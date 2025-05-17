@@ -16,6 +16,7 @@ import TableSkeleton from "@/components/FormSkeleton";
 import GeneratePDFButton from "@/components/GeneratePDFButton";
 import ContentPDFDocument from "./ContentPDFDocument";
 import DOCXPreview from "./DOCXPreview";
+import { useDebouncedCallback } from "use-debounce";
 
 type SortDirection = "asc" | "desc" | null;
 
@@ -30,9 +31,25 @@ const fetcherTotal = async (userId: string) => {
 };
 
 const fetcher = async (
-  key: [string, number, number, string | null, SortDirection, string]
+  key: [
+    string,
+    number,
+    number,
+    string | null,
+    SortDirection,
+    string,
+    string | null,
+  ]
 ): Promise<DicomType[] | null> => {
-  const [tableName, page, pageSize, sortColumn, sortDirection, userId] = key;
+  const [
+    tableName,
+    page,
+    pageSize,
+    sortColumn,
+    sortDirection,
+    userId,
+    searchWord,
+  ] = key;
 
   const start = (page - 1) * pageSize;
   const end = start + pageSize - 1;
@@ -49,6 +66,12 @@ const fetcher = async (
     query = query.order(sortColumn, { ascending: sortDirection === "asc" });
   } else {
     query = query.order("created_at", { ascending: false });
+  }
+
+  if (searchWord && searchWord.length > 0) {
+    query = query.or(
+      `patient_id.ilike.%${searchWord}%,patient_name.ilike.%${searchWord}%,institution.ilike.%${searchWord}%,study_description.ilike.%${searchWord}%`
+    );
   }
 
   const { data, error } = await query;
@@ -68,6 +91,10 @@ export default function Pagination({
   tableName: "dicom";
   userId: string;
 }) {
+  const debouncedSearch = useDebouncedCallback((value) => {
+    setSearch(value);
+  }, 400);
+
   const PDFDownloadLink = useMemo(
     () =>
       dynamic(
@@ -84,13 +111,16 @@ export default function Pagination({
   const [pageSize, setPageSize] = useState<number>(8);
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+  const [search, setSearch] = useState<string | null>(null);
 
   const { data, error, isLoading } = useSWR<DicomType[] | null>(
-    [tableName, page, pageSize, sortColumn, sortDirection, userId],
+    [tableName, page, pageSize, sortColumn, sortDirection, userId, search],
     fetcher
   );
 
-  const { data: count } = useSWR("dicom-total", () => fetcherTotal(userId));
+  const { data: count } = useSWR("admin-dicoms-total", () =>
+    fetcherTotal(userId)
+  );
 
   const hasMore: boolean =
     data !== undefined && data !== null && data.length === pageSize;
@@ -141,24 +171,28 @@ export default function Pagination({
     setPage(1);
   };
 
+  const noData = !isLoading && !error && data && data.length === 0;
   const startItemNumber = (page - 1) * pageSize + 1;
 
   return (
     <>
-      <div className="flex mb-4 items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="w-full mb-4">
+        <div className="flex max-w-lg w-full mx-auto sm:mx-0 flex-col sm:flex-row items-center gap-3">
           <Link
             href="/admin/dicom"
             title="Upload Dicoms"
-            className="px-6 text-white py-2 rounded-full bg-black flex gap-2 items-center"
+            className="px-6 text-white w-full justify-center py-2 rounded-full bg-black flex gap-2 items-center"
           >
             <span>Upload</span>
             <Icon icon="solar:add-circle-linear" fontSize={24}></Icon>
           </Link>
-          {/* <input
-            type="search"
-            className="bg-white rounded-full border border-gray-200 outline-0 py-2 px-5"
-          /> */}
+          <input
+            type="text"
+            className="bg-white rounded-full border w-full border-gray-200 outline-0 py-2 px-5"
+            placeholder="Search ..."
+            defaultValue={search ?? ""}
+            onChange={(event) => debouncedSearch(event.target.value)}
+          />
         </div>
       </div>
       <div className="flex justify-end mb-4">
@@ -191,196 +225,246 @@ export default function Pagination({
         </p>
       )}
 
-      {!isLoading && !error && data && data.length > 0 && (
-        <div className="bg-white shadow rounded-xl overflow-auto">
-          <table className="text-sm w-full table-fixed">
-            <thead>
-              <tr className="border-b border-gray-200">
-                <th className="w-6 text-left uppercase text-xs font-semibold py-4 px-3">
-                  #
-                </th>
-                <th className="w-25 px-1">
-                  <button
-                    type="button"
-                    onClick={() => handleSort("patient_id")}
-                    className="py-3 w-full text-left px-2 rounded-lg cursor-pointer uppercase text-xs font-semibold hover:bg-cyan-50 bg-slate-50 transition-colors duration-300"
-                  >
-                    Patient ID
-                    {sortColumn === "patient_id" && sortDirection && (
+      <div className="bg-white shadow rounded-xl overflow-auto">
+        <table className="text-sm w-full table-fixed">
+          <thead>
+            <tr className="border-b border-gray-200">
+              <th className="w-6 text-left uppercase text-xs font-semibold py-4 px-3">
+                #
+              </th>
+              <th className="w-25 px-1">
+                <button
+                  type="button"
+                  disabled={!!noData}
+                  onClick={() => handleSort("patient_id")}
+                  className="py-3 w-full text-left px-2 rounded-lg cursor-pointer uppercase text-xs font-semibold hover:bg-cyan-50 bg-slate-50 transition-colors duration-300"
+                >
+                  Patient ID
+                  {sortColumn === "patient_id" && sortDirection && (
+                    <Icon
+                      icon={
+                        sortDirection === "asc"
+                          ? "solar:arrow-up-outline"
+                          : "solar:arrow-down-outline"
+                      }
+                      className="inline-block"
+                      fontSize={14}
+                    />
+                  )}
+                </button>
+              </th>
+              <th className="w-46">
+                <button
+                  onClick={() => handleSort("institution")}
+                  disabled={!!noData}
+                  type="button"
+                  className="py-3 w-full text-left px-2 rounded-lg cursor-pointer uppercase text-xs font-semibold hover:bg-cyan-50 bg-slate-50 transition-colors duration-300"
+                >
+                  Institution Name
+                  {sortColumn === "institution" && sortDirection && (
+                    <Icon
+                      icon={
+                        sortDirection === "asc"
+                          ? "solar:arrow-up-outline"
+                          : "solar:arrow-down-outline"
+                      }
+                      className="inline-block"
+                      fontSize={12}
+                    />
+                  )}
+                </button>
+              </th>
+              <th className="w-60 px-1">
+                <button
+                  disabled={!!noData}
+                  onClick={() => handleSort("patient_name")}
+                  type="button"
+                  className="py-3 w-full text-left px-2 rounded-lg cursor-pointer uppercase text-xs font-semibold hover:bg-cyan-50 bg-slate-50 transition-colors duration-300"
+                >
+                  Patient Name
+                  {sortColumn === "patient_name" && sortDirection && (
+                    <Icon
+                      icon={
+                        sortDirection === "asc"
+                          ? "solar:arrow-up-outline"
+                          : "solar:arrow-down-outline"
+                      }
+                      className="inline-block ml-1"
+                      fontSize={12}
+                    />
+                  )}
+                </button>
+              </th>
+              <th className="w-14 py-2">
+                <button
+                  disabled={!!noData}
+                  type="button"
+                  onClick={() => handleSort("gender")}
+                  className="py-3 w-full text-left px-2 rounded-lg cursor-pointer uppercase text-xs font-semibold hover:bg-cyan-50 bg-slate-50 transition-colors duration-300"
+                >
+                  Sex
+                  {sortColumn === "gender" && sortDirection && (
+                    <Icon
+                      icon={
+                        sortDirection === "asc"
+                          ? "solar:arrow-up-outline"
+                          : "solar:arrow-down-outline"
+                      }
+                      className="inline-block ml-1"
+                      fontSize={12}
+                    />
+                  )}
+                </button>
+              </th>
+              <th className="w-16 px-1">
+                <button
+                  disabled={!!noData}
+                  type="button"
+                  onClick={() => handleSort("patient_age")}
+                  className="py-3 w-full text-left px-2 rounded-lg cursor-pointer uppercase text-xs font-semibold hover:bg-cyan-50 bg-slate-50 transition-colors duration-300"
+                >
+                  Age
+                  {sortColumn === "patient_age" && sortDirection && (
+                    <Icon
+                      icon={
+                        sortDirection === "asc"
+                          ? "solar:arrow-up-outline"
+                          : "solar:arrow-down-outline"
+                      }
+                      className="inline-block ml-1"
+                      fontSize={12}
+                    />
+                  )}
+                </button>
+              </th>
+              <th className="w-40 py-1">
+                <button
+                  disabled={!!noData}
+                  type="button"
+                  onClick={() => handleSort("study_description")}
+                  className="py-3 w-full text-left px-2 rounded-lg cursor-pointer uppercase text-xs font-semibold hover:bg-cyan-50 bg-slate-50 transition-colors duration-300"
+                >
+                  Study Description
+                  {sortColumn === "study_description" && sortDirection && (
+                    <Icon
+                      icon={
+                        sortDirection === "asc"
+                          ? "solar:arrow-up-outline"
+                          : "solar:arrow-down-outline"
+                      }
+                      className="inline-block ml-1"
+                      fontSize={12}
+                    />
+                  )}
+                </button>
+              </th>
+              <th className="w-30 px-1">
+                <button
+                  disabled={!!noData}
+                  type="button"
+                  onClick={() => handleSort("study_date")}
+                  className="py-3 w-full text-left px-2 rounded-lg cursor-pointer uppercase text-xs font-semibold hover:bg-cyan-50 bg-slate-50 transition-colors duration-300"
+                >
+                  Study Date
+                  {sortColumn === "study_date" && sortDirection && (
+                    <Icon
+                      icon={
+                        sortDirection === "asc"
+                          ? "solar:arrow-up-outline"
+                          : "solar:arrow-down-outline"
+                      }
+                      className="inline-block ml-1"
+                      fontSize={12}
+                    />
+                  )}
+                </button>
+              </th>
+              <th className="w-42 py-1">
+                <button
+                  disabled={!!noData}
+                  type="button"
+                  onClick={() => handleSort("created_at")}
+                  className="py-3 w-full text-left px-2 rounded-lg cursor-pointer uppercase text-xs font-semibold hover:bg-cyan-50 bg-slate-50 transition-colors duration-300"
+                >
+                  Receipt Date
+                  {sortColumn === "created_at" && sortDirection && (
+                    <Icon
+                      icon={
+                        sortDirection === "asc"
+                          ? "solar:arrow-up-outline"
+                          : "solar:arrow-down-outline"
+                      }
+                      className="inline-block ml-1"
+                      fontSize={12}
+                    />
+                  )}
+                </button>
+              </th>
+              <th title="Modalidad" className="w-13 px-1">
+                <button
+                  disabled={!!noData}
+                  type="button"
+                  onClick={() => handleSort("modality")}
+                  className="py-3 w-full text-left px-2 rounded-lg cursor-pointer uppercase text-xs font-semibold hover:bg-cyan-50 bg-slate-50 transition-colors duration-300"
+                >
+                  M
+                  {sortColumn === "modality" && sortDirection && (
+                    <Icon
+                      icon={
+                        sortDirection === "asc"
+                          ? "solar:arrow-up-outline"
+                          : "solar:arrow-down-outline"
+                      }
+                      className="inline-block ml-1"
+                      fontSize={12}
+                    />
+                  )}
+                </button>
+              </th>
+              <th className="w-90"></th>
+            </tr>
+          </thead>
+          {noData ? (
+            <tbody>
+              <tr>
+                <td colSpan={11} className="text-center">
+                  <div className="relative w-full overflow-hidden">
+                    <div className="absolute top-1/2 -translate-x-1/2 left-1/2 -translate-y-1/2 w-1/3 aspect-square rounded-full border border-gray-100"></div>
+                    <div className="absolute top-1/2 -translate-x-1/2 left-1/2 -translate-y-1/2 w-1/2 aspect-square rounded-full border border-gray-100"></div>
+                    <div className="absolute top-1/2 -translate-x-1/2 left-1/2 -translate-y-1/2 w-1/5 aspect-square rounded-full border border-gray-100"></div>
+                    <div className="relative py-30 text-base max-w-80 w-full mx-auto">
                       <Icon
-                        icon={
-                          sortDirection === "asc"
-                            ? "solar:arrow-up-outline"
-                            : "solar:arrow-down-outline"
-                        }
-                        className="inline-block"
-                        fontSize={14}
-                      />
-                    )}
-                  </button>
-                </th>
-                <th onClick={() => handleSort("institution")} className="w-46">
-                  <button
-                    type="button"
-                    className="py-3 w-full text-left px-2 rounded-lg cursor-pointer uppercase text-xs font-semibold hover:bg-cyan-50 bg-slate-50 transition-colors duration-300"
-                  >
-                    Institution Name
-                    {sortColumn === "institution" && sortDirection && (
-                      <Icon
-                        icon={
-                          sortDirection === "asc"
-                            ? "solar:arrow-up-outline"
-                            : "solar:arrow-down-outline"
-                        }
-                        className="inline-block"
-                        fontSize={12}
-                      />
-                    )}
-                  </button>
-                </th>
-                <th className="w-60 px-1">
-                  <button
-                    onClick={() => handleSort("patient_name")}
-                    type="button"
-                    className="py-3 w-full text-left px-2 rounded-lg cursor-pointer uppercase text-xs font-semibold hover:bg-cyan-50 bg-slate-50 transition-colors duration-300"
-                  >
-                    Patient Name
-                    {sortColumn === "patient_name" && sortDirection && (
-                      <Icon
-                        icon={
-                          sortDirection === "asc"
-                            ? "solar:arrow-up-outline"
-                            : "solar:arrow-down-outline"
-                        }
-                        className="inline-block ml-1"
-                        fontSize={12}
-                      />
-                    )}
-                  </button>
-                </th>
-                <th className="w-14 py-2">
-                  <button
-                    type="button"
-                    onClick={() => handleSort("gender")}
-                    className="py-3 w-full text-left px-2 rounded-lg cursor-pointer uppercase text-xs font-semibold hover:bg-cyan-50 bg-slate-50 transition-colors duration-300"
-                  >
-                    Sex
-                    {sortColumn === "gender" && sortDirection && (
-                      <Icon
-                        icon={
-                          sortDirection === "asc"
-                            ? "solar:arrow-up-outline"
-                            : "solar:arrow-down-outline"
-                        }
-                        className="inline-block ml-1"
-                        fontSize={12}
-                      />
-                    )}
-                  </button>
-                </th>
-                <th className="w-16 px-1">
-                  <button
-                    type="button"
-                    onClick={() => handleSort("patient_age")}
-                    className="py-3 w-full text-left px-2 rounded-lg cursor-pointer uppercase text-xs font-semibold hover:bg-cyan-50 bg-slate-50 transition-colors duration-300"
-                  >
-                    Age
-                    {sortColumn === "patient_age" && sortDirection && (
-                      <Icon
-                        icon={
-                          sortDirection === "asc"
-                            ? "solar:arrow-up-outline"
-                            : "solar:arrow-down-outline"
-                        }
-                        className="inline-block ml-1"
-                        fontSize={12}
-                      />
-                    )}
-                  </button>
-                </th>
-                <th className="w-40 py-1">
-                  <button
-                    type="button"
-                    onClick={() => handleSort("study_description")}
-                    className="py-3 w-full text-left px-2 rounded-lg cursor-pointer uppercase text-xs font-semibold hover:bg-cyan-50 bg-slate-50 transition-colors duration-300"
-                  >
-                    Study Description
-                    {sortColumn === "study_description" && sortDirection && (
-                      <Icon
-                        icon={
-                          sortDirection === "asc"
-                            ? "solar:arrow-up-outline"
-                            : "solar:arrow-down-outline"
-                        }
-                        className="inline-block ml-1"
-                        fontSize={12}
-                      />
-                    )}
-                  </button>
-                </th>
-                <th className="w-30 px-1">
-                  <button
-                    type="button"
-                    onClick={() => handleSort("study_date")}
-                    className="py-3 w-full text-left px-2 rounded-lg cursor-pointer uppercase text-xs font-semibold hover:bg-cyan-50 bg-slate-50 transition-colors duration-300"
-                  >
-                    Study Date
-                    {sortColumn === "study_date" && sortDirection && (
-                      <Icon
-                        icon={
-                          sortDirection === "asc"
-                            ? "solar:arrow-up-outline"
-                            : "solar:arrow-down-outline"
-                        }
-                        className="inline-block ml-1"
-                        fontSize={12}
-                      />
-                    )}
-                  </button>
-                </th>
-                <th className="w-42 py-1">
-                  <button
-                    type="button"
-                    onClick={() => handleSort("created_at")}
-                    className="py-3 w-full text-left px-2 rounded-lg cursor-pointer uppercase text-xs font-semibold hover:bg-cyan-50 bg-slate-50 transition-colors duration-300"
-                  >
-                    Receipt Date
-                    {sortColumn === "created_at" && sortDirection && (
-                      <Icon
-                        icon={
-                          sortDirection === "asc"
-                            ? "solar:arrow-up-outline"
-                            : "solar:arrow-down-outline"
-                        }
-                        className="inline-block ml-1"
-                        fontSize={12}
-                      />
-                    )}
-                  </button>
-                </th>
-                <th title="Modalidad" className="w-13 px-1">
-                  <button
-                    type="button"
-                    onClick={() => handleSort("modality")}
-                    className="py-3 w-full text-left px-2 rounded-lg cursor-pointer uppercase text-xs font-semibold hover:bg-cyan-50 bg-slate-50 transition-colors duration-300"
-                  >
-                    M
-                    {sortColumn === "modality" && sortDirection && (
-                      <Icon
-                        icon={
-                          sortDirection === "asc"
-                            ? "solar:arrow-up-outline"
-                            : "solar:arrow-down-outline"
-                        }
-                        className="inline-block ml-1"
-                        fontSize={12}
-                      />
-                    )}
-                  </button>
-                </th>
-                <th className="w-90"></th>
+                        icon="solar:file-text-linear"
+                        fontSize={60}
+                        className="mb-6 mx-auto"
+                      ></Icon>
+                      <div className="font-semibold text-lg px-4 mb-2">
+                        No data found
+                      </div>
+                      <div className="text-gray-500 mb-6">
+                        Your search{" "}
+                        <div className="line-clamp-2 font-semibold text-black">
+                          {search}
+                        </div>{" "}
+                        did not match any items. Please try again.
+                      </div>
+                      <Link
+                        href="/admin/dicom"
+                        title="Upload Dicoms"
+                        className="mx-auto px-6 text-white justify-center py-2 rounded-full bg-black flex gap-2 items-center w-fit"
+                      >
+                        <span>Upload</span>
+                        <Icon
+                          icon="solar:add-circle-linear"
+                          fontSize={24}
+                        ></Icon>
+                      </Link>
+                    </div>
+                  </div>
+                </td>
               </tr>
-            </thead>
+            </tbody>
+          ) : (
             <tbody className="whitespace-nowrap">
               {data?.map(
                 (
@@ -513,35 +597,32 @@ export default function Pagination({
                 }
               )}
             </tbody>
-          </table>
-        </div>
-      )}
-
-      {!isLoading && !error && data && data.length === 0 && (
-        <p className="text-gray-700 text-sm">No data found for this page.</p>
-      )}
-
-      <div className="flex justify-between items-center mt-4">
-        <button
-          onClick={handlePreviousPage}
-          disabled={page === 1 || isLoading}
-          className="flex cursor-pointer items-center gap-1 px-4 py-2 border border-transparent text-sm rounded-full  text-white bg-cyan-500 hover:bg-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-300"
-        >
-          <Icon icon="solar:arrow-left-outline" fontSize={16} />
-          Previous
-        </button>
-        <span className="text-xs uppercase font-semibold text-gray-700">
-          Page {page}
-        </span>
-        <button
-          onClick={handleNextPage}
-          disabled={!hasMore || isLoading}
-          className="flex cursor-pointer items-center gap-1 px-4 py-2 border border-transparent text-sm rounded-full  text-white bg-cyan-500 hover:bg-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-300"
-        >
-          Next
-          <Icon icon="solar:arrow-right-outline" fontSize={16} />
-        </button>
+          )}
+        </table>
       </div>
+      {!noData ? (
+        <div className="flex justify-between items-center mt-4">
+          <button
+            onClick={handlePreviousPage}
+            disabled={page === 1 || isLoading}
+            className="flex cursor-pointer items-center gap-1 px-4 py-2 border border-transparent text-sm rounded-full  text-white bg-cyan-500 hover:bg-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-300"
+          >
+            <Icon icon="solar:arrow-left-outline" fontSize={16} />
+            Previous
+          </button>
+          <span className="text-xs uppercase font-semibold text-gray-700">
+            Page {page}
+          </span>
+          <button
+            onClick={handleNextPage}
+            disabled={!hasMore || isLoading}
+            className="flex cursor-pointer items-center gap-1 px-4 py-2 border border-transparent text-sm rounded-full  text-white bg-cyan-500 hover:bg-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-300"
+          >
+            Next
+            <Icon icon="solar:arrow-right-outline" fontSize={16} />
+          </button>
+        </div>
+      ) : null}
     </>
   );
 }

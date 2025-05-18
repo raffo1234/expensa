@@ -23,8 +23,6 @@ import {
   endOfWeek,
   startOfMonth,
   endOfMonth,
-  subWeeks,
-  subMonths,
   formatISO,
 } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
@@ -146,6 +144,9 @@ export default function Pagination({
   const debouncedSearch = useDebouncedCallback((value) => {
     setSearch(value);
   }, 400);
+  const debouncedPerPage = useDebouncedCallback((value) => {
+    handlePageSize(value);
+  }, 400);
 
   const PDFDownloadLink = useMemo(
     () =>
@@ -189,9 +190,7 @@ export default function Pagination({
   const hasMore: boolean =
     data !== undefined && data !== null && data.length === pageSize;
 
-  const handlePageSize = (formData: FormData) => {
-    const pageSizeValue: FormDataEntryValue | null = formData.get("pageSize");
-
+  const handlePageSize = (pageSizeValue: string) => {
     if (typeof pageSizeValue === "string") {
       const newPageSize = parseInt(pageSizeValue, 10);
 
@@ -294,14 +293,13 @@ export default function Pagination({
           <span>
             Total: <span className="text-base font-semibold">{count}</span>
           </span>
-          <form action={handlePageSize} className="inline-block">
-            <input
-              type="text"
-              name="pageSize"
-              className="py-1 px-3 rounded-full text-center text-base transition-colors duration-300 hover:border-gray-300 focus:border-cyan-400 outline-0 border border-gray-200 w-16"
-              defaultValue={pageSize}
-            />
-          </form>
+          <input
+            onChange={(event) => debouncedPerPage(event.target.value)}
+            type="text"
+            name="pageSize"
+            className="py-1 px-3 rounded-full text-center text-base transition-colors duration-300 hover:border-gray-300 focus:border-cyan-400 outline-0 border border-gray-200 w-16"
+            defaultValue={pageSize}
+          />
           <span>per page</span>
         </div>
       </div>

@@ -31,8 +31,8 @@ type SortDirection = "asc" | "desc" | null;
 
 enum FilterByTimeType {
   TODAY = "TODAY",
-  LAST_WEEK = "LAST_WEEK",
-  LAST_MONTH = "LAST_MONTH",
+  THIS_WEEK = "THIS_WEEK",
+  THIS_MONTH = "THIS_MONTH",
 }
 
 const fetcherTotal = async (userId: string) => {
@@ -105,14 +105,14 @@ const fetcher = async (
         startOfCurrentDay = startOfDay(now);
         query = query.gte("created_at", formatISO(startOfCurrentDay));
         break;
-      case FilterByTimeType.LAST_WEEK: // Now means current week
+      case FilterByTimeType.THIS_WEEK: // Now means current week
         startOfCurrentWeek = startOfWeek(now, { weekStartsOn: 0 }); // Assuming week starts on Sunday
         endOfCurrentWeek = endOfWeek(now, { weekStartsOn: 0 });
         query = query
           .gte("created_at", formatISO(startOfCurrentWeek))
           .lte("created_at", formatISO(endOfCurrentWeek));
         break;
-      case FilterByTimeType.LAST_MONTH: // Now means current month
+      case FilterByTimeType.THIS_MONTH: // Now means current month
         startOfCurrentMonth = startOfMonth(now);
         endOfCurrentMonth = endOfMonth(now);
         query = query
@@ -275,18 +275,18 @@ export default function Pagination({
             Today
           </button>
           <button
-            onClick={() => setFilterByTime(FilterByTimeType.LAST_WEEK)}
+            onClick={() => setFilterByTime(FilterByTimeType.THIS_WEEK)}
             type="button"
-            className={`${filterByTime === FilterByTimeType.LAST_WEEK ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-xl `}
+            className={`${filterByTime === FilterByTimeType.THIS_WEEK ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-xl `}
           >
-            Last Week
+            This Week
           </button>
           <button
-            onClick={() => setFilterByTime(FilterByTimeType.LAST_MONTH)}
+            onClick={() => setFilterByTime(FilterByTimeType.THIS_MONTH)}
             type="button"
-            className={`${filterByTime === FilterByTimeType.LAST_MONTH ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-xl `}
+            className={`${filterByTime === FilterByTimeType.THIS_MONTH ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-xl `}
           >
-            Last Month
+            This Month
           </button>
         </div>
         <div className="text-xs flex items-center gap-1">
@@ -297,7 +297,7 @@ export default function Pagination({
             onChange={(event) => debouncedPerPage(event.target.value)}
             type="text"
             name="pageSize"
-            className="py-1 px-3 rounded-full text-center text-base transition-colors duration-300 hover:border-gray-300 focus:border-cyan-400 outline-0 border border-gray-200 w-16"
+            className="bg-white py-1 px-3 rounded-full text-center text-base transition-colors duration-300 hover:border-gray-300 focus:border-cyan-400 outline-0 border border-gray-200 w-16"
             defaultValue={pageSize}
           />
           <span>per page</span>

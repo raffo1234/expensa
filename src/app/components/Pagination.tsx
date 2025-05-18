@@ -24,6 +24,8 @@ import {
   startOfMonth,
   endOfMonth,
   formatISO,
+  subDays,
+  endOfDay,
 } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 
@@ -31,6 +33,7 @@ type SortDirection = "asc" | "desc" | null;
 
 enum FilterByTimeType {
   TODAY = "TODAY",
+  YESTERDAY = "YESTERDAY",
   THIS_WEEK = "THIS_WEEK",
   THIS_MONTH = "THIS_MONTH",
 }
@@ -99,6 +102,8 @@ const fetcher = async (
     let endOfCurrentWeek: Date;
     let startOfCurrentMonth: Date;
     let endOfCurrentMonth: Date;
+    let startOfYesterday: Date;
+    let endOfYesterday: Date;
 
     switch (filterByTime) {
       case FilterByTimeType.TODAY:
@@ -118,6 +123,14 @@ const fetcher = async (
         query = query
           .gte("created_at", formatISO(startOfCurrentMonth))
           .lte("created_at", formatISO(endOfCurrentMonth));
+        break;
+      case FilterByTimeType.YESTERDAY: // Added yesterday filter
+        const yesterday = subDays(now, 1);
+        startOfYesterday = startOfDay(yesterday);
+        endOfYesterday = endOfDay(yesterday);
+        query = query
+          .gte("created_at", formatISO(startOfYesterday))
+          .lte("created_at", formatISO(endOfYesterday));
         break;
       default:
         break;
@@ -273,6 +286,13 @@ export default function Pagination({
             className={`${filterByTime === FilterByTimeType.TODAY ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-xl `}
           >
             Today
+          </button>
+          <button
+            onClick={() => setFilterByTime(FilterByTimeType.YESTERDAY)}
+            type="button"
+            className={`${filterByTime === FilterByTimeType.YESTERDAY ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-xl `}
+          >
+            Yesterday
           </button>
           <button
             onClick={() => setFilterByTime(FilterByTimeType.THIS_WEEK)}

@@ -28,6 +28,7 @@ import {
   endOfDay,
 } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
+import DateRangeButtonCalendar from "./DateRangeButtonCalendar";
 
 type SortDirection = "asc" | "desc" | null;
 
@@ -272,39 +273,39 @@ export default function Pagination({
         </div>
       </div>
       <div className="flex flex-col sm:flex-row gap-4 justify-between mb-4">
-        <div className="text-sm font-semibold flex items-center gap-1 py-1 px-1 bg-gray-100 rounded-xl">
+        <div className="text-sm font-semibold flex items-center gap-1 py-1 px-1 bg-gray-100 rounded-full">
           <button
             type="button"
             onClick={() => setFilterByTime(null)}
-            className={`${filterByTime === null ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-xl `}
+            className={`${filterByTime === null ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-full `}
           >
             All
           </button>
           <button
             onClick={() => setFilterByTime(FilterByTimeType.TODAY)}
             type="button"
-            className={`${filterByTime === FilterByTimeType.TODAY ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-xl `}
+            className={`${filterByTime === FilterByTimeType.TODAY ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-full `}
           >
             Today
           </button>
           <button
             onClick={() => setFilterByTime(FilterByTimeType.YESTERDAY)}
             type="button"
-            className={`${filterByTime === FilterByTimeType.YESTERDAY ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-xl `}
+            className={`${filterByTime === FilterByTimeType.YESTERDAY ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-full `}
           >
             Yesterday
           </button>
           <button
             onClick={() => setFilterByTime(FilterByTimeType.THIS_WEEK)}
             type="button"
-            className={`${filterByTime === FilterByTimeType.THIS_WEEK ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-xl `}
+            className={`${filterByTime === FilterByTimeType.THIS_WEEK ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-full `}
           >
             This Week
           </button>
           <button
             onClick={() => setFilterByTime(FilterByTimeType.THIS_MONTH)}
             type="button"
-            className={`${filterByTime === FilterByTimeType.THIS_MONTH ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-xl `}
+            className={`${filterByTime === FilterByTimeType.THIS_MONTH ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-full `}
           >
             This Month
           </button>
@@ -322,6 +323,11 @@ export default function Pagination({
           />
           <span>per page</span>
         </div>
+      </div>
+
+      <div className="hidden">
+        <DateRangeButtonCalendar label="Study Data Range" />
+        <DateRangeButtonCalendar label="Receipt Data Range" />
       </div>
 
       {isLoading && <TableSkeleton rows={pageSize} cols={7} />}

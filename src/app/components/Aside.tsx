@@ -36,7 +36,7 @@ export default function Aside({
   const pages = [
     {
       href: "/admin/dicom",
-      title: "Upload Dicom",
+      title: "Upload Files",
       iconName: "solar:cloud-upload-broken",
     },
     {

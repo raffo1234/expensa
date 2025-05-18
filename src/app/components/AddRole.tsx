@@ -70,13 +70,9 @@ export default function AddRole() {
               type="button"
               className="font-semibold disabled:border-gray-100 disabled:bg-gray-100 inline-block py-3 px-10 bg-white text-sm border border-gray-100 rounded-lg transition-colors hover:border-gray-200 duration-500 active:border-gray-300"
             >
-              Cancelar
+              Cancel
             </button>
-            <PrimaryButton
-              type="submit"
-              label="Agregar"
-              isLoading={isLoading}
-            />
+            <PrimaryButton type="submit" label="Add" isLoading={isLoading} />
           </div>
         </form>
       ) : (
@@ -85,7 +81,7 @@ export default function AddRole() {
           className="w-full flex rounded-b-xl gap-3.5 items-center text-left hover:bg-gray-50 transition-colors duration-300 px-6 py-4 border-t border-gray-200"
         >
           <Icon icon="solar:add-square-broken" fontSize={22} />
-          <span className="pb-1">Agregar Rol</span>
+          <span className="pb-1">Add Role</span>
         </button>
       )}
     </>

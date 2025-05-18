@@ -27,7 +27,7 @@ export default async function Page() {
         <h1 className="mb-6 font-semibold text-lg block">
           Upload Files
           <span className="text-sm text-gray-500 font-normal block pt-1">
-            Compressed files containing (.dcm) files
+            Compressed files containing DICOM files
           </span>
         </h1>
         <Link

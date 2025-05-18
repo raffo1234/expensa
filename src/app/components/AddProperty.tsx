@@ -569,13 +569,13 @@ export default function AddProperty({ userId }: { userId: string }) {
                 href="/admin/property"
                 className="font-semibold disabled:border-gray-100 disabled:bg-gray-100 inline-block py-3 px-10 bg-white text-sm border border-gray-100 rounded-lg transition-colors hover:border-gray-200 duration-500 active:border-gray-300"
               >
-                Cancelar
+                Cancel
               </a>
               <button
                 type="submit"
                 className="text-white font-semibold disabled:border-gray-100 disabled:bg-gray-100 inline-block py-3 px-10 text-sm bg-cyan-500 hover:bg-cyan-400 transition-colors duration-500 rounded-lg"
               >
-                Agregar
+                Add
               </button>
             </footer>
           </div>

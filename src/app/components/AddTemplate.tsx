@@ -79,11 +79,7 @@ export default function AddTemplate({ userId }: { userId: string }) {
             >
               Cancel
             </button>
-            <PrimaryButton
-              type="submit"
-              label="Agregar"
-              isLoading={isLoading}
-            />
+            <PrimaryButton type="submit" label="Add" isLoading={isLoading} />
           </div>
         </form>
       ) : (

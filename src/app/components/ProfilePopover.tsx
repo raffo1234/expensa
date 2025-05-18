@@ -61,8 +61,8 @@ export default async function ProfilePopover() {
                   href="/admin/dicom"
                   className="flex gap-3.5 items-center py-2 px-6 hover:bg-gray-50"
                 >
-                  <Icon icon="solar:settings-minimalistic-broken" />
-                  <span>Upload File</span>
+                  <Icon icon="solar:cloud-upload-broken" fontSize={18} />
+                  <span>Upload Files</span>
                 </Link>
               </li>
               <li className="border-t border-gray-100">
@@ -93,7 +93,7 @@ export default async function ProfilePopover() {
         >
           <button
             type="submit"
-            className="flex gap-4 cursor-pointer hover:bg-rose-400 px-6 py-2 bg-black text-white rounded-full transition-colors duration-700 active:bg-gray-900"
+            className="cursor-pointer flex gap-4 cursor-pointer hover:bg-rose-400 px-6 py-2 bg-black text-white rounded-full transition-colors duration-700 active:bg-gray-900"
           >
             <Icon icon="solar:login-3-broken" fontSize={24}></Icon>
             <span>Sign in</span>

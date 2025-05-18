@@ -17,8 +17,25 @@ import GeneratePDFButton from "@/components/GeneratePDFButton";
 import ContentPDFDocument from "./ContentPDFDocument";
 import DOCXPreview from "./DOCXPreview";
 import { useDebouncedCallback } from "use-debounce";
+import {
+  startOfDay,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  subWeeks,
+  subMonths,
+  formatISO,
+} from "date-fns";
+import { toZonedTime } from "date-fns-tz";
 
 type SortDirection = "asc" | "desc" | null;
+
+enum FilterByTimeType {
+  TODAY = "TODAY",
+  LAST_WEEK = "LAST_WEEK",
+  LAST_MONTH = "LAST_MONTH",
+}
 
 const fetcherTotal = async (userId: string) => {
   const { count, error } = await supabase
@@ -39,6 +56,7 @@ const fetcher = async (
     SortDirection,
     string,
     string | null,
+    FilterByTimeType | null,
   ]
 ): Promise<DicomType[] | null> => {
   const [
@@ -49,6 +67,7 @@ const fetcher = async (
     sortDirection,
     userId,
     searchWord,
+    filterByTime,
   ] = key;
 
   const start = (page - 1) * pageSize;
@@ -72,6 +91,39 @@ const fetcher = async (
     query = query.or(
       `patient_id.ilike.%${searchWord}%,patient_name.ilike.%${searchWord}%,institution.ilike.%${searchWord}%,study_description.ilike.%${searchWord}%`
     );
+  }
+
+  if (filterByTime) {
+    const timeZone = "America/Lima"; // Set timezone to Peru
+    const now = toZonedTime(new Date(), timeZone);
+    let startOfCurrentDay: Date;
+    let startOfCurrentWeek: Date;
+    let endOfCurrentWeek: Date;
+    let startOfCurrentMonth: Date;
+    let endOfCurrentMonth: Date;
+
+    switch (filterByTime) {
+      case FilterByTimeType.TODAY:
+        startOfCurrentDay = startOfDay(now);
+        query = query.gte("created_at", formatISO(startOfCurrentDay));
+        break;
+      case FilterByTimeType.LAST_WEEK: // Now means current week
+        startOfCurrentWeek = startOfWeek(now, { weekStartsOn: 0 }); // Assuming week starts on Sunday
+        endOfCurrentWeek = endOfWeek(now, { weekStartsOn: 0 });
+        query = query
+          .gte("created_at", formatISO(startOfCurrentWeek))
+          .lte("created_at", formatISO(endOfCurrentWeek));
+        break;
+      case FilterByTimeType.LAST_MONTH: // Now means current month
+        startOfCurrentMonth = startOfMonth(now);
+        endOfCurrentMonth = endOfMonth(now);
+        query = query
+          .gte("created_at", formatISO(startOfCurrentMonth))
+          .lte("created_at", formatISO(endOfCurrentMonth));
+        break;
+      default:
+        break;
+    }
   }
 
   const { data, error } = await query;
@@ -112,9 +164,21 @@ export default function Pagination({
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [search, setSearch] = useState<string | null>(null);
+  const [filterByTime, setFilterByTime] = useState<FilterByTimeType | null>(
+    null
+  );
 
   const { data, error, isLoading } = useSWR<DicomType[] | null>(
-    [tableName, page, pageSize, sortColumn, sortDirection, userId, search],
+    [
+      tableName,
+      page,
+      pageSize,
+      sortColumn,
+      sortDirection,
+      userId,
+      search,
+      filterByTime,
+    ],
     fetcher
   );
 
@@ -195,7 +259,37 @@ export default function Pagination({
           />
         </div>
       </div>
-      <div className="flex justify-end mb-4">
+      <div className="flex flex-col sm:flex-row gap-4 justify-between mb-4">
+        <div className="text-sm font-semibold flex items-center gap-1 py-1 px-1 bg-gray-100 rounded-xl">
+          <button
+            type="button"
+            onClick={() => setFilterByTime(null)}
+            className={`${filterByTime === null ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-xl `}
+          >
+            All
+          </button>
+          <button
+            onClick={() => setFilterByTime(FilterByTimeType.TODAY)}
+            type="button"
+            className={`${filterByTime === FilterByTimeType.TODAY ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-xl `}
+          >
+            Today
+          </button>
+          <button
+            onClick={() => setFilterByTime(FilterByTimeType.LAST_WEEK)}
+            type="button"
+            className={`${filterByTime === FilterByTimeType.LAST_WEEK ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-xl `}
+          >
+            Last Week
+          </button>
+          <button
+            onClick={() => setFilterByTime(FilterByTimeType.LAST_MONTH)}
+            type="button"
+            className={`${filterByTime === FilterByTimeType.LAST_MONTH ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-xl `}
+          >
+            Last Month
+          </button>
+        </div>
         <div className="text-xs flex items-center gap-1">
           <span>
             Total: <span className="text-base font-semibold">{count}</span>

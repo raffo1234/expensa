@@ -95,7 +95,7 @@ export default function Aside({
         onClick={() => setIsOpen((prev) => !prev)}
         className={`${
           isOpen ? "text-cyan-500" : ""
-        } lg:invisible z-20 visible absolute right-2 top-4 bg-white w-12 h-12 border border-gray-200 rounded-xl flex justify-center items-center`}
+        } lg:invisible z-20 visible absolute right-4 top-1 bg-white w-12 h-12 border border-gray-200 rounded-xl flex justify-center items-center`}
       >
         <Icon icon="solar:hamburger-menu-broken" fontSize={24} />
       </button>

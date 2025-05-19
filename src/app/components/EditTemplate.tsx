@@ -83,10 +83,15 @@ export default function EditTemplate({ id }: { id: string }) {
               <Icon icon="solar:backspace-line-duotone" fontSize={36} />
             </Link>
           </div>
-          <form onSubmit={handleSubmit(onSubmit)} id="editUser">
+          <form onSubmit={handleSubmit(onSubmit)}>
             <fieldset className="flex flex-col gap-4">
               <div className="flex p-7 flex-col gap-4 border border-gray-100 rounded-xl bg-white">
-                <h2 className="font-semibold">Header Image</h2>
+                <h2 className="font-semibold">
+                  Header Image <br />
+                  <span className="text-sm text-gray-500 font-normal">
+                    Image dimensions: (75pt x 76.5pt) o (100px x 102px)
+                  </span>
+                </h2>
                 <fieldset className="flex flex-col items-center gap-4 w-full">
                   <UploaderTemplateImageUploader
                     templateId={id}

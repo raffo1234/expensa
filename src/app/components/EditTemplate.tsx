@@ -114,7 +114,7 @@ export default function EditTemplate({ id }: { id: string }) {
                   <UploaderTemplateImageUploader
                     templateId={id}
                     userId={template.user_id}
-                    previewImageWidth="25%"
+                    previewImageWidth="120pt"
                     fileNamePrefix="sign"
                     templateImageUrl={template.sign_image_url}
                     onUploadSuccess={async (publicUrl: string) => {

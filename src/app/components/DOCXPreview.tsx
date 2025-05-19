@@ -1,5 +1,6 @@
-"use client"; // This line makes it a Client Component
+"use client";
 
+import extractAgeWidthUnit from "@/lib/extractAgeWithUnit";
 import React from "react";
 import {
   Document,
@@ -16,6 +17,7 @@ import {
 } from "docx";
 import { DicomType } from "@/types/dicomType";
 import { Icon } from "@iconify/react/dist/iconify.js";
+import formatDateYYYYMMDD from "@/lib/formatDateYYYYMMDD";
 
 const DOCXPreview = ({ dicom }: { dicom: DicomType }) => {
   const lines = dicom.report?.split("\n") || [];
@@ -24,7 +26,7 @@ const DOCXPreview = ({ dicom }: { dicom: DicomType }) => {
     const footerImageUrl = dicom.template?.footer_image_url ?? "";
     const signImageUrl = dicom.template?.sign_image_url ?? "";
 
-    const information = new Table({
+    const patientInformation = new Table({
       borders: {
         top: { style: BorderStyle.NONE, size: 0 },
         bottom: { style: BorderStyle.NONE, size: 0 },
@@ -56,7 +58,7 @@ const DOCXPreview = ({ dicom }: { dicom: DicomType }) => {
               },
               children: [
                 new Paragraph({
-                  text: `Edad: ${dicom.patient_age ?? ""}`,
+                  text: `Edad: ${extractAgeWidthUnit(dicom.patient_age).value}${" "}${extractAgeWidthUnit(dicom.patient_age).unit}`,
                   spacing: { line: 320 },
                 }),
               ],
@@ -72,7 +74,7 @@ const DOCXPreview = ({ dicom }: { dicom: DicomType }) => {
               },
               children: [
                 new Paragraph({
-                  text: `Fecha: ${dicom.study_date ?? ""}`,
+                  text: `Fecha: ${formatDateYYYYMMDD(dicom.study_date) ?? ""}`,
                   spacing: { line: 320 },
                 }),
               ],
@@ -135,7 +137,7 @@ const DOCXPreview = ({ dicom }: { dicom: DicomType }) => {
           default: {
             document: {
               run: {
-                font: "Arial",
+                font: "Roboto",
                 size: 22,
               },
             },
@@ -192,7 +194,7 @@ const DOCXPreview = ({ dicom }: { dicom: DicomType }) => {
             children: [
               new Paragraph(""),
               new Paragraph(""),
-              information,
+              patientInformation,
               new Paragraph(""),
               new Paragraph(""),
               ...lines.map(
@@ -204,6 +206,7 @@ const DOCXPreview = ({ dicom }: { dicom: DicomType }) => {
               ),
               new Paragraph(""),
               new Paragraph({
+                alignment: "right",
                 ...(dicom.template?.sign_image_url
                   ? {
                       children: [

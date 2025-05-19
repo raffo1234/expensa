@@ -96,8 +96,8 @@ export default function UploaderTemplateImageUploader({
       throw new Error("Could not get public URL after upload.");
     }
 
-    setIsLoading(false);
     if (onUploadSuccess) onUploadSuccess(publicUrl);
+    setIsLoading(false);
   };
 
   return (
@@ -137,14 +137,16 @@ export default function UploaderTemplateImageUploader({
         />
       </div>
       {templateImageUrl ? (
-        <Image
-          src={templateImageUrl}
-          alt={templateImageUrl}
-          width={300}
-          height={300}
-          className={`h-auto`}
-          style={{ width: previewImageWidth }}
-        />
+        <div className="flex justify-end w-full">
+          <Image
+            src={templateImageUrl}
+            alt={templateImageUrl}
+            width={300}
+            height={300}
+            className="h-auto"
+            style={{ width: previewImageWidth }}
+          />
+        </div>
       ) : null}
     </div>
   );

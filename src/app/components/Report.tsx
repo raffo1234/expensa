@@ -283,15 +283,17 @@ export default function Report({
               aria-label="Radiologist's report"
               className="rounded-sm w-full text-[11pt] leading-[1.6] focus:ring-0 focus:outline-none border border-gray-300 focus:border-cyan-300 min-h-6 border-dotted"
             />
-            {activeTemplate?.sign_image_url ? (
-              <Image
-                src={activeTemplate?.sign_image_url}
-                width={300}
-                height={300}
-                alt={activeTemplate.name}
-                className="bg-gray-100 h-auto w-[160pt]"
-              />
-            ) : null}
+            <div className="flex justify-end">
+              {activeTemplate?.sign_image_url ? (
+                <Image
+                  src={activeTemplate?.sign_image_url}
+                  width={300}
+                  height={300}
+                  alt={activeTemplate.name}
+                  className="bg-white h-auto w-[160pt]"
+                />
+              ) : null}
+            </div>
           </div>
           <div className="absolute bottom-0 left-0 right-0 p-[60pt]">
             {activeTemplate?.footer_image_url ? (

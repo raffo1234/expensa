@@ -9,14 +9,29 @@ import {
   View,
   Image as ImagePdf,
   StyleSheet,
+  Font,
 } from "@react-pdf/renderer";
+
+Font.register({
+  family: "Roboto",
+  fonts: [
+    {
+      src: "/fonts/roboto-latin-400-normal.ttf",
+      fontWeight: 400,
+    },
+  ],
+});
 
 const styles = StyleSheet.create({
   page: {
+    fontFamily: "Roboto",
     flexDirection: "column",
     backgroundColor: "#ffffff",
     padding: 60,
     paddingBottom: 120,
+  },
+  htmlContent: {
+    fontFamily: "Roboto",
   },
   section: {
     flexGrow: 1,
@@ -25,7 +40,7 @@ const styles = StyleSheet.create({
   text: {
     fontSize: 11,
     minHeight: 17,
-    fontFamily: "Helvetica",
+    fontFamily: "Roboto",
     lineHeight: 1.6,
   },
   textSmall: {
@@ -45,9 +60,6 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "auto",
     padding: 60,
-  },
-  htmlContent: {
-    fontFamily: "Arial",
   },
   table: {
     fontSize: 11,
@@ -135,10 +147,19 @@ export default function ContentPDFDocument({
               </Text>
             );
           })}
-          <ImagePdf
-            style={{ width: 160, height: "auto" }}
-            src={activeTemplate?.sign_image_url}
-          />
+          <View
+            style={{
+              display: "flex",
+              width: "100%",
+              flexDirection: "row",
+              justifyContent: "flex-end",
+            }}
+          >
+            <ImagePdf
+              style={{ width: 160, height: "auto" }}
+              src={activeTemplate?.sign_image_url}
+            />
+          </View>
         </View>
         <View style={styles.footer} fixed>
           <ImagePdf src={activeTemplate?.footer_image_url} />

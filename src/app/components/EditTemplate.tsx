@@ -92,19 +92,8 @@ export default function EditTemplate({ id }: { id: string }) {
                     templateId={id}
                     userId={template.user_id}
                     fileNamePrefix="header"
+                    mutate={mutateTemplate}
                     templateImageUrl={template.header_image_url}
-                    onUploadSuccess={async (publicUrl: string) => {
-                      const { data, error: errorTemplate } = await supabase
-                        .from("template")
-                        .update({ header_image_url: publicUrl })
-                        .eq("id", id)
-                        .select()
-                        .single();
-
-                      if (errorTemplate)
-                        throw new Error("Could not sync image");
-                      mutateTemplate(data);
-                    }}
                   />
                 </fieldset>
               </div>
@@ -117,18 +106,7 @@ export default function EditTemplate({ id }: { id: string }) {
                     previewImageWidth="120pt"
                     fileNamePrefix="sign"
                     templateImageUrl={template.sign_image_url}
-                    onUploadSuccess={async (publicUrl: string) => {
-                      const { data, error: errorTemplate } = await supabase
-                        .from("template")
-                        .update({ sign_image_url: publicUrl })
-                        .eq("id", id)
-                        .select()
-                        .single();
-
-                      if (errorTemplate)
-                        throw new Error("Could not sync image");
-                      mutateTemplate(data);
-                    }}
+                    mutate={mutateTemplate}
                   />
                 </fieldset>
               </div>
@@ -140,18 +118,7 @@ export default function EditTemplate({ id }: { id: string }) {
                     userId={template.user_id}
                     fileNamePrefix="footer"
                     templateImageUrl={template.footer_image_url}
-                    onUploadSuccess={async (publicUrl: string) => {
-                      const { data, error: errorTemplate } = await supabase
-                        .from("template")
-                        .update({ footer_image_url: publicUrl })
-                        .eq("id", id)
-                        .select()
-                        .single();
-
-                      if (errorTemplate)
-                        throw new Error("Could not sync image");
-                      mutateTemplate(data);
-                    }}
+                    mutate={mutateTemplate}
                   />
                 </fieldset>
               </div>

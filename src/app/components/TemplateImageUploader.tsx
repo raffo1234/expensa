@@ -7,10 +7,50 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import { useDropzone } from "react-dropzone";
 import { ChangeEvent, useState } from "react";
 
+const removeFilesByFolderPath = async (
+  templateImageUrl: string | null,
+  bucketName: string,
+  folderPath: string,
+  setIsLoading: (isLoading: boolean) => void
+) => {
+  if (!templateImageUrl) {
+    console.warn("No image URL provided, skipping file removal.");
+    return true;
+  }
+
+  const { data: files } = await supabase.storage
+    .from(bucketName)
+    .list(folderPath);
+
+  if (!files || files.length === 0) {
+    console.warn("Folder is already empty or does not exist.");
+  }
+
+  if (files && files.length > 0) {
+    const filesToRemove =
+      files?.map((file) => `${folderPath}/${file.name}`) || [];
+
+    const { data: removeData, error: removeError } = await supabase.storage
+      .from(bucketName)
+      .remove(filesToRemove);
+
+    if (removeError) {
+      setIsLoading(false);
+      console.error("Error removing files:", removeError.message);
+      return false;
+    } else {
+      console.warn("Files removed successfully:", removeData);
+      return true;
+    }
+  }
+  return true;
+};
+
 export default function UploaderTemplateImageUploader({
   templateImageUrl,
   templateId,
   userId,
+  mutate,
   onUploadSuccess,
   fileNamePrefix,
   previewImageWidth = "100%",
@@ -18,10 +58,13 @@ export default function UploaderTemplateImageUploader({
   templateImageUrl: string | null;
   templateId: string;
   userId: string;
+  mutate: () => void;
   fileNamePrefix: string;
   previewImageWidth?: string;
   onUploadSuccess?: (publicUrl: string) => void;
 }) {
+  const bucketName = "dicoms";
+  const folderPath = `template_user_${userId}/${templateId}/${fileNamePrefix}`;
   const [isLoading, setIsLoading] = useState(false);
   const { getRootProps, getInputProps } = useDropzone({
     accept: {
@@ -39,48 +82,33 @@ export default function UploaderTemplateImageUploader({
     const selectedFile = event.target.files?.[0] || null;
     const fileExt = selectedFile?.name.split(".").pop();
     const fileName = `${fileNamePrefix}_${templateId}_${uuidv4()}.${fileExt}`;
-    const folderPath = `template_user_${userId}/${templateId}/${fileNamePrefix}`;
     const filePath = `${folderPath}/${fileName}`;
-    const bucketName = "dicoms";
 
     if (!selectedFile) {
       setIsLoading(false);
       throw new Error("Please select an image file.");
     }
 
-    if (templateImageUrl) {
-      const { data: files } = await supabase.storage
-        .from(bucketName)
-        .list(folderPath);
+    const isRemoved = await removeFilesByFolderPath(
+      templateImageUrl,
+      bucketName,
+      folderPath,
+      setIsLoading
+    );
 
-      if (!files || files.length === 0) {
-        console.log("Folder is already empty or does not exist.");
-      }
-
-      if (files && files.length > 0) {
-        const filesToRemove =
-          files?.map((file) => `${folderPath}/${file.name}`) || [];
-
-        const { data: removeData, error: removeError } = await supabase.storage
-          .from(bucketName)
-          .remove(filesToRemove);
-
-        if (removeError) {
-          setIsLoading(false);
-          console.error("Error removing files:", removeError.message);
-        } else {
-          console.log("Files removed successfully:", removeData);
-          console.log("The folder will disappear automatically once empty.");
-        }
-      }
+    if (!isRemoved) {
+      setIsLoading(false);
+      return;
     }
 
-    const { error: uploadError } = await supabase.storage
+    const { data, error: uploadError } = await supabase.storage
       .from(bucketName)
       .upload(filePath, selectedFile, {
         cacheControl: "3600",
         upsert: false,
       });
+
+    if (data) console.warn("File uploaded successfully:", data);
 
     if (uploadError) {
       setIsLoading(false);
@@ -96,8 +124,50 @@ export default function UploaderTemplateImageUploader({
       throw new Error("Could not get public URL after upload.");
     }
 
+    console.warn(
+      "File Sync successfully with Database. Public URL:",
+      publicUrl
+    );
+
+    const { error: errorTemplate } = await supabase
+      .from("template")
+      .update({ header_image_url: publicUrl })
+      .eq("id", templateId);
+
+    if (errorTemplate) throw new Error("Could not sync image");
+
     if (onUploadSuccess) onUploadSuccess(publicUrl);
+    mutate();
     setIsLoading(false);
+  };
+
+  const deleteImage = async () => {
+    const confirmationMessage = confirm(
+      "Are you sure you want to delete this item?"
+    );
+    if (!confirmationMessage) return;
+
+    try {
+      const isRemoved = await removeFilesByFolderPath(
+        templateImageUrl,
+        bucketName,
+        folderPath,
+        setIsLoading
+      );
+
+      if (!isRemoved) console.error("No files to remove.");
+
+      const { error: errorTemplate } = await supabase
+        .from("template")
+        .update({ header_image_url: null })
+        .eq("id", templateId);
+
+      if (errorTemplate) throw new Error("Could not sync image");
+    } catch (error) {
+      console.error("Error deleting", error);
+    } finally {
+      mutate();
+    }
   };
 
   return (
@@ -137,7 +207,7 @@ export default function UploaderTemplateImageUploader({
         />
       </div>
       {templateImageUrl ? (
-        <div className="flex justify-end w-full">
+        <div className="flex group justify-center w-full relative">
           <Image
             src={templateImageUrl}
             alt={templateImageUrl}
@@ -146,6 +216,14 @@ export default function UploaderTemplateImageUploader({
             className="h-auto"
             style={{ width: previewImageWidth }}
           />
+          <button
+            title="Remove image"
+            onClick={deleteImage}
+            type="button"
+            className="absolute -translate-y-1 group-hover:translate-y-0 top-3 hover:bg-white opacity-0 group-hover:opacity-100 transition-all duration-300 right-3 cursor-pointer bg-gray-100 w-11 h-11 rounded-full border-rose-300 border-dashed border text-rose-500 flex items-center justify-center"
+          >
+            <Icon icon="solar:trash-bin-minimalistic-broken" fontSize={24} />
+          </button>
         </div>
       ) : null}
     </div>

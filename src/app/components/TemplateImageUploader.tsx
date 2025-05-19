@@ -17,33 +17,34 @@ const removeFilesByFolderPath = async (
     console.warn("No image URL provided, skipping file removal.");
     return true;
   }
-
+  setIsLoading(true);
   const { data: files } = await supabase.storage
     .from(bucketName)
     .list(folderPath);
 
   if (!files || files.length === 0) {
     console.warn("Folder is already empty or does not exist.");
+    setIsLoading(false);
   }
 
-  if (files && files.length > 0) {
-    const filesToRemove =
-      files?.map((file) => `${folderPath}/${file.name}`) || [];
+  if (!files || files.length === 0) setIsLoading(false);
 
-    const { data: removeData, error: removeError } = await supabase.storage
-      .from(bucketName)
-      .remove(filesToRemove);
+  const filesToRemove =
+    files?.map((file) => `${folderPath}/${file.name}`) || [];
 
-    if (removeError) {
-      setIsLoading(false);
-      console.error("Error removing files:", removeError.message);
-      return false;
-    } else {
-      console.warn("Files removed successfully:", removeData);
-      return true;
-    }
+  const { data: removeData, error: removeError } = await supabase.storage
+    .from(bucketName)
+    .remove(filesToRemove);
+
+  if (removeError) {
+    setIsLoading(false);
+    console.error("Error removing files:", removeError.message);
+    return false;
+  } else {
+    console.warn("Files removed successfully:", removeData);
+    setIsLoading(false);
+    return true;
   }
-  return true;
 };
 
 export default function UploaderTemplateImageUploader({

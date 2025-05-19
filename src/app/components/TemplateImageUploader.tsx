@@ -17,6 +17,7 @@ const removeFilesByFolderPath = async (
     console.warn("No image URL provided, skipping file removal.");
     return true;
   }
+
   setIsLoading(true);
   const { data: files } = await supabase.storage
     .from(bucketName)
@@ -25,9 +26,8 @@ const removeFilesByFolderPath = async (
   if (!files || files.length === 0) {
     console.warn("Folder is already empty or does not exist.");
     setIsLoading(false);
+    return false;
   }
-
-  if (!files || files.length === 0) setIsLoading(false);
 
   const filesToRemove =
     files?.map((file) => `${folderPath}/${file.name}`) || [];
@@ -66,17 +66,6 @@ export default function UploaderTemplateImageUploader({
   onUploadSuccess?: (publicUrl: string) => void;
   imageFileName: string;
 }) {
-  const getImageFileName = (key: string, value: string | null) => {
-    const fields: { [key: string]: string | null }[] = [
-      { header_image_url: value },
-      { footer_image_url: value },
-      { sign_image_url: value },
-    ];
-
-    const field = fields.find((field) => field[key]);
-    return field ? field : null;
-  };
-
   const bucketName = "dicoms";
   const folderPath = `template_user_${userId}/${templateId}/${fileNamePrefix}`;
   const [isLoading, setIsLoading] = useState(false);
@@ -103,17 +92,12 @@ export default function UploaderTemplateImageUploader({
       throw new Error("Please select an image file.");
     }
 
-    const isRemoved = await removeFilesByFolderPath(
+    await removeFilesByFolderPath(
       templateImageUrl,
       bucketName,
       folderPath,
       setIsLoading
     );
-
-    if (!isRemoved) {
-      setIsLoading(false);
-      return;
-    }
 
     const { data, error: uploadError } = await supabase.storage
       .from(bucketName)
@@ -145,7 +129,7 @@ export default function UploaderTemplateImageUploader({
 
     const { error: errorTemplate } = await supabase
       .from("template")
-      .update(getImageFileName(imageFileName, publicUrl))
+      .update({ [imageFileName]: publicUrl })
       .eq("id", templateId);
 
     if (errorTemplate) throw new Error("Could not sync image");
@@ -162,18 +146,16 @@ export default function UploaderTemplateImageUploader({
     if (!confirmationMessage) return;
 
     try {
-      const isRemoved = await removeFilesByFolderPath(
+      await removeFilesByFolderPath(
         templateImageUrl,
         bucketName,
         folderPath,
         setIsLoading
       );
 
-      if (!isRemoved) console.error("No files to remove.");
-
       const { error: errorTemplate } = await supabase
         .from("template")
-        .update(getImageFileName(imageFileName, null))
+        .update({ [imageFileName]: null })
         .eq("id", templateId);
 
       if (errorTemplate) throw new Error("Could not sync image");

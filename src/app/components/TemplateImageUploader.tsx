@@ -55,6 +55,7 @@ export default function UploaderTemplateImageUploader({
   onUploadSuccess,
   fileNamePrefix,
   previewImageWidth = "100%",
+  imageFileName,
 }: {
   templateImageUrl: string | null;
   templateId: string;
@@ -63,7 +64,19 @@ export default function UploaderTemplateImageUploader({
   fileNamePrefix: string;
   previewImageWidth?: string;
   onUploadSuccess?: (publicUrl: string) => void;
+  imageFileName: string;
 }) {
+  const getImageFileName = (key: string, value: string | null) => {
+    const fields: { [key: string]: string | null }[] = [
+      { header_image_url: value },
+      { footer_image_url: value },
+      { sign_image_url: value },
+    ];
+
+    const field = fields.find((field) => field[key]);
+    return field ? field : null;
+  };
+
   const bucketName = "dicoms";
   const folderPath = `template_user_${userId}/${templateId}/${fileNamePrefix}`;
   const [isLoading, setIsLoading] = useState(false);
@@ -132,7 +145,7 @@ export default function UploaderTemplateImageUploader({
 
     const { error: errorTemplate } = await supabase
       .from("template")
-      .update({ header_image_url: publicUrl })
+      .update(getImageFileName(imageFileName, publicUrl))
       .eq("id", templateId);
 
     if (errorTemplate) throw new Error("Could not sync image");
@@ -160,7 +173,7 @@ export default function UploaderTemplateImageUploader({
 
       const { error: errorTemplate } = await supabase
         .from("template")
-        .update({ header_image_url: null })
+        .update(getImageFileName(imageFileName, null))
         .eq("id", templateId);
 
       if (errorTemplate) throw new Error("Could not sync image");

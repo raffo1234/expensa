@@ -90,6 +90,7 @@ export default function EditTemplate({ id }: { id: string }) {
                 <fieldset className="flex flex-col items-center gap-4 w-full">
                   <UploaderTemplateImageUploader
                     templateId={id}
+                    imageFileName="header_image_url"
                     userId={template.user_id}
                     fileNamePrefix="header"
                     mutate={mutateTemplate}
@@ -102,6 +103,7 @@ export default function EditTemplate({ id }: { id: string }) {
                 <fieldset className="flex items-center gap-4 w-full">
                   <UploaderTemplateImageUploader
                     templateId={id}
+                    imageFileName="sign_image_url"
                     userId={template.user_id}
                     previewImageWidth="120pt"
                     fileNamePrefix="sign"
@@ -115,6 +117,7 @@ export default function EditTemplate({ id }: { id: string }) {
                 <fieldset className="flex items-center gap-4 w-full">
                   <UploaderTemplateImageUploader
                     templateId={id}
+                    imageFileName="footer_image_url"
                     userId={template.user_id}
                     fileNamePrefix="footer"
                     templateImageUrl={template.footer_image_url}

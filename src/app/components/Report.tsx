@@ -39,7 +39,7 @@ export default function Report({
   const [activeTemplate, setActiveTemplate] = useState<
     TemplateType | undefined
   >();
-  const sortTemplate = putFirst(templates, activeTemplate);
+  const sortedTemplates = putFirst(templates, activeTemplate);
 
   const PDFDownloadLink = useMemo(
     () =>
@@ -143,12 +143,13 @@ export default function Report({
             gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))",
           }}
         >
-          {sortTemplate?.map((template) => {
+          {sortedTemplates?.map((template) => {
             const { id, name } = template;
             return (
               <button
                 key={id}
                 type="button"
+                title={name}
                 onClick={() => handleTemplateActive(template)}
                 className={`${
                   activeTemplate?.id === id

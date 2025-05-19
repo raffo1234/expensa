@@ -54,6 +54,7 @@ export default function UploaderTemplateImageUploader({
   mutate,
   onUploadSuccess,
   fileNamePrefix,
+  previewImageHeight = "auto",
   previewImageWidth = "100%",
   imageFileName,
 }: {
@@ -62,6 +63,7 @@ export default function UploaderTemplateImageUploader({
   userId: string;
   mutate: () => void;
   fileNamePrefix: string;
+  previewImageHeight?: string;
   previewImageWidth?: string;
   onUploadSuccess?: (publicUrl: string) => void;
   imageFileName: string;

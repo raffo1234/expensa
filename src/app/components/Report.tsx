@@ -288,10 +288,10 @@ export default function Report({
               {activeTemplate?.sign_image_url ? (
                 <Image
                   src={activeTemplate?.sign_image_url}
-                  width={300}
-                  height={300}
+                  width={100}
+                  height={102}
                   alt={activeTemplate.name}
-                  className="bg-white h-auto w-[160pt]"
+                  className="bg-white h-auto w-[75pt]"
                 />
               ) : null}
             </div>

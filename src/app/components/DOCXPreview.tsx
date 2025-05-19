@@ -213,8 +213,8 @@ const DOCXPreview = ({ dicom }: { dicom: DicomType }) => {
                         new ImageRun({
                           data: bufferSign,
                           transformation: {
-                            width: 120,
-                            height: 120,
+                            width: 75,
+                            height: 76,
                           },
                           type: "png",
                         }),

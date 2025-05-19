@@ -88,9 +88,6 @@ export default function EditTemplate({ id }: { id: string }) {
               <div className="flex p-7 flex-col gap-4 border border-gray-100 rounded-xl bg-white">
                 <h2 className="font-semibold">
                   Header Image <br />
-                  <span className="text-sm text-gray-500 font-normal">
-                    Image dimensions: (75pt x 76.5pt) o (100px x 102px)
-                  </span>
                 </h2>
                 <fieldset className="flex flex-col items-center gap-4 w-full">
                   <UploaderTemplateImageUploader
@@ -104,13 +101,18 @@ export default function EditTemplate({ id }: { id: string }) {
                 </fieldset>
               </div>
               <div className="flex p-7 flex-col gap-4 border border-gray-100 rounded-xl bg-white">
-                <h2 className="font-semibold">Sign Image</h2>
+                <h2 className="font-semibold">
+                  Sign Image <br />
+                  <span className="text-sm text-gray-500 font-normal">
+                    Image dimensions: (75pt x 76.5pt) o (100px x 102px)
+                  </span>
+                </h2>
                 <fieldset className="flex items-center gap-4 w-full">
                   <UploaderTemplateImageUploader
                     templateId={id}
                     imageFileName="sign_image_url"
                     userId={template.user_id}
-                    previewImageWidth="120pt"
+                    previewImageWidth="75pt"
                     fileNamePrefix="sign"
                     templateImageUrl={template.sign_image_url}
                     mutate={mutateTemplate}

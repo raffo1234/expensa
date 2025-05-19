@@ -156,7 +156,7 @@ export default function ContentPDFDocument({
             }}
           >
             <ImagePdf
-              style={{ width: 160, height: "auto" }}
+              style={{ width: 75, height: "auto" }}
               src={activeTemplate?.sign_image_url}
             />
           </View>

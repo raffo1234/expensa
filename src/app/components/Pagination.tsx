@@ -254,18 +254,18 @@ export default function Pagination({
   return (
     <>
       <div className="w-full mb-4">
-        <div className="flex max-w-lg w-full mx-auto sm:mx-0 flex-col sm:flex-row items-center gap-3">
+        <div className="flex max-w-lg w-full mx-auto sm:mx-0 items-center gap-3">
           <Link
             href="/admin/dicom"
             title="Upload Dicoms"
-            className="px-6 text-white w-full justify-center py-2 rounded-full bg-black flex gap-2 items-center"
+            className="px-6 text-white justify-center py-2 rounded-full bg-black flex gap-2 items-center"
           >
             <span>Upload</span>
             <Icon icon="solar:add-circle-linear" fontSize={24}></Icon>
           </Link>
           <input
             type="text"
-            className="bg-white rounded-full border w-full border-gray-200 outline-0 py-2 px-5"
+            className="bg-white w-full rounded-full border border-gray-200 outline-0 py-2 px-5"
             placeholder="Search ..."
             defaultValue={search ?? ""}
             onChange={(event) => debouncedSearch(event.target.value)}
@@ -291,23 +291,23 @@ export default function Pagination({
           <button
             onClick={() => setFilterByTime(FilterByTimeType.YESTERDAY)}
             type="button"
-            className={`${filterByTime === FilterByTimeType.YESTERDAY ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-full `}
+            className={`${filterByTime === FilterByTimeType.YESTERDAY ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-full whitespace-nowrap`}
           >
-            Yesterday
+            Y<span className="hidden sm:inline">esterday</span>
           </button>
           <button
             onClick={() => setFilterByTime(FilterByTimeType.THIS_WEEK)}
             type="button"
-            className={`${filterByTime === FilterByTimeType.THIS_WEEK ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-full `}
+            className={`${filterByTime === FilterByTimeType.THIS_WEEK ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-full whitespace-nowrap`}
           >
-            This Week
+            This W<span className="hidden sm:inline">eek</span>
           </button>
           <button
             onClick={() => setFilterByTime(FilterByTimeType.THIS_MONTH)}
             type="button"
-            className={`${filterByTime === FilterByTimeType.THIS_MONTH ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-full `}
+            className={`${filterByTime === FilterByTimeType.THIS_MONTH ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-full whitespace-nowrap`}
           >
-            This Month
+            This M<span className="hidden sm:inline">onth</span>
           </button>
         </div>
         <div className="text-xs flex items-center gap-1">

@@ -7,6 +7,7 @@ import React, { useCallback, useState, type ChangeEvent } from "react";
 import { Icon } from "@iconify/react";
 import { useDropzone } from "react-dropzone";
 import Link from "next/link";
+import getAgeFromYYYYMMDD from "@/lib/getAgeFromYYYYMMDD";
 
 Archive.init({
   workerUrl: "/libarchive.js/dist/worker-bundle.js",
@@ -188,7 +189,9 @@ async function insertDataSetToDb(userId: string, dataSet: DicomMetadata) {
           user_id: userId,
           patient_name: dataSet.patientName,
           patient_id: dataSet.patientId,
-          patient_age: dataSet.patientAge,
+          patient_age:
+            dataSet.patientAge ||
+            getAgeFromYYYYMMDD(dataSet.patientBirthDate ?? ""),
           study_description: dataSet.studyDescription,
           modality: dataSet.modality,
           study_date: dataSet.studyDate,
@@ -329,8 +332,6 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
               extractedFiles
             );
 
-          console.log("folders", folders);
-
           if (folders && Object.keys(folders).length > 0) {
             for (const [key, value] of Object.entries(folders)) {
               console.warn(key);
@@ -381,7 +382,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
             }
           } else {
             const dcmFile = await findFirstDcmFileRecursive(extractedFiles);
-            console.log({ dcmFile });
+
             if (dcmFile) {
               const dcmFileArrayBuffer = await dcmFile.arrayBuffer();
               const byteArray: Uint8Array = new Uint8Array(dcmFileArrayBuffer);

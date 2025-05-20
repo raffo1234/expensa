@@ -1,17 +1,16 @@
 "use client";
+import React, { useState, useRef } from "react";
 
-import { useState } from "react";
-
-export default function Page() {
+export default function LargeFileUpload() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadStatus, setUploadStatus] = useState("");
+  const [publicUrl, setPublicUrl] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files.length > 0) {
-      setSelectedFile(event.target.files[0]);
-    } else {
-      setSelectedFile(null);
-    }
+    setSelectedFile(event.target.files?.[0] || null);
+    setUploadStatus(""); // Reset upload status message
+    setPublicUrl(""); // Reset public URL display
   };
 
   const handleUpload = async () => {
@@ -21,47 +20,54 @@ export default function Page() {
     }
 
     setUploadStatus("Uploading...");
+    setPublicUrl("");
 
     try {
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64String = reader.result?.toString().split(",")[1];
-        if (base64String) {
-          const filename = selectedFile.name;
+      const formData = new FormData();
+      formData.append("file", selectedFile);
 
-          const response = await fetch("/api/minio", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ filename, fileContent: base64String }),
-          });
+      const response = await fetch("/api/minio/upload-large", {
+        method: "POST",
+        body: formData,
+      });
 
-          const data = await response.json();
-          console.log(data);
-          setUploadStatus(data.message || data.error);
-        } else {
-          setUploadStatus("Error reading file.");
-        }
-      };
-      reader.onerror = () => {
-        setUploadStatus("Error reading file.");
-      };
-      reader.readAsDataURL(selectedFile);
+      const data = await response.json();
+      if (data.publicUrl) {
+        setPublicUrl(data.publicUrl);
+        setUploadStatus("Upload complete!");
+      } else {
+        setUploadStatus("Upload failed.");
+      }
     } catch (error) {
       console.error("Upload error:", error);
       setUploadStatus("Upload failed.");
+    } finally {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      setSelectedFile(null);
     }
   };
 
   return (
     <div>
-      <h1>Upload File to MinIO</h1>
-      <input type="file" onChange={handleFileChange} />
-      <button onClick={handleUpload} disabled={!selectedFile}>
+      <h1>Large File Upload to MinIO</h1>
+      <input type="file" onChange={handleFileChange} ref={fileInputRef} />
+      <button
+        onClick={handleUpload}
+        disabled={!selectedFile || uploadStatus !== ""}
+      >
         Upload
       </button>
-      {uploadStatus && <p>{uploadStatus}</p>}
+      {uploadStatus && <p>Status: {uploadStatus}</p>}
+      {publicUrl && (
+        <p>
+          Public URL:{" "}
+          <a href={publicUrl} target="_blank" rel="noopener noreferrer">
+            {publicUrl}
+          </a>
+        </p>
+      )}
     </div>
   );
 }

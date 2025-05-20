@@ -68,6 +68,7 @@ export default function UploaderTemplateImageUploader({
   onUploadSuccess?: (publicUrl: string) => void;
   imageFileName: string;
 }) {
+  console.warn(previewImageHeight);
   const bucketName = "dicoms";
   const folderPath = `template_user_${userId}/${templateId}/${fileNamePrefix}`;
   const [isLoading, setIsLoading] = useState(false);

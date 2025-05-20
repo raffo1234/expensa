@@ -331,7 +331,6 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
             await findFirstLevelMultipleFoldersWithDifferentStudyDescription(
               extractedFiles
             );
-
           if (folders && Object.keys(folders).length > 0) {
             for (const [key, value] of Object.entries(folders)) {
               console.warn(key);

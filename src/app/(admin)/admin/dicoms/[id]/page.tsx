@@ -23,7 +23,7 @@ export default async function Page({ params }: { params: Params }) {
 
   const { data: dicom } = (await supabase
     .from("dicom")
-    .select("*")
+    .select("*, template(header_image_url, sign_image_url, footer_image_url)")
     .eq("id", id)
     .single()) as {
     data: DicomType | null;

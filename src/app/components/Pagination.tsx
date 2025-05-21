@@ -10,7 +10,7 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import { formatInTimeZone } from "date-fns-tz";
 import { es } from "date-fns/locale";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
 import TableSkeleton from "@/components/FormSkeleton";
 import GeneratePDFButton from "@/components/GeneratePDFButton";
@@ -156,7 +156,7 @@ export default function Pagination({
   userId: string;
 }) {
   const debouncedSearch = useDebouncedCallback((value) => {
-    setSearch(value);
+    handleSearchChange(value);
   }, 400);
   const debouncedPerPage = useDebouncedCallback((value) => {
     handlePageSize(value);
@@ -249,8 +249,37 @@ export default function Pagination({
     setPage(1);
   };
 
+  const handleFilterChange = (newFilterValue: FilterByTimeType | null) => {
+    setFilterByTime(newFilterValue);
+    if (newFilterValue) {
+      localStorage.setItem("dicomFilterTime", newFilterValue);
+    } else {
+      localStorage.removeItem("dicomFilterTime");
+    }
+  };
+
+  const handleSearchChange = (newSearchWord: string | null) => {
+    setSearch(newSearchWord);
+    if (newSearchWord && newSearchWord.length > 0) {
+      localStorage.setItem("dicomSearchWord", newSearchWord);
+    } else {
+      localStorage.removeItem("dicomSearchWord");
+    }
+  };
+
   const noData = !isLoading && !error && data && data.length === 0;
   const startItemNumber = (page - 1) * pageSize + 1;
+
+  useEffect(() => {
+    const savedFilter = localStorage.getItem("dicomFilterTime");
+    if (savedFilter) {
+      setFilterByTime(savedFilter as FilterByTimeType);
+    }
+    const savedSearchWord = localStorage.getItem("dicomSearchWord");
+    if (savedSearchWord) {
+      setSearch(savedSearchWord);
+    }
+  }, []);
 
   return (
     <>
@@ -277,34 +306,34 @@ export default function Pagination({
         <div className="text-sm font-semibold flex items-center gap-1 py-1 px-1 bg-gray-100 rounded-full">
           <button
             type="button"
-            onClick={() => setFilterByTime(null)}
+            onClick={() => handleFilterChange(null)}
             className={`${filterByTime === null ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-full `}
           >
             All
           </button>
           <button
-            onClick={() => setFilterByTime(FilterByTimeType.TODAY)}
+            onClick={() => handleFilterChange(FilterByTimeType.TODAY)}
             type="button"
             className={`${filterByTime === FilterByTimeType.TODAY ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-full `}
           >
             Today
           </button>
           <button
-            onClick={() => setFilterByTime(FilterByTimeType.YESTERDAY)}
+            onClick={() => handleFilterChange(FilterByTimeType.YESTERDAY)}
             type="button"
             className={`${filterByTime === FilterByTimeType.YESTERDAY ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-full whitespace-nowrap`}
           >
             Y<span className="hidden sm:inline">esterday</span>
           </button>
           <button
-            onClick={() => setFilterByTime(FilterByTimeType.THIS_WEEK)}
+            onClick={() => handleFilterChange(FilterByTimeType.THIS_WEEK)}
             type="button"
             className={`${filterByTime === FilterByTimeType.THIS_WEEK ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-full whitespace-nowrap`}
           >
             This W<span className="hidden sm:inline">eek</span>
           </button>
           <button
-            onClick={() => setFilterByTime(FilterByTimeType.THIS_MONTH)}
+            onClick={() => handleFilterChange(FilterByTimeType.THIS_MONTH)}
             type="button"
             className={`${filterByTime === FilterByTimeType.THIS_MONTH ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-full whitespace-nowrap`}
           >

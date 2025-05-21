@@ -174,8 +174,9 @@ export default function Pagination({
     []
   );
   const nowMs = Date.now();
+  const defaultPageSize = 20;
   const [page, setPage] = useState<number>(1);
-  const [pageSize, setPageSize] = useState<number>(8);
+  const [pageSize, setPageSize] = useState<number>(defaultPageSize);
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [search, setSearch] = useState<string | null>(null);

@@ -29,6 +29,7 @@ import {
 } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 import DateRangeButtonCalendar from "./DateRangeButtonCalendar";
+import { UUIDTypes } from "uuid";
 
 type SortDirection = "asc" | "desc" | null;
 
@@ -184,7 +185,7 @@ export default function Pagination({
     null
   );
 
-  const { data, error, isLoading } = useSWR<DicomType[] | null>(
+  const { data, error, isLoading, mutate } = useSWR<DicomType[] | null>(
     [
       tableName,
       page,
@@ -264,6 +265,26 @@ export default function Pagination({
       localStorage.setItem("dicomSearchWord", newSearchWord);
     } else {
       localStorage.removeItem("dicomSearchWord");
+    }
+  };
+
+  const deleteDicom = async (id: UUIDTypes) => {
+    const confirmationMessage = confirm(
+      "Are you sure you want to delete this item?"
+    );
+    if (!confirmationMessage) return;
+
+    try {
+      const { error: errorDelete } = await supabase
+        .from("dicom")
+        .delete()
+        .eq("id", id);
+
+      if (errorDelete) throw new Error("Could not sync image");
+    } catch (error) {
+      console.error("Error deleting", error);
+    } finally {
+      mutate();
     }
   };
 
@@ -422,7 +443,7 @@ export default function Pagination({
                   )}
                 </button>
               </th>
-              <th className="w-60 px-1">
+              <th className="w-46 px-1">
                 <button
                   disabled={!!noData}
                   onClick={() => handleSort("patient_name")}
@@ -569,7 +590,7 @@ export default function Pagination({
                   )}
                 </button>
               </th>
-              <th className="w-90"></th>
+              <th className="w-98"></th>
             </tr>
           </thead>
           {noData ? (
@@ -738,6 +759,17 @@ export default function Pagination({
                                 : "Amend"}
                             </span>
                           </Link>
+                          <button
+                            title="Delete Dicom"
+                            onClick={() => deleteDicom(id)}
+                            type="button"
+                            className=" hover:bg-white flex-shrink-0 transition-colors duration-300 cursor-pointer bg-gray-100 w-11 h-11 rounded-full border-gray-200 border-dashed border text-rose-400 flex items-center justify-center"
+                          >
+                            <Icon
+                              icon="solar:trash-bin-minimalistic-broken"
+                              fontSize={24}
+                            />
+                          </button>
                         </div>
                       </td>
                     </tr>

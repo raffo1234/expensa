@@ -1,0 +1,95 @@
+.rdrCalendarWrapper {
+  font-size: var(--text-sm);
+}
+
+.rdrDefinedRangesWrapper {
+  border-top-left-radius: var(--radius-xl);
+  border-bottom-left-radius: var(--radius-xl);
+  background-color: var(--color-gray-50);
+  font-size: var(--text-sm);
+  overflow: hidden;
+}
+
+.rdrDateDisplayWrapper {
+  background-color: var(--color-gray-50);
+  border-top-right-radius: var(--radius-4xl);
+  border-bottom-right-radius: var(--radius-4xl);
+}
+
+.rdrDateDisplayItem {
+  border-radius: var(--radius-3xl);
+}
+
+.rdrSelected,
+.rdrInRange,
+.rdrStartEdge,
+.rdrEndEdge {
+  background-color: var(--color-cyan-400);
+}
+
+.rdrDayNumber {
+  font-weight: var(--font-weight-normal);
+}
+
+.rdrDayHovered {
+  border-color: var(--color-cyan-400) !important;
+  border: 0 !important;
+}
+
+.rdrDateDisplayItemActive {
+  border-color: var(--color-cyan-400);
+}
+
+.rdrStaticRange.rdrStaticRangeSelected {
+  color: var(--color-cyan-400) !important;
+  font-weight: var(--font-weight-semibold) !important;
+}
+
+.rdrDayToday .rdrDayNumber span:after {
+  background-color: var(--color-cyan-400);
+}
+
+.rdrDayStartPreview,
+.rdrDayInPreview,
+.rdrDayEndPreview {
+  border-color: var(--color-cyan-400);
+}
+
+.rdrDayStartOfMonth .rdrInRange,
+.rdrDayStartOfMonth .rdrEndEdge,
+.rdrDayStartOfWeek .rdrInRange,
+.rdrDayStartOfWeek .rdrEndEdge {
+  border-top-left-radius: 1.2em;
+  border-bottom-left-radius: 1.2em;
+}
+
+.rdrDayEndOfMonth .rdrInRange,
+.rdrDayEndOfMonth .rdrStartEdge,
+.rdrDayEndOfWeek .rdrInRange,
+.rdrDayEndOfWeek .rdrStartEdge {
+  border-top-right-radius: 1.2em;
+  border-bottom-right-radius: 1.2em;
+}
+
+.rdrStartEdge {
+  border-top-left-radius: 1.2em;
+  border-bottom-left-radius: 1.2em;
+}
+
+.rdrEndEdge {
+  border-top-right-radius: 1.2em;
+  border-bottom-right-radius: 1.2em;
+}
+
+.rdrStaticRange {
+  background-color: transparent;
+}
+
+.rdrInputRangeInput {
+  background-color: var(--color-white);
+}
+
+.rdrMonthName,
+.rdrMonthAndYearPickers select {
+  color: var(--color-black);
+}

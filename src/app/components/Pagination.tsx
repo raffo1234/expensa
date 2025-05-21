@@ -26,12 +26,19 @@ import {
   formatISO,
   subDays,
   endOfDay,
+  format,
 } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 import DateRangeButtonCalendar from "./DateRangeButtonCalendar";
 import { UUIDTypes } from "uuid";
 
 type SortDirection = "asc" | "desc" | null;
+
+interface DateRangeType {
+  startDate: Date;
+  endDate: Date;
+  key: string;
+}
 
 enum FilterByTimeType {
   TODAY = "TODAY",
@@ -60,6 +67,8 @@ const fetcher = async (
     string,
     string | null,
     FilterByTimeType | null,
+    { startDate: Date | null; endDate: Date | null } | null,
+    { startDate: Date | null; endDate: Date | null } | null,
   ]
 ): Promise<DicomType[] | null> => {
   const [
@@ -71,6 +80,8 @@ const fetcher = async (
     userId,
     searchWord,
     filterByTime,
+    studyDateRange,
+    receiptDateRange,
   ] = key;
 
   const start = (page - 1) * pageSize;
@@ -139,6 +150,19 @@ const fetcher = async (
     }
   }
 
+  if (studyDateRange?.startDate && studyDateRange?.endDate) {
+    const formattedStartDate = format(studyDateRange.startDate, "yyyyMMdd");
+    const formattedEndDate = format(studyDateRange.endDate, "yyyyMMdd");
+    query = query
+      .gte("study_date", formattedStartDate)
+      .lte("study_date", formattedEndDate);
+  }
+
+  if (receiptDateRange?.startDate && receiptDateRange?.endDate) {
+    query = query
+      .gte("created_at", formatISO(startOfDay(receiptDateRange?.startDate)))
+      .lte("created_at", formatISO(endOfDay(receiptDateRange?.endDate)));
+  }
   const { data, error } = await query;
 
   if (error) {
@@ -156,9 +180,16 @@ export default function Pagination({
   tableName: "dicom";
   userId: string;
 }) {
+  const [studyDateRange, setStudyDateRange] = useState<DateRangeType | null>(
+    null
+  );
+  const [receiptDateRange, setReceiptDateRange] =
+    useState<DateRangeType | null>(null);
+
   const debouncedSearch = useDebouncedCallback((value) => {
     handleSearchChange(value);
   }, 300);
+
   const debouncedPerPage = useDebouncedCallback((value) => {
     handlePageSize(value);
   }, 300);
@@ -185,17 +216,21 @@ export default function Pagination({
     null
   );
 
+  const swrKey = [
+    tableName,
+    page,
+    pageSize,
+    sortColumn,
+    sortDirection,
+    userId,
+    search,
+    filterByTime,
+    studyDateRange,
+    receiptDateRange,
+  ];
+
   const { data, error, isLoading, mutate } = useSWR<DicomType[] | null>(
-    [
-      tableName,
-      page,
-      pageSize,
-      sortColumn,
-      sortDirection,
-      userId,
-      search,
-      filterByTime,
-    ],
+    swrKey,
     fetcher
   );
 
@@ -268,6 +303,33 @@ export default function Pagination({
     }
   };
 
+  const handleStudyDateRangeChange = (newRange: DateRangeType | null) => {
+    setStudyDateRange(newRange);
+    if (newRange?.startDate && newRange?.endDate) {
+      localStorage.setItem("dicomStudyDateRange", JSON.stringify(newRange));
+    } else {
+      localStorage.removeItem("dicomStudyDateRange");
+    }
+  };
+
+  const handleReceiptDateRangeChange = (newRange: DateRangeType | null) => {
+    setReceiptDateRange(newRange); // Update the state first
+
+    if (newRange?.startDate && newRange?.endDate) {
+      const endOfSelectedDay = endOfDay(newRange.endDate);
+      localStorage.setItem(
+        "dicomReceiptDateRange",
+        JSON.stringify({
+          startDate: newRange.startDate,
+          endDate: endOfSelectedDay,
+          key: "selection",
+        })
+      );
+    } else {
+      localStorage.removeItem("dicomReceiptDateRange");
+    }
+  };
+
   const deleteDicom = async (id: UUIDTypes) => {
     const confirmationMessage = confirm(
       "Are you sure you want to delete this item?"
@@ -300,6 +362,14 @@ export default function Pagination({
     if (savedSearchWord) {
       setSearch(savedSearchWord);
     }
+    // const savedStudyDateRange = localStorage.getItem("dicomStudyDateRange");
+    // if (savedStudyDateRange) {
+    //   setStudyDateRange(JSON.parse(savedStudyDateRange));
+    // }
+    // const savedReceiptDateRange = localStorage.getItem("dicomReceiptDateRange");
+    // if (savedReceiptDateRange) {
+    //   setReceiptDateRange(JSON.parse(savedReceiptDateRange));
+    // }
   }, []);
 
   return (
@@ -324,7 +394,7 @@ export default function Pagination({
         </div>
       </div>
       <div className="flex flex-col sm:flex-row gap-4 justify-between mb-4">
-        <div className="text-sm font-semibold flex items-center gap-1 py-1 px-1 bg-gray-100 rounded-full">
+        <div className="hidden text-sm font-semibold items-center gap-1 py-1 px-1 bg-gray-100 rounded-full">
           <button
             type="button"
             onClick={() => handleFilterChange(null)}
@@ -361,6 +431,19 @@ export default function Pagination({
             This M<span className="hidden sm:inline">onth</span>
           </button>
         </div>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-2 items-center mb-4 justify-between">
+        <div className="flex items-center flex-col sm:flex-row gap-2">
+          <DateRangeButtonCalendar
+            handleDateRangeChange={handleStudyDateRangeChange}
+            label="Study Data Range"
+          />
+          <DateRangeButtonCalendar
+            handleDateRangeChange={handleReceiptDateRangeChange}
+            label="Receipt Data Range"
+          />
+        </div>
         <div className="text-xs flex items-center gap-1">
           <span>
             Total: <span className="text-base font-semibold">{count}</span>
@@ -374,11 +457,6 @@ export default function Pagination({
           />
           <span>per page</span>
         </div>
-      </div>
-
-      <div className="hidden">
-        <DateRangeButtonCalendar label="Study Data Range" />
-        <DateRangeButtonCalendar label="Receipt Data Range" />
       </div>
 
       {isLoading && <TableSkeleton rows={pageSize} cols={7} />}

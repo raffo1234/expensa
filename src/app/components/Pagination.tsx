@@ -362,14 +362,14 @@ export default function Pagination({
     if (savedSearchWord) {
       setSearch(savedSearchWord);
     }
-    // const savedStudyDateRange = localStorage.getItem("dicomStudyDateRange");
-    // if (savedStudyDateRange) {
-    //   setStudyDateRange(JSON.parse(savedStudyDateRange));
-    // }
-    // const savedReceiptDateRange = localStorage.getItem("dicomReceiptDateRange");
-    // if (savedReceiptDateRange) {
-    //   setReceiptDateRange(JSON.parse(savedReceiptDateRange));
-    // }
+    const savedStudyDateRange = localStorage.getItem("dicomStudyDateRange");
+    if (savedStudyDateRange) {
+      setStudyDateRange(JSON.parse(savedStudyDateRange));
+    }
+    const savedReceiptDateRange = localStorage.getItem("dicomReceiptDateRange");
+    if (savedReceiptDateRange) {
+      setReceiptDateRange(JSON.parse(savedReceiptDateRange));
+    }
   }, []);
 
   return (

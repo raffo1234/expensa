@@ -40,7 +40,7 @@ export default function DateRangeButtonCalendar({
     }
   };
   console.log("date range", dateRange);
-  const timeZone = "America/Lima"; // Set timezone to Peru
+  const timeZone = "America/Lima";
   const zonedStart = dateRange?.startDate
     ? toZonedTime(dateRange?.startDate, timeZone)
     : null;
@@ -80,10 +80,14 @@ export default function DateRangeButtonCalendar({
               <div className="py-1 px-2 rounded-full bg-gray-200">
                 {formattedStart}
               </div>
-              <span>-</span>
-              <div className="py-1 px-2 rounded-full bg-gray-200">
-                {formattedEnd}
-              </div>
+              {formattedStart !== formattedEnd ? (
+                <>
+                  <span>-</span>
+                  <div className="py-1 px-2 rounded-full bg-gray-200">
+                    {formattedEnd}
+                  </div>
+                </>
+              ) : null}
             </div>
           ) : (
             label

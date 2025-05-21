@@ -1,10 +1,11 @@
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { useState } from "react";
 import { DateRangePicker } from "react-date-range";
-import { addDays } from "date-fns";
+import { format, formatISO } from "date-fns";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 import "../styles/react-date-range-custom.css";
+import { toZonedTime } from "date-fns-tz";
 
 interface DateRangeType {
   startDate: Date;
@@ -14,9 +15,11 @@ interface DateRangeType {
 
 export default function DateRangeButtonCalendar({
   label,
+  dateRange,
   handleDateRangeChange,
 }: {
   label: string;
+  dateRange: DateRangeType | null;
   handleDateRangeChange: (newRange: DateRangeType | null) => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -36,11 +39,25 @@ export default function DateRangeButtonCalendar({
       setIsOpen(false);
     }
   };
+  console.log("date range", dateRange);
+  const timeZone = "America/Lima"; // Set timezone to Peru
+  const zonedStart = dateRange?.startDate
+    ? toZonedTime(dateRange?.startDate, timeZone)
+    : null;
+
+  const zonedEnd = dateRange?.endDate
+    ? toZonedTime(dateRange?.endDate, timeZone)
+    : null;
+
+  const start = zonedStart ? formatISO(zonedStart) : null;
+  const formattedStart = start ? format(new Date(start), "dd-MM-yyyy") : null;
+  const end = zonedEnd ? formatISO(zonedEnd) : null;
+  const formattedEnd = end ? format(new Date(end), "dd-MM-yyyy") : null;
 
   return (
     <>
       <div
-        className={`${isOpen ? "bg-gray-100 pr-9" : "pr-4 bg-cyan-400 text-white"} transition-all duration-300 w-fit font-semibold rounded-full flex items-center relative`}
+        className={`${dateRange ? "bg-gray-100 pr-9" : "pr-4 bg-cyan-400 text-white"} transition-all duration-300 w-fit font-semibold rounded-full flex items-center relative`}
       >
         <button
           onClick={toggle}
@@ -56,14 +73,35 @@ export default function DateRangeButtonCalendar({
         <button
           onClick={toggle}
           type="button"
-          className={`${isOpen ? "px-4" : ""} text-sm cursor-pointer h-full py-2`}
+          className={`${isOpen ? "px-4" : ""} text-sm cursor-pointer h-full`}
         >
-          {isOpen ? "05 mayo 2025 - 28 julio 2025" : label}
+          {dateRange ? (
+            <div className="flex items-center gap-1 px-1">
+              <div className="py-1 px-2 rounded-full bg-gray-200">
+                {formattedStart}
+              </div>
+              <span>-</span>
+              <div className="py-1 px-2 rounded-full bg-gray-200">
+                {formattedEnd}
+              </div>
+            </div>
+          ) : (
+            label
+          )}
         </button>
-        {isOpen ? (
+        {dateRange ? (
           <button
             type="button"
-            onClick={toggle}
+            onClick={() => {
+              setState([
+                {
+                  startDate: new Date(),
+                  endDate: new Date(),
+                  key: "selection",
+                },
+              ]);
+              handleDateRangeChange(null);
+            }}
             className="cursor-pointer bg-cyan-400 p-1 rounded-full text-white right-0 absolute top-1/2 -translate-y-1/2"
           >
             <Icon
@@ -98,6 +136,14 @@ export default function DateRangeButtonCalendar({
               ranges={state}
               direction="horizontal"
             />
+            <button
+              onClick={toggle}
+              type="button"
+              title="Done"
+              className="cursor-pointer mx-auto px-6 text-white justify-center py-2 rounded-full bg-black flex gap-2 items-center w-fit"
+            >
+              <span>Done</span>
+            </button>
           </div>
         </div>
       ) : null}

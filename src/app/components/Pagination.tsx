@@ -433,13 +433,15 @@ export default function Pagination({
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-2 items-center mb-4 justify-between">
-        <div className="flex items-center flex-col sm:flex-row gap-2">
+      <div className="flex flex-col lg:flex-row gap-2 items-center mb-4 justify-between">
+        <div className="flex items-center flex-col lg:flex-row gap-2">
           <DateRangeButtonCalendar
+            dateRange={studyDateRange}
             handleDateRangeChange={handleStudyDateRangeChange}
             label="Study Data Range"
           />
           <DateRangeButtonCalendar
+            dateRange={receiptDateRange}
             handleDateRangeChange={handleReceiptDateRangeChange}
             label="Receipt Data Range"
           />

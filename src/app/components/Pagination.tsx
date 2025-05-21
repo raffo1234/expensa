@@ -271,15 +271,27 @@ export default function Pagination({
   };
 
   const handleSort = (column: string) => {
+    let newSortDirection: SortDirection | null = "asc";
+
     if (sortColumn === column) {
-      setSortDirection((prevDirection) => {
-        if (prevDirection === "asc") return "desc";
-        if (prevDirection === "desc") return null;
-        return "asc";
-      });
+      if (sortDirection === "asc") {
+        newSortDirection = "desc";
+      } else if (sortDirection === "desc") {
+        newSortDirection = null;
+        setSortColumn(null); // Reset sort column when toggling from desc
+      }
     } else {
       setSortColumn(column);
-      setSortDirection("asc");
+    }
+
+    setSortDirection(newSortDirection);
+
+    if (newSortDirection !== null) {
+      localStorage.setItem("sortColumn", column);
+      localStorage.setItem("sortDirection", newSortDirection);
+    } else {
+      localStorage.removeItem("sortColumn");
+      localStorage.removeItem("sortDirection");
     }
 
     setPage(1);
@@ -369,6 +381,19 @@ export default function Pagination({
     const savedReceiptDateRange = localStorage.getItem("dicomReceiptDateRange");
     if (savedReceiptDateRange) {
       setReceiptDateRange(JSON.parse(savedReceiptDateRange));
+    }
+
+    const storedSortColumn = localStorage.getItem("sortColumn");
+    const storedSortDirection = localStorage.getItem("sortDirection");
+
+    if (storedSortColumn) {
+      setSortColumn(storedSortColumn);
+    }
+    if (
+      storedSortDirection &&
+      (storedSortDirection === "asc" || storedSortDirection === "desc")
+    ) {
+      setSortDirection(storedSortDirection as SortDirection);
     }
   }, []);
 

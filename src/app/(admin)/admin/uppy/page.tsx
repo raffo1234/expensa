@@ -46,14 +46,9 @@ export default function Page() {
           type: file.type,
           data: file,
         });
-      } catch (err) {
-        if (err.isRestriction) {
-          // handle restrictions
-          console.log("Restriction error:", err);
-        } else {
-          // handle other errors
-          console.error(err);
-        }
+      } catch {
+        // handle other errors
+        console.error("err");
       }
     });
   };

@@ -297,7 +297,7 @@ export default function Report({
               ) : null}
             </div>
           </div>
-          <div className="absolute bottom-0 left-0 right-0 p-[60pt]">
+          <div className="absolute bottom-0 left-0 right-0 px-[60pt] pb-[60pt]">
             {activeTemplate?.footer_image_url ? (
               <Image
                 src={activeTemplate?.footer_image_url}

@@ -56,15 +56,6 @@ export default async function ProfilePopover() {
                   <span>Home</span>
                 </Link>
               </li>
-              <li>
-                <Link
-                  href="/admin/dicom"
-                  className="flex gap-3.5 items-center py-2 px-6 hover:bg-gray-50"
-                >
-                  <Icon icon="solar:cloud-upload-broken" fontSize={18} />
-                  <span>Upload Files</span>
-                </Link>
-              </li>
               <li className="border-t border-gray-100">
                 <form
                   action={async () => {

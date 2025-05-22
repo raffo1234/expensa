@@ -1,9 +1,6 @@
-import CheckPermission from "@/components/CheckPermission";
-import FallbackPermission from "@/components/FallbackPermission";
-import Uploader from "@/components/Uploader";
+import UploaderPage from "@/components/UploaderPage";
 import { auth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
-import { Permissions } from "@/types/propertyState";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import Link from "next/link";
 
@@ -17,9 +14,7 @@ export default async function Page() {
     .eq("email", userEmail)
     .single();
 
-  const userId = user?.id;
-
-  if (!userId) return null;
+  if (!user?.id || !user?.role_id) return null;
 
   return (
     <>
@@ -39,13 +34,7 @@ export default async function Page() {
           <span className="group-hover:underline">View All</span>
         </Link>
       </div>
-      <CheckPermission
-        userRoleId={user.role_id}
-        requiredPermission={Permissions.UPLOAD_DICOM}
-        fallback={<FallbackPermission />}
-      >
-        <Uploader userId={userId} />
-      </CheckPermission>
+      <UploaderPage userId={user.id} userRoleId={user.role_id} />
     </>
   );
 }

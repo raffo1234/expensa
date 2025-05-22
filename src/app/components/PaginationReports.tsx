@@ -258,24 +258,6 @@ export default function PaginationReports({
     }
   };
 
-  const handleReceiptDateRangeChange = (newRange: DateRangeType | null) => {
-    setReceiptDateRange(newRange); // Update the state first
-
-    if (newRange?.startDate && newRange?.endDate) {
-      const endOfSelectedDay = endOfDay(newRange.endDate);
-      localStorage.setItem(
-        "dicomReceiptDateRange",
-        JSON.stringify({
-          startDate: newRange.startDate,
-          endDate: endOfSelectedDay,
-          key: "selection",
-        })
-      );
-    } else {
-      localStorage.removeItem("dicomReceiptDateRange");
-    }
-  };
-
   const noData = !isLoading && !error && data && data.length === 0;
   const startItemNumber = (page - 1) * pageSize + 1;
 

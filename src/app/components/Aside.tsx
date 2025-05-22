@@ -36,23 +36,47 @@ export default function Aside({
     hasPermission: hasDownloadReportPermission,
     isLoading: isLoadingDownloadReportPermission,
   } = useCheckPermission(userRoleId, Permissions.DOWNLOAD_REPORT);
+  const {
+    hasPermission: hasViewTemplatesPermission,
+    isLoading: isLoadingHasViewTemplatesPermission,
+  } = useCheckPermission(userRoleId, Permissions.VIEW_TEMPLATES);
+  const {
+    hasPermission: hasViewDicomsPermission,
+    isLoading: isLoadingHasViewDicomsPermission,
+  } = useCheckPermission(userRoleId, Permissions.VIEW_DICOMS);
+  const {
+    hasPermission: hasUploadDicomPermission,
+    isLoading: isLoadingUloadDicomPermission,
+  } = useCheckPermission(userRoleId, Permissions.UPLOAD_DICOM);
 
   const pages = [
-    {
-      href: "/admin/dicom",
-      title: "Upload Files",
-      iconName: "solar:cloud-upload-broken",
-    },
-    {
-      href: "/admin/dicoms",
-      title: "Dicoms",
-      iconName: "solar:bones-broken",
-    },
-    {
-      href: "/admin/templates",
-      title: "Locations",
-      iconName: "solar:file-favourite-line-duotone",
-    },
+    ...(hasUploadDicomPermission
+      ? [
+          {
+            href: "/admin/dicom",
+            title: "Upload Files",
+            iconName: "solar:cloud-upload-broken",
+          },
+        ]
+      : []),
+    ...(hasViewDicomsPermission
+      ? [
+          {
+            href: "/admin/dicoms",
+            title: "Dicoms",
+            iconName: "solar:bones-broken",
+          },
+        ]
+      : []),
+    ...(hasViewTemplatesPermission
+      ? [
+          {
+            href: "/admin/templates",
+            title: "Locations",
+            iconName: "solar:file-favourite-line-duotone",
+          },
+        ]
+      : []),
     ...(hasUsersPermission
       ? [
           {
@@ -85,7 +109,7 @@ export default function Aside({
           {
             href: "/admin/reports",
             title: "Reports",
-            iconName: "solar:lock-keyhole-broken",
+            iconName: "solar:file-text-linear",
           },
         ]
       : []),
@@ -99,7 +123,10 @@ export default function Aside({
     isLoadingRolesPermission ||
     isLoadingUsersPermission ||
     isLoadingPermissionsPermission ||
-    isLoadingDownloadReportPermission
+    isLoadingDownloadReportPermission ||
+    isLoadingHasViewTemplatesPermission ||
+    isLoadingHasViewDicomsPermission ||
+    isLoadingUloadDicomPermission
   )
     return null;
 

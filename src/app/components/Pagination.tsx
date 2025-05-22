@@ -368,7 +368,10 @@ export default function Pagination({
         </div>
       </div>
 
-      {isLoading && <TableSkeleton rows={pageSize} cols={7} />}
+      {isLoading ||
+        (isLoadingPermissionDownloadReport && (
+          <TableSkeleton rows={pageSize} cols={7} />
+        ))}
 
       {error && (
         <p className="text-sm px-4 py-2 border border-rose-200 flex items-center gap-3 bg-rose-50 rounded-xl text-rose-700">

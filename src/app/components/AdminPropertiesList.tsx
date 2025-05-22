@@ -102,7 +102,7 @@ export default function AdminPropertiesList({
       >
         <CheckPermission
           userRoleId={userRoleId}
-          requiredPermission={Permissions.ADMINISTRAR_USUARIOS}
+          requiredPermission={Permissions.MANAGE_USERS}
         >
           <a
             href="/admin/property/add"

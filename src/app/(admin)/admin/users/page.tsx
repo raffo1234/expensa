@@ -36,7 +36,7 @@ export default async function Page() {
   return (
     <CheckPermission
       userRoleId={user.role_id}
-      requiredPermission={Permissions.ADMINISTRAR_USUARIOS}
+      requiredPermission={Permissions.MANAGE_USERS}
       fallback={<FallbackPermission />}
     >
       <UsersTable currentUserId={user.id} users={users} />

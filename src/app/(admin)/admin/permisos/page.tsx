@@ -29,7 +29,7 @@ export default async function Page() {
       <h1 className="mb-6 font-semibold text-lg block">Permissions</h1>
       <CheckPermission
         userRoleId={user.role_id}
-        requiredPermission={Permissions.ADMINISTRAR_PERMISOS}
+        requiredPermission={Permissions.MANAGE_PERMISSIONS}
         fallback={<FallbackPermission />}
       >
         <div className="border-x border-b border-gray-200 bg-white rounded-xl">

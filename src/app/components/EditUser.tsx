@@ -27,7 +27,7 @@ type Inputs = {
   first_name: string;
   last_name: string;
   role_id: string;
-  template_id: UUIDTypes;
+  template_id: UUIDTypes | null;
 };
 
 const rolesFetcher = async () => {
@@ -89,6 +89,10 @@ export default function EditUser({
   };
 
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
+    if (data.template_id === "") {
+      data.template_id = null;
+    }
+
     try {
       const { data: updatedUser } = await supabase
         .from("user")
@@ -157,6 +161,7 @@ export default function EditUser({
                         {...register("template_id")}
                         className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500 bg-white"
                       >
+                        <option value="">Select ...</option>
                         {templates?.map(({ id, description }) => {
                           return (
                             <option value={id} key={id}>

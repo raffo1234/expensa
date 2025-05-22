@@ -41,7 +41,7 @@ export default async function Page() {
       </div>
       <CheckPermission
         userRoleId={user.role_id}
-        requiredPermission={Permissions.CARGAR_DICOM}
+        requiredPermission={Permissions.UPLOAD_DICOM}
         fallback={<FallbackPermission />}
       >
         <Uploader userId={userId} />

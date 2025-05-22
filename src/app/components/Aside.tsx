@@ -23,15 +23,15 @@ export default function Aside({
   const {
     hasPermission: hasRolesPermission,
     isLoading: isLoadingRolesPermission,
-  } = useCheckPermission(userRoleId, Permissions.ADMINISTRAR_ROLES);
+  } = useCheckPermission(userRoleId, Permissions.MANAGE_ROLES);
   const {
     hasPermission: hasUsersPermission,
     isLoading: isLoadingUsersPermission,
-  } = useCheckPermission(userRoleId, Permissions.ADMINISTRAR_USUARIOS);
+  } = useCheckPermission(userRoleId, Permissions.MANAGE_USERS);
   const {
     hasPermission: hasPermissionsPermission,
     isLoading: isLoadingPermissionsPermission,
-  } = useCheckPermission(userRoleId, Permissions.ADMINISTRAR_PERMISOS);
+  } = useCheckPermission(userRoleId, Permissions.MANAGE_PERMISSIONS);
 
   const pages = [
     {

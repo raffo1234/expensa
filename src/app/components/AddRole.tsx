@@ -38,14 +38,14 @@ export default function AddRole() {
           <fieldset className="flex flex-col gap-4">
             <div>
               <label htmlFor="name" className="inline-block mb-2 text-sm">
-                Nombre
+                Name
               </label>
               <input
                 type="text"
                 id="name"
                 {...register("name")}
                 required
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
+                className="bg-white w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
               />
             </div>
             <div>
@@ -53,14 +53,14 @@ export default function AddRole() {
                 htmlFor="description"
                 className="inline-block mb-2 text-sm"
               >
-                Descripcion
+                Description
               </label>
               <input
                 type="text"
                 id="description"
                 {...register("description")}
                 required
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
+                className="bg-white w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
               />
             </div>
           </fieldset>
@@ -81,7 +81,7 @@ export default function AddRole() {
           className="w-full flex rounded-b-xl gap-3.5 items-center text-left hover:bg-gray-50 transition-colors duration-300 px-6 py-4 border-t border-gray-200"
         >
           <Icon icon="solar:add-square-broken" fontSize={22} />
-          <span className="pb-1">Add Role</span>
+          <span className="pb-1">Add</span>
         </button>
       )}
     </>

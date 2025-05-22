@@ -112,7 +112,7 @@ export function Role({
   };
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const { id, name } = role;
+  const { id, name, description } = role;
   return (
     <>
       <button
@@ -127,9 +127,12 @@ export function Role({
           fontSize={20}
           className={`${
             isOpen ? "rotate-180" : ""
-          } transition-transform duration-500`}
+          } transition-transform duration-500 flex-shrink-0`}
         />
-        <span className="pb-1">{name}</span>
+        <span>{name}</span>{" "}
+        {description ? (
+          <span className="text-sm text-gray-500">{description}</span>
+        ) : null}
       </button>
       {isOpen ? (
         <div className="border-t border-gray-200 pl-20 pr-4 py-8">

@@ -22,7 +22,7 @@ export default async function Page() {
       <h1 className="mb-8 font-semibold text-lg block">Add User</h1>
       <CheckPermission
         userRoleId={user.role_id}
-        requiredPermission={Permissions.ADMINISTRAR_USUARIOS}
+        requiredPermission={Permissions.MANAGE_USERS}
         fallback={<FallbackPermission />}
       >
         <form method="post" action="/admin/users/add">

@@ -40,7 +40,7 @@ export default function AddTemplate({ userId }: { userId: string }) {
       {displayForm ? (
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="w-full items-center text-left hover:bg-gray-50 rounded-bl-xl rounded-br-xl transition-colors duration-300 px-7 pt-4 pb-6 border-t border-gray-200"
+          className="w-full items-center text-left hover:bg-gray-50 rounded-bl-xl first:rounded-tl-xl first:rounded-tr-xl rounded-br-xl transition-colors duration-300 px-7 pt-4 pb-6"
         >
           <fieldset className="flex flex-col gap-4">
             <div>
@@ -85,7 +85,7 @@ export default function AddTemplate({ userId }: { userId: string }) {
       ) : (
         <button
           onClick={() => setDisplayForm((prev) => !prev)}
-          className="w-full flex rounded-b-xl gap-3.5 items-center text-left hover:bg-gray-50 transition-colors duration-300 px-6 py-4"
+          className="w-full flex rounded-b-xl rounded-t-xl gap-3.5 items-center text-left hover:bg-gray-50 transition-colors duration-300 px-6 py-4"
         >
           <Icon icon="solar:add-square-broken" fontSize={22} />
           <span className="pb-1">Add Template</span>

@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { useDropzone } from "react-dropzone";
 import { ChangeEvent, useState } from "react";
+import { bucketName } from "@/constants";
 
 const removeFilesByFolderPath = async (
   templateImageUrl: string | null,
@@ -69,7 +70,7 @@ export default function UploaderTemplateImageUploader({
   imageFileName: string;
 }) {
   console.warn(previewImageHeight);
-  const bucketName = "dicoms";
+
   const folderPath = `template_user_${userId}/${templateId}/${fileNamePrefix}`;
   const [isLoading, setIsLoading] = useState(false);
   const { getRootProps, getInputProps } = useDropzone({

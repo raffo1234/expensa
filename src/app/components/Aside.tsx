@@ -32,6 +32,10 @@ export default function Aside({
     hasPermission: hasPermissionsPermission,
     isLoading: isLoadingPermissionsPermission,
   } = useCheckPermission(userRoleId, Permissions.MANAGE_PERMISSIONS);
+  const {
+    hasPermission: hasDownloadReportPermission,
+    isLoading: isLoadingDownloadReportPermission,
+  } = useCheckPermission(userRoleId, Permissions.DOWNLOAD_REPORT);
 
   const pages = [
     {
@@ -76,6 +80,15 @@ export default function Aside({
           },
         ]
       : []),
+    ...(hasDownloadReportPermission
+      ? [
+          {
+            href: "/admin/reports",
+            title: "Reports",
+            iconName: "solar:lock-keyhole-broken",
+          },
+        ]
+      : []),
   ];
 
   const closeMenu = () => {
@@ -85,7 +98,8 @@ export default function Aside({
   if (
     isLoadingRolesPermission ||
     isLoadingUsersPermission ||
-    isLoadingPermissionsPermission
+    isLoadingPermissionsPermission ||
+    isLoadingDownloadReportPermission
   )
     return null;
 

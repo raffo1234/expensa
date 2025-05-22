@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
-import Pagination from "@/components/Pagination";
+import DicomsTable from "@/components/DicomsTable";
 
 export default async function Page() {
   const session = await auth();
@@ -8,13 +8,11 @@ export default async function Page() {
 
   const { data: user } = await supabase
     .from("user")
-    .select("id")
+    .select("id, role_id")
     .eq("email", userEmail)
     .single();
 
-  const userId = user?.id;
+  if (!user?.id || !user.role_id) return null;
 
-  if (!userId) return null;
-
-  return <Pagination tableName="dicom" userId={userId} />;
+  return <DicomsTable userId={user.id} userRoleId={user.role_id} />;
 }

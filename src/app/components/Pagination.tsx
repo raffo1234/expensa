@@ -1,5 +1,6 @@
 "use client";
 
+import { Permissions } from "@/types/propertyState";
 import dynamic from "next/dynamic";
 import { DicomStateEnum } from "@/enums/dicomStateEnum";
 import extractAgeWidthUnit from "@/lib/extractAgeWithUnit";
@@ -21,6 +22,7 @@ import { startOfDay, formatISO, endOfDay, format } from "date-fns";
 import DateRangeButtonCalendar from "./DateRangeButtonCalendar";
 import { UUIDTypes } from "uuid";
 import UploadButton from "./UploadButton";
+import useCheckPermission from "@/hooks/useCheckPermission";
 
 type SortDirection = "asc" | "desc" | null;
 
@@ -114,10 +116,15 @@ const fetcher = async (
 export default function Pagination({
   tableName,
   userId,
+  userRoleId,
 }: {
   tableName: "dicom";
   userId: string;
+  userRoleId: string;
 }) {
+  const { hasPermission, isLoading: isLoadingPermissionDownloadReport } =
+    useCheckPermission(userRoleId, Permissions.DOWNLOAD_REPORT);
+
   const [studyDateRange, setStudyDateRange] = useState<DateRangeType | null>(
     null
   );
@@ -682,7 +689,8 @@ export default function Pagination({
                       <td className="py-5 px-2 text-center">{modality}</td>
                       <td className="py-2 px-2">
                         <div className="flex gap-1 justify-end">
-                          {state === DicomStateEnum.COMPLETED ? (
+                          {state === DicomStateEnum.COMPLETED &&
+                          hasPermission ? (
                             <>
                               {PDFDownloadLink ? (
                                 <PDFDownloadLink

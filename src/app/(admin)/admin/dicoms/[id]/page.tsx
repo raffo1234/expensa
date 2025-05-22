@@ -2,7 +2,6 @@ import { supabase } from "@/lib/supabase";
 import Report from "@/components/Report";
 import { TemplateType } from "@/types/templateType";
 import { auth } from "@/lib/auth";
-import { DicomType } from "@/types/dicomType";
 import Link from "next/link";
 import { Icon } from "@iconify/react/dist/iconify.js";
 
@@ -20,14 +19,6 @@ export default async function Page({ params }: { params: Params }) {
     .single();
 
   const userId = user?.id;
-
-  const { data: dicom } = (await supabase
-    .from("dicom")
-    .select("*, template(header_image_url, sign_image_url, footer_image_url)")
-    .eq("id", id)
-    .single()) as {
-    data: DicomType | null;
-  };
 
   const { data: templates } = (await supabase
     .from("template")
@@ -51,9 +42,7 @@ export default async function Page({ params }: { params: Params }) {
           <Icon icon="solar:backspace-line-duotone" fontSize={36} />
         </Link>
       </div>
-      {dicom ? (
-        <Report templates={templates || []} dicom={dicom} userId={userId} />
-      ) : null}
+      <Report dicomId={id} templates={templates || []} userId={userId} />
     </>
   );
 }

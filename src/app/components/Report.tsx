@@ -17,6 +17,8 @@ import { supabase } from "@/lib/supabase";
 import ContentPDFDocument from "@/components/ContentPDFDocument";
 import DOCXPreview from "@/components/DOCXPreview";
 import GeneratePDFButton from "@/components/GeneratePDFButton";
+import { UUIDTypes } from "uuid";
+import useSWR from "swr";
 
 function putFirst(array: TemplateType[], element: TemplateType | undefined) {
   if (element)
@@ -24,18 +26,37 @@ function putFirst(array: TemplateType[], element: TemplateType | undefined) {
   return array;
 }
 
+const fetcher = async (id: UUIDTypes) => {
+  const { data } = (await supabase
+    .from("dicom")
+    .select("*, template(header_image_url, sign_image_url, footer_image_url)")
+    .eq("id", id)
+    .single()) as {
+    data: DicomType | null;
+  };
+  return data;
+};
+
 export default function Report({
   templates,
   userId,
-  dicom,
+  dicomId,
 }: {
   templates: TemplateType[] | [];
-  userId?: string;
-  dicom: DicomType;
+  userId: string;
+  dicomId: UUIDTypes;
 }) {
   const nowMs = Date.now();
+
+  const {
+    data: dicom,
+    error,
+    isLoading,
+    mutate,
+  } = useSWR(`admin-${dicomId}`, () => fetcher(dicomId));
+
   const [dicomState, setDicomState] = useState("");
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState<string>("");
   const [activeTemplate, setActiveTemplate] = useState<
     TemplateType | undefined
   >();
@@ -54,24 +75,23 @@ export default function Report({
     // value and activeTemplate are needed because @react-pdf/renderer needs to re render to load correctly
   );
 
-  const handleTemplateActive = (newTemplate: TemplateType) => {
+  const handleTemplateActive = (
+    dicomId: UUIDTypes,
+    newTemplate: TemplateType
+  ) => {
     setActiveTemplate(newTemplate);
-    updateDicomTemplate(dicom.id, newTemplate.id);
-    if (newTemplate) {
-      localStorage.setItem("dicomActiveTemplateId", newTemplate.id);
-    } else {
-      localStorage.removeItem("dicomActiveTemplateId");
-    }
+    updateDicomTemplate(dicomId, newTemplate.id);
+    localStorage.setItem("dicomActiveTemplateId", newTemplate.id);
   };
 
   const debouncedTextarea = useDebouncedCallback((value) => {
-    updateDicomReport(value, dicom.id, activeTemplate?.id);
+    updateDicomReport(value, dicomId, activeTemplate?.id);
     setValue(value);
   }, 500);
 
   const updateDicomReport = async (
     value: string,
-    id: string,
+    id: UUIDTypes,
     templateId: string | undefined
   ) => {
     try {
@@ -81,11 +101,13 @@ export default function Report({
         .eq("id", id);
     } catch (error) {
       console.error(error);
+    } finally {
+      mutate();
     }
   };
 
   const updateDicomTemplate = async (
-    id: string,
+    id: UUIDTypes,
     templateId: string | undefined
   ) => {
     try {
@@ -95,11 +117,13 @@ export default function Report({
         .eq("id", id);
     } catch (error) {
       console.error(error);
+    } finally {
+      mutate();
     }
   };
 
   const updateDicomState = async (
-    id: string,
+    id: UUIDTypes,
     state: DicomStateEnum,
     templateId: string | undefined
   ) => {
@@ -114,18 +138,20 @@ export default function Report({
       if (data) setDicomState(data.state);
     } catch (error) {
       console.error(error);
+    } finally {
+      mutate();
     }
   };
 
   useEffect(() => {
     if (templates.length === 0) return;
 
-    if (dicom.template_id) {
+    if (dicom?.template_id) {
       const activeTemplate = templates.find(
         (template) => template.id === dicom.template_id
       );
       if (activeTemplate) {
-        handleTemplateActive(activeTemplate);
+        handleTemplateActive(dicomId, activeTemplate);
         return;
       }
     }
@@ -136,31 +162,37 @@ export default function Report({
         (template) => template.id === storedTemplateId
       );
       if (activeTemplate) {
-        handleTemplateActive(activeTemplate);
+        handleTemplateActive(dicomId, activeTemplate);
         return;
       }
     }
 
     const defaultTemplate = templates[0];
     if (defaultTemplate) {
-      handleTemplateActive(defaultTemplate);
+      handleTemplateActive(dicomId, defaultTemplate);
       return;
     }
-  }, []);
+  }, [dicom]);
 
   useEffect(() => {
-    if (!dicom.state) {
-      updateDicomState(dicom.id, DicomStateEnum.VIEWED, activeTemplate?.id);
+    if (!dicom?.state) {
+      updateDicomState(dicomId, DicomStateEnum.VIEWED, activeTemplate?.id);
     }
-  }, [dicom.id, dicom.state]);
+  }, [dicom?.id, dicom?.state]);
 
   useEffect(() => {
-    setDicomState(dicom.state);
-  }, [dicom.state]);
+    if (dicom?.state) setDicomState(dicom?.state);
+  }, [dicom?.state]);
 
   useEffect(() => {
-    setValue(dicom.report);
-  }, [dicom.report]);
+    if (dicom?.report) setValue(dicom?.report);
+  }, [dicom?.report]);
+
+  if (!dicom) return null;
+
+  if (error) return null;
+
+  if (isLoading) return null;
 
   return (
     <>
@@ -178,7 +210,7 @@ export default function Report({
                 key={id}
                 type="button"
                 title={name}
-                onClick={() => handleTemplateActive(template)}
+                onClick={() => handleTemplateActive(dicomId, template)}
                 className={`${
                   activeTemplate?.id === id
                     ? "bg-rose-50 border-rose-200"

@@ -31,6 +31,7 @@ import {
 import { toZonedTime } from "date-fns-tz";
 import DateRangeButtonCalendar from "./DateRangeButtonCalendar";
 import { UUIDTypes } from "uuid";
+import UploadButton from "./UploadButton";
 
 type SortDirection = "asc" | "desc" | null;
 
@@ -401,14 +402,7 @@ export default function Pagination({
     <>
       <div className="w-full mb-4">
         <div className="flex max-w-lg w-full mx-auto sm:mx-0 items-center gap-3">
-          <Link
-            href="/admin/dicom"
-            title="Upload Dicoms"
-            className="px-6 text-white justify-center py-2 rounded-full bg-black flex gap-2 items-center"
-          >
-            <span>Upload</span>
-            <Icon icon="solar:add-circle-linear" fontSize={24}></Icon>
-          </Link>
+          <UploadButton />
           <input
             type="text"
             className="bg-white w-full rounded-full border border-gray-200 outline-0 py-2 px-5"

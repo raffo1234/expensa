@@ -6,7 +6,7 @@ export default function UploadButton() {
     <Link
       href="/admin/dicom"
       title="Upload Dicoms"
-      className="px-6 text-white justify-center py-2 rounded-full bg-black flex gap-2 items-center"
+      className="px-6 w-fit mx-auto text-white justify-center py-2 rounded-full bg-black flex gap-2 items-center"
     >
       <span>Upload</span>
       <Icon icon="solar:add-circle-linear" fontSize={24}></Icon>

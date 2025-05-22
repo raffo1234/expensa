@@ -17,18 +17,7 @@ import GeneratePDFButton from "@/components/GeneratePDFButton";
 import ContentPDFDocument from "./ContentPDFDocument";
 import DOCXPreview from "./DOCXPreview";
 import { useDebouncedCallback } from "use-debounce";
-import {
-  startOfDay,
-  startOfWeek,
-  endOfWeek,
-  startOfMonth,
-  endOfMonth,
-  formatISO,
-  subDays,
-  endOfDay,
-  format,
-} from "date-fns";
-import { toZonedTime } from "date-fns-tz";
+import { startOfDay, formatISO, endOfDay, format } from "date-fns";
 import DateRangeButtonCalendar from "./DateRangeButtonCalendar";
 import { UUIDTypes } from "uuid";
 import UploadButton from "./UploadButton";
@@ -39,13 +28,6 @@ interface DateRangeType {
   startDate: Date;
   endDate: Date;
   key: string;
-}
-
-enum FilterByTimeType {
-  TODAY = "TODAY",
-  YESTERDAY = "YESTERDAY",
-  THIS_WEEK = "THIS_WEEK",
-  THIS_MONTH = "THIS_MONTH",
 }
 
 const fetcherTotal = async (userId: string) => {
@@ -67,7 +49,6 @@ const fetcher = async (
     SortDirection,
     string,
     string | null,
-    FilterByTimeType | null,
     { startDate: Date | null; endDate: Date | null } | null,
     { startDate: Date | null; endDate: Date | null } | null,
   ]
@@ -80,7 +61,6 @@ const fetcher = async (
     sortDirection,
     userId,
     searchWord,
-    filterByTime,
     studyDateRange,
     receiptDateRange,
   ] = key;
@@ -106,49 +86,6 @@ const fetcher = async (
     query = query.or(
       `patient_id.ilike.%${searchWord}%,patient_name.ilike.%${searchWord}%,institution.ilike.%${searchWord}%,study_description.ilike.%${searchWord}%`
     );
-  }
-
-  if (filterByTime) {
-    const timeZone = "America/Lima"; // Set timezone to Peru
-    const now = toZonedTime(new Date(), timeZone);
-    let startOfCurrentDay: Date;
-    let startOfCurrentWeek: Date;
-    let endOfCurrentWeek: Date;
-    let startOfCurrentMonth: Date;
-    let endOfCurrentMonth: Date;
-    let startOfYesterday: Date;
-    let endOfYesterday: Date;
-
-    switch (filterByTime) {
-      case FilterByTimeType.TODAY:
-        startOfCurrentDay = startOfDay(now);
-        query = query.gte("created_at", formatISO(startOfCurrentDay));
-        break;
-      case FilterByTimeType.THIS_WEEK: // Now means current week
-        startOfCurrentWeek = startOfWeek(now, { weekStartsOn: 0 }); // Assuming week starts on Sunday
-        endOfCurrentWeek = endOfWeek(now, { weekStartsOn: 0 });
-        query = query
-          .gte("created_at", formatISO(startOfCurrentWeek))
-          .lte("created_at", formatISO(endOfCurrentWeek));
-        break;
-      case FilterByTimeType.THIS_MONTH: // Now means current month
-        startOfCurrentMonth = startOfMonth(now);
-        endOfCurrentMonth = endOfMonth(now);
-        query = query
-          .gte("created_at", formatISO(startOfCurrentMonth))
-          .lte("created_at", formatISO(endOfCurrentMonth));
-        break;
-      case FilterByTimeType.YESTERDAY: // Added yesterday filter
-        const yesterday = subDays(now, 1);
-        startOfYesterday = startOfDay(yesterday);
-        endOfYesterday = endOfDay(yesterday);
-        query = query
-          .gte("created_at", formatISO(startOfYesterday))
-          .lte("created_at", formatISO(endOfYesterday));
-        break;
-      default:
-        break;
-    }
   }
 
   if (studyDateRange?.startDate && studyDateRange?.endDate) {
@@ -213,9 +150,6 @@ export default function Pagination({
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [search, setSearch] = useState<string | null>(null);
-  const [filterByTime, setFilterByTime] = useState<FilterByTimeType | null>(
-    null
-  );
 
   const swrKey = [
     tableName,
@@ -225,7 +159,6 @@ export default function Pagination({
     sortDirection,
     userId,
     search,
-    filterByTime,
     studyDateRange,
     receiptDateRange,
   ];
@@ -298,15 +231,6 @@ export default function Pagination({
     setPage(1);
   };
 
-  const handleFilterChange = (newFilterValue: FilterByTimeType | null) => {
-    setFilterByTime(newFilterValue);
-    if (newFilterValue) {
-      localStorage.setItem("dicomFilterTime", newFilterValue);
-    } else {
-      localStorage.removeItem("dicomFilterTime");
-    }
-  };
-
   const handleSearchChange = (newSearchWord: string | null) => {
     setSearch(newSearchWord);
     if (newSearchWord && newSearchWord.length > 0) {
@@ -367,10 +291,6 @@ export default function Pagination({
   const startItemNumber = (page - 1) * pageSize + 1;
 
   useEffect(() => {
-    const savedFilter = localStorage.getItem("dicomFilterTime");
-    if (savedFilter) {
-      setFilterByTime(savedFilter as FilterByTimeType);
-    }
     const savedSearchWord = localStorage.getItem("dicomSearchWord");
     if (savedSearchWord) {
       setSearch(savedSearchWord);
@@ -410,45 +330,6 @@ export default function Pagination({
             defaultValue={search ?? ""}
             onChange={(event) => debouncedSearch(event.target.value)}
           />
-        </div>
-      </div>
-      <div className="flex flex-col sm:flex-row gap-4 justify-between mb-4">
-        <div className="hidden text-sm font-semibold items-center gap-1 py-1 px-1 bg-gray-100 rounded-full">
-          <button
-            type="button"
-            onClick={() => handleFilterChange(null)}
-            className={`${filterByTime === null ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-full `}
-          >
-            All
-          </button>
-          <button
-            onClick={() => handleFilterChange(FilterByTimeType.TODAY)}
-            type="button"
-            className={`${filterByTime === FilterByTimeType.TODAY ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-full `}
-          >
-            Today
-          </button>
-          <button
-            onClick={() => handleFilterChange(FilterByTimeType.YESTERDAY)}
-            type="button"
-            className={`${filterByTime === FilterByTimeType.YESTERDAY ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-full whitespace-nowrap`}
-          >
-            Y<span className="hidden sm:inline">esterday</span>
-          </button>
-          <button
-            onClick={() => handleFilterChange(FilterByTimeType.THIS_WEEK)}
-            type="button"
-            className={`${filterByTime === FilterByTimeType.THIS_WEEK ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-full whitespace-nowrap`}
-          >
-            This W<span className="hidden sm:inline">eek</span>
-          </button>
-          <button
-            onClick={() => handleFilterChange(FilterByTimeType.THIS_MONTH)}
-            type="button"
-            className={`${filterByTime === FilterByTimeType.THIS_MONTH ? "bg-cyan-400 text-white" : "hover:bg-white"} transition-colors duration-300 cursor-pointer px-4 py-2  rounded-full whitespace-nowrap`}
-          >
-            This M<span className="hidden sm:inline">onth</span>
-          </button>
         </div>
       </div>
 
@@ -716,17 +597,7 @@ export default function Pagination({
                         </div>{" "}
                         did not match any items. Please try again.
                       </div>
-                      <Link
-                        href="/admin/dicom"
-                        title="Upload Dicoms"
-                        className="mx-auto px-6 text-white justify-center py-2 rounded-full bg-black flex gap-2 items-center w-fit"
-                      >
-                        <span>Upload</span>
-                        <Icon
-                          icon="solar:add-circle-linear"
-                          fontSize={24}
-                        ></Icon>
-                      </Link>
+                      <UploadButton />
                     </div>
                   </div>
                 </td>

@@ -54,9 +54,14 @@ export default function Report({
     // value and activeTemplate are needed because @react-pdf/renderer needs to re render to load correctly
   );
 
-  const handleTemplateActive = (template: TemplateType) => {
-    setActiveTemplate(template);
-    updateDicomTemplate(dicom.id, template.id);
+  const handleTemplateActive = (newTemplate: TemplateType) => {
+    setActiveTemplate(newTemplate);
+    updateDicomTemplate(dicom.id, newTemplate.id);
+    if (newTemplate) {
+      localStorage.setItem("dicomActiveTemplateId", newTemplate.id);
+    } else {
+      localStorage.removeItem("dicomActiveTemplateId");
+    }
   };
 
   const debouncedTextarea = useDebouncedCallback((value) => {
@@ -113,11 +118,33 @@ export default function Report({
   };
 
   useEffect(() => {
-    if (templates.length > 0) {
-      const template =
-        templates.find((template) => template.id === dicom.template_id) ||
-        templates[0];
-      handleTemplateActive(template);
+    if (templates.length === 0) return;
+
+    if (dicom.template_id) {
+      const activeTemplate = templates.find(
+        (template) => template.id === dicom.template_id
+      );
+      if (activeTemplate) {
+        handleTemplateActive(activeTemplate);
+        return;
+      }
+    }
+
+    const storedTemplateId = localStorage.getItem("dicomActiveTemplateId");
+    if (storedTemplateId) {
+      const activeTemplate = templates.find(
+        (template) => template.id === storedTemplateId
+      );
+      if (activeTemplate) {
+        handleTemplateActive(activeTemplate);
+        return;
+      }
+    }
+
+    const defaultTemplate = templates[0];
+    if (defaultTemplate) {
+      handleTemplateActive(defaultTemplate);
+      return;
     }
   }, []);
 
@@ -196,7 +223,6 @@ export default function Report({
               {dicomState}
             </div>
           ) : null}
-
           {PDFDownloadLink ? (
             <PDFDownloadLink
               document={

@@ -1,5 +1,5 @@
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DateRangePicker } from "react-date-range";
 import { format, formatISO } from "date-fns";
 import "react-date-range/dist/styles.css";
@@ -39,7 +39,7 @@ export default function DateRangeButtonCalendar({
       setIsOpen(false);
     }
   };
-  console.log("date range", dateRange);
+
   const timeZone = "America/Lima";
   const zonedStart = dateRange?.startDate
     ? toZonedTime(dateRange?.startDate, timeZone)
@@ -53,6 +53,15 @@ export default function DateRangeButtonCalendar({
   const formattedStart = start ? format(new Date(start), "dd-MM-yyyy") : null;
   const end = zonedEnd ? formatISO(zonedEnd) : null;
   const formattedEnd = end ? format(new Date(end), "dd-MM-yyyy") : null;
+
+  useEffect(() => {
+    const app = document.getElementById("admin");
+    if (isOpen) {
+      app?.classList.add("overflow-hidden");
+    } else {
+      app?.classList.remove("overflow-hidden");
+    }
+  }, [isOpen]);
 
   return (
     <>
@@ -118,12 +127,11 @@ export default function DateRangeButtonCalendar({
       {isOpen ? (
         <div
           onClick={onCloseOutside}
-          className="bg-[rgb(255,255,255,.9)] fixed top-0 left-0 w-full h-lvh z-10 flex items-start pt-30 justify-center"
+          className="bg-[rgb(255,255,255,.9)] overflow-auto fixed top-0 left-0 w-full h-lvh z-10 flex items-start pb-10 pt-30 justify-center"
         >
-          <div className="bg-white rounded-2xl shadow-lg p-8">
+          <div className="bg-white rounded-2xl shadow-lg p-8 overflow-auto">
             <DateRangePicker
               onChange={(item) => {
-                console.log(item);
                 // @ts-expect-error: Unreachable code error
                 setState([item.selection]);
 

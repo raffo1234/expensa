@@ -39,7 +39,7 @@ export default async function Page() {
       requiredPermission={Permissions.ADMINISTRAR_USUARIOS}
       fallback={<FallbackPermission />}
     >
-      <UsersTable users={users} />
+      <UsersTable currentUserId={user.id} users={users} />
     </CheckPermission>
   );
 }

@@ -1,3 +1,6 @@
+import { UUIDTypes } from "uuid";
+import { TemplateType } from "./templateType";
+
 type RoleType = {
   id: string;
   name: string;
@@ -12,4 +15,6 @@ export type UserType = {
   email: string;
   role_id?: string;
   role?: RoleType;
+  template_id?: UUIDTypes;
+  template?: TemplateType;
 };

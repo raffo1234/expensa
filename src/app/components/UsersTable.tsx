@@ -1,11 +1,16 @@
 import DeleteUser from "@/components/DeleteUser";
 import EditUser from "@/components/EditUser";
 import { UserType } from "@/types/userType";
-// import { Icon } from "@iconify/react";
 import Image from "next/image";
-// import Link from "next/link";
+import { UUIDTypes } from "uuid";
 
-export default function UsersTable({ users }: { users: UserType[] | null }) {
+export default function UsersTable({
+  currentUserId,
+  users,
+}: {
+  currentUserId: UUIDTypes;
+  users: UserType[] | null;
+}) {
   return (
     <div className="max-w-[1200px] mx-auto w-full">
       <h1 className="mb-6 font-semibold text-lg block">Users</h1>
@@ -53,7 +58,7 @@ export default function UsersTable({ users }: { users: UserType[] | null }) {
                 {role?.name}
               </div>
               <div className="flex gap-2 items-center justify-center">
-                <EditUser userId={id} />
+                <EditUser currentUserId={currentUserId} userId={id} />
                 <DeleteUser userId={id} />
               </div>
             </div>

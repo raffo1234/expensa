@@ -9,6 +9,7 @@ import { useForm } from "react-hook-form";
 import type { SubmitHandler } from "react-hook-form";
 import { Icon } from "@iconify/react";
 import { useGlobalState } from "@/lib/globalState";
+import { UUIDTypes } from "uuid";
 
 async function fetcher(userId: string) {
   const { data, error } = await supabase
@@ -26,6 +27,7 @@ type Inputs = {
   first_name: string;
   last_name: string;
   role_id: string;
+  template_id: UUIDTypes;
 };
 
 const rolesFetcher = async () => {
@@ -37,11 +39,34 @@ const rolesFetcher = async () => {
   return data;
 };
 
-export default function EditUser({ userId }: { userId: string }) {
+const templatesFetcher = async (userId: UUIDTypes) => {
+  const { data, error } = await supabase
+    .from("template")
+    .select("*")
+    .eq("user_id", userId)
+    .order("name", { ascending: true });
+  if (error) throw error;
+  return data;
+};
+
+export default function EditUser({
+  currentUserId,
+  userId,
+}: {
+  currentUserId: UUIDTypes;
+  userId: string;
+}) {
   const { setModalContent, setModalOpen } = useGlobalState();
   const [messageApi, contextHolder] = message.useMessage();
 
   const { data: roles, error, isLoading } = useSWR("admin-roles", rolesFetcher);
+  const {
+    data: templates,
+    error: errorTemplates,
+    isLoading: isLoadingTemplates,
+  } = useSWR("admin-templates-as-locations", () =>
+    templatesFetcher(currentUserId)
+  );
 
   const { data: user } = useSWR(userId, () => fetcher(userId));
 
@@ -82,13 +107,73 @@ export default function EditUser({ userId }: { userId: string }) {
   const showGlobalModal = () => {
     setModalContent(
       <>
-        {isLoading ? (
+        {isLoading || isLoadingTemplates ? (
           <FormSkeleton rows={2} />
         ) : (
           <>
             <h2 className="mb-6 font-semibold text-lg block">Edit User</h2>
             <form onSubmit={handleSubmit(onSubmit)} id="editUser">
               <fieldset className="flex flex-col gap-4">
+                <div className="flex items-center gap-4 w-full">
+                  <div className="flex-grow">
+                    <label
+                      htmlFor="role_id"
+                      className="inline-block mb-2 text-sm"
+                    >
+                      Role
+                    </label>
+                    <div className="relative">
+                      <select
+                        id="role_id"
+                        {...register("role_id")}
+                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500 bg-white"
+                      >
+                        {roles?.map(({ id, name }) => {
+                          return (
+                            <option value={id} key={id}>
+                              {name}
+                            </option>
+                          );
+                        })}
+                      </select>
+                      <div className="absolute top-1/2 -translate-y-1/2 right-1 pr-3 pointer-events-none bg-white">
+                        <Icon
+                          icon="solar:alt-arrow-down-linear"
+                          fontSize={16}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex-grow">
+                    <label
+                      htmlFor="template_id"
+                      className="inline-block mb-2 text-sm"
+                    >
+                      Locations
+                    </label>
+                    <div className="relative">
+                      <select
+                        id="template_id"
+                        {...register("template_id")}
+                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500 bg-white"
+                      >
+                        {templates?.map(({ id, description }) => {
+                          return (
+                            <option value={id} key={id}>
+                              {description}
+                            </option>
+                          );
+                        })}
+                      </select>
+                      <div className="absolute top-1/2 -translate-y-1/2 right-1 pr-3 pointer-events-none bg-white">
+                        <Icon
+                          icon="solar:alt-arrow-down-linear"
+                          fontSize={16}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
                 <div>
                   <label
                     htmlFor="first_name"
@@ -150,32 +235,6 @@ export default function EditUser({ userId }: { userId: string }) {
                     className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
                   />
                 </div>
-                <div>
-                  <label
-                    htmlFor="role_id"
-                    className="inline-block mb-2 text-sm"
-                  >
-                    Role
-                  </label>
-                  <div className="relative">
-                    <select
-                      id="role_id"
-                      {...register("role_id")}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500 bg-white"
-                    >
-                      {roles?.map(({ id, name }) => {
-                        return (
-                          <option value={id} key={id}>
-                            {name}
-                          </option>
-                        );
-                      })}
-                    </select>
-                    <div className="absolute top-1/2 -translate-y-1/2 right-1 pr-3 pointer-events-none bg-white">
-                      <Icon icon="solar:alt-arrow-down-linear" fontSize={16} />
-                    </div>
-                  </div>
-                </div>
               </fieldset>
               <footer className="flex items-center gap-3.5 justify-end mt-6 pt-6">
                 <button
@@ -204,7 +263,7 @@ export default function EditUser({ userId }: { userId: string }) {
     reset(user);
   }, [user]);
 
-  if (error) return <div>Error loading item details</div>;
+  if (error || errorTemplates) return <div>Error loading item details</div>;
 
   return (
     <>

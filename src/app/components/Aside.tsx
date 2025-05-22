@@ -46,7 +46,7 @@ export default function Aside({
     },
     {
       href: "/admin/templates",
-      title: "Templates",
+      title: "Locations",
       iconName: "solar:file-favourite-line-duotone",
     },
     ...(hasUsersPermission

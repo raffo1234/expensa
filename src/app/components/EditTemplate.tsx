@@ -73,7 +73,7 @@ export default function EditTemplate({ id }: { id: string }) {
         <>
           <div className="flex mb-4 items-center justify-between">
             <h1 className=" font-semibold text-lg block">
-              <span className="capitalize">{template.name}</span> Template
+              <span className="capitalize">{template.name}</span>
             </h1>
             <Link
               href="/admin/templates"

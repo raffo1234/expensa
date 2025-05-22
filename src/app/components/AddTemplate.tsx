@@ -88,7 +88,7 @@ export default function AddTemplate({ userId }: { userId: string }) {
           className="w-full flex rounded-b-xl rounded-t-xl gap-3.5 items-center text-left hover:bg-gray-50 transition-colors duration-300 px-6 py-4"
         >
           <Icon icon="solar:add-square-broken" fontSize={22} />
-          <span className="pb-1">Add Template</span>
+          <span className="pb-1">Add</span>
         </button>
       )}
     </>

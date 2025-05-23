@@ -3,7 +3,7 @@
 import FormSkeleton from "@/components/FormSkeleton";
 import { supabase } from "@/lib/supabase";
 import useSWR from "swr";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { message } from "antd";
 import { useForm } from "react-hook-form";
 import type { SubmitHandler } from "react-hook-form";
@@ -58,6 +58,7 @@ export default function EditUser({
 }) {
   const { setModalContent, setModalOpen } = useGlobalState();
   const [messageApi, contextHolder] = message.useMessage();
+  const [isSaving, setIsSaving] = useState(false);
 
   const { data: roles, error, isLoading } = useSWR("admin-roles", rolesFetcher);
   const {
@@ -93,6 +94,8 @@ export default function EditUser({
       data.template_id = null;
     }
 
+    setIsSaving(true);
+
     try {
       const { data: updatedUser } = await supabase
         .from("user")
@@ -104,6 +107,7 @@ export default function EditUser({
     } catch (error) {
       console.error(error);
     } finally {
+      setIsSaving(false);
       hideModal();
     }
   };
@@ -247,13 +251,14 @@ export default function EditUser({
                   onClick={() => setModalOpen(false)}
                   className="font-semibold disabled:border-gray-100 disabled:bg-gray-100 inline-block py-3 px-10 bg-white text-sm border border-gray-100 rounded-lg transition-colors hover:border-gray-200 duration-500 active:border-gray-300"
                 >
-                  Cancelar
+                  Cancel
                 </button>
                 <button
+                  disabled={isSaving}
                   type="submit"
-                  className="text-white font-semibold disabled:border-gray-100 disabled:bg-gray-100 inline-block py-3 px-10 text-sm bg-cyan-500 hover:bg-cyan-400 transition-colors duration-500 rounded-lg"
+                  className="text-white font-semibold disabled:opacity-80 inline-block py-3 px-10 text-sm bg-cyan-500 hover:bg-cyan-400 transition-colors duration-500 rounded-lg"
                 >
-                  Guardar
+                  {isSaving ? "Saving..." : "Save"}
                 </button>
               </footer>
             </form>

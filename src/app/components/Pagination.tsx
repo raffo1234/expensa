@@ -32,16 +32,6 @@ interface DateRangeType {
   key: string;
 }
 
-const fetcherTotal = async (userId: string) => {
-  const { count, error } = await supabase
-    .from("dicom")
-    .select("id", { count: "exact", head: false })
-    .eq("user_id", userId);
-
-  if (error) throw error;
-  return count;
-};
-
 const fetcher = async (
   key: [
     string,
@@ -54,7 +44,7 @@ const fetcher = async (
     { startDate: Date | null; endDate: Date | null } | null,
     { startDate: Date | null; endDate: Date | null } | null,
   ]
-): Promise<DicomType[] | null> => {
+): Promise<{ data: DicomType[] | null; total: number } | null> => {
   const [
     tableName,
     page,
@@ -70,7 +60,7 @@ const fetcher = async (
   const start = (page - 1) * pageSize;
   const end = start + pageSize - 1;
 
-  let query = supabase
+  let dataQuery = supabase
     .from(tableName)
     .select(
       "*, user(id, image_url, first_name, last_name), template(header_image_url, footer_image_url, sign_image_url)"
@@ -78,14 +68,24 @@ const fetcher = async (
     .eq("user_id", userId)
     .range(start, end);
 
+  let countQuery = supabase
+    .from(tableName)
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId);
+
   if (sortColumn && sortDirection) {
-    query = query.order(sortColumn, { ascending: sortDirection === "asc" });
+    dataQuery = dataQuery.order(sortColumn, {
+      ascending: sortDirection === "asc",
+    });
   } else {
-    query = query.order("created_at", { ascending: false });
+    dataQuery = dataQuery.order("created_at", { ascending: false });
   }
 
   if (searchWord && searchWord.length > 0) {
-    query = query.or(
+    dataQuery = dataQuery.or(
+      `patient_id.ilike.%${searchWord}%,patient_name.ilike.%${searchWord}%,institution.ilike.%${searchWord}%,study_description.ilike.%${searchWord}%`
+    );
+    countQuery = countQuery.or(
       `patient_id.ilike.%${searchWord}%,patient_name.ilike.%${searchWord}%,institution.ilike.%${searchWord}%,study_description.ilike.%${searchWord}%`
     );
   }
@@ -93,24 +93,45 @@ const fetcher = async (
   if (studyDateRange?.startDate && studyDateRange?.endDate) {
     const formattedStartDate = format(studyDateRange.startDate, "yyyyMMdd");
     const formattedEndDate = format(studyDateRange.endDate, "yyyyMMdd");
-    query = query
+    dataQuery = dataQuery
+      .gte("study_date", formattedStartDate)
+      .lte("study_date", formattedEndDate);
+    countQuery = countQuery
       .gte("study_date", formattedStartDate)
       .lte("study_date", formattedEndDate);
   }
 
   if (receiptDateRange?.startDate && receiptDateRange?.endDate) {
-    query = query
+    dataQuery = dataQuery
+      .gte("created_at", formatISO(startOfDay(receiptDateRange?.startDate)))
+      .lte("created_at", formatISO(endOfDay(receiptDateRange?.endDate)));
+    countQuery = countQuery
       .gte("created_at", formatISO(startOfDay(receiptDateRange?.startDate)))
       .lte("created_at", formatISO(endOfDay(receiptDateRange?.endDate)));
   }
-  const { data, error } = await query;
 
-  if (error) {
-    console.error(`SWR Error fetching data from "${tableName}":`, error);
-    throw error;
+  const [dataResult, countResult] = await Promise.all([dataQuery, countQuery]);
+
+  if (dataResult.error) {
+    console.error(
+      `SWR Error fetching data from "${tableName}":`,
+      dataResult.error
+    );
+    throw dataResult.error;
   }
 
-  return data as DicomType[] | null;
+  if (countResult.error) {
+    console.error(
+      `SWR Error fetching total count from "${tableName}":`,
+      countResult.error
+    );
+    throw countResult.error;
+  }
+
+  return {
+    data: dataResult.data as DicomType[] | null,
+    total: countResult.count as number,
+  };
 };
 
 export default function Pagination({
@@ -158,6 +179,11 @@ export default function Pagination({
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [search, setSearch] = useState<string | null>(null);
 
+  interface FetchResult {
+    data: DicomType[] | null;
+    total: number;
+  }
+
   const swrKey = [
     tableName,
     page,
@@ -170,17 +196,17 @@ export default function Pagination({
     receiptDateRange,
   ];
 
-  const { data, error, isLoading, mutate } = useSWR<DicomType[] | null>(
-    swrKey,
-    fetcher
-  );
-
-  const { data: count } = useSWR("admin-dicoms-total", () =>
-    fetcherTotal(userId)
-  );
+  const {
+    data: result,
+    error,
+    isLoading,
+    mutate,
+  } = useSWR<FetchResult | null, number>(swrKey, fetcher);
 
   const hasMore: boolean =
-    data !== undefined && data !== null && data.length === pageSize;
+    result?.data !== undefined &&
+    result?.data !== null &&
+    result?.data.length === pageSize;
 
   const handlePageSize = (pageSizeValue: string) => {
     if (typeof pageSizeValue === "string") {
@@ -294,7 +320,8 @@ export default function Pagination({
     }
   };
 
-  const noData = !isLoading && !error && data && data.length === 0;
+  const noData =
+    !isLoading && !error && result?.data && result?.data.length === 0;
   const startItemNumber = (page - 1) * pageSize + 1;
 
   useEffect(() => {
@@ -355,7 +382,8 @@ export default function Pagination({
         </div>
         <div className="text-xs flex items-center gap-1">
           <span>
-            Total: <span className="text-base font-semibold">{count}</span>
+            Total:{" "}
+            <span className="text-base font-semibold">{result?.total}</span>
           </span>
           <input
             onChange={(event) => debouncedPerPage(event.target.value)}
@@ -380,7 +408,7 @@ export default function Pagination({
             className="flex-shrink-0"
             fontSize={20}
           ></Icon>
-          Error fetching data: {error.message || "Unknown error"}
+          Error fetching data
         </p>
       )}
 
@@ -615,7 +643,7 @@ export default function Pagination({
             </tbody>
           ) : (
             <tbody className="whitespace-nowrap">
-              {data?.map(
+              {result?.data?.map(
                 (
                   {
                     id,
@@ -695,16 +723,18 @@ export default function Pagination({
                           {state === DicomStateEnum.COMPLETED &&
                           hasPermission ? (
                             <>
-                              {PDFDownloadLink ? (
+                              {PDFDownloadLink && result.data ? (
                                 <PDFDownloadLink
                                   document={
                                     <ContentPDFDocument
-                                      dicom={data[index]}
-                                      activeTemplate={data[index].template}
-                                      content={data[index].report}
+                                      dicom={result.data?.[index]}
+                                      activeTemplate={
+                                        result.data?.[index].template
+                                      }
+                                      content={result.data?.[index].report}
                                     />
                                   }
-                                  fileName={`${data[index]?.patient_name}_${nowMs}_${userId}.pdf`}
+                                  fileName={`${result?.data[index]?.patient_name}_${nowMs}_${userId}.pdf`}
                                 >
                                   {({ loading }) =>
                                     loading ? (
@@ -718,7 +748,9 @@ export default function Pagination({
                                   }
                                 </PDFDownloadLink>
                               ) : null}
-                              <DOCXPreview dicom={data[index]} />
+                              {result.data ? (
+                                <DOCXPreview dicom={result.data[index]} />
+                              ) : null}
                             </>
                           ) : null}
                           <Link

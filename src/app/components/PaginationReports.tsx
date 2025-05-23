@@ -32,19 +32,10 @@ interface DateRangeType {
   key: string;
 }
 
-const fetcherTotal = async (
-  key: [userTemplateId: string | null]
-): Promise<number | null> => {
-  const [userTemplateId] = key;
-  const { count, error } = await supabase
-    .from("dicom")
-    .select("id", { count: "exact", head: false })
-    .eq("template_id", userTemplateId)
-    .eq("state", DicomStateEnum.COMPLETED);
-
-  if (error) throw error;
-  return count;
-};
+interface FetchResult {
+  data: DicomType[] | null;
+  total: number;
+}
 
 const fetcher = async (
   key: [
@@ -58,7 +49,7 @@ const fetcher = async (
     { startDate: Date | null; endDate: Date | null } | null,
     { startDate: Date | null; endDate: Date | null } | null,
   ]
-): Promise<DicomType[] | null> => {
+): Promise<{ data: DicomType[] | null; total: number } | null> => {
   const [
     tableName,
     page,
@@ -74,7 +65,8 @@ const fetcher = async (
   const start = (page - 1) * pageSize;
   const end = start + pageSize - 1;
 
-  let query = supabase
+  // Query for the data
+  let dataQuery = supabase
     .from(tableName)
     .select(
       "*, user(id, image_url, first_name, last_name), template(header_image_url, footer_image_url, sign_image_url)"
@@ -83,14 +75,26 @@ const fetcher = async (
     .eq("state", DicomStateEnum.COMPLETED)
     .range(start, end);
 
+  // Query for the total count
+  let countQuery = supabase
+    .from(tableName)
+    .select("id", { count: "exact", head: true })
+    .eq("template_id", userTemplateId)
+    .eq("state", DicomStateEnum.COMPLETED);
+
   if (sortColumn && sortDirection) {
-    query = query.order(sortColumn, { ascending: sortDirection === "asc" });
+    dataQuery = dataQuery.order(sortColumn, {
+      ascending: sortDirection === "asc",
+    });
   } else {
-    query = query.order("created_at", { ascending: false });
+    dataQuery = dataQuery.order("created_at", { ascending: false });
   }
 
   if (searchWord && searchWord.length > 0) {
-    query = query.or(
+    dataQuery = dataQuery.or(
+      `patient_id.ilike.%${searchWord}%,patient_name.ilike.%${searchWord}%,institution.ilike.%${searchWord}%,study_description.ilike.%${searchWord}%`
+    );
+    countQuery = countQuery.or(
       `patient_id.ilike.%${searchWord}%,patient_name.ilike.%${searchWord}%,institution.ilike.%${searchWord}%,study_description.ilike.%${searchWord}%`
     );
   }
@@ -98,24 +102,45 @@ const fetcher = async (
   if (studyDateRange?.startDate && studyDateRange?.endDate) {
     const formattedStartDate = format(studyDateRange.startDate, "yyyyMMdd");
     const formattedEndDate = format(studyDateRange.endDate, "yyyyMMdd");
-    query = query
+    dataQuery = dataQuery
+      .gte("study_date", formattedStartDate)
+      .lte("study_date", formattedEndDate);
+    countQuery = countQuery
       .gte("study_date", formattedStartDate)
       .lte("study_date", formattedEndDate);
   }
 
   if (receiptDateRange?.startDate && receiptDateRange?.endDate) {
-    query = query
+    dataQuery = dataQuery
+      .gte("created_at", formatISO(startOfDay(receiptDateRange?.startDate)))
+      .lte("created_at", formatISO(endOfDay(receiptDateRange?.endDate)));
+    countQuery = countQuery
       .gte("created_at", formatISO(startOfDay(receiptDateRange?.startDate)))
       .lte("created_at", formatISO(endOfDay(receiptDateRange?.endDate)));
   }
-  const { data, error } = await query;
 
-  if (error) {
-    console.error(`SWR Error fetching data from "${tableName}":`, error);
-    throw error;
+  const [dataResult, countResult] = await Promise.all([dataQuery, countQuery]);
+
+  if (dataResult.error) {
+    console.error(
+      `SWR Error fetching data from "${tableName}":`,
+      dataResult.error
+    );
+    throw dataResult.error;
   }
 
-  return data as DicomType[] | null;
+  if (countResult.error) {
+    console.error(
+      `SWR Error fetching total count from "${tableName}":`,
+      countResult.error
+    );
+    throw countResult.error;
+  }
+
+  return {
+    data: dataResult.data as DicomType[] | null,
+    total: countResult.count as number,
+  };
 };
 
 export default function PaginationReports({
@@ -178,12 +203,15 @@ export default function PaginationReports({
     receiptDateRange,
   ];
 
-  const { data, error, isLoading, mutate } = useSWR<DicomType[] | null>(
-    swrKey,
-    fetcher
-  );
+  const {
+    data: result,
+    error,
+    isLoading,
+    mutate,
+  } = useSWR<FetchResult | null, number>(swrKey, fetcher);
 
-  const { data: count } = useSWR([userTemplateId], fetcherTotal);
+  const data = result?.data;
+  const total = result?.total;
 
   const hasMore: boolean =
     data !== undefined && data !== null && data.length === pageSize;
@@ -348,7 +376,7 @@ export default function PaginationReports({
         </div>
         <div className="text-xs flex items-center gap-1">
           <span>
-            Total: <span className="text-base font-semibold">{count}</span>
+            Total: <span className="text-base font-semibold">{total}</span>
           </span>
           <input
             onChange={(event) => debouncedPerPage(event.target.value)}
@@ -373,7 +401,7 @@ export default function PaginationReports({
             className="flex-shrink-0"
             fontSize={20}
           ></Icon>
-          Error fetching data: {error.message || "Unknown error"}
+          Error fetching data
         </p>
       )}
 

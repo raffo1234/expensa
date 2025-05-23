@@ -18,7 +18,7 @@ export default function UploaderPage({
       requiredPermission={Permissions.UPLOAD_DICOM}
       fallback={<FallbackPermission />}
     >
-      <Uploader userId={userId} />;
+      <Uploader userId={userId} />
     </CheckPermission>
   );
 }

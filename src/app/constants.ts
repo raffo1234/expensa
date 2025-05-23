@@ -3,3 +3,5 @@ export const getAdminPropertiesUserKey = (userId: string) => {
 };
 
 export const bucketName = "dicoms";
+
+export const adminRolesKey = "admin-roles";

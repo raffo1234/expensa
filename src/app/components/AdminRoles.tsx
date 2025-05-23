@@ -7,6 +7,8 @@ import { Skeleton } from "antd";
 import { useState } from "react";
 import useSWR from "swr";
 import AddRole from "./AddRole";
+import DeleteRole from "./DeleteRole";
+import { adminRolesKey } from "@/constants";
 
 const permissionsFetcher = async () => {
   const { data, error } = await supabase
@@ -115,25 +117,30 @@ export function Role({
   const { id, name, description } = role;
   return (
     <>
-      <button
-        onClick={() => setIsOpen((prev) => !prev)}
-        key={id}
-        className={`${
-          isOpen ? "bg-gray-50" : ""
-        } w-full first:rounded-t-xl first:border-0 flex gap-3.5 items-center text-left hover:bg-gray-50 transition-colors duration-300 px-6 py-4 border-t border-gray-200`}
-      >
-        <Icon
-          icon="solar:alt-arrow-down-linear"
-          fontSize={20}
+      <div className="relative first:rounded-t-xl first:border-0 border-t border-gray-200 hover:bg-gray-50">
+        <button
+          onClick={() => setIsOpen((prev) => !prev)}
+          key={id}
           className={`${
-            isOpen ? "rotate-180" : ""
-          } transition-transform duration-500 flex-shrink-0`}
-        />
-        <span>{name}</span>{" "}
-        {description ? (
-          <span className="text-sm text-gray-500">{description}</span>
-        ) : null}
-      </button>
+            isOpen ? "bg-gray-50" : ""
+          } w-full flex gap-3.5 items-center justify-between text-left transition-colors duration-300 pl-6 pr-20 py-4`}
+        >
+          <span className="flex gap-3.5 items-center">
+            <Icon
+              icon="solar:alt-arrow-down-linear"
+              fontSize={20}
+              className={`${
+                isOpen ? "rotate-180" : ""
+              } transition-transform duration-500 flex-shrink-0`}
+            />
+            <span>{name}</span>{" "}
+            {description ? (
+              <span className="text-sm text-gray-500">{description}</span>
+            ) : null}
+          </span>
+        </button>
+        {role.name === "Super" ? null : <DeleteRole roleId={role.id} />}
+      </div>
       {isOpen ? (
         <div className="border-t border-gray-200 pl-20 pr-4 py-8">
           <Permissions roleId={role.id} />
@@ -153,7 +160,7 @@ const rolesFetcher = async () => {
 };
 
 export default function AdminRoles() {
-  const { data: roles, error, isLoading } = useSWR("admin-roles", rolesFetcher);
+  const { data: roles, error, isLoading } = useSWR(adminRolesKey, rolesFetcher);
 
   if (error) return null;
   if (isLoading)

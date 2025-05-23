@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { mutate } from "swr";
 import PrimaryButton from "./PrimaryButton";
+import { adminRolesKey } from "@/constants";
 
 type Inputs = {
   name: string;
@@ -22,7 +23,7 @@ export default function AddRole() {
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
     setIsLoading(true);
     await supabase.from("role").insert([data]);
-    await mutate("admin-roles");
+    await mutate(adminRolesKey);
     reset();
     setDisplayForm(false);
     setIsLoading(false);

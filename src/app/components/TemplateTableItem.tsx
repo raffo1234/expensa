@@ -52,7 +52,7 @@ export default function TemplatesTableItem({
 
       await mutate(`admin_templates_${userId}`);
     } catch (error) {
-      console.error("Error deleting user", error);
+      console.error("Error deleting item", error);
     } finally {
       setIsDeleting(false);
     }

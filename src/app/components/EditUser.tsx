@@ -10,6 +10,7 @@ import type { SubmitHandler } from "react-hook-form";
 import { Icon } from "@iconify/react";
 import { useGlobalState } from "@/lib/globalState";
 import { UUIDTypes } from "uuid";
+import { adminRolesKey } from "@/constants";
 
 async function fetcher(userId: string) {
   const { data, error } = await supabase
@@ -60,7 +61,7 @@ export default function EditUser({
   const [messageApi, contextHolder] = message.useMessage();
   const [isSaving, setIsSaving] = useState(false);
 
-  const { data: roles, error, isLoading } = useSWR("admin-roles", rolesFetcher);
+  const { data: roles, error, isLoading } = useSWR(adminRolesKey, rolesFetcher);
   const {
     data: templates,
     error: errorTemplates,

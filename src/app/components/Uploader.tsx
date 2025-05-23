@@ -1,6 +1,5 @@
 "use client";
 
-import JSZip from "jszip";
 import { fileTypeFromBlob } from "file-type";
 import { Archive } from "libarchive.js";
 import dicomParser from "dicom-parser"; // Or dcmjs, etc.
@@ -11,6 +10,7 @@ import { useDropzone } from "react-dropzone";
 import Link from "next/link";
 import getAgeFromYYYYMMDD from "@/lib/getAgeFromYYYYMMDD";
 import { ExtractedFilesObject, processZipFile } from "@/lib/decompress";
+import { findFirstLevelDicomFilesWithDifferentStudyDescriptions } from "@/lib/dicoms";
 
 Archive.init({
   workerUrl: "/libarchive.js/dist/worker-bundle.js",
@@ -60,102 +60,6 @@ type ImageUploaderProps = {
   userId: string;
   onUploadSuccess?: () => void;
 };
-
-async function isDicomFile(file: File): Promise<boolean> {
-  try {
-    const extension = await fileTypeFromBlob(file);
-    if (extension && extension.ext === "dcm") {
-      return true;
-    }
-
-    return false;
-  } catch (error) {
-    console.error("Error reading file:", error);
-    return false;
-  }
-}
-
-async function getStudyDescription(file: File): Promise<string | undefined> {
-  try {
-    const arrayBuffer = await file.arrayBuffer();
-    const byteArray = new Uint8Array(arrayBuffer);
-    if (
-      byteArray.length >= 132 &&
-      byteArray[128] === 0x44 &&
-      byteArray[129] === 0x49 &&
-      byteArray[130] === 0x43 &&
-      byteArray[131] === 0x4d
-    ) {
-      const dataSet = dicomParser.parseDicom(byteArray);
-      return dataSet.string("x00081030");
-    }
-    return undefined;
-  } catch (error) {
-    console.error("Error parsing DICOM file:", error);
-    return undefined;
-  }
-}
-
-async function findFirstLevelMultipleFoldersWithDifferentStudyDescription(
-  extractedFilesObject: ExtractedFilesObject
-): Promise<ExtractedFilesObject[] | undefined> {
-  const currentLevelFolders: ExtractedFilesObject[] = [];
-
-  for (const key in extractedFilesObject) {
-    if (Object.prototype.hasOwnProperty.call(extractedFilesObject, key)) {
-      const item = extractedFilesObject[key];
-      if (
-        typeof item === "object" &&
-        item !== null &&
-        !(item instanceof File)
-      ) {
-        currentLevelFolders.push(item as ExtractedFilesObject);
-      }
-    }
-  }
-
-  if (currentLevelFolders.length >= 4) {
-    const studyDescriptions: (string | undefined)[] = await Promise.all(
-      currentLevelFolders.map(async (folder) => {
-        const firstDicom = await findFirstDcmFileRecursive(folder);
-        return firstDicom ? await getStudyDescription(firstDicom) : undefined;
-      })
-    );
-
-    const uniqueDescriptions = [
-      ...new Set(studyDescriptions.filter((desc) => desc !== undefined)),
-    ];
-
-    if (
-      uniqueDescriptions.length === currentLevelFolders.length &&
-      currentLevelFolders.length > 1
-    ) {
-      return currentLevelFolders;
-    } else {
-      return undefined;
-    }
-  } else {
-    for (const key in extractedFilesObject) {
-      if (Object.prototype.hasOwnProperty.call(extractedFilesObject, key)) {
-        const item = extractedFilesObject[key];
-        if (
-          typeof item === "object" &&
-          item !== null &&
-          !(item instanceof File)
-        ) {
-          const result =
-            await findFirstLevelMultipleFoldersWithDifferentStudyDescription(
-              item as ExtractedFilesObject
-            );
-          if (result) {
-            return result;
-          }
-        }
-      }
-    }
-    return undefined;
-  }
-}
 
 async function insertDataSetToDb(userId: string, dataSet: DicomMetadata) {
   const table = "dicom";
@@ -222,35 +126,6 @@ type CustomFileType = {
   state: CustomFileStateType;
   bgColor: string;
 };
-
-async function findFirstDcmFileRecursive(
-  item: File | ExtractedFilesObject
-): Promise<File | undefined> {
-  if (item instanceof File) {
-    if (item.name.toLowerCase() === "dicomdir") {
-      return undefined; // Ignore files named "DICOMDIR"
-    }
-    const isValidDicom = await isDicomFile(item);
-    console.log("isValidDicom", isValidDicom);
-    if (isValidDicom) {
-      return item;
-    }
-  } else if (typeof item === "object" && item !== null) {
-    for (const itemName in item) {
-      if (Object.prototype.hasOwnProperty.call(item, itemName)) {
-        const nestedItem = item[itemName];
-
-        const foundFile = await findFirstDcmFileRecursive(nestedItem);
-
-        if (foundFile) {
-          return foundFile;
-        }
-      }
-    }
-  }
-
-  return undefined;
-}
 
 const editFileAtIndex = (
   files: CustomFileType[],
@@ -331,14 +206,14 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         switch (extension.ext) {
           case "zip":
             extractedFiles = await processZipFile(selectedFile);
-            
             break;
           case "rar":
             const archiveRar = await Archive.open(selectedFile);
             extractedFiles = await archiveRar.extractFiles();
             break;
           case "tar":
-            console.log("TAR file detected");
+            const archiveTar = await Archive.open(selectedFile);
+            extractedFiles = await archiveTar.extractFiles();
             break;
           default:
             editFileAtIndex(
@@ -350,19 +225,16 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
             );
             continue;
         }
-        console.log(extractedFiles);
-        const folders =
-          await findFirstLevelMultipleFoldersWithDifferentStudyDescription(
+
+        const diferentStudyDescriptions =
+          await findFirstLevelDicomFilesWithDifferentStudyDescriptions(
             extractedFiles
           );
 
-        if (folders && Object.keys(folders).length > 0) {
-          for (const [key, value] of Object.entries(folders)) {
-            console.warn(key);
-
-            const dcmFile = await findFirstDcmFileRecursive(value);
-            if (dcmFile) {
-              const dcmFileArrayBuffer = await dcmFile.arrayBuffer();
+        if (diferentStudyDescriptions && diferentStudyDescriptions.length > 0) {
+          for (const study of diferentStudyDescriptions) {
+            if (study) {
+              const dcmFileArrayBuffer = await study.arrayBuffer();
               const byteArray: Uint8Array = new Uint8Array(dcmFileArrayBuffer);
               const dataSet: DicomDataSet = dicomParser.parseDicom(byteArray);
 
@@ -401,49 +273,6 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                 "bg-rose-50"
               );
             }
-          }
-        } else {
-          const dcmFile = await findFirstDcmFileRecursive(extractedFiles);
-
-          if (dcmFile) {
-            const dcmFileArrayBuffer = await dcmFile.arrayBuffer();
-            const byteArray: Uint8Array = new Uint8Array(dcmFileArrayBuffer);
-            const dataSet: DicomDataSet = dicomParser.parseDicom(byteArray);
-
-            const extractedMetadata = {
-              patientName: dataSet.string("x00100010"),
-              patientId: dataSet.string("x00100020"),
-              patientAge: dataSet.string("x00101010"),
-              studyDescription: dataSet.string("x00081030"),
-              modality: dataSet.string("x00080060"),
-              studyDate: dataSet.string("x00080020"),
-              patientSex: dataSet.string("x00100040"),
-              patientBirthDate: dataSet.string("x00100030"),
-              institutionName: dataSet.string("x00080080"),
-            };
-
-            const insertedData = await insertDataSetToDb(
-              userId,
-              extractedMetadata
-            );
-
-            editFileAtIndex(
-              files,
-              setFiles,
-              index,
-              insertedData
-                ? CustomFileStateType.inserted
-                : CustomFileStateType.duplicated,
-              insertedData ? "bg-green-50" : "bg-yellow-50"
-            );
-          } else {
-            editFileAtIndex(
-              files,
-              setFiles,
-              index,
-              CustomFileStateType.noDcimFile,
-              "bg-rose-50"
-            );
           }
         }
       } catch {

@@ -13,11 +13,34 @@ export async function processZipFile(
 
   for (const filename in loadedZip.files) {
     const file = loadedZip.files[filename];
-    if (!file.dir) {
-      extractedFiles[filename] = new File([await file.async("blob")], filename);
-    } else {
-      // For directories, we can represent them as an empty object for now
-      extractedFiles[filename] = {};
+    const pathParts = filename.split("/");
+    let currentLevel = extractedFiles;
+
+    for (let i = 0; i < pathParts.length - 1; i++) {
+      const part = pathParts[i];
+      if (!currentLevel[part]) {
+        currentLevel[part] = {};
+      }
+      currentLevel = currentLevel[part] as ExtractedFilesObject;
+    }
+
+    const finalPart = pathParts[pathParts.length - 1];
+    if (finalPart) {
+      if (!file.dir) {
+        currentLevel[finalPart] = new File(
+          [await file.async("blob")],
+          finalPart
+        );
+      } else {
+        if (!currentLevel[finalPart]) {
+          currentLevel[finalPart] = {};
+        }
+      }
+    } else if (file.dir && filename === "") {
+      // Handle the specific case of a root directory entry with an empty name
+      if (!currentLevel[""]) {
+        currentLevel[""] = {};
+      }
     }
   }
 

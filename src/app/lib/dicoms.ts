@@ -1,5 +1,4 @@
 import { ExtractedFilesObject } from "./decompress";
-import { fileTypeFromBlob } from "file-type";
 import dicomParser from "dicom-parser"; // Or dcmjs, etc.
 
 interface DicomFileWithMetadata {
@@ -17,20 +16,6 @@ interface DicomMetadata {
   patientSex?: string;
   patientBirthDate?: string;
   institutionName?: string;
-}
-
-async function isDicomFile(file: File): Promise<boolean> {
-  try {
-    const extension = await fileTypeFromBlob(file);
-    if (extension && extension.ext === "dcm") {
-      return true;
-    }
-
-    return false;
-  } catch (error) {
-    console.error("Error reading file:", error);
-    return false;
-  }
 }
 
 async function getStudyDescription(file: File): Promise<string | undefined> {

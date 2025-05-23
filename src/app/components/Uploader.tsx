@@ -2,7 +2,6 @@
 
 import { fileTypeFromBlob } from "file-type";
 import { Archive } from "libarchive.js";
-import dicomParser from "dicom-parser"; // Or dcmjs, etc.
 import { supabase } from "@/lib/supabase";
 import React, { useCallback, useState, type ChangeEvent } from "react";
 import { Icon } from "@iconify/react";
@@ -10,7 +9,7 @@ import { useDropzone } from "react-dropzone";
 import Link from "next/link";
 import getAgeFromYYYYMMDD from "@/lib/getAgeFromYYYYMMDD";
 import { ExtractedFilesObject, processZipFile } from "@/lib/decompress";
-import { findFirstLevelDicomFilesWithDifferentStudyDescriptions } from "@/lib/dicoms";
+import { findAllDicomFilesWithDifferentStudyDescriptions } from "@/lib/dicoms";
 
 Archive.init({
   workerUrl: "/libarchive.js/dist/worker-bundle.js",
@@ -186,24 +185,9 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       );
       const extension = await fileTypeFromBlob(selectedFile);
 
-      if (
-        extension?.ext !== "zip" &&
-        extension?.ext !== "rar" &&
-        extension?.ext !== "tar"
-      ) {
-        editFileAtIndex(
-          files,
-          setFiles,
-          index,
-          CustomFileStateType.fileNotSupported,
-          "bg-rose-50"
-        );
-        continue;
-      }
-
       try {
         let extractedFiles: ExtractedFilesObject = {};
-        switch (extension.ext) {
+        switch (extension?.ext) {
           case "zip":
             extractedFiles = await processZipFile(selectedFile);
             break;
@@ -227,53 +211,31 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         }
 
         const diferentStudyDescriptions =
-          await findFirstLevelDicomFilesWithDifferentStudyDescriptions(
-            extractedFiles
+          await findAllDicomFilesWithDifferentStudyDescriptions(extractedFiles);
+
+        if (diferentStudyDescriptions.length === 0) {
+          editFileAtIndex(
+            files,
+            setFiles,
+            index,
+            CustomFileStateType.noDcimFile,
+            "bg-rose-50"
           );
+          continue;
+        }
 
-        if (diferentStudyDescriptions && diferentStudyDescriptions.length > 0) {
-          for (const study of diferentStudyDescriptions) {
-            if (study) {
-              const dcmFileArrayBuffer = await study.arrayBuffer();
-              const byteArray: Uint8Array = new Uint8Array(dcmFileArrayBuffer);
-              const dataSet: DicomDataSet = dicomParser.parseDicom(byteArray);
+        for (const study of diferentStudyDescriptions) {
+          const insertedData = await insertDataSetToDb(userId, study.metadata);
 
-              const extractedMetadata = {
-                patientName: dataSet.string("x00100010"),
-                patientId: dataSet.string("x00100020"),
-                patientAge: dataSet.string("x00101010"),
-                studyDescription: dataSet.string("x00081030"),
-                modality: dataSet.string("x00080060"),
-                studyDate: dataSet.string("x00080020"),
-                patientSex: dataSet.string("x00100040"),
-                patientBirthDate: dataSet.string("x00100030"),
-                institutionName: dataSet.string("x00080080"),
-              };
-
-              const insertedData = await insertDataSetToDb(
-                userId,
-                extractedMetadata
-              );
-
-              editFileAtIndex(
-                files,
-                setFiles,
-                index,
-                insertedData
-                  ? CustomFileStateType.inserted
-                  : CustomFileStateType.duplicated,
-                insertedData ? "bg-green-50" : "bg-yellow-50"
-              );
-            } else {
-              editFileAtIndex(
-                files,
-                setFiles,
-                index,
-                CustomFileStateType.noDcimFile,
-                "bg-rose-50"
-              );
-            }
-          }
+          editFileAtIndex(
+            files,
+            setFiles,
+            index,
+            insertedData
+              ? CustomFileStateType.inserted
+              : CustomFileStateType.duplicated,
+            insertedData ? "bg-green-50" : "bg-yellow-50"
+          );
         }
       } catch {
         editFileAtIndex(
@@ -283,10 +245,11 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
           CustomFileStateType.errorLoading,
           "bg-rose-50"
         );
+      } finally {
+        if (onUploadSuccess) onUploadSuccess();
+        setUploading(false);
       }
     }
-
-    setUploading(false);
   };
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -304,27 +267,12 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    // accept: {
-    //   "application/octet-stream": [
-    //     ".rar",
-    //     ".7z",
-    //     ".tar",
-    //     ".gz",
-    //     ".bz2",
-    //     ".xz",
-    //     ".lz4",
-    //     ".zst",
-    //   ],
-    //   "application/zip": [".zip"],
-    //   "application/x-tar": [".tar"],
-    //   "application/x-rar-compressed": [".rar"],
-    //   "application/x-7z-compressed": [".7z"],
-    //   "application/gzip": [".gz"],
-    //   "application/x-bzip2": [".bz2"],
-    //   "application/x-xz": [".xz"],
-    //   "application/x-lz4": [".lz4"],
-    //   "application/zstd": [".zst"],
-    // },
+    accept: {
+      "application/octet-stream": [".rar", ".tar"],
+      "application/zip": [".zip"],
+      "application/x-tar": [".tar"],
+      "application/x-rar-compressed": [".rar"],
+    },
   });
 
   return (

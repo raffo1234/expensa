@@ -2,6 +2,23 @@ import { ExtractedFilesObject } from "./decompress";
 import { fileTypeFromBlob } from "file-type";
 import dicomParser from "dicom-parser"; // Or dcmjs, etc.
 
+interface DicomFileWithMetadata {
+  file: File;
+  metadata: DicomMetadata;
+}
+
+interface DicomMetadata {
+  patientName?: string;
+  patientId?: string;
+  patientAge?: string;
+  studyDescription?: string;
+  modality?: string;
+  studyDate?: string;
+  patientSex?: string;
+  patientBirthDate?: string;
+  institutionName?: string;
+}
+
 async function isDicomFile(file: File): Promise<boolean> {
   try {
     const extension = await fileTypeFromBlob(file);
@@ -37,96 +54,75 @@ async function getStudyDescription(file: File): Promise<string | undefined> {
   }
 }
 
-async function findFirstDcmFileRecursive(
-  item: File | ExtractedFilesObject
-): Promise<File | undefined> {
-  if (item instanceof File) {
-    if (item.name.toLowerCase() === "dicomdir") {
-      return undefined; // Ignore files named "DICOMDIR"
-    }
-    const isValidDicom = await isDicomFile(item);
-    console.log("isValidDicom", isValidDicom);
-    if (isValidDicom) {
-      return item;
-    }
-  } else if (typeof item === "object" && item !== null) {
-    for (const itemName in item) {
-      if (Object.prototype.hasOwnProperty.call(item, itemName)) {
-        const nestedItem = item[itemName];
+async function extractDicomMetadata(
+  dicomFile: File
+): Promise<DicomMetadata | undefined> {
+  try {
+    const arrayBuffer = await dicomFile.arrayBuffer();
+    const byteArray = new Uint8Array(arrayBuffer);
+    const dataSet = dicomParser.parseDicom(byteArray);
 
-        const foundFile = await findFirstDcmFileRecursive(nestedItem);
+    return {
+      patientName: dataSet.string("x00100010"),
+      patientId: dataSet.string("x00100020"),
+      patientAge: dataSet.string("x00101010"),
+      studyDescription: dataSet.string("x00081030"),
+      modality: dataSet.string("x00080060"),
+      studyDate: dataSet.string("x00080020"),
+      patientSex: dataSet.string("x00100040"),
+      patientBirthDate: dataSet.string("x00100030"),
+      institutionName: dataSet.string("x00080080"),
+    };
+  } catch (error) {
+    console.error("Error parsing DICOM metadata:", error);
+    return undefined;
+  }
+}
 
-        if (foundFile) {
-          return foundFile;
+export async function findAllDicomFilesWithDifferentStudyDescriptions(
+  extractedFilesObject: ExtractedFilesObject
+): Promise<DicomFileWithMetadata[]> {
+  const allDicomFilesWithDescriptions: {
+    file: File;
+    description: string | undefined;
+  }[] = [];
+
+  async function traverse(obj: ExtractedFilesObject | File) {
+    if (obj instanceof File) {
+      const description = await getStudyDescription(obj);
+      allDicomFilesWithDescriptions.push({ file: obj, description });
+    } else if (typeof obj === "object" && obj !== null) {
+      for (const key in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
+          await traverse(obj[key]);
         }
       }
     }
   }
 
-  return undefined;
-}
+  await traverse(extractedFilesObject);
 
-export async function findFirstLevelDicomFilesWithDifferentStudyDescriptions(
-  extractedFilesObject: ExtractedFilesObject,
-  minFolderCount: number = 2 // Make the minimum folder count a parameter
-): Promise<File[] | undefined> {
-  const currentLevelFolders: ExtractedFilesObject[] = [];
-  const dicomFiles: (File | undefined)[] = []; // To store the corresponding DICOM files
-  const nextLevelObjects: ExtractedFilesObject[] = []; // To store objects for the next level of search
+  const validDicomFiles = allDicomFilesWithDescriptions.filter(
+    (item) => item.description !== undefined
+  );
+  const uniqueDescriptions = new Set(
+    validDicomFiles.map((item) => item.description)
+  );
 
-  // Collect first-level folders and identify next levels for search
-  for (const key in extractedFilesObject) {
-    if (Object.prototype.hasOwnProperty.call(extractedFilesObject, key)) {
-      const item = extractedFilesObject[key];
-      if (
-        typeof item === "object" &&
-        item !== null &&
-        !(item instanceof File)
-      ) {
-        currentLevelFolders.push(item as ExtractedFilesObject);
-        dicomFiles.push(await findFirstDcmFileRecursive(item));
-        nextLevelObjects.push(item as ExtractedFilesObject);
+  const result: DicomFileWithMetadata[] = [];
+  for (const description of uniqueDescriptions) {
+    const firstFileWithDescription = validDicomFiles.find(
+      (item) => item.description === description
+    );
+    if (firstFileWithDescription) {
+      const metadata = await extractDicomMetadata(
+        firstFileWithDescription.file
+      );
+      if (metadata) {
+        result.push({ file: firstFileWithDescription.file, metadata });
       }
     }
   }
 
-  // If enough folders at this level, check study descriptions
-  if (currentLevelFolders.length >= minFolderCount) {
-    const studyDescriptions: (string | undefined)[] = await Promise.all(
-      dicomFiles.map(async (dicomFile) => {
-        return dicomFile ? await getStudyDescription(dicomFile) : undefined;
-      })
-    );
-
-    const validDescriptionsWithIndex = studyDescriptions
-      .map((desc, index) => ({ desc, index }))
-      .filter(({ desc }) => desc !== undefined);
-
-    const uniqueDescriptions = [
-      ...new Set(validDescriptionsWithIndex.map(({ desc }) => desc)),
-    ];
-
-    if (
-      uniqueDescriptions.length === currentLevelFolders.length &&
-      currentLevelFolders.length > 1
-    ) {
-      // Return the DICOM files where study descriptions are different
-      return validDescriptionsWithIndex
-        .map(({ index }) => dicomFiles[index]!)
-        .filter((file) => file !== undefined) as File[];
-    }
-  }
-
-  // If criteria not met at this level, recursively search in subfolders
-  for (const item of nextLevelObjects) {
-    const result = await findFirstLevelDicomFilesWithDifferentStudyDescriptions(
-      item as ExtractedFilesObject,
-      minFolderCount
-    );
-    if (result) {
-      return result;
-    }
-  }
-
-  return undefined;
+  return result;
 }

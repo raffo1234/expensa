@@ -72,8 +72,9 @@ export async function findFirstLevelDicomFilesWithDifferentStudyDescriptions(
 ): Promise<File[] | undefined> {
   const currentLevelFolders: ExtractedFilesObject[] = [];
   const dicomFiles: (File | undefined)[] = []; // To store the corresponding DICOM files
+  const nextLevelObjects: ExtractedFilesObject[] = []; // To store objects for the next level of search
 
-  // Collect all first-level folders and their first DICOM files
+  // Collect first-level folders and identify next levels for search
   for (const key in extractedFilesObject) {
     if (Object.prototype.hasOwnProperty.call(extractedFilesObject, key)) {
       const item = extractedFilesObject[key];
@@ -84,6 +85,7 @@ export async function findFirstLevelDicomFilesWithDifferentStudyDescriptions(
       ) {
         currentLevelFolders.push(item as ExtractedFilesObject);
         dicomFiles.push(await findFirstDcmFileRecursive(item));
+        nextLevelObjects.push(item as ExtractedFilesObject);
       }
     }
   }
@@ -116,23 +118,13 @@ export async function findFirstLevelDicomFilesWithDifferentStudyDescriptions(
   }
 
   // If criteria not met at this level, recursively search in subfolders
-  for (const key in extractedFilesObject) {
-    if (Object.prototype.hasOwnProperty.call(extractedFilesObject, key)) {
-      const item = extractedFilesObject[key];
-      if (
-        typeof item === "object" &&
-        item !== null &&
-        !(item instanceof File)
-      ) {
-        const result =
-          await findFirstLevelDicomFilesWithDifferentStudyDescriptions(
-            item as ExtractedFilesObject,
-            minFolderCount
-          );
-        if (result) {
-          return result;
-        }
-      }
+  for (const item of nextLevelObjects) {
+    const result = await findFirstLevelDicomFilesWithDifferentStudyDescriptions(
+      item as ExtractedFilesObject,
+      minFolderCount
+    );
+    if (result) {
+      return result;
     }
   }
 

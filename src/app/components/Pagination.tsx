@@ -345,12 +345,12 @@ export default function Pagination({
           <DateRangeButtonCalendar
             dateRange={studyDateRange}
             handleDateRangeChange={handleStudyDateRangeChange}
-            label="Study Data Range"
+            label="Study Date Range"
           />
           <DateRangeButtonCalendar
             dateRange={receiptDateRange}
             handleDateRangeChange={handleReceiptDateRangeChange}
-            label="Receipt Data Range"
+            label="Receipt Date Range"
           />
         </div>
         <div className="text-xs flex items-center gap-1">

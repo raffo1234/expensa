@@ -11,7 +11,7 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import { formatInTimeZone } from "date-fns-tz";
 import { es } from "date-fns/locale";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
 import TableSkeleton from "@/components/FormSkeleton";
 import GeneratePDFButton from "@/components/GeneratePDFButton";
@@ -21,6 +21,8 @@ import { useDebouncedCallback } from "use-debounce";
 import { startOfDay, formatISO, endOfDay, format } from "date-fns";
 import DateRangeButtonCalendar from "./DateRangeButtonCalendar";
 import useCheckPermission from "@/hooks/useCheckPermission";
+import EditUserTemplate from "./EditUserTemplate";
+import CheckPermission from "./CheckPermission";
 
 type SortDirection = "asc" | "desc" | null;
 
@@ -30,7 +32,10 @@ interface DateRangeType {
   key: string;
 }
 
-const fetcherTotal = async (userTemplateId: string) => {
+const fetcherTotal = async (
+  key: [userTemplateId: string | null]
+): Promise<number | null> => {
+  const [userTemplateId] = key;
   const { count, error } = await supabase
     .from("dicom")
     .select("id", { count: "exact", head: false })
@@ -116,12 +121,12 @@ const fetcher = async (
 export default function PaginationReports({
   tableName,
   userId,
-  userTemplateId,
+  templateId,
   userRoleId,
 }: {
   tableName: "dicom";
   userId: string;
-  userTemplateId: string;
+  templateId: string;
   userRoleId: string;
 }) {
   const { hasPermission, isLoading: isLoadingPermissionDownloadReport } =
@@ -159,6 +164,7 @@ export default function PaginationReports({
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [search, setSearch] = useState<string | null>(null);
+  const [userTemplateId, setUserTemplateId] = useState<string>(templateId);
 
   const swrKey = [
     tableName,
@@ -172,14 +178,12 @@ export default function PaginationReports({
     receiptDateRange,
   ];
 
-  const { data, error, isLoading } = useSWR<DicomType[] | null>(
+  const { data, error, isLoading, mutate } = useSWR<DicomType[] | null>(
     swrKey,
     fetcher
   );
 
-  const { data: count } = useSWR("admin-dicoms-total", () =>
-    fetcherTotal(userTemplateId)
-  );
+  const { data: count } = useSWR([userTemplateId], fetcherTotal);
 
   const hasMore: boolean =
     data !== undefined && data !== null && data.length === pageSize;
@@ -258,6 +262,26 @@ export default function PaginationReports({
     }
   };
 
+  const handleUserTemplateEdition = async (
+    event: ChangeEvent<HTMLSelectElement>
+  ) => {
+    const newUserTemplateId = event.target.value;
+    if (newUserTemplateId) setUserTemplateId(newUserTemplateId);
+
+    try {
+      await supabase
+        .from("user")
+        .update({
+          template_id: newUserTemplateId === "" ? null : newUserTemplateId,
+        })
+        .eq("id", userId);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      mutate();
+    }
+  };
+
   const noData = !isLoading && !error && data && data.length === 0;
   const startItemNumber = (page - 1) * pageSize + 1;
 
@@ -287,6 +311,8 @@ export default function PaginationReports({
     ) {
       setSortDirection(storedSortDirection as SortDirection);
     }
+
+    setUserTemplateId(templateId);
   }, []);
 
   return (
@@ -307,8 +333,18 @@ export default function PaginationReports({
           <DateRangeButtonCalendar
             dateRange={studyDateRange}
             handleDateRangeChange={handleStudyDateRangeChange}
-            label="Study Data Range"
+            label="Study Date Range"
           />
+          <CheckPermission
+            userRoleId={userRoleId}
+            requiredPermission={Permissions.MANAGE_ROLES}
+          >
+            <EditUserTemplate
+              handleUserTemplateEdition={handleUserTemplateEdition}
+              userTemplateId={userTemplateId}
+              userId={userId}
+            />
+          </CheckPermission>
         </div>
         <div className="text-xs flex items-center gap-1">
           <span>

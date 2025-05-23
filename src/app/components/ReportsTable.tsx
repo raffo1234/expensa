@@ -26,7 +26,7 @@ export default function ReportsTable({
       tableName="dicom"
       userRoleId={userRoleId}
       userId={userId}
-      userTemplateId={userTemplateId}
+      templateId={userTemplateId}
     />
   );
 }

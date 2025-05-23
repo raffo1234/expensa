@@ -72,7 +72,7 @@ export default function Aside({
       ? [
           {
             href: "/admin/templates",
-            title: "Locations",
+            title: "Templates",
             iconName: "solar:file-favourite-line-duotone",
           },
         ]

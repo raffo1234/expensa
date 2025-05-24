@@ -2,7 +2,7 @@
 
 import { useDebouncedCallback } from "use-debounce";
 import extractAgeWidthUnit from "@/lib/extractAgeWithUnit";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo } from "react";
 import TextareaAutosize from "react-textarea-autosize";
 import dynamic from "next/dynamic";
 
@@ -29,7 +29,7 @@ function putFirst(array: TemplateType[], element: TemplateType | undefined) {
 const fetcher = async (id: UUIDTypes) => {
   const { data } = (await supabase
     .from("dicom")
-    .select("*, template(header_image_url, sign_image_url, footer_image_url)")
+    .select("*, template(*)")
     .eq("id", id)
     .single()) as {
     data: DicomType | null;
@@ -44,7 +44,7 @@ export default function Report({
 }: {
   templates: TemplateType[] | [];
   userId: string;
-  dicomId: UUIDTypes;
+  dicomId: string;
 }) {
   const nowMs = Date.now();
 
@@ -55,12 +55,7 @@ export default function Report({
     mutate,
   } = useSWR(`admin-${dicomId}`, () => fetcher(dicomId));
 
-  const [dicomState, setDicomState] = useState("");
-  const [value, setValue] = useState<string>("");
-  const [activeTemplate, setActiveTemplate] = useState<
-    TemplateType | undefined
-  >();
-  const sortedTemplates = putFirst(templates, activeTemplate);
+  const sortedTemplates = putFirst(templates, dicom?.template);
 
   const PDFDownloadLink = useMemo(
     () =>
@@ -71,71 +66,21 @@ export default function Report({
           loading: () => <GeneratePDFButton isDisabled={true} label="PDF" />,
         }
       ),
-    [value, activeTemplate]
-    // value and activeTemplate are needed because @react-pdf/renderer needs to re render to load correctly
+    [dicom?.report]
   );
 
-  const handleTemplateActive = (
-    dicomId: UUIDTypes,
-    newTemplate: TemplateType
-  ) => {
-    setActiveTemplate(newTemplate);
-    updateDicomTemplate(dicomId, newTemplate.id);
+  const handleTemplateActive = (dicomId: string, newTemplate: TemplateType) => {
+    updateDicom(dicomId, { template_id: newTemplate.id });
     localStorage.setItem("dicomActiveTemplateId", newTemplate.id);
   };
 
   const debouncedTextarea = useDebouncedCallback((value) => {
-    updateDicomReport(value, dicomId, activeTemplate?.id);
-    setValue(value);
+    if (dicom?.id) updateDicom(dicom?.id, { report: value });
   }, 500);
 
-  const updateDicomReport = async (
-    value: string,
-    id: UUIDTypes,
-    templateId: string | undefined
-  ) => {
+  const updateDicom = async (id: string, newData: Partial<DicomType>) => {
     try {
-      await supabase
-        .from("dicom")
-        .update({ report: value, template_id: templateId })
-        .eq("id", id);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      mutate();
-    }
-  };
-
-  const updateDicomTemplate = async (
-    id: UUIDTypes,
-    templateId: string | undefined
-  ) => {
-    try {
-      await supabase
-        .from("dicom")
-        .update({ template_id: templateId })
-        .eq("id", id);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      mutate();
-    }
-  };
-
-  const updateDicomState = async (
-    id: UUIDTypes,
-    state: DicomStateEnum,
-    templateId: string | undefined
-  ) => {
-    try {
-      const { data } = await supabase
-        .from("dicom")
-        .update({ state, report: value, template_id: templateId })
-        .eq("id", id)
-        .select()
-        .single();
-
-      if (data) setDicomState(data.state);
+      await supabase.from("dicom").update(newData).eq("id", id);
     } catch (error) {
       console.error(error);
     } finally {
@@ -144,49 +89,11 @@ export default function Report({
   };
 
   useEffect(() => {
-    if (templates.length === 0) return;
-
-    if (dicom?.template_id) {
-      const activeTemplate = templates.find(
-        (template) => template.id === dicom.template_id
-      );
-      if (activeTemplate) {
-        handleTemplateActive(dicomId, activeTemplate);
-        return;
-      }
-    }
-
     const storedTemplateId = localStorage.getItem("dicomActiveTemplateId");
     if (storedTemplateId) {
-      const activeTemplate = templates.find(
-        (template) => template.id === storedTemplateId
-      );
-      if (activeTemplate) {
-        handleTemplateActive(dicomId, activeTemplate);
-        return;
-      }
-    }
-
-    const defaultTemplate = templates[0];
-    if (defaultTemplate) {
-      handleTemplateActive(dicomId, defaultTemplate);
-      return;
+      updateDicom(dicomId, { template_id: storedTemplateId });
     }
   }, [dicom]);
-
-  useEffect(() => {
-    if (!dicom?.state) {
-      updateDicomState(dicomId, DicomStateEnum.VIEWED, activeTemplate?.id);
-    }
-  }, [dicom?.id, dicom?.state]);
-
-  useEffect(() => {
-    if (dicom?.state) setDicomState(dicom?.state);
-  }, [dicom?.state]);
-
-  useEffect(() => {
-    if (dicom?.report) setValue(dicom?.report);
-  }, [dicom?.report]);
 
   if (!dicom) return null;
 
@@ -203,7 +110,7 @@ export default function Report({
             gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))",
           }}
         >
-          {sortedTemplates?.map((template) => {
+          {sortedTemplates.map((template) => {
             const { id, name } = template;
             return (
               <button
@@ -211,11 +118,13 @@ export default function Report({
                 type="button"
                 title={name}
                 onClick={() => handleTemplateActive(dicomId, template)}
-                className={`${
-                  activeTemplate?.id === id
-                    ? "bg-rose-50 border-rose-200"
-                    : "bg-gray-50 border-gray-200"
-                } cursor-pointer truncate text-center p-3 rounded-xl border`}
+                className={`
+                  ${
+                    id === dicom.template_id
+                      ? "bg-rose-50 border-rose-200"
+                      : "bg-gray-50 border-gray-200"
+                  } 
+                cursor-pointer truncate text-center p-3 rounded-xl border`}
               >
                 {name}
               </button>
@@ -230,7 +139,7 @@ export default function Report({
           </Link>
         </div>
         <div className="flex items-center gap-1">
-          {dicomState ? (
+          {/* {dicomState ? (
             <div
               className={`
               font-semibold uppercase
@@ -254,14 +163,14 @@ export default function Report({
             >
               {dicomState}
             </div>
-          ) : null}
+          ) : null} */}
           {PDFDownloadLink ? (
             <PDFDownloadLink
               document={
                 <ContentPDFDocument
                   dicom={dicom}
-                  activeTemplate={activeTemplate}
-                  content={value}
+                  activeTemplate={dicom.template}
+                  content={dicom.report}
                 />
               }
               fileName={`${dicom?.patient_name}_${nowMs}_${userId}.pdf`}
@@ -285,12 +194,12 @@ export default function Report({
         >
           <div className="left-0 top-[842pt] px-[60pt] pb-[60pt] absolute w-full border-b border-rose-400"></div>
           <div className="left-0 top-[1684pt] px-[60pt] pb-[60pt] absolute w-full border-b border-rose-400"></div>
-          {activeTemplate?.header_image_url ? (
+          {dicom.template?.header_image_url ? (
             <Image
-              src={activeTemplate?.header_image_url}
+              src={dicom.template.header_image_url}
               width={300}
               height={300}
-              alt={activeTemplate.name}
+              alt={dicom.template.name}
               className="bg-gray-100 mb-6 w-full h-auto"
             />
           ) : null}
@@ -336,7 +245,7 @@ export default function Report({
               </div>
             </div>
             <TextareaAutosize
-              defaultValue={value}
+              defaultValue={dicom.report}
               onChange={(event) => debouncedTextarea(event.target.value)}
               minRows={2}
               placeholder="Radiologist's report"
@@ -344,24 +253,24 @@ export default function Report({
               className="rounded-sm w-full text-[11pt] leading-[1.6] focus:ring-0 focus:outline-none border border-gray-300 focus:border-cyan-300 min-h-6 border-dotted"
             />
             <div className="flex justify-end">
-              {activeTemplate?.sign_image_url ? (
+              {dicom.template?.sign_image_url ? (
                 <Image
-                  src={activeTemplate?.sign_image_url}
+                  src={dicom.template?.sign_image_url}
                   width={100}
                   height={102}
-                  alt={activeTemplate.name}
+                  alt={dicom.template.name}
                   className="bg-white h-auto w-[75pt]"
                 />
               ) : null}
             </div>
           </div>
           <div className="absolute bottom-0 left-0 right-0 px-[60pt] pb-[60pt]">
-            {activeTemplate?.footer_image_url ? (
+            {dicom.template?.footer_image_url ? (
               <Image
-                src={activeTemplate?.footer_image_url}
+                src={dicom.template?.footer_image_url}
                 width={300}
                 height={300}
-                alt={activeTemplate.name}
+                alt={dicom.template.name}
                 className="bg-gray-100 w-full h-auto"
               />
             ) : null}
@@ -377,14 +286,12 @@ export default function Report({
         >
           <span>Back</span>
         </Link>
-        {dicomState === DicomStateEnum.VIEWED ? (
+        {dicom.state === DicomStateEnum.VIEWED ? (
           <button
             onClick={() =>
-              updateDicomState(
-                dicom.id,
-                DicomStateEnum.DRAFT,
-                activeTemplate?.id
-              )
+              updateDicom(dicom.id, {
+                state: DicomStateEnum.DRAFT,
+              })
             }
             title={`Save as ${DicomStateEnum.DRAFT}`}
             type="button"
@@ -393,14 +300,12 @@ export default function Report({
             Save as {DicomStateEnum.DRAFT}
           </button>
         ) : null}
-        {dicomState === DicomStateEnum.DRAFT ? (
+        {dicom.state === DicomStateEnum.DRAFT ? (
           <button
             onClick={() =>
-              updateDicomState(
-                dicom.id,
-                DicomStateEnum.COMPLETED,
-                activeTemplate?.id
-              )
+              updateDicom(dicom.id, {
+                state: DicomStateEnum.COMPLETED,
+              })
             }
             title={`Save as ${DicomStateEnum.COMPLETED}`}
             type="button"
@@ -409,14 +314,12 @@ export default function Report({
             Save as {DicomStateEnum.COMPLETED}
           </button>
         ) : null}
-        {dicomState === DicomStateEnum.COMPLETED ? (
+        {dicom.state === DicomStateEnum.COMPLETED ? (
           <button
             onClick={() =>
-              updateDicomState(
-                dicom.id,
-                DicomStateEnum.COMPLETED,
-                activeTemplate?.id
-              )
+              updateDicom(dicom.id, {
+                state: DicomStateEnum.COMPLETED,
+              })
             }
             title="Amend"
             type="button"

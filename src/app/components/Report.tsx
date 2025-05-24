@@ -112,7 +112,7 @@ export default function Report({
   return (
     <>
       <h2 className="mb-6">
-        <span className="text-gray-600 text-sm">Patient ID:</span>{" "}
+        <span className="text-gray-600 text-sm">ID:</span>{" "}
         <span className="font-semibold">{dicom.patient_id}</span>
       </h2>
       <div className="sm:flex mb-6 items-center">
@@ -250,9 +250,9 @@ export default function Report({
                 </div>
                 <div>
                   <span className="text-gray-400 w-[65pt] inline-block">
-                    Modalidad:
+                    ID:
                   </span>
-                  {dicom?.modality}
+                  {dicom?.patient_id}
                 </div>
               </div>
             </div>

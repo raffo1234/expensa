@@ -127,8 +127,8 @@ export default function ContentPDFDocument({
                     : null}
                 </Text>
                 <Text style={[styles.cell]}>
-                  <Text style={styles.textSmall}>Modalidad: </Text>
-                  {dicom?.modality}
+                  <Text style={styles.textSmall}>ID: </Text>
+                  {dicom?.patient_id}
                 </Text>
               </View>
               <View style={[styles.row]}>

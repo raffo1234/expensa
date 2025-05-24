@@ -86,7 +86,7 @@ const DOCXPreview = ({ dicom }: { dicom: DicomType }) => {
               },
               children: [
                 new Paragraph({
-                  text: `Modalidad: ${dicom.modality ?? ""}`,
+                  text: `ID: ${dicom.patient_id ?? ""}`,
                   spacing: { line: 320 },
                 }),
               ],

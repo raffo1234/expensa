@@ -139,7 +139,12 @@ export function Role({
             ) : null}
           </span>
         </button>
-        {role.name === "Super" ? null : <DeleteRole roleId={role.id} />}
+        {role.name === "Super" ||
+        role.name === "Secretary" ||
+        role.name === "Doctor" ||
+        role.name === "Patient" ? null : (
+          <DeleteRole roleId={role.id} />
+        )}
       </div>
       {isOpen ? (
         <div className="border-t border-gray-200 pl-20 pr-4 py-8">

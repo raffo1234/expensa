@@ -60,52 +60,62 @@ type ImageUploaderProps = {
   onUploadSuccess?: () => void;
 };
 
-async function insertDataSetToDb(userId: string, dataSet: DicomMetadata) {
+interface InsertResult {
+  existing: boolean;
+  dicomId: number;
+}
+
+async function insertDataSetToDb(
+  userId: string,
+  dataSet: DicomMetadata
+): Promise<InsertResult | null> {
   const table = "dicom";
-  const { count, error } = await supabase
+  const { data: existingData, error } = await supabase
     .from(table)
-    .select("id", { count: "exact", head: true })
+    .select("id")
     .eq("patient_name", dataSet.patientName)
     .eq("study_date", dataSet.studyDate)
     .eq("study_description", dataSet.studyDescription)
-    .eq("user_id", userId);
+    .eq("user_id", userId)
+    .limit(1)
+    .single();
 
   if (error) {
     console.error("Error checking for existing record:", error);
-    return;
-  }
-
-  if (count === 0) {
-    const { data, error: insertError } = await supabase
-      .from(table)
-      .insert([
-        {
-          user_id: userId,
-          patient_name: dataSet.patientName,
-          patient_id: dataSet.patientId,
-          patient_age:
-            dataSet.patientAge ||
-            getAgeFromYYYYMMDD(dataSet.patientBirthDate ?? ""),
-          study_description: dataSet.studyDescription,
-          modality: dataSet.modality,
-          study_date: dataSet.studyDate,
-          gender: dataSet.patientSex,
-          birthday: dataSet.patientBirthDate,
-          institution: dataSet.institutionName,
-        },
-      ])
-      .select()
-      .single();
-
-    if (insertError) {
-      console.error("Error inserting record:", insertError);
-      return null;
-    }
-
-    return data;
-  } else {
     return null;
   }
+
+  if (existingData) {
+    return { existing: true, dicomId: existingData.id };
+  }
+
+  const { data, error: insertError } = await supabase
+    .from(table)
+    .insert([
+      {
+        user_id: userId,
+        patient_name: dataSet.patientName,
+        patient_id: dataSet.patientId,
+        patient_age:
+          dataSet.patientAge ||
+          getAgeFromYYYYMMDD(dataSet.patientBirthDate ?? ""),
+        study_description: dataSet.studyDescription,
+        modality: dataSet.modality,
+        study_date: dataSet.studyDate,
+        gender: dataSet.patientSex,
+        birthday: dataSet.patientBirthDate,
+        institution: dataSet.institutionName,
+      },
+    ])
+    .select()
+    .single();
+
+  if (insertError) {
+    console.error("Error inserting record:", insertError);
+    return null;
+  }
+
+  return { existing: false, dicomId: data.id };
 }
 
 enum CustomFileStateType {
@@ -118,6 +128,7 @@ enum CustomFileStateType {
   noDcimFile = "No DICOM file",
   fileNotSupported = "File no supported!",
   errorLoading = "Error loading!",
+  errorInserting = "Error inserting!",
 }
 
 type CustomFileType = {
@@ -210,10 +221,10 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
             continue;
         }
 
-        const diferentStudyDescriptions =
+        const dicoms =
           await findAllDicomFilesWithDifferentStudyDescriptions(extractedFiles);
 
-        if (diferentStudyDescriptions.length === 0) {
+        if (dicoms.length === 0) {
           editFileAtIndex(
             files,
             setFiles,
@@ -224,17 +235,28 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
           continue;
         }
 
-        for (const study of diferentStudyDescriptions) {
-          const insertedData = await insertDataSetToDb(userId, study.metadata);
+        for (const study of dicoms) {
+          const data = await insertDataSetToDb(userId, study.metadata);
+
+          if (!data) {
+            editFileAtIndex(
+              files,
+              setFiles,
+              index,
+              CustomFileStateType.errorInserting,
+              "bg-rose-50"
+            );
+            setUploading(false);
+          }
 
           editFileAtIndex(
             files,
             setFiles,
             index,
-            insertedData
+            data?.existing
               ? CustomFileStateType.inserted
               : CustomFileStateType.duplicated,
-            insertedData ? "bg-green-50" : "bg-yellow-50"
+            data?.existing ? "bg-green-50" : "bg-yellow-50"
           );
         }
       } catch {

@@ -89,13 +89,17 @@ export default function Report({
   };
 
   useEffect(() => {
-    if (!dicom?.state) {
-      updateDicom(dicomId, { state: DicomStateEnum.VIEWED });
-    }
+    if (dicom) {
+      if (dicom.state !== DicomStateEnum.COMPLETED && !dicom?.state) {
+        updateDicom(dicomId, { state: DicomStateEnum.VIEWED });
+      }
 
-    const storedTemplateId = localStorage.getItem("dicomActiveTemplateId");
-    if (storedTemplateId) {
-      updateDicom(dicomId, { template_id: storedTemplateId });
+      if (dicom.state !== DicomStateEnum.COMPLETED && !dicom.template) {
+        const storedTemplateId = localStorage.getItem("dicomActiveTemplateId");
+        if (storedTemplateId) {
+          updateDicom(dicomId, { template_id: storedTemplateId });
+        }
+      }
     }
   }, [dicom]);
 

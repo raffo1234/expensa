@@ -89,6 +89,10 @@ export default function Report({
   };
 
   useEffect(() => {
+    if (!dicom?.state) {
+      updateDicom(dicomId, { state: DicomStateEnum.VIEWED });
+    }
+
     const storedTemplateId = localStorage.getItem("dicomActiveTemplateId");
     if (storedTemplateId) {
       updateDicom(dicomId, { template_id: storedTemplateId });
@@ -286,7 +290,7 @@ export default function Report({
         >
           <span>Back</span>
         </Link>
-        {dicom.state === DicomStateEnum.VIEWED ? (
+        {!dicom.state || dicom.state === DicomStateEnum.VIEWED ? (
           <button
             onClick={() =>
               updateDicom(dicom.id, {

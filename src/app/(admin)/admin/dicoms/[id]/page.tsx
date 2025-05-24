@@ -33,7 +33,7 @@ export default async function Page({ params }: { params: Params }) {
   return (
     <>
       <div className="flex mb-4 print:hidden items-center justify-between">
-        <h1 className=" font-semibold text-lg block">Medical Report</h1>
+        <h1 className="font-semibold text-lg block">Medical Report</h1>
         <Link
           href="/admin/dicoms"
           title="Templates"

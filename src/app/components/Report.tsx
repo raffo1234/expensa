@@ -107,6 +107,10 @@ export default function Report({
 
   return (
     <>
+      <h2 className="mb-6">
+        <span className="text-gray-600 text-sm">Patient ID:</span>{" "}
+        <span className="font-semibold">{dicom.patient_id}</span>
+      </h2>
       <div className="sm:flex mb-6 items-center">
         <div
           className="grid gap-2 mb-4 sm:mb-0 flex-grow-1"

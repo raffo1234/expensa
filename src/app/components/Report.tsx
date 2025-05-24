@@ -139,31 +139,31 @@ export default function Report({
           </Link>
         </div>
         <div className="flex items-center gap-1">
-          {/* {dicomState ? (
+          {dicom.state ? (
             <div
               className={`
               font-semibold uppercase
               ${
-                dicomState === DicomStateEnum.VIEWED
+                dicom.state === DicomStateEnum.VIEWED
                   ? "text-yellow-500 border-yellow-300 bg-yellow-50"
                   : ""
               }  
               ${
-                dicomState === DicomStateEnum.DRAFT
+                dicom.state === DicomStateEnum.DRAFT
                   ? "text-orange-500 border-orange-100 bg-orange-50"
                   : ""
               }  
               ${
-                dicomState === DicomStateEnum.COMPLETED
+                dicom.state === DicomStateEnum.COMPLETED
                   ? "text-cyan-600 border-cyan-200 bg-cyan-100"
                   : ""
               }  
               py-1 px-5 text-sm uppercase rounded-full border`}
-              title={dicomState}
+              title={dicom.state}
             >
-              {dicomState}
+              {dicom.state}
             </div>
-          ) : null} */}
+          ) : null}
           {PDFDownloadLink ? (
             <PDFDownloadLink
               document={

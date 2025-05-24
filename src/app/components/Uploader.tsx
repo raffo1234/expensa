@@ -246,7 +246,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
               CustomFileStateType.errorInserting,
               "bg-rose-50"
             );
-            setUploading(false);
+            continue;
           }
 
           editFileAtIndex(

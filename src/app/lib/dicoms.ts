@@ -30,7 +30,15 @@ async function getStudyDescription(file: File): Promise<string | undefined> {
       byteArray[131] === 0x4d
     ) {
       const dataSet = dicomParser.parseDicom(byteArray);
-      return dataSet.string("x00081030");
+      const studyDescription = dataSet.string("x00081030");
+
+      if (studyDescription) {
+        return studyDescription;
+      } else {
+        // If Study Description is not found, try Protocol Name
+        const protocolName = dataSet.string("x00181030");
+        return protocolName || undefined;
+      }
     }
     return undefined;
   } catch (error) {
@@ -51,7 +59,8 @@ async function extractDicomMetadata(
       patientName: dataSet.string("x00100010"),
       patientId: dataSet.string("x00100020"),
       patientAge: dataSet.string("x00101010"),
-      studyDescription: dataSet.string("x00081030"),
+      studyDescription:
+        dataSet.string("x00081030") || dataSet.string("x00181030"),
       modality: dataSet.string("x00080060"),
       studyDate: dataSet.string("x00080020"),
       patientSex: dataSet.string("x00100040"),

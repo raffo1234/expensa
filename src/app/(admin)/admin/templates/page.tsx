@@ -3,22 +3,15 @@ import CheckPermission from "@/components/CheckPermission";
 import FallbackPermission from "@/components/FallbackPermission";
 import TemplatesTable from "@/components/TemplatesTable";
 import { auth } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
 import { Permissions } from "@/types/propertyState";
 
 export default async function Page() {
   const session = await auth();
-  const userEmail = session?.user?.email;
+  const user = session?.user;
 
-  const { data: user } = await supabase
-    .from("user")
-    .select("id, role_id")
-    .eq("email", userEmail)
-    .single();
+  if (!user?.id || !user.role_id) return null;
 
-  const userId = user?.id;
-
-  if (!userId) return null;
+  const userId = user.id;
 
   return (
     <>

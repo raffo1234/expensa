@@ -12,15 +12,9 @@ export default async function Page() {
   };
 
   const session = await auth();
-  const userEmail = session?.user?.email;
+  const user = session?.user;
 
-  const { data: user } = await supabase
-    .from("user")
-    .select("id, role_id")
-    .eq("email", userEmail)
-    .single();
-
-  if (!user) return null;
+  if (!user?.id || !user.role_id) return null;
 
   return (
     <PermissionsPage userRoleId={user.role_id} permissions={permissions} />

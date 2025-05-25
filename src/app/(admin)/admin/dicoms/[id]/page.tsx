@@ -10,13 +10,9 @@ type Params = Promise<{ id: string }>;
 export default async function Page({ params }: { params: Params }) {
   const { id } = await params;
   const session = await auth();
-  const userEmail = session?.user?.email;
+  const user = session?.user;
 
-  const { data: user } = await supabase
-    .from("user")
-    .select("id, role_id")
-    .eq("email", userEmail)
-    .single();
+  if (!user?.id || !user.role_id) return null;
 
   const userId = user?.id;
 

@@ -123,7 +123,7 @@ export function Role({
           key={id}
           className={`${
             isOpen ? "bg-gray-50" : ""
-          } w-full flex gap-3.5 items-center justify-between text-left transition-colors duration-300 pl-6 pr-20 py-4`}
+          } w-full flex gap-3.5 first:rounded-t-xl items-center justify-between text-left transition-colors duration-300 pl-6 pr-20 py-4`}
         >
           <span className="flex gap-3.5 items-center">
             <Icon

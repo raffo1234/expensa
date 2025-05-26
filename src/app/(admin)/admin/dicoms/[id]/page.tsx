@@ -4,6 +4,9 @@ import { TemplateType } from "@/types/templateType";
 import { auth } from "@/lib/auth";
 import Link from "next/link";
 import { Icon } from "@iconify/react/dist/iconify.js";
+import CheckPermission from "@/components/CheckPermission";
+import { Permissions } from "@/types/propertyState";
+import FallbackPermission from "@/components/FallbackPermission";
 
 type Params = Promise<{ id: string }>;
 
@@ -42,7 +45,13 @@ export default async function Page({ params }: { params: Params }) {
           <Icon icon="solar:backspace-line-duotone" fontSize={36} />
         </Link>
       </div>
-      <Report dicomId={id} templates={templates || []} userId={userId} />
+      <CheckPermission
+        userRoleId={user.role_id}
+        requiredPermission={Permissions.GENERATE_REPORT}
+        fallback={<FallbackPermission />}
+      >
+        <Report dicomId={id} templates={templates || []} userId={userId} />
+      </CheckPermission>
     </>
   );
 }

@@ -410,7 +410,7 @@ export default function Pagination({
             label="Receipt Date Range"
           />
         </div>
-        <div className="flex rounded-full items-center flex-col lg:flex-row">
+        <div className="flex rounded-full items-center">
           {Object.values(DicomStateEnum).map((state, index) => (
             <button
               key={state}

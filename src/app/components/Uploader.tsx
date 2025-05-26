@@ -60,23 +60,34 @@ type ImageUploaderProps = {
   onUploadSuccess?: () => void;
 };
 
-async function insertDataSetToDb(userId: string, dataSet: DicomMetadata) {
+interface InsertResult {
+  id: number;
+  isNew: boolean;
+}
+
+async function insertDataSetToDb(
+  userId: string,
+  dataSet: DicomMetadata
+): Promise<InsertResult | null> {
   const table = "dicom";
-  const { count, error } = await supabase
+  const { data: existingDataArray, error: checkError } = await supabase
     .from(table)
-    .select("id", { count: "exact", head: true })
+    .select("id")
     .eq("patient_name", dataSet.patientName)
     .eq("study_date", dataSet.studyDate)
     .eq("study_description", dataSet.studyDescription)
-    .eq("user_id", userId);
+    .eq("user_id", userId)
+    .limit(1);
 
-  if (error) {
-    console.error("Error checking for existing record:", error);
-    return;
+  if (checkError) {
+    console.error("Error checking for existing record:", checkError);
+    return null;
   }
 
-  if (count === 0) {
-    const { data, error: insertError } = await supabase
+  if (existingDataArray && existingDataArray.length > 0) {
+    return { id: existingDataArray[0].id, isNew: false };
+  } else {
+    const { data: insertedDataArray, error: insertError } = await supabase
       .from(table)
       .insert([
         {
@@ -94,7 +105,7 @@ async function insertDataSetToDb(userId: string, dataSet: DicomMetadata) {
           institution: dataSet.institutionName,
         },
       ])
-      .select()
+      .select("id")
       .single();
 
     if (insertError) {
@@ -102,9 +113,11 @@ async function insertDataSetToDb(userId: string, dataSet: DicomMetadata) {
       return null;
     }
 
-    return data;
-  } else {
-    return null;
+    if (insertedDataArray) {
+      return { id: insertedDataArray.id, isNew: true };
+    } else {
+      return null;
+    }
   }
 }
 
@@ -121,22 +134,26 @@ enum CustomFileStateType {
 }
 
 type CustomFileType = {
+  studies: Study[];
   file: File;
   state: CustomFileStateType;
   bgColor: string;
 };
+
+type Study = { id: string; state: CustomFileStateType };
 
 const editFileAtIndex = (
   files: CustomFileType[],
   setFiles: React.Dispatch<React.SetStateAction<CustomFileType[]>>,
   index: number,
   state: CustomFileStateType,
-  bgColor: string
+  bgColor: string,
+  studies: Study[] = []
 ) => {
   setFiles((prevFiles) => {
     if (index >= 0 && index < prevFiles.length) {
       const updatedFiles = prevFiles.map((item, fileIndex) =>
-        fileIndex === index ? { ...item, state, bgColor } : item
+        fileIndex === index ? { ...item, state, bgColor, studies } : item
       );
       return updatedFiles;
     } else {
@@ -160,6 +177,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       setFiles((prev) => [
         ...prev,
         {
+          studies: [],
           file,
           state: CustomFileStateType.selected,
           bgColor: "bg-gray-50",
@@ -169,10 +187,15 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   };
 
   const handleUpload = async () => {
-    setUploading(true);
-
     for (let index = 0; index < files.length; index++) {
-      if (files[index].state !== CustomFileStateType.selected) continue;
+      setUploading(true);
+      if (files[index].state !== CustomFileStateType.selected) {
+        console.log(
+          `Skipping file at index ${index} because it is not in the selected state.`
+        );
+        setUploading(false);
+        continue;
+      }
 
       const selectedFile = files[index].file;
 
@@ -184,7 +207,9 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         "bg-cyan-50"
       );
       const extension = await fileTypeFromBlob(selectedFile);
-
+      console.log(
+        `Processing file at index ${index}: ${selectedFile.name}, type: ${extension?.ext}`
+      );
       try {
         let extractedFiles: ExtractedFilesObject = {};
         switch (extension?.ext) {
@@ -224,17 +249,36 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
           continue;
         }
 
+        const studies: Study[] = [];
         for (const study of diferentStudyDescriptions) {
           const insertedData = await insertDataSetToDb(userId, study.metadata);
+          if (!insertedData) {
+            editFileAtIndex(
+              files,
+              setFiles,
+              index,
+              CustomFileStateType.errorLoading,
+              "bg-rose-50"
+            );
+            continue;
+          }
 
+          if (insertedData.id)
+            studies.push({
+              id: insertedData.id.toString(),
+              state: insertedData.isNew
+                ? CustomFileStateType.inserted
+                : CustomFileStateType.duplicated,
+            });
           editFileAtIndex(
             files,
             setFiles,
             index,
-            insertedData
+            insertedData.isNew
               ? CustomFileStateType.inserted
               : CustomFileStateType.duplicated,
-            insertedData ? "bg-green-50" : "bg-yellow-50"
+            insertedData ? "bg-green-50" : "bg-yellow-50",
+            studies
           );
         }
       } catch {
@@ -257,6 +301,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       setFiles((prev) => [
         ...prev,
         {
+          studies: [],
           file,
           state: CustomFileStateType.selected,
           bgColor: "bg-gray-50",
@@ -304,31 +349,39 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
           />
         </div>
         <h2 className="text-gray-400 text-sm mb-1">.zip, .rar, .tar files</h2>
-        <h4 className="font-semibold">Drag and Drop your files here</h4>
-        {files.length > 0 ? (
-          <div className="border w-full border-gray-200 rounded-xl mt-6 max-w-md">
-            <div className="text-sm font-semibold px-5 py-2 bg-gray-100 rounded-t-xl">
-              Selected File{files.length === 1 ? "" : "s"} ({files.length})
+        <h4 className="font-semibold mb-5">Drag and Drop your files here</h4>
+        <div className="border border-gray-200 rounded-xl">
+          <div className="flex items-center border-b border-gray-200 bg-gray-100 rounded-t-xl">
+            <div className="border-r w-30 text-center text-sm text-gray-600 py-1 px-5 border-gray-200">
+              Selected
             </div>
-            <div className="border-t border-gray-200">
-              {Array.from(files).map(({ file, state, bgColor }, index) => {
-                return (
-                  <div
-                    key={index}
-                    className={`${bgColor} last:rounded-b-xl flex text-sm items-center gap-2 first:border-0 border-t border-gray-200`}
-                  >
-                    <div key={index} className="truncate flex-1 px-5 py-2">
-                      {file.name}
-                    </div>
-                    <div className="w-40 whitespace-nowrap flex-shrink-0 px-5 py-2 text-center border-l border-gray-200">
-                      {state}
-                    </div>
-                  </div>
-                );
-              })}
+            <div className="border-r border-gray-200 w-30 text-center text-sm text-gray-600 py-1 px-5 ">
+              Processed
+            </div>
+            <div className="w-30 text-center text-sm text-gray-600 py-1 px-5 ">
+              Total
             </div>
           </div>
-        ) : null}
+          <div className="flex items-center">
+            <h5 className=" border-r border-gray-200 w-30 text-center text-sm text-gray-600 py-1 px-5">
+              {
+                files.filter(
+                  (file) => file.state === CustomFileStateType.selected
+                ).length
+              }
+            </h5>
+            <h5 className="border-r border-gray-200 w-30 text-center text-sm text-gray-600 py-1 px-5">
+              {
+                files.filter(
+                  (file) => file.state !== CustomFileStateType.selected
+                ).length
+              }
+            </h5>
+            <h5 className="w-30 text-center text-sm text-gray-600 py-1 px-5">
+              {files.length}
+            </h5>
+          </div>
+        </div>
         <input
           {...getInputProps()}
           onChange={handleFileChange}
@@ -339,13 +392,63 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         />
       </div>
 
-      {files.length > 0 &&
-      files.filter((file) => file.state === CustomFileStateType.selected)
-        .length > 0 ? (
+      {files.length > 0 ? (
+        <div className="border w-full border-gray-200 rounded-xl mt-6 mx-auto max-w-md">
+          <div className="text-sm font-semibold px-5 py-2 bg-gray-100 rounded-t-xl">
+            Selected File{files.length === 1 ? "" : "s"} ({files.length})
+          </div>
+          <div className="border-t border-gray-200">
+            {Array.from(files).map(
+              ({ file, state, bgColor, studies }, index) => {
+                return (
+                  <div
+                    key={index}
+                    className={`${bgColor} last:rounded-b-xl flex text-sm items-center gap-2 first:border-0 border-t border-gray-200`}
+                  >
+                    <div key={index} className="truncate flex-1 px-5 py-2">
+                      {file.name}
+                    </div>
+                    <div className="w-40 flex flex-col gap-1 whitespace-nowrap flex-shrink-0 text-center border-l border-gray-200">
+                      {state === CustomFileStateType.duplicated ||
+                      state === CustomFileStateType.inserted ? (
+                        studies.map(({ id, state }) => (
+                          <Link
+                            key={id}
+                            target="_blank"
+                            href={`/admin/dicoms/${id}`}
+                            className="flex gap-2 first:border-t-0 border-t border-gray-200 px-5 py-2 text-left underline hover:text-cyan-500 transition-colors duration-300 underline-offset-4 w-full justify-center"
+                          >
+                            <Icon
+                              icon={`${state === CustomFileStateType.duplicated ? "solar:check-read-bold" : "solar:verified-check-bold"}`}
+                              fontSize={24}
+                              className="text-cyan-500"
+                            />
+                            <span className="flex-grow-1">{state}</span>
+                          </Link>
+                        ))
+                      ) : (
+                        <span className="px-5 py-2">{state}</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              }
+            )}
+          </div>
+        </div>
+      ) : null}
+
+      {files.filter((file) => file.state === CustomFileStateType.selected)
+        .length ? (
         <button
           type="button"
-          className="flex mx-auto mt-4 gap-4 items-center text-white disabled:cursor-no-drop cursor-pointer font-semibold disabled:border-cyan-400 disabled:bg-cyan-400 py-3 px-10 bg-cyan-500 hover:bg-cyan-400 transition-colors duration-500 rounded-lg"
-          disabled={uploading}
+          className="flex mx-auto mt-4 gap-4 items-center text-white disabled:opacity-60 disabled:cursor-no-drop cursor-pointer font-semibold disabled:border-cyan-400 disabled:bg-cyan-400 py-3 px-10 bg-cyan-500 hover:bg-cyan-400 transition-colors duration-500 rounded-lg"
+          disabled={
+            uploading ||
+            files.length === 0 ||
+            files.filter((file) => file.state === CustomFileStateType.selected)
+              .length === 0
+          }
           onClick={handleUpload}
         >
           {uploading ? (
@@ -365,19 +468,16 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         </button>
       ) : null}
 
-      {files.length > 0 &&
-      files.filter((file) => file.state === CustomFileStateType.inserted)
-        .length > 0 ? (
-        <div className="flex mt-4 justify-end">
-          <Link
-            href="/admin/dicoms"
-            className="flex items-center gap-2 cursor-pointer text-center p-3 text-cyan-400 group"
-            title="View new records"
-          >
-            <Icon icon="solar:file-text-line-duotone" fontSize={24} />
-            <span className="group-hover:underline">View Inserted Records</span>
-          </Link>
-        </div>
+      {files.length ? (
+        <Link
+          href="/admin/dicoms"
+          className="flex w-fit mt-3 mx-auto items-center gap-2 cursor-pointer text-center p-3 text-cyan-400 group"
+          title="View All"
+          target="_blank"
+        >
+          <Icon icon="solar:file-text-line-duotone" fontSize={24} />
+          <span className="group-hover:underline">View All</span>
+        </Link>
       ) : null}
     </>
   );

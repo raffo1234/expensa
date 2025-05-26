@@ -15,34 +15,32 @@ export default function AsideMenu({
 }) {
   const currentPath = usePathname();
 
-  const {
-    hasPermission: hasRolesPermission,
-    isLoading: isLoadingRolesPermission,
-  } = useCheckPermission(userRoleId, Permissions.MANAGE_ROLES);
-  const {
-    hasPermission: hasUsersPermission,
-    isLoading: isLoadingUsersPermission,
-  } = useCheckPermission(userRoleId, Permissions.MANAGE_USERS);
-  const {
-    hasPermission: hasPermissionsPermission,
-    isLoading: isLoadingPermissionsPermission,
-  } = useCheckPermission(userRoleId, Permissions.MANAGE_PERMISSIONS);
-  const {
-    hasPermission: hasDownloadReportPermission,
-    isLoading: isLoadingDownloadReportPermission,
-  } = useCheckPermission(userRoleId, Permissions.DOWNLOAD_REPORT);
-  const {
-    hasPermission: hasViewTemplatesPermission,
-    isLoading: isLoadingHasViewTemplatesPermission,
-  } = useCheckPermission(userRoleId, Permissions.VIEW_TEMPLATES);
-  const {
-    hasPermission: hasViewDicomsPermission,
-    isLoading: isLoadingHasViewDicomsPermission,
-  } = useCheckPermission(userRoleId, Permissions.VIEW_DICOMS);
-  const {
-    hasPermission: hasUploadDicomPermission,
-    isLoading: isLoadingUloadDicomPermission,
-  } = useCheckPermission(userRoleId, Permissions.UPLOAD_DICOM);
+  const { hasPermission: hasRolesPermission } = useCheckPermission(
+    userRoleId,
+    Permissions.MANAGE_ROLES
+  );
+  const { hasPermission: hasUsersPermission } = useCheckPermission(
+    userRoleId,
+    Permissions.MANAGE_USERS
+  );
+  const { hasPermission: hasPermissionsPermission } = useCheckPermission(
+    userRoleId,
+    Permissions.MANAGE_PERMISSIONS
+  );
+  const { hasPermission: hasDownloadReportPermission } = useCheckPermission(
+    userRoleId,
+    Permissions.DOWNLOAD_REPORT
+  );
+  const { hasPermission: hasViewTemplatesPermission } = useCheckPermission(
+    userRoleId,
+    Permissions.VIEW_TEMPLATES
+  );
+  const { hasPermission: hasViewDicomsPermission } = useCheckPermission(
+    userRoleId,
+    Permissions.VIEW_DICOMS
+  );
+  const { hasPermission: hasUploadDicomPermission, isLoading } =
+    useCheckPermission(userRoleId, Permissions.UPLOAD_DICOM);
 
   const pages = [
     {
@@ -115,15 +113,6 @@ export default function AsideMenu({
         ]
       : []),
   ];
-
-  const isLoading =
-    isLoadingRolesPermission ||
-    isLoadingUsersPermission ||
-    isLoadingPermissionsPermission ||
-    isLoadingDownloadReportPermission ||
-    isLoadingHasViewTemplatesPermission ||
-    isLoadingHasViewDicomsPermission ||
-    isLoadingUloadDicomPermission;
 
   if (isLoading)
     return (

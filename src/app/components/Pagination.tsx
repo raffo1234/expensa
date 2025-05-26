@@ -43,6 +43,7 @@ const fetcher = async (
     string | null,
     { startDate: Date | null; endDate: Date | null } | null,
     { startDate: Date | null; endDate: Date | null } | null,
+    DicomStateEnum | null,
   ]
 ): Promise<{ data: DicomType[] | null; total: number } | null> => {
   const [
@@ -55,6 +56,7 @@ const fetcher = async (
     searchWord,
     studyDateRange,
     receiptDateRange,
+    filteredByState,
   ] = key;
 
   const start = (page - 1) * pageSize;
@@ -110,6 +112,16 @@ const fetcher = async (
       .lte("created_at", formatISO(endOfDay(receiptDateRange?.endDate)));
   }
 
+  if (filteredByState) {
+    if (filteredByState === DicomStateEnum.NEW) {
+      dataQuery = dataQuery.eq("state", "");
+      countQuery = countQuery.eq("state", "");
+    } else {
+      dataQuery = dataQuery.eq("state", filteredByState);
+      countQuery = countQuery.eq("state", filteredByState);
+    }
+  }
+
   const [dataResult, countResult] = await Promise.all([dataQuery, countQuery]);
 
   if (dataResult.error) {
@@ -143,6 +155,10 @@ export default function Pagination({
   userId: string;
   userRoleId: string;
 }) {
+  const [filteredByState, setFilteredByState] = useState<DicomStateEnum | null>(
+    null
+  );
+
   const { hasPermission, isLoading: isLoadingPermissionDownloadReport } =
     useCheckPermission(userRoleId, Permissions.DOWNLOAD_REPORT);
 
@@ -194,6 +210,7 @@ export default function Pagination({
     search,
     studyDateRange,
     receiptDateRange,
+    filteredByState,
   ];
 
   const {
@@ -320,11 +337,25 @@ export default function Pagination({
     }
   };
 
+  const filterByState = (state: DicomStateEnum) => {
+    if (filteredByState === state) {
+      setFilteredByState(null);
+      localStorage.removeItem("dicomStateFilter");
+    } else {
+      setFilteredByState(state);
+      localStorage.setItem("dicomStateFilter", state);
+    }
+  };
+
   const noData =
     !isLoading && !error && result?.data && result?.data.length === 0;
   const startItemNumber = (page - 1) * pageSize + 1;
 
   useEffect(() => {
+    const savedStateFilter = localStorage.getItem("dicomStateFilter");
+    if (savedStateFilter) {
+      setFilteredByState(savedStateFilter as DicomStateEnum);
+    }
     const savedSearchWord = localStorage.getItem("dicomSearchWord");
     if (savedSearchWord) {
       setSearch(savedSearchWord);
@@ -366,7 +397,6 @@ export default function Pagination({
           />
         </div>
       </div>
-
       <div className="flex flex-col lg:flex-row gap-2 items-center mb-4 justify-between">
         <div className="flex items-center flex-col lg:flex-row gap-2">
           <DateRangeButtonCalendar
@@ -379,6 +409,26 @@ export default function Pagination({
             handleDateRangeChange={handleReceiptDateRangeChange}
             label="Receipt Date Range"
           />
+        </div>
+        <div className="flex rounded-full items-center flex-col lg:flex-row">
+          {Object.values(DicomStateEnum).map((state, index) => (
+            <button
+              key={state}
+              title={state}
+              onClick={() => filterByState(state)}
+              className={`
+                ${state === filteredByState ? "border-3 border-slate-50" : ""}
+                ${index === 0 ? "rounded-l-full" : ""}
+                ${index === Object.values(DicomStateEnum).length - 1 ? "rounded-r-full" : ""}
+                cursor-pointer h-[36px] w-10 
+                ${state === DicomStateEnum.NEW ? "bg-white" : ""}
+                ${state === DicomStateEnum.VIEWED ? "bg-yellow-300" : ""}
+                ${state === DicomStateEnum.DRAFT ? "bg-orange-300" : ""}
+                ${state === DicomStateEnum.COMPLETED ? "bg-cyan-300" : ""}`}
+            >
+              {/* <Icon icon="solar:check-square-outline"></Icon> */}
+            </button>
+          ))}
         </div>
         <div className="text-xs flex items-center gap-1">
           <span>

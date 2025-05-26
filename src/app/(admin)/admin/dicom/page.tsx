@@ -1,20 +1,13 @@
 import UploaderPage from "@/components/UploaderPage";
 import { auth } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import Link from "next/link";
 
 export default async function Page() {
   const session = await auth();
-  const userEmail = session?.user?.email;
+  const user = session?.user;
 
-  const { data: user } = await supabase
-    .from("user")
-    .select("id, role_id")
-    .eq("email", userEmail)
-    .single();
-
-  if (!user?.id || !user?.role_id) return null;
+  if (!user?.id || !user.role_id) return null;
 
   return (
     <>

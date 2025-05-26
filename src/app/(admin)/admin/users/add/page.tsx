@@ -1,21 +1,14 @@
 import CheckPermission from "@/components/CheckPermission";
 import FallbackPermission from "@/components/FallbackPermission";
 import { auth } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { Permissions } from "@/types/propertyState";
 
 export default async function Page() {
   const session = await auth();
-  const userEmail = session?.user?.email;
+  const user = session?.user;
 
-  const { data: user } = await supabase
-    .from("user")
-    .select("id, role_id")
-    .eq("email", userEmail)
-    .single();
-
-  if (!user) return null;
+  if (!user?.id || !user.role_id) return null;
 
   return (
     <>

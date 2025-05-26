@@ -8,13 +8,7 @@ import FallbackPermission from "@/components/FallbackPermission";
 
 export default async function Page() {
   const session = await auth();
-  const userEmail = session?.user?.email;
-
-  const { data: user } = await supabase
-    .from("user")
-    .select("id, role_id")
-    .eq("email", userEmail)
-    .single();
+  const user = session?.user;
 
   const { data: users } = (await supabase
     .from("user")
@@ -32,7 +26,8 @@ export default async function Page() {
     )
     .order("created_at", { ascending: false })) as { data: UserType[] | null };
 
-  if (!user) return null;
+  if (!user?.id || !user.role_id) return null;
+
   return (
     <CheckPermission
       userRoleId={user.role_id}

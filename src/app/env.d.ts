@@ -6,9 +6,4 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
-declare namespace App {
-  interface Locals {
-    currentUserId: string;
-    currentUserRoleId: string;
-  }
-}
+

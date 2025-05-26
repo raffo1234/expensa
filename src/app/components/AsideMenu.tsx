@@ -45,6 +45,12 @@ export default function AsideMenu({
   } = useCheckPermission(userRoleId, Permissions.UPLOAD_DICOM);
 
   const pages = [
+    {
+      href: "/",
+      title: "Home",
+      iconName: "solar:home-smile-angle-broken",
+    },
+
     ...(hasUploadDicomPermission
       ? [
           {

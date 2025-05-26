@@ -438,32 +438,47 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         </div>
       ) : null}
 
-      <button
-        type="button"
-        className="flex mx-auto mt-4 gap-4 items-center text-white disabled:opacity-60 disabled:cursor-no-drop cursor-pointer font-semibold disabled:border-cyan-400 disabled:bg-cyan-400 py-3 px-10 bg-cyan-500 hover:bg-cyan-400 transition-colors duration-500 rounded-lg"
-        disabled={
-          uploading ||
-          files.length === 0 ||
-          files.filter((file) => file.state === CustomFileStateType.selected)
-            .length === 0
-        }
-        onClick={handleUpload}
-      >
-        {uploading ? (
-          <Icon
-            icon="solar:record-broken"
-            fontSize={26}
-            className="animate-spin"
-          />
-        ) : (
-          <Icon icon="solar:upload-minimalistic-linear" fontSize={26} />
-        )}
-        <span>
-          {uploading
-            ? "Processing..."
-            : `Process File${files.filter((file) => file.state === CustomFileStateType.selected).length === 1 ? "" : "s"}`}
-        </span>
-      </button>
+      {files.filter((file) => file.state === CustomFileStateType.selected)
+        .length ? (
+        <button
+          type="button"
+          className="flex mx-auto mt-4 gap-4 items-center text-white disabled:opacity-60 disabled:cursor-no-drop cursor-pointer font-semibold disabled:border-cyan-400 disabled:bg-cyan-400 py-3 px-10 bg-cyan-500 hover:bg-cyan-400 transition-colors duration-500 rounded-lg"
+          disabled={
+            uploading ||
+            files.length === 0 ||
+            files.filter((file) => file.state === CustomFileStateType.selected)
+              .length === 0
+          }
+          onClick={handleUpload}
+        >
+          {uploading ? (
+            <Icon
+              icon="solar:record-broken"
+              fontSize={26}
+              className="animate-spin"
+            />
+          ) : (
+            <Icon icon="solar:upload-minimalistic-linear" fontSize={26} />
+          )}
+          <span>
+            {uploading
+              ? "Processing..."
+              : `Process File${files.filter((file) => file.state === CustomFileStateType.selected).length === 1 ? "" : "s"}`}
+          </span>
+        </button>
+      ) : null}
+
+      {files.length ? (
+        <Link
+          href="/admin/dicoms"
+          className="flex w-fit mt-3 mx-auto items-center gap-2 cursor-pointer text-center p-3 text-cyan-400 group"
+          title="View All"
+          target="_blank"
+        >
+          <Icon icon="solar:file-text-line-duotone" fontSize={24} />
+          <span className="group-hover:underline">View All</span>
+        </Link>
+      ) : null}
     </>
   );
 };

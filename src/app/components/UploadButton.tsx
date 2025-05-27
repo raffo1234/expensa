@@ -1,4 +1,3 @@
-import { Icon } from "@iconify/react/dist/iconify.js";
 import Link from "next/link";
 
 export default function UploadButton() {
@@ -9,7 +8,17 @@ export default function UploadButton() {
       className="px-6 w-fit mx-auto text-white justify-center py-2 rounded-full bg-black flex gap-2 items-center"
     >
       <span>Upload</span>
-      <Icon icon="solar:add-circle-linear" fontSize={24}></Icon>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+      >
+        <g fill="none" stroke="currentColor" strokeWidth="1.5">
+          <circle cx="12" cy="12" r="10" />
+          <path strokeLinecap="round" d="M15 12h-3m0 0H9m3 0V9m0 3v3" />
+        </g>
+      </svg>
     </Link>
   );
 }

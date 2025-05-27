@@ -3,10 +3,10 @@ import Report from "@/components/Report";
 import { TemplateType } from "@/types/templateType";
 import { auth } from "@/lib/auth";
 import Link from "next/link";
-import { Icon } from "@iconify/react/dist/iconify.js";
 import CheckPermission from "@/components/CheckPermission";
 import { Permissions } from "@/types/propertyState";
 import FallbackPermission from "@/components/FallbackPermission";
+import LoadingReportComponent from "@/components/LoadingReportComponent";
 
 type Params = Promise<{ id: string }>;
 
@@ -58,6 +58,7 @@ export default async function Page({ params }: { params: Params }) {
         userRoleId={user.role_id}
         requiredPermission={Permissions.GENERATE_REPORT}
         fallback={<FallbackPermission />}
+        loadingComponent={<LoadingReportComponent />}
       >
         <Report dicomId={id} templates={templates || []} userId={userId} />
       </CheckPermission>

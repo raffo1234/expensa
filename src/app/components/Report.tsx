@@ -19,6 +19,7 @@ import DOCXPreview from "@/components/DOCXPreview";
 import GeneratePDFButton from "@/components/GeneratePDFButton";
 import { UUIDTypes } from "uuid";
 import useSWR from "swr";
+import LoadingReportComponent from "./LoadingReportComponent";
 
 function putFirst(array: TemplateType[], element: TemplateType | undefined) {
   if (element)
@@ -103,11 +104,11 @@ export default function Report({
     }
   }, [dicom]);
 
-  if (!dicom) return null;
+  if (!dicom) return <LoadingReportComponent />;
 
-  if (error) return null;
+  if (error) return <LoadingReportComponent />;
 
-  if (isLoading) return null;
+  if (isLoading) return <LoadingReportComponent />;
 
   return (
     <>

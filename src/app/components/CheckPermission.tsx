@@ -7,11 +7,13 @@ export default function CheckPermission({
   requiredPermission,
   children,
   fallback = null,
+  loadingComponent = null,
 }: {
   userRoleId: string;
   requiredPermission: string;
   children: React.ReactNode;
   fallback?: React.ReactNode;
+  loadingComponent?: React.ReactNode;
 }) {
   const { hasPermission, isLoading } = useCheckPermission(
     userRoleId,
@@ -19,6 +21,8 @@ export default function CheckPermission({
   );
 
   if (isLoading) {
+    if (loadingComponent) return loadingComponent;
+
     return (
       <span className="relative flex size-3">
         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-75"></span>

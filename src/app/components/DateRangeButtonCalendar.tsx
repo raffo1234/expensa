@@ -66,7 +66,7 @@ export default function DateRangeButtonCalendar({
   return (
     <>
       <div
-        className={`${dateRange ? "bg-gray-100 pr-9" : "pr-4 bg-cyan-400 text-white"} transition-all duration-300 w-fit font-semibold rounded-full flex items-center relative`}
+        className={`${dateRange ? "bg-gray-100 pr-9" : "pr-4 bg-cyan-400 text-white"} w-fit font-semibold rounded-full flex items-center relative`}
       >
         <button
           onClick={toggle}

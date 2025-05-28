@@ -25,6 +25,7 @@ import { UUIDTypes } from "uuid";
 import UploadButton from "./UploadButton";
 import useCheckPermission from "@/hooks/useCheckPermission";
 import useCheckboxSelection from "@/hooks/useCheckboxSelection";
+import GenerateCompressedPDFs from "./GenerateCompressedPDFs";
 
 type SortDirection = "asc" | "desc" | null;
 
@@ -453,6 +454,9 @@ export default function Pagination({
 
   return (
     <>
+      {result?.data?.[0] ? (
+        <GenerateCompressedPDFs dicom={result?.data[0]} />
+      ) : null}
       <div className="w-full mb-4">
         <div className="flex w-full justify-between items-center gap-2">
           <div className="flex max-w-xl items-center gap-2 mx-auto sm:mx-0">

@@ -24,6 +24,7 @@ import DateRangeButtonCalendar from "./DateRangeButtonCalendar";
 import { UUIDTypes } from "uuid";
 import UploadButton from "./UploadButton";
 import useCheckPermission from "@/hooks/useCheckPermission";
+import useCheckboxSelection from "@/hooks/useCheckboxSelection";
 
 type SortDirection = "asc" | "desc" | null;
 
@@ -147,6 +148,10 @@ const fetcher = async (
   };
 };
 
+interface TableRowType {
+  id: string;
+}
+
 export default function Pagination({
   tableName,
   userId,
@@ -157,6 +162,18 @@ export default function Pagination({
   userRoleId: string;
 }) {
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const {
+    selectedIds,
+    isItemSelected,
+    toggleItemSelected,
+    handleSelectAllClick,
+    isAllItemsSelected,
+  } = useCheckboxSelection<TableRowType>();
+
+  useEffect(() => {
+    console.log(selectedIds);
+  }, [selectedIds]);
+
   const [filteredByState, setFilteredByState] = useState<DicomStateEnum | null>(
     null
   );
@@ -426,6 +443,14 @@ export default function Pagination({
     }
   }, []);
 
+  const items = result?.data
+    ? result?.data?.map(({ id }) => {
+        return {
+          id,
+        };
+      })
+    : [];
+
   return (
     <>
       <div className="w-full mb-4">
@@ -518,7 +543,11 @@ export default function Pagination({
           <thead>
             <tr className="border-b border-gray-200">
               <th className="w-10 py-4 text-center">
-                <input type="checkbox" />
+                <input
+                  type="checkbox"
+                  checked={isAllItemsSelected(items)}
+                  onChange={() => handleSelectAllClick(items)}
+                />
               </th>
               <th className="w-6 text-center uppercase text-xs font-semibold py-4">
                 #
@@ -778,7 +807,11 @@ export default function Pagination({
                       }`}
                     >
                       <td className="py-5 px-1 text-center">
-                        <input type="checkbox" />
+                        <input
+                          type="checkbox"
+                          checked={isItemSelected(id)}
+                          onChange={() => toggleItemSelected(id)}
+                        />
                       </td>
                       <td className="whitespace-nowrap py-5 text-center">
                         {startItemNumber + index}

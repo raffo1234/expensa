@@ -10,6 +10,7 @@ import Link from "next/link";
 import getAgeFromYYYYMMDD from "@/lib/getAgeFromYYYYMMDD";
 import { ExtractedFilesObject, processZipFile } from "@/lib/decompress";
 import { findAllDicomFilesWithDifferentStudyDescriptions } from "@/lib/dicoms";
+import sortFilesByName from "@/utils/sortFilesByName";
 
 Archive.init({
   workerUrl: "/libarchive.js/dist/worker-bundle.js",
@@ -319,7 +320,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       "application/x-rar-compressed": [".rar"],
     },
   });
-
+  console.log(files);
   return (
     <>
       <div
@@ -398,7 +399,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
             Selected File{files.length === 1 ? "" : "s"} ({files.length})
           </div>
           <div className="border-t border-gray-200">
-            {Array.from(files).map(
+            {Array.from(sortFilesByName(files)).map(
               ({ file, state, bgColor, studies }, index) => {
                 return (
                   <div

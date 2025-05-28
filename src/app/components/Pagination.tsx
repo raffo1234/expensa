@@ -187,13 +187,14 @@ export default function Pagination({
       ),
     []
   );
+
   const nowMs = Date.now();
   const savedPageSize = localStorage.getItem("pageSize");
   const defaultPageSize = savedPageSize ? parseInt(savedPageSize, 10) : 20;
 
   const savedPage = localStorage.getItem("page");
   const defaultPage = savedPage ? parseInt(savedPage, 10) : 1;
-  
+
   const [page, setPage] = useState<number>(defaultPage);
   const [pageSize, setPageSize] = useState<number>(defaultPageSize);
   const [sortColumn, setSortColumn] = useState<string | null>(null);
@@ -448,9 +449,7 @@ export default function Pagination({
                 ${state === DicomStateEnum.VIEWED ? "bg-yellow-300" : ""}
                 ${state === DicomStateEnum.DRAFT ? "bg-orange-300" : ""}
                 ${state === DicomStateEnum.COMPLETED ? "bg-cyan-300" : ""}`}
-            >
-              {/* <Icon icon="solar:check-square-outline"></Icon> */}
-            </button>
+            ></button>
           ))}
         </div>
         <div className="text-xs flex items-center gap-1">

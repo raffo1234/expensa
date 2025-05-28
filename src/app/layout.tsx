@@ -6,7 +6,6 @@ import {
   fetchAllPermissionsServer,
   prefetchPermissionServer,
 } from "@/utils/serverPermissions";
-import InnerLayout from "./components/InnerLayout";
 
 export const metadata: Metadata = {
   title: "Your Scans, Instantly Accessible",
@@ -33,7 +32,7 @@ export default async function Layout({ children }: Readonly<LayoutProps>) {
     <html lang="es">
       <body id="admin">
         <SWRConfig value={{ fallback: initialPermissions }}>
-          <InnerLayout>{children}</InnerLayout>
+          {children}
         </SWRConfig>
         <GlobalModal />
       </body>

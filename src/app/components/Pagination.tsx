@@ -187,9 +187,15 @@ export default function Pagination({
       ),
     []
   );
+
   const nowMs = Date.now();
-  const defaultPageSize = 20;
-  const [page, setPage] = useState<number>(1);
+  const savedPageSize = localStorage.getItem("pageSize");
+  const defaultPageSize = savedPageSize ? parseInt(savedPageSize, 10) : 20;
+
+  const savedPage = localStorage.getItem("page");
+  const defaultPage = savedPage ? parseInt(savedPage, 10) : 1;
+
+  const [page, setPage] = useState<number>(defaultPage);
   const [pageSize, setPageSize] = useState<number>(defaultPageSize);
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
@@ -232,6 +238,12 @@ export default function Pagination({
       if (!isNaN(newPageSize) && newPageSize > 0) {
         setPageSize(newPageSize);
         setPage(1);
+
+        if (newPageSize) {
+          localStorage.setItem("pageSize", String(newPageSize));
+        } else {
+          localStorage.removeItem("pageSize");
+        }
       } else {
         console.warn("Invalid page size value received:", pageSizeValue);
       }
@@ -244,13 +256,19 @@ export default function Pagination({
 
   const handlePreviousPage = () => {
     if (page > 1) {
-      setPage((prevPage) => prevPage - 1);
+      setPage((prevPage) => {
+        localStorage.setItem("page", String(prevPage - 1));
+        return prevPage - 1;
+      });
     }
   };
 
   const handleNextPage = () => {
     if (hasMore) {
-      setPage((prevPage) => prevPage + 1);
+      setPage((prevPage) => {
+        localStorage.setItem("page", String(prevPage + 1));
+        return prevPage + 1;
+      });
     }
   };
 
@@ -352,6 +370,12 @@ export default function Pagination({
   const startItemNumber = (page - 1) * pageSize + 1;
 
   useEffect(() => {
+    if (savedPage) {
+      setPage(defaultPage);
+    }
+    if (savedPageSize) {
+      setPageSize(defaultPageSize);
+    }
     const savedStateFilter = localStorage.getItem("dicomStateFilter");
     if (savedStateFilter) {
       setFilteredByState(savedStateFilter as DicomStateEnum);
@@ -425,9 +449,7 @@ export default function Pagination({
                 ${state === DicomStateEnum.VIEWED ? "bg-yellow-300" : ""}
                 ${state === DicomStateEnum.DRAFT ? "bg-orange-300" : ""}
                 ${state === DicomStateEnum.COMPLETED ? "bg-cyan-300" : ""}`}
-            >
-              {/* <Icon icon="solar:check-square-outline"></Icon> */}
-            </button>
+            ></button>
           ))}
         </div>
         <div className="text-xs flex items-center gap-1">

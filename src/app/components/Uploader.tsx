@@ -10,6 +10,7 @@ import Link from "next/link";
 import getAgeFromYYYYMMDD from "@/lib/getAgeFromYYYYMMDD";
 import { ExtractedFilesObject, processZipFile } from "@/lib/decompress";
 import { findAllDicomFilesWithDifferentStudyDescriptions } from "@/lib/dicoms";
+import sortFilesByName from "@/utils/sortFilesByName";
 
 Archive.init({
   workerUrl: "/libarchive.js/dist/worker-bundle.js",
@@ -350,38 +351,41 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         </div>
         <h2 className="text-gray-400 text-sm mb-1">.zip, .rar, .tar files</h2>
         <h4 className="font-semibold mb-5">Drag and Drop your files here</h4>
-        <div className="border border-gray-200 rounded-xl">
-          <div className="flex items-center border-b border-gray-200 bg-gray-100 rounded-t-xl">
-            <div className="border-r w-30 text-center text-sm text-gray-600 py-1 px-5 border-gray-200">
-              Selected
+        {files.length > 0 ? (
+          <div className="border border-gray-200 rounded-xl">
+            <div className="flex items-center border-b border-gray-200 bg-gray-100 rounded-t-xl">
+              <div className="border-r w-30 text-center text-sm text-gray-600 py-1 px-5 border-gray-200">
+                Selected
+              </div>
+              <div className="border-r border-gray-200 w-30 text-center text-sm text-gray-600 py-1 px-5 ">
+                Processed
+              </div>
+              <div className="w-30 text-center text-sm text-gray-600 py-1 px-5 ">
+                Total
+              </div>
             </div>
-            <div className="border-r border-gray-200 w-30 text-center text-sm text-gray-600 py-1 px-5 ">
-              Processed
-            </div>
-            <div className="w-30 text-center text-sm text-gray-600 py-1 px-5 ">
-              Total
+
+            <div className="flex items-center">
+              <h5 className=" border-r border-gray-200 w-30 text-center text-sm text-gray-600 py-1 px-5">
+                {
+                  files.filter(
+                    (file) => file.state === CustomFileStateType.selected
+                  ).length
+                }
+              </h5>
+              <h5 className="border-r border-gray-200 w-30 text-center text-sm text-gray-600 py-1 px-5">
+                {
+                  files.filter(
+                    (file) => file.state !== CustomFileStateType.selected
+                  ).length
+                }
+              </h5>
+              <h5 className="w-30 text-center text-sm text-gray-600 py-1 px-5">
+                {files.length}
+              </h5>
             </div>
           </div>
-          <div className="flex items-center">
-            <h5 className=" border-r border-gray-200 w-30 text-center text-sm text-gray-600 py-1 px-5">
-              {
-                files.filter(
-                  (file) => file.state === CustomFileStateType.selected
-                ).length
-              }
-            </h5>
-            <h5 className="border-r border-gray-200 w-30 text-center text-sm text-gray-600 py-1 px-5">
-              {
-                files.filter(
-                  (file) => file.state !== CustomFileStateType.selected
-                ).length
-              }
-            </h5>
-            <h5 className="w-30 text-center text-sm text-gray-600 py-1 px-5">
-              {files.length}
-            </h5>
-          </div>
-        </div>
+        ) : null}
         <input
           {...getInputProps()}
           onChange={handleFileChange}
@@ -398,7 +402,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
             Selected File{files.length === 1 ? "" : "s"} ({files.length})
           </div>
           <div className="border-t border-gray-200">
-            {Array.from(files).map(
+            {Array.from(sortFilesByName(files)).map(
               ({ file, state, bgColor, studies }, index) => {
                 return (
                   <div

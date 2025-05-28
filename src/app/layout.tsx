@@ -6,6 +6,7 @@ import {
   fetchAllPermissionsServer,
   prefetchPermissionServer,
 } from "@/utils/serverPermissions";
+import InnerLayout from "./components/InnerLayout";
 
 export const metadata: Metadata = {
   title: "Your Scans, Instantly Accessible",
@@ -15,13 +16,11 @@ export const metadata: Metadata = {
   },
 };
 
-interface AdminLayoutProps {
+interface LayoutProps {
   children: React.ReactNode;
 }
 
-export default async function AdminLayout({
-  children,
-}: Readonly<AdminLayoutProps>) {
+export default async function Layout({ children }: Readonly<LayoutProps>) {
   const initialPermissions = {};
   const permissionSlugs = await fetchAllPermissionsServer();
 
@@ -34,7 +33,7 @@ export default async function AdminLayout({
     <html lang="es">
       <body id="admin">
         <SWRConfig value={{ fallback: initialPermissions }}>
-          {children}
+          <InnerLayout>{children}</InnerLayout>
         </SWRConfig>
         <GlobalModal />
       </body>

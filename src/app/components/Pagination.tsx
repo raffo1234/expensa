@@ -11,7 +11,7 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import { formatInTimeZone } from "date-fns-tz";
 import { es } from "date-fns/locale";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import useSWR from "swr";
 import TableSkeleton from "@/components/FormSkeleton";
 import GeneratePDFButton from "@/components/GeneratePDFButton";
@@ -155,6 +155,7 @@ export default function Pagination({
   userId: string;
   userRoleId: string;
 }) {
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [filteredByState, setFilteredByState] = useState<DicomStateEnum | null>(
     null
   );
@@ -369,6 +370,21 @@ export default function Pagination({
     !isLoading && !error && result?.data && result?.data.length === 0;
   const startItemNumber = (page - 1) * pageSize + 1;
 
+  const clearLocalStorage = () => {
+    const savedTemplateId = localStorage.getItem("dicomActiveTemplateId");
+    if (savedTemplateId) localStorage.removeItem("dicomActiveTemplateId");
+
+    handleSearchChange(null);
+    if (searchInputRef.current) {
+      searchInputRef.current.value = "";
+    }
+
+    setPage(1);
+
+    handleStudyDateRangeChange(null);
+    handleReceiptDateRangeChange(null);
+  };
+
   useEffect(() => {
     if (savedPage) {
       setPage(defaultPage);
@@ -410,15 +426,25 @@ export default function Pagination({
   return (
     <>
       <div className="w-full mb-4">
-        <div className="flex max-w-lg w-full mx-auto sm:mx-0 items-center gap-3">
-          <UploadButton />
-          <input
-            type="text"
-            className="bg-white w-full rounded-full border border-gray-200 outline-0 py-2 px-5"
-            placeholder="Search ..."
-            defaultValue={search ?? ""}
-            onChange={(event) => debouncedSearch(event.target.value)}
-          />
+        <div className="flex w-full justify-between items-center gap-2">
+          <div className="flex max-w-xl items-center gap-2 mx-auto sm:mx-0">
+            <UploadButton />
+            <input
+              ref={searchInputRef}
+              type="text"
+              className="bg-white w-full rounded-full border border-gray-200 outline-0 py-2 px-5"
+              placeholder="Search ..."
+              defaultValue={search ?? ""}
+              onChange={(event) => debouncedSearch(event.target.value)}
+            />
+          </div>
+          <button
+            title="Clear Dates and Template o Location selections "
+            onClick={clearLocalStorage}
+            className="cursor-pointer hover:text-cyan-400 transition-colors duration-300"
+          >
+            <Icon icon="solar:restart-circle-linear" fontSize={32}></Icon>
+          </button>
         </div>
       </div>
       <div className="flex flex-col lg:flex-row gap-2 items-center mb-4 justify-between">

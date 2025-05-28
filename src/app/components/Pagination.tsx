@@ -1,5 +1,6 @@
 "use client";
 
+import toast from "react-hot-toast";
 import { Permissions } from "@/types/propertyState";
 import dynamic from "next/dynamic";
 import { DicomStateEnum } from "@/enums/dicomStateEnum";
@@ -383,6 +384,8 @@ export default function Pagination({
 
     handleStudyDateRangeChange(null);
     handleReceiptDateRangeChange(null);
+
+    toast.success("Filters was cleared Successfully!");
   };
 
   useEffect(() => {
@@ -439,9 +442,9 @@ export default function Pagination({
             />
           </div>
           <button
-            title="Clear Dates and Template o Location selections "
+            title="Clear Dates and Location"
             onClick={clearLocalStorage}
-            className="cursor-pointer hover:text-cyan-400 transition-colors duration-300"
+            className="cursor-pointer text-cyan-400 hover:text-cyan-600 transition-colors duration-300"
           >
             <Icon icon="solar:restart-circle-linear" fontSize={32}></Icon>
           </button>

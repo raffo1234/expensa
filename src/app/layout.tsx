@@ -6,6 +6,7 @@ import {
   fetchAllPermissionsServer,
   prefetchPermissionServer,
 } from "@/utils/serverPermissions";
+import { Toaster } from "react-hot-toast";
 
 export const metadata: Metadata = {
   title: "Your Scans, Instantly Accessible",
@@ -31,6 +32,7 @@ export default async function Layout({ children }: Readonly<LayoutProps>) {
   return (
     <html lang="es">
       <body id="admin">
+        <Toaster />
         <SWRConfig value={{ fallback: initialPermissions }}>
           {children}
         </SWRConfig>

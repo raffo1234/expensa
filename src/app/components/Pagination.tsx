@@ -517,7 +517,10 @@ export default function Pagination({
         <table className="text-sm w-full table-fixed">
           <thead>
             <tr className="border-b border-gray-200">
-              <th className="w-6 text-left uppercase text-xs font-semibold py-4 px-3">
+              <th className="w-10 py-4 text-center">
+                <input type="checkbox" />
+              </th>
+              <th className="w-6 text-center uppercase text-xs font-semibold py-4">
                 #
               </th>
               <th className="w-25 px-1">
@@ -541,7 +544,7 @@ export default function Pagination({
                   )}
                 </button>
               </th>
-              <th className="w-46">
+              <th className="w-40">
                 <button
                   onClick={() => handleSort("institution")}
                   disabled={!!noData}
@@ -562,7 +565,7 @@ export default function Pagination({
                   )}
                 </button>
               </th>
-              <th className="w-46 px-1">
+              <th className="w-40 px-1">
                 <button
                   disabled={!!noData}
                   onClick={() => handleSort("patient_name")}
@@ -715,7 +718,7 @@ export default function Pagination({
           {noData ? (
             <tbody>
               <tr>
-                <td colSpan={11} className="text-center">
+                <td colSpan={12} className="text-center">
                   <div className="relative w-full overflow-hidden">
                     <div className="absolute top-1/2 -translate-x-1/2 left-1/2 -translate-y-1/2 w-1/3 aspect-square rounded-full border border-gray-100"></div>
                     <div className="absolute top-1/2 -translate-x-1/2 left-1/2 -translate-y-1/2 w-1/2 aspect-square rounded-full border border-gray-100"></div>
@@ -774,7 +777,10 @@ export default function Pagination({
                         index === 0 ? " " : "border-t border-gray-200"
                       }`}
                     >
-                      <td className="whitespace-nowrap py-5 px-3">
+                      <td className="py-5 px-1 text-center">
+                        <input type="checkbox" />
+                      </td>
+                      <td className="whitespace-nowrap py-5 text-center">
                         {startItemNumber + index}
                       </td>
                       <td className="py-5 px-2">

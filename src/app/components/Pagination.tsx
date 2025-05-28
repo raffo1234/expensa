@@ -171,10 +171,6 @@ export default function Pagination({
     isAllItemsSelected,
   } = useCheckboxSelection<TableRowType>();
 
-  useEffect(() => {
-    console.log(selectedIds);
-  }, [selectedIds]);
-
   const [filteredByState, setFilteredByState] = useState<DicomStateEnum | null>(
     null
   );
@@ -454,9 +450,6 @@ export default function Pagination({
 
   return (
     <>
-      {result?.data?.[0] ? (
-        <GenerateCompressedPDFs dicom={result?.data[0]} />
-      ) : null}
       <div className="w-full mb-4">
         <div className="flex w-full justify-between items-center gap-2">
           <div className="flex max-w-xl items-center gap-2 mx-auto sm:mx-0">
@@ -542,17 +535,48 @@ export default function Pagination({
         </p>
       )}
 
+      <div className="w-fit pl-2 flex item-center mb-4 gap-2">
+        <div className="relative w-9 h-9">
+          <input
+            id="all"
+            type="checkbox"
+            checked={isAllItemsSelected(items)}
+            onChange={() => handleSelectAllClick(items)}
+            className="hidden peer"
+          />
+          <label
+            htmlFor="all"
+            className="cursor-pointer block w-full h-full border absolute top-1/2 -translate-x-1/2 -translate-y-1/2 left-1/2 border-gray-200 rounded-lg text-gray-400"
+          ></label>
+          <div className="bg-white cursor-pointer block w-5 h-5 border-2 pointer-events-none absolute top-1/2 -translate-x-1/2 -translate-y-1/2 left-1/2 peer-checked:border-cyan-400 rounded-sm text-gray-400 peer-checked:text-cyan-400"></div>
+          <svg
+            className="hidden peer-checked:text-cyan-400 pointer-events-none peer-checked:block absolute top-1/2 -translate-x-1/2 -translate-y-1/2 left-1/2"
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+          >
+            <g fill="none" fillRule="evenodd">
+              <path d="m12.593 23.258l-.011.002l-.071.035l-.02.004l-.014-.004l-.071-.035q-.016-.005-.024.005l-.004.01l-.017.428l.005.02l.01.013l.104.074l.015.004l.012-.004l.104-.074l.012-.016l.004-.017l-.017-.427q-.004-.016-.017-.018m.265-.113l-.013.002l-.185.093l-.01.01l-.003.011l.018.43l.005.012l.008.007l.201.093q.019.005.029-.008l.004-.014l-.034-.614q-.005-.018-.02-.022m-.715.002a.02.02 0 0 0-.027.006l-.006.014l-.034.614q.001.018.017.024l.015-.002l.201-.093l.01-.008l.004-.011l.017-.43l-.003-.012l-.01-.01z" />
+              <path
+                fill="currentColor"
+                d="M21.546 5.111a1.5 1.5 0 0 1 0 2.121L10.303 18.475a1.6 1.6 0 0 1-2.263 0L2.454 12.89a1.5 1.5 0 1 1 2.121-2.121l4.596 4.596L19.424 5.111a1.5 1.5 0 0 1 2.122 0"
+              />
+            </g>
+          </svg>
+        </div>
+        {selectedIds.size > 0 ? (
+          result?.data?.[0] ? (
+            <GenerateCompressedPDFs dicom={result?.data[0]} />
+          ) : null
+        ) : null}
+      </div>
+
       <div className="bg-white shadow rounded-xl overflow-auto">
         <table className="text-sm w-full table-fixed">
           <thead>
             <tr className="border-b border-gray-200">
-              <th className="w-10 py-4 text-center">
-                <input
-                  type="checkbox"
-                  checked={isAllItemsSelected(items)}
-                  onChange={() => handleSelectAllClick(items)}
-                />
-              </th>
+              <th className="w-13 py-4 text-center"></th>
               <th className="w-6 text-center uppercase text-xs font-semibold py-4">
                 #
               </th>
@@ -577,7 +601,7 @@ export default function Pagination({
                   )}
                 </button>
               </th>
-              <th className="w-40">
+              <th className="w-36">
                 <button
                   onClick={() => handleSort("institution")}
                   disabled={!!noData}
@@ -810,12 +834,36 @@ export default function Pagination({
                         index === 0 ? " " : "border-t border-gray-200"
                       }`}
                     >
-                      <td className="py-5 px-1 text-center">
-                        <input
-                          type="checkbox"
-                          checked={isItemSelected(id)}
-                          onChange={() => toggleItemSelected(id)}
-                        />
+                      <td className="py-3 pl-2 pr-1 text-center">
+                        <div className="relative w-fit cursor-pointer">
+                          <input
+                            id={id}
+                            type="checkbox"
+                            className="hidden peer"
+                            checked={isItemSelected(id)}
+                            onChange={() => toggleItemSelected(id)}
+                          />
+                          <label
+                            htmlFor={id}
+                            className="block cursor-pointer p-2 w-9 h-9 text-gray-400"
+                          ></label>
+                          <div className="pointer-events-none bg-white w-5 h-5 border-2 peer-checked:border-cyan-400 rounded-sm text-gray-400 peer-checked:text-cyan-400 absolute top-1/2 -translate-x-1/2 -translate-y-1/2 left-1/2"></div>
+                          <svg
+                            className="hidden peer-checked:text-cyan-400 pointer-events-none peer-checked:block absolute top-1/2 -translate-x-1/2 -translate-y-1/2 left-1/2"
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                          >
+                            <g fill="none" fillRule="evenodd">
+                              <path d="m12.593 23.258l-.011.002l-.071.035l-.02.004l-.014-.004l-.071-.035q-.016-.005-.024.005l-.004.01l-.017.428l.005.02l.01.013l.104.074l.015.004l.012-.004l.104-.074l.012-.016l.004-.017l-.017-.427q-.004-.016-.017-.018m.265-.113l-.013.002l-.185.093l-.01.01l-.003.011l.018.43l.005.012l.008.007l.201.093q.019.005.029-.008l.004-.014l-.034-.614q-.005-.018-.02-.022m-.715.002a.02.02 0 0 0-.027.006l-.006.014l-.034.614q.001.018.017.024l.015-.002l.201-.093l.01-.008l.004-.011l.017-.43l-.003-.012l-.01-.01z" />
+                              <path
+                                fill="currentColor"
+                                d="M21.546 5.111a1.5 1.5 0 0 1 0 2.121L10.303 18.475a1.6 1.6 0 0 1-2.263 0L2.454 12.89a1.5 1.5 0 1 1 2.121-2.121l4.596 4.596L19.424 5.111a1.5 1.5 0 0 1 2.122 0"
+                              />
+                            </g>
+                          </svg>
+                        </div>
                       </td>
                       <td className="whitespace-nowrap py-5 text-center">
                         {startItemNumber + index}

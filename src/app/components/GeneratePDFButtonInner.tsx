@@ -72,13 +72,7 @@ export default function GeneratePDFButtonInner({
   const downloadLinkRef = useRef<HTMLAnchorElement>(null);
 
   const [instance] = usePDF({
-    document: (
-      <ContentPDFDocument
-        dicom={dicom}
-        activeTemplate={dicom.template}
-        content={dicom.report}
-      />
-    ),
+    document: <ContentPDFDocument dicom={dicom} />,
   });
 
   const triggerDownload = () => {

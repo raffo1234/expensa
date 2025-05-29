@@ -43,21 +43,15 @@ export default function GenerateCompressedPDFs({
     }
   };
 
-  const generatePdfUrl = (dicom: DicomType): Promise<Blob> => {
+  const generatePdfUrl = (dicom: Partial<DicomType>): Promise<Blob> => {
     return new Promise((resolve, reject) => {
       const container = document.createElement("div");
       const root = createRoot(container);
 
+      if (!dicom) return null;
+
       const pdfElement = (
-        <BlobProvider
-          document={
-            <ContentPDFDocument
-              dicom={dicom}
-              activeTemplate={dicom.template}
-              content={dicom.report}
-            />
-          }
-        >
+        <BlobProvider document={<ContentPDFDocument dicom={dicom} />}>
           {({ blob, loading, error }) => {
             if (!loading && !error && blob) {
               resolve(blob);

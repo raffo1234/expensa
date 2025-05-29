@@ -33,11 +33,7 @@ export default function PDFPreview({ dicom }: { dicom: DicomType }) {
             minHeight: "100vh",
           }}
         >
-          <ContentPDFDocument
-            dicom={dicom}
-            activeTemplate={dicom.template}
-            content={dicom.report}
-          />
+          <ContentPDFDocument dicom={dicom} />
         </PDFViewer>
       </div>
     </div>

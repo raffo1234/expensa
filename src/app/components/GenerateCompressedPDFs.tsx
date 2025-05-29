@@ -1,23 +1,49 @@
 import JSZip from "jszip";
 import { BlobProvider } from "@react-pdf/renderer";
 import { saveAs } from "file-saver";
-import { createRoot } from "react-dom/client"; // Import createRoot
+import { createRoot } from "react-dom/client";
 import ContentPDFDocument from "@/components/ContentPDFDocument";
 import { DicomType } from "@/types/dicomType";
+import { supabase } from "@/lib/supabase";
 
-const GeneratePdfButton = ({ dicom }: { dicom: DicomType }) => {
+const fetchSelectedDicoms = async (selectedIds: Set<string>) => {
+  const idsToFetch = Array.from(selectedIds.keys());
+  const { data, error } = await supabase
+    .from("dicom")
+    .select(
+      "id, patient_id, patient_name, study_date, study_description, patient_age, birthday, report, template(header_image_url,sign_image_url,footer_image_url)"
+    )
+    .in("id", idsToFetch);
+
+  if (error) {
+    console.error("Error fetching selected DICOMs:", error);
+    return null;
+  }
+
+  return data;
+};
+
+export default function GenerateCompressedPDFs({
+  selectedIds,
+}: {
+  selectedIds: Set<string>;
+}) {
   const generatePdf = async () => {
-    try {
-      const pdfBlobs = await Promise.all(
-        [2, 3, 4].map(async () => await generatePdfUrl())
-      );
-      await createAndDownloadZip(pdfBlobs);
-    } catch (error) {
-      console.error("Error generating PDFs:", error);
+    const selectedDicomsData = await fetchSelectedDicoms(selectedIds);
+
+    if (selectedDicomsData) {
+      try {
+        const pdfBlobs = await Promise.all(
+          selectedDicomsData.map(async (dicom) => await generatePdfUrl(dicom))
+        );
+        await createAndDownloadZip(pdfBlobs);
+      } catch (error) {
+        console.error("Error generating PDFs:", error);
+      }
     }
   };
 
-  const generatePdfUrl = (): Promise<Blob> => {
+  const generatePdfUrl = (dicom: DicomType): Promise<Blob> => {
     return new Promise((resolve, reject) => {
       const container = document.createElement("div");
       const root = createRoot(container);
@@ -89,6 +115,4 @@ const GeneratePdfButton = ({ dicom }: { dicom: DicomType }) => {
       </svg>
     </button>
   );
-};
-
-export default GeneratePdfButton;
+}

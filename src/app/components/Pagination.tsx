@@ -552,7 +552,7 @@ export default function Pagination({
         </div>
         {selectedIds.size > 0 ? (
           result?.data?.[0] ? (
-            <GenerateCompressedPDFs dicom={result?.data[0]} />
+            <GenerateCompressedPDFs selectedIds={selectedIds} />
           ) : null
         ) : null}
       </div>

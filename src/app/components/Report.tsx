@@ -292,30 +292,12 @@ export default function Report({
             Save as {DicomStateEnum.COMPLETED}
           </button>
         ) : null}
-        {dicom.state === DicomStateEnum.COMPLETED ? (
-          <button
-            onClick={() =>
-              updateDicom(dicom.id, {
-                state: DicomStateEnum.COMPLETED,
-              })
-            }
-            title="Amend"
-            type="button"
-            className="px-6 py-2 font-semibold text-cyan-600 border-cyan-200 cursor-pointer border bg-cyan-50 rounded-xl"
-          >
-            Amend
-          </button>
-        ) : null}
-        <Link
-          target="_blank"
-          href={`/admin/dicoms/preview/pdf/${dicom.id}`}
-          title="PDF Preview"
-          type="button"
-          className="px-6 py-2 flex gap-3 items-center text-white border bg-rose-400 rounded-xl cursor-pointer"
-        >
-          <Icon icon="solar:eye-linear" fontSize={24} />
-          <span>PDF</span>
-        </Link>
+        <GeneratePDFButton
+          isDownloadable={false}
+          dicom={dicom}
+          userId={userId}
+          label="PDF"
+        />
       </div>
     </>
   );

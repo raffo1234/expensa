@@ -1,7 +1,6 @@
 "use client";
 
 import { Permissions } from "@/types/propertyState";
-import dynamic from "next/dynamic";
 import { DicomStateEnum } from "@/enums/dicomStateEnum";
 import extractAgeWidthUnit from "@/lib/extractAgeWithUnit";
 import formatDateYYYYMMDD from "@/lib/formatDateYYYYMMDD";
@@ -11,11 +10,10 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import { formatInTimeZone } from "date-fns-tz";
 import { es } from "date-fns/locale";
 import Link from "next/link";
-import { ChangeEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 import useSWR from "swr";
 import TableSkeleton from "@/components/FormSkeleton";
 import GeneratePDFButton from "@/components/GeneratePDFButton";
-import ContentPDFDocument from "./ContentPDFDocument";
 import DOCXPreview from "./DOCXPreview";
 import { useDebouncedCallback } from "use-debounce";
 import { startOfDay, formatISO, endOfDay, format } from "date-fns";
@@ -171,18 +169,6 @@ export default function PaginationReports({
     handlePageSize(value);
   }, 300);
 
-  const PDFDownloadLink = useMemo(
-    () =>
-      dynamic(
-        () => import("@react-pdf/renderer").then((mod) => mod.PDFDownloadLink),
-        {
-          ssr: false,
-          loading: () => <GeneratePDFButton isDisabled={true} label="PDF" />,
-        }
-      ),
-    []
-  );
-  const nowMs = Date.now();
   const defaultPageSize = 20;
   const [page, setPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(defaultPageSize);
@@ -715,29 +701,11 @@ export default function PaginationReports({
                           {state === DicomStateEnum.COMPLETED &&
                           hasPermission ? (
                             <>
-                              {PDFDownloadLink ? (
-                                <PDFDownloadLink
-                                  document={
-                                    <ContentPDFDocument
-                                      dicom={data[index]}
-                                      activeTemplate={data[index].template}
-                                      content={data[index].report}
-                                    />
-                                  }
-                                  fileName={`${data[index]?.patient_name}_${nowMs}_${userId}.pdf`}
-                                >
-                                  {({ loading }) =>
-                                    loading ? (
-                                      <GeneratePDFButton
-                                        label="PDF"
-                                        isDisabled={true}
-                                      />
-                                    ) : (
-                                      <GeneratePDFButton label="PDF" />
-                                    )
-                                  }
-                                </PDFDownloadLink>
-                              ) : null}
+                              <GeneratePDFButton
+                                label="PDF"
+                                dicom={data[index]}
+                                userId={userId}
+                              />
                               <DOCXPreview dicom={data[index]} />
                             </>
                           ) : null}

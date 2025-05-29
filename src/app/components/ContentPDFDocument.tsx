@@ -1,7 +1,6 @@
 import extractAgeWidthUnit from "@/lib/extractAgeWithUnit";
 import formatDateYYYYMMDD from "@/lib/formatDateYYYYMMDD";
-import { DicomType } from "@/types/dicomType";
-import { TemplateType } from "@/types/templateType";
+import { PartialDicomWithTemplate } from "@/types/dicomType";
 import {
   Document,
   Page,
@@ -81,15 +80,11 @@ const styles = StyleSheet.create({
 });
 
 export default function ContentPDFDocument({
-  content,
-  activeTemplate,
   dicom,
 }: {
-  content: string;
-  activeTemplate: TemplateType | undefined;
-  dicom: DicomType | undefined;
+  dicom: PartialDicomWithTemplate;
 }) {
-  const lines = content?.split("\n") || [];
+  const lines: string[] = dicom.report ? dicom.report.split("\n") : [];
 
   return (
     <Document
@@ -103,7 +98,7 @@ export default function ContentPDFDocument({
           <ImagePdf
             fixed
             style={{ marginBottom: 24 }}
-            src={activeTemplate?.header_image_url}
+            src={dicom.template?.header_image_url}
           />
           <View style={{ marginBottom: 24, display: "flex" }}>
             <View style={styles.table}>
@@ -157,12 +152,12 @@ export default function ContentPDFDocument({
           >
             <ImagePdf
               style={{ width: 75, height: "auto" }}
-              src={activeTemplate?.sign_image_url}
+              src={dicom.template?.sign_image_url}
             />
           </View>
         </View>
         <View style={styles.footer} fixed>
-          <ImagePdf src={activeTemplate?.footer_image_url} />
+          <ImagePdf src={dicom.template?.footer_image_url} />
         </View>
       </Page>
     </Document>

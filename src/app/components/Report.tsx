@@ -2,9 +2,8 @@
 
 import { useDebouncedCallback } from "use-debounce";
 import extractAgeWidthUnit from "@/lib/extractAgeWithUnit";
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect } from "react";
 import TextareaAutosize from "react-textarea-autosize";
-import dynamic from "next/dynamic";
 
 import Image from "next/image";
 import { TemplateType } from "@/types/templateType";
@@ -14,7 +13,6 @@ import Link from "next/link";
 import formatDateYYYYMMDD from "@/lib/formatDateYYYYMMDD";
 import { DicomStateEnum } from "@/enums/dicomStateEnum";
 import { supabase } from "@/lib/supabase";
-import ContentPDFDocument from "@/components/ContentPDFDocument";
 import DOCXPreview from "@/components/DOCXPreview";
 import GeneratePDFButton from "@/components/GeneratePDFButton";
 import { UUIDTypes } from "uuid";
@@ -40,15 +38,13 @@ const fetcher = async (id: UUIDTypes) => {
 
 export default function Report({
   templates,
-  userId,
   dicomId,
+  userId,
 }: {
   templates: TemplateType[] | [];
-  userId: string;
   dicomId: string;
+  userId: string;
 }) {
-  const nowMs = Date.now();
-
   const {
     data: dicom,
     error,
@@ -57,18 +53,6 @@ export default function Report({
   } = useSWR(`admin-${dicomId}`, () => fetcher(dicomId));
 
   const sortedTemplates = putFirst(templates, dicom?.template);
-
-  const PDFDownloadLink = useMemo(
-    () =>
-      dynamic(
-        () => import("@react-pdf/renderer").then((mod) => mod.PDFDownloadLink),
-        {
-          ssr: false,
-          loading: () => <GeneratePDFButton isDisabled={true} label="PDF" />,
-        }
-      ),
-    [dicom?.report]
-  );
 
   const handleTemplateActive = (dicomId: string, newTemplate: TemplateType) => {
     updateDicom(dicomId, { template_id: newTemplate.id });
@@ -177,26 +161,7 @@ export default function Report({
               {dicom.state}
             </div>
           ) : null}
-          {PDFDownloadLink ? (
-            <PDFDownloadLink
-              document={
-                <ContentPDFDocument
-                  dicom={dicom}
-                  activeTemplate={dicom.template}
-                  content={dicom.report}
-                />
-              }
-              fileName={`${dicom?.patient_name}_${nowMs}_${userId}.pdf`}
-            >
-              {({ loading }) =>
-                loading ? (
-                  <GeneratePDFButton label="PDF" isDisabled={true} />
-                ) : (
-                  <GeneratePDFButton label="PDF" />
-                )
-              }
-            </PDFDownloadLink>
-          ) : null}
+          <GeneratePDFButton dicom={dicom} userId={userId} label="PDF" />
           <DOCXPreview dicom={dicom} />
         </div>
       </div>
@@ -327,30 +292,12 @@ export default function Report({
             Save as {DicomStateEnum.COMPLETED}
           </button>
         ) : null}
-        {dicom.state === DicomStateEnum.COMPLETED ? (
-          <button
-            onClick={() =>
-              updateDicom(dicom.id, {
-                state: DicomStateEnum.COMPLETED,
-              })
-            }
-            title="Amend"
-            type="button"
-            className="px-6 py-2 font-semibold text-cyan-600 border-cyan-200 cursor-pointer border bg-cyan-50 rounded-xl"
-          >
-            Amend
-          </button>
-        ) : null}
-        <Link
-          target="_blank"
-          href={`/admin/dicoms/preview/pdf/${dicom.id}`}
-          title="PDF Preview"
-          type="button"
-          className="px-6 py-2 flex gap-3 items-center text-white border bg-rose-400 rounded-xl cursor-pointer"
-        >
-          <Icon icon="solar:eye-linear" fontSize={24} />
-          <span>PDF</span>
-        </Link>
+        <GeneratePDFButton
+          isDownloadable={false}
+          dicom={dicom}
+          userId={userId}
+          label="PDF"
+        />
       </div>
     </>
   );

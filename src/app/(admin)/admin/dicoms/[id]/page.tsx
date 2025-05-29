@@ -60,7 +60,7 @@ export default async function Page({ params }: { params: Params }) {
         fallback={<FallbackPermission />}
         loadingComponent={<LoadingReportComponent />}
       >
-        <Report dicomId={id} templates={templates || []} userId={userId} />
+        <Report dicomId={id} userId={userId} templates={templates || []} />
       </CheckPermission>
     </>
   );

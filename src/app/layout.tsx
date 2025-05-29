@@ -7,6 +7,7 @@ import {
   prefetchPermissionServer,
 } from "@/utils/serverPermissions";
 import { Toaster } from "react-hot-toast";
+import { ReactScan } from "@/components/ReactScan";
 
 export const metadata: Metadata = {
   title: "Your Scans, Instantly Accessible",
@@ -33,6 +34,7 @@ export default async function Layout({ children }: Readonly<LayoutProps>) {
     <html lang="es">
       <body id="admin">
         <Toaster />
+        <ReactScan />
         <SWRConfig value={{ fallback: initialPermissions }}>
           {children}
         </SWRConfig>

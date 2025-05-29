@@ -1,6 +1,6 @@
 import extractAgeWidthUnit from "@/lib/extractAgeWithUnit";
 import formatDateYYYYMMDD from "@/lib/formatDateYYYYMMDD";
-import { DicomType } from "@/types/dicomType";
+import { PartialDicomWithTemplate } from "@/types/dicomType";
 import {
   Document,
   Page,
@@ -82,9 +82,8 @@ const styles = StyleSheet.create({
 export default function ContentPDFDocument({
   dicom,
 }: {
-  dicom: Partial<DicomType>;
+  dicom: PartialDicomWithTemplate;
 }) {
-  console.log("report ====>>>>", dicom.report);
   const lines: string[] = dicom.report ? dicom.report.split("\n") : [];
 
   return (

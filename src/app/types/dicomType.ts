@@ -16,10 +16,14 @@ export type DicomType = {
   series_description: string;
   created_at: string;
   state: DicomStateEnum;
-  template_id: string;
+  template_id?: string;
   report: string;
   gender: string;
   birthday: string;
   institution: string;
   template?: TemplateType | undefined;
+};
+
+export type PartialDicomWithTemplate = Partial<Omit<DicomType, "template">> & {
+  template?: Partial<TemplateType>;
 };

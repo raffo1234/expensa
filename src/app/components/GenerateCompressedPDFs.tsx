@@ -3,8 +3,8 @@ import { BlobProvider } from "@react-pdf/renderer";
 import { saveAs } from "file-saver";
 import { createRoot } from "react-dom/client";
 import ContentPDFDocument from "@/components/ContentPDFDocument";
-import { DicomType } from "@/types/dicomType";
 import { supabase } from "@/lib/supabase";
+import { PartialDicomWithTemplate } from "@/types/dicomType";
 
 const fetchSelectedDicoms = async (selectedIds: Set<string>) => {
   const idsToFetch = Array.from(selectedIds.keys());
@@ -20,7 +20,7 @@ const fetchSelectedDicoms = async (selectedIds: Set<string>) => {
     return null;
   }
 
-  return data;
+  return data as PartialDicomWithTemplate[];
 };
 
 export default function GenerateCompressedPDFs({
@@ -43,7 +43,7 @@ export default function GenerateCompressedPDFs({
     }
   };
 
-  const generatePdfUrl = (dicom: Partial<DicomType>): Promise<Blob> => {
+  const generatePdfUrl = (dicom: PartialDicomWithTemplate): Promise<Blob> => {
     return new Promise((resolve, reject) => {
       const container = document.createElement("div");
       const root = createRoot(container);

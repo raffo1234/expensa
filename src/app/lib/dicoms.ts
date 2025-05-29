@@ -18,7 +18,9 @@ interface DicomMetadata {
   institutionName?: string;
 }
 
-async function getStudyDescription(file: File): Promise<string | undefined> {
+export async function getStudyDescription(
+  file: File
+): Promise<string | undefined> {
   try {
     const arrayBuffer = await file.arrayBuffer();
     const byteArray = new Uint8Array(arrayBuffer);

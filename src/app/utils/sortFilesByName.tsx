@@ -8,6 +8,7 @@ interface FileObject {
 interface ArrayEntry {
   bgColor: string;
   state: string;
+  patientName: string;
   studies: { id: string; state: string }[];
   file: FileObject;
 }

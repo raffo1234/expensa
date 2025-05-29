@@ -1,21 +1,8 @@
-interface FileObject {
-  name: string;
-  lastModified?: number;
-  size?: number;
-  type?: string;
-}
-
-interface ArrayEntry {
-  bgColor: string;
-  state: string;
-  patientName: string;
-  studies: { id: string; state: string }[];
-  file: FileObject;
-}
+import { CustomFileType } from "@/types/customFileType";
 
 export default function sortFilesByName(
-  filesArray: ArrayEntry[]
-): ArrayEntry[] {
+  filesArray: CustomFileType[]
+): CustomFileType[] {
   if (!Array.isArray(filesArray)) {
     console.error("Input is not an array.");
     return filesArray;

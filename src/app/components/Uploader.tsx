@@ -9,11 +9,13 @@ import { useDropzone } from "react-dropzone";
 import Link from "next/link";
 import getAgeFromYYYYMMDD from "@/lib/getAgeFromYYYYMMDD";
 import { ExtractedFilesObject, processZipFile } from "@/lib/decompress";
-import {
-  findAllDicomFilesWithDifferentStudyDescriptions,
-  getStudyDescription,
-} from "@/lib/dicoms";
+import { findAllDicomFilesWithDifferentStudyDescriptions } from "@/lib/dicoms";
 import sortFilesByName from "@/utils/sortFilesByName";
+import {
+  CustomFileStateType,
+  CustomFileType,
+  Study,
+} from "@/types/customFileType";
 
 Archive.init({
   workerUrl: "/libarchive.js/dist/worker-bundle.js",
@@ -124,28 +126,6 @@ async function insertDataSetToDb(
     }
   }
 }
-
-enum CustomFileStateType {
-  selected = "Selected",
-  processing = "Processing...",
-  processed = "Processed",
-  duplicated = "Duplicated",
-  inserted = "Inserted",
-  noTag = "No Tag found",
-  noDcimFile = "No DICOM file",
-  fileNotSupported = "File no supported!",
-  errorLoading = "Error loading!",
-}
-
-type CustomFileType = {
-  studies: Study[];
-  file: File;
-  patientName: string;
-  state: CustomFileStateType;
-  bgColor: string;
-};
-
-type Study = { id: string; state: CustomFileStateType };
 
 const editFileAtIndex = (
   files: CustomFileType[],

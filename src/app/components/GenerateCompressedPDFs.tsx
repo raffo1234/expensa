@@ -56,7 +56,7 @@ const GeneratePdfButton = ({ dicom }: { dicom: DicomType }) => {
 
   async function createAndDownloadZip(pdfBlobs: Blob[]) {
     const zip = new JSZip();
-    const agent_name = "Abhay Kumar"; // This can be dynamic for different PDFs
+    const agent_name = "Abhay Kumar";
     pdfBlobs.forEach((blob, index) => {
       zip.file(`${agent_name}_${index}.pdf`, blob);
     });

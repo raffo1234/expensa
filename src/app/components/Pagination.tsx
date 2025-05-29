@@ -2,7 +2,6 @@
 
 import toast from "react-hot-toast";
 import { Permissions } from "@/types/propertyState";
-import dynamic from "next/dynamic";
 import { DicomStateEnum } from "@/enums/dicomStateEnum";
 import extractAgeWidthUnit from "@/lib/extractAgeWithUnit";
 import formatDateYYYYMMDD from "@/lib/formatDateYYYYMMDD";
@@ -12,11 +11,10 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import { formatInTimeZone } from "date-fns-tz";
 import { es } from "date-fns/locale";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
 import TableSkeleton from "@/components/FormSkeleton";
 import GeneratePDFButton from "@/components/GeneratePDFButton";
-import ContentPDFDocument from "./ContentPDFDocument";
 import DOCXPreview from "./DOCXPreview";
 import { useDebouncedCallback } from "use-debounce";
 import { startOfDay, formatISO, endOfDay, format } from "date-fns";
@@ -192,19 +190,6 @@ export default function Pagination({
     handlePageSize(value);
   }, 300);
 
-  const PDFDownloadLink = useMemo(
-    () =>
-      dynamic(
-        () => import("@react-pdf/renderer").then((mod) => mod.PDFDownloadLink),
-        {
-          ssr: false,
-          loading: () => <GeneratePDFButton isDisabled={true} label="PDF" />,
-        }
-      ),
-    []
-  );
-
-  const nowMs = Date.now();
   const savedPageSize = localStorage.getItem("pageSize");
   const defaultPageSize = savedPageSize ? parseInt(savedPageSize, 10) : 20;
 
@@ -296,7 +281,7 @@ export default function Pagination({
         newSortDirection = "desc";
       } else if (sortDirection === "desc") {
         newSortDirection = null;
-        setSortColumn(null); // Reset sort column when toggling from desc
+        setSortColumn(null);
       }
     } else {
       setSortColumn(column);
@@ -914,36 +899,16 @@ export default function Pagination({
                         <div className="flex gap-1 justify-end">
                           {state === DicomStateEnum.COMPLETED &&
                           hasPermission ? (
-                            <>
-                              {PDFDownloadLink && result.data ? (
-                                <PDFDownloadLink
-                                  document={
-                                    <ContentPDFDocument
-                                      dicom={result.data?.[index]}
-                                      activeTemplate={
-                                        result.data?.[index].template
-                                      }
-                                      content={result.data?.[index].report}
-                                    />
-                                  }
-                                  fileName={`${result?.data[index]?.patient_name}_${nowMs}_${userId}.pdf`}
-                                >
-                                  {({ loading }) =>
-                                    loading ? (
-                                      <GeneratePDFButton
-                                        label="PDF"
-                                        isDisabled={true}
-                                      />
-                                    ) : (
-                                      <GeneratePDFButton label="PDF" />
-                                    )
-                                  }
-                                </PDFDownloadLink>
-                              ) : null}
-                              {result.data ? (
+                            result.data?.[index] ? (
+                              <>
+                                <GeneratePDFButton
+                                  dicom={result.data[index]}
+                                  label="PDF"
+                                  userId={userId}
+                                />
                                 <DOCXPreview dicom={result.data[index]} />
-                              ) : null}
-                            </>
+                              </>
+                            ) : null
                           ) : null}
                           <Link
                             href={`/admin/dicoms/${id}`}

@@ -1,15 +1,35 @@
+import { usePDF } from "@react-pdf/renderer";
+import ContentPDFDocument from "./ContentPDFDocument";
+import { DicomType } from "@/types/dicomType";
+import Link from "next/link";
+
 export default function GeneratePDFButton({
   label,
-  isDisabled = false,
+  dicom,
+  userId,
 }: {
+  userId: string;
   label: string;
-  isDisabled?: boolean;
+  dicom: DicomType;
 }) {
+  const nowMs = Date.now();
+
+  const [instance] = usePDF({
+    document: (
+      <ContentPDFDocument
+        dicom={dicom}
+        activeTemplate={dicom.template}
+        content={dicom.report}
+      />
+    ),
+  });
+
   return (
-    <button
-      disabled={isDisabled}
-      type="button"
+    <Link
+      download={`${dicom.patient_name}_${nowMs}_${userId}.pdf`}
+      href={instance.url ? instance.url : ""}
       title="Download PDF"
+      target="_blank"
       className="flex gap-1 items-center text-white cursor-pointer font-semibold disabled:opacity-90 py-2 px-6 text-xs bg-rose-400 hover:bg-rose-500 transition-colors duration-500 rounded-full"
     >
       <svg
@@ -27,7 +47,7 @@ export default function GeneratePDFButton({
           d="M3.75 15a.75.75 0 0 0-1.5 0v.055c0 1.367 0 2.47.117 3.337c.12.9.38 1.658.981 2.26c.602.602 1.36.86 2.26.982c.867.116 1.97.116 3.337.116h6.11c1.367 0 2.47 0 3.337-.116c.9-.122 1.658-.38 2.26-.982s.86-1.36.982-2.26c.116-.867.116-1.97.116-3.337V15a.75.75 0 0 0-1.5 0c0 1.435-.002 2.436-.103 3.192c-.099.734-.28 1.122-.556 1.399c-.277.277-.665.457-1.4.556c-.755.101-1.756.103-3.191.103H9c-1.435 0-2.437-.002-3.192-.103c-.734-.099-1.122-.28-1.399-.556c-.277-.277-.457-.665-.556-1.4c-.101-.755-.103-1.756-.103-3.191"
         />
       </svg>
-      <span>{label}</span>
-    </button>
+      <span>{!instance.url ? "loading ..." : label}</span>
+    </Link>
   );
 }

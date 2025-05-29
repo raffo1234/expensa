@@ -9,19 +9,19 @@ export default function sortFilesByName(
   }
 
   filesArray.sort((a, b) => {
-    if (!a || !a.file || typeof a.file.name !== "string") {
+    if (!a || !a.file || typeof a.patientName !== "string") {
       console.warn("Encountered an item with unexpected structure:", a);
 
       return 0;
     }
-    if (!b || !b.file || typeof b.file.name !== "string") {
+    if (!b || !b.file || typeof b.patientName !== "string") {
       console.warn("Encountered an item with unexpected structure:", b);
 
       return 0;
     }
 
-    const nameA = a.file.name.toLowerCase();
-    const nameB = b.file.name.toLowerCase();
+    const nameA = a.patientName.toLowerCase();
+    const nameB = b.patientName.toLowerCase();
 
     if (nameA < nameB) {
       return -1;

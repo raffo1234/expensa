@@ -3,16 +3,18 @@
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { useState } from "react";
-import { Document, Packer, Paragraph, TextRun } from "docx";
+import { Packer } from "docx";
 import { supabase } from "@/lib/supabase";
 import { PartialDicomWithTemplate } from "@/types/dicomType";
+import createDocxDocument from "@/lib/createDocxDocument"; // Import the new function
+import { DicomType } from "@/types/dicomType"; // Import full DicomType for createDocxDocument
 
 const fetchSelectedDicoms = async (selectedIds: Set<string>) => {
   const idsToFetch = Array.from(selectedIds);
   const { data, error } = await supabase
     .from("dicom")
     .select(
-      "id, patient_id, patient_name, study_date, study_description, patient_age, birthday, report"
+      "id, patient_id, patient_name, study_date, study_description, patient_age, birthday, report, template(header_image_url,sign_image_url,footer_image_url)"
     )
     .in("id", idsToFetch);
 
@@ -39,80 +41,18 @@ export default function GenerateCompressedDOCXs({
     if (selectedDicomsData) {
       try {
         const docxBlobs = await Promise.all(
-          selectedDicomsData.map(async (dicom) => await generateDocxBlob(dicom))
+          selectedDicomsData.map(async (dicom) => {
+            // Type cast PartialDicomWithTemplate to DicomType as createDocxDocument expects the full type
+            const fullDicom: DicomType = dicom as DicomType;
+            const doc = await createDocxDocument(fullDicom);
+            return await Packer.toBlob(doc);
+          })
         );
         await createAndDownloadZip(selectedDicomsData, docxBlobs);
       } catch (error) {
         console.error("Error generating DOCXs:", error);
       }
     }
-  };
-
-  const generateDocxBlob = (dicom: PartialDicomWithTemplate): Promise<Blob> => {
-    return new Promise((resolve, reject) => {
-      try {
-        const doc = new Document({
-          sections: [
-            {
-              properties: {},
-              children: [
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: "Patient ID: ",
-                      bold: true,
-                    }),
-                    new TextRun(dicom.patient_id || ""),
-                  ],
-                }),
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: "Patient Name: ",
-                      bold: true,
-                    }),
-                    new TextRun(dicom.patient_name || ""),
-                  ],
-                }),
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: "Study Date: ",
-                      bold: true,
-                    }),
-                    new TextRun(dicom.study_date || ""),
-                  ],
-                }),
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: "Study Description: ",
-                      bold: true,
-                    }),
-                    new TextRun(dicom.study_description || ""),
-                  ],
-                }),
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: "Report: ",
-                      bold: true,
-                    }),
-                    new TextRun(dicom.report || ""),
-                  ],
-                }),
-              ],
-            },
-          ],
-        });
-
-        Packer.toBlob(doc).then((blob) => {
-          resolve(blob);
-        });
-      } catch (error) {
-        reject(error);
-      }
-    });
   };
 
   async function createAndDownloadZip(

@@ -80,7 +80,7 @@ export default function GenerateCompressedDOCXs({
       onClick={generateDocx}
       disabled={isLoading}
       title="Download compressed DOCXs"
-      className={`${isLoading ? "cursor-not-allowed pointer-none" : ""} cursor-pointer rounded-lg text-gray-500 p-1 border border-gray-200 hover:text-cyan-400`}
+      className={`${isLoading ? "cursor-not-allowed pointer-none" : ""} cursor-pointer rounded-lg p-1 border border-gray-200 hover:bg-gray-100 transition-colors duration-300`}
     >
       {isLoading ? (
         <svg
@@ -92,7 +92,7 @@ export default function GenerateCompressedDOCXs({
         >
           <path
             fill="none"
-            stroke="currentColor"
+            stroke="#42a5f5"
             strokeLinecap="round"
             strokeWidth="1.5"
             d="M7 3.338A9.95 9.95 0 0 1 12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12c0-1.821.487-3.53 1.338-5"
@@ -105,10 +105,13 @@ export default function GenerateCompressedDOCXs({
           height="24"
           viewBox="0 0 24 24"
         >
-          <path
-            fill="currentColor"
-            d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"
-          />
+          <g fill="none">
+            <path d="M0 0h24v24H0z" />
+            <path
+              fill="#42a5f5"
+              d="M8 16h8v2H8zm0-4h8v2H8zm6-10H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8zm4 18H6V4h7v5h5z"
+            />
+          </g>
         </svg>
       )}
     </button>

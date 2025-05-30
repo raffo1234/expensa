@@ -1,21 +1,10 @@
+import { DicomMetadata } from "@/types/dicomMetadata";
 import { ExtractedFilesObject } from "./decompress";
 import dicomParser from "dicom-parser"; // Or dcmjs, etc.
 
 interface DicomFileWithMetadata {
   file: File;
   metadata: DicomMetadata;
-}
-
-interface DicomMetadata {
-  patientName?: string;
-  patientId?: string;
-  patientAge?: string;
-  studyDescription?: string;
-  modality?: string;
-  studyDate?: string;
-  patientSex?: string;
-  patientBirthDate?: string;
-  institutionName?: string;
 }
 
 export async function getStudyDescription(

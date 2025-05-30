@@ -174,10 +174,12 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   };
 
   const handleUpload = async () => {
-    for (let index = 0; index < files.length; index++) {
+    const sortedFiles = sortFilesByName(files, "desc");
+
+    for (let index = 0; index < sortedFiles.length; index++) {
       setUploading(true);
       if (files[index].state !== CustomFileStateType.selected) {
-        console.log(
+        console.info(
           `Skipping file at index ${index} because it is not in the selected state.`
         );
         setUploading(false);
@@ -226,10 +228,10 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
             continue;
         }
 
-        const diferentStudyDescriptions =
+        const differentStudyDescriptions =
           await findAllDicomFilesWithDifferentStudyDescriptions(extractedFiles);
 
-        if (diferentStudyDescriptions.length === 0) {
+        if (differentStudyDescriptions.length === 0) {
           editFileAtIndex(
             files,
             setFiles,
@@ -241,7 +243,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         }
 
         const studies: Study[] = [];
-        for (const study of diferentStudyDescriptions) {
+        for (const study of differentStudyDescriptions) {
           const insertedData = await insertDataSetToDb(userId, study.metadata);
           if (!insertedData) {
             editFileAtIndex(

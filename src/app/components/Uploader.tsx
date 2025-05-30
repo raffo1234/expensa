@@ -11,6 +11,11 @@ import getAgeFromYYYYMMDD from "@/lib/getAgeFromYYYYMMDD";
 import { ExtractedFilesObject, processZipFile } from "@/lib/decompress";
 import { findAllDicomFilesWithDifferentStudyDescriptions } from "@/lib/dicoms";
 import sortFilesByName from "@/utils/sortFilesByName";
+import {
+  CustomFileStateType,
+  CustomFileType,
+  Study,
+} from "@/types/customFileType";
 
 Archive.init({
   workerUrl: "/libarchive.js/dist/worker-bundle.js",
@@ -122,27 +127,6 @@ async function insertDataSetToDb(
   }
 }
 
-enum CustomFileStateType {
-  selected = "Selected",
-  processing = "Processing...",
-  processed = "Processed",
-  duplicated = "Duplicated",
-  inserted = "Inserted",
-  noTag = "No Tag found",
-  noDcimFile = "No DICOM file",
-  fileNotSupported = "File no supported!",
-  errorLoading = "Error loading!",
-}
-
-type CustomFileType = {
-  studies: Study[];
-  file: File;
-  state: CustomFileStateType;
-  bgColor: string;
-};
-
-type Study = { id: string; state: CustomFileStateType };
-
 const editFileAtIndex = (
   files: CustomFileType[],
   setFiles: React.Dispatch<React.SetStateAction<CustomFileType[]>>,
@@ -169,6 +153,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   onUploadSuccess,
 }) => {
   const [uploading, setUploading] = useState(false);
+  const [isDropping, setSiDropping] = useState(false);
   const [files, setFiles] = useState<CustomFileType[]>([]);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -180,6 +165,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         {
           studies: [],
           file,
+          patientName: file.name,
           state: CustomFileStateType.selected,
           bgColor: "bg-gray-50",
         },
@@ -208,9 +194,10 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         "bg-cyan-50"
       );
       const extension = await fileTypeFromBlob(selectedFile);
-      console.log(
+      console.warn(
         `Processing file at index ${index}: ${selectedFile.name}, type: ${extension?.ext}`
       );
+
       try {
         let extractedFiles: ExtractedFilesObject = {};
         switch (extension?.ext) {
@@ -224,6 +211,9 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
           case "tar":
             const archiveTar = await Archive.open(selectedFile);
             extractedFiles = await archiveTar.extractFiles();
+            break;
+          case "dcm":
+            extractedFiles = { [selectedFile.name]: selectedFile };
             break;
           default:
             editFileAtIndex(
@@ -297,28 +287,71 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     }
   };
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    Array.from(acceptedFiles).map((file) => {
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    setSiDropping(true);
+
+    const compressedMimeTypes = [
+      "application/zip",
+      "application/x-rar-compressed",
+      "application/gzip",
+      "application/x-tar",
+    ];
+
+    const nonCompressedFiles: ExtractedFilesObject = {};
+    const compressedFiles: File[] = [];
+
+    for (const file of acceptedFiles) {
+      const fileTypeResult = await fileTypeFromBlob(file);
+      const mimeType = fileTypeResult?.mime;
+      const isCompressed = mimeType
+        ? compressedMimeTypes.includes(mimeType)
+        : false;
+
+      if (isCompressed) {
+        compressedFiles.push(file);
+      } else {
+        nonCompressedFiles[file.name] = file;
+      }
+    }
+
+    // Process non-compressed files
+    const differentStudyDescriptions =
+      await findAllDicomFilesWithDifferentStudyDescriptions(nonCompressedFiles);
+
+    if (differentStudyDescriptions && differentStudyDescriptions.length > 0) {
+      differentStudyDescriptions.map(({ file, metadata }) => {
+        setFiles((prev) => [
+          ...prev,
+          {
+            studies: [],
+            file,
+            patientName: metadata.patientName ?? "",
+            state: CustomFileStateType.selected,
+            bgColor: "bg-gray-50",
+          },
+        ]);
+      });
+    }
+
+    // Process compressed files
+    compressedFiles.map((file) => {
       setFiles((prev) => [
         ...prev,
         {
           studies: [],
           file,
+          patientName: file.name,
           state: CustomFileStateType.selected,
           bgColor: "bg-gray-50",
         },
       ]);
     });
+
+    setSiDropping(false);
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: {
-      "application/octet-stream": [".rar", ".tar"],
-      "application/zip": [".zip"],
-      "application/x-tar": [".tar"],
-      "application/x-rar-compressed": [".rar"],
-    },
   });
 
   return (
@@ -330,21 +363,21 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
             ? "bg-cyan-50 border-cyan-100"
             : "bg-gray-50 border-gray-300"
         }
-        ${uploading ? "cursor-no-drop" : "cursor-pointer"}
+        ${uploading || isDropping ? "cursor-no-drop" : "cursor-pointer"}
         transition-all  hover:outline-8 outline-cyan-50 duration-300 hover:border-cyan-200 hover:bg-white flex flex-col group items-center justify-center py-20 w-full border border-dashed rounded-2xl`}
       >
         <div className="w-11 h-11 relative mb-3">
           <Icon
             icon="solar:record-broken"
             className={`${
-              uploading ? "opacity-100" : "opacity-0"
+              uploading || isDropping ? "opacity-100" : "opacity-0"
             } text-gray-500 animate-spin absolute left-0 top-0 group-hover:text-cyan-400 transition-all duration-300`}
             fontSize={42}
           />
           <Icon
             icon="solar:cloud-upload-broken"
             className={`${
-              uploading ? "opacity-0" : "opacity-100"
+              uploading || isDropping ? "opacity-0" : "opacity-100"
             } text-gray-700 absolute left-0 top-0 group-hover:text-cyan-400 transition-colors duration-300`}
             fontSize={42}
           />
@@ -403,14 +436,14 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
           </div>
           <div className="border-t border-gray-200">
             {Array.from(sortFilesByName(files)).map(
-              ({ file, state, bgColor, studies }, index) => {
+              ({ patientName, state, bgColor, studies }, index) => {
                 return (
                   <div
                     key={index}
                     className={`${bgColor} last:rounded-b-xl flex text-sm items-center gap-2 first:border-0 border-t border-gray-200`}
                   >
                     <div key={index} className="truncate flex-1 px-5 py-2">
-                      {file.name}
+                      {patientName}
                     </div>
                     <div className="w-40 flex flex-col gap-1 whitespace-nowrap flex-shrink-0 text-center border-l border-gray-200">
                       {state === CustomFileStateType.duplicated ||

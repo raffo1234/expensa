@@ -1,4 +1,3 @@
-// createDocxDocument.ts
 "use client";
 
 import extractAgeWidthUnit from "@/lib/extractAgeWithUnit";

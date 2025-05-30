@@ -4,21 +4,16 @@ import React from "react";
 import { Packer } from "docx";
 import { DicomType } from "@/types/dicomType";
 import createDocxDocument from "@/lib/createDocxDocument";
+import { saveAs } from "file-saver";
 
 export default function DOCXPreview({ dicom }: { dicom: DicomType }) {
   const generateDocx = async () => {
     try {
       const doc = await createDocxDocument(dicom);
       const blob = await Packer.toBlob(doc);
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
       const now = Date.now();
-      link.href = url;
-      link.download = `${dicom.patient_name}_${dicom.user_id}_${now}.docx`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      const filename = `${dicom.patient_name}_${dicom.user_id}_${now}.docx`;
+      saveAs(blob, filename);
     } catch (error) {
       console.error("Error creating document:", error);
     }

@@ -6,8 +6,8 @@ import { useState } from "react";
 import { Packer } from "docx";
 import { supabase } from "@/lib/supabase";
 import { PartialDicomWithTemplate } from "@/types/dicomType";
-import createDocxDocument from "@/lib/createDocxDocument"; // Import the new function
-import { DicomType } from "@/types/dicomType"; // Import full DicomType for createDocxDocument
+import createDocxDocument from "@/lib/createDocxDocument";
+import { DicomType } from "@/types/dicomType";
 
 const fetchSelectedDicoms = async (selectedIds: Set<string>) => {
   const idsToFetch = Array.from(selectedIds);

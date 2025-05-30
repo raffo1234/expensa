@@ -24,6 +24,7 @@ import UploadButton from "./UploadButton";
 import useCheckPermission from "@/hooks/useCheckPermission";
 import useCheckboxSelection from "@/hooks/useCheckboxSelection";
 import GenerateCompressedPDFs from "./GenerateCompressedPDFs";
+import GenerateCompressedDOCs from "./GenerateCompressedDOCs";
 
 type SortDirection = "asc" | "desc" | null;
 
@@ -552,7 +553,10 @@ export default function Pagination({
         </div>
         {selectedIds.size > 0 ? (
           result?.data?.[0] ? (
-            <GenerateCompressedPDFs selectedIds={selectedIds} />
+            <>
+              <GenerateCompressedPDFs selectedIds={selectedIds} />
+              <GenerateCompressedDOCs selectedIds={selectedIds} />
+            </>
           ) : null
         ) : null}
       </div>

@@ -12,13 +12,24 @@ interface UsersPageContentProps {
 const UsersPageContent: React.FC<UsersPageContentProps> = ({
   currentUserId,
 }) => {
-  const { data: users, error, isLoading } = useSWR("users", userFetcher);
+  const {
+    data: users,
+    error,
+    isLoading,
+    mutate,
+  } = useSWR("users", userFetcher);
 
   if (isLoading) return <div>Loading users...</div>;
   if (error) return <div>Error loading users</div>;
   if (!users) return null;
 
-  return <UsersTable currentUserId={currentUserId} users={users} />;
+  return (
+    <UsersTable
+      mutateUsers={mutate}
+      currentUserId={currentUserId}
+      users={users}
+    />
+  );
 };
 
 export default UsersPageContent;

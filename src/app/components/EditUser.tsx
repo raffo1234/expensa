@@ -53,9 +53,11 @@ const templatesFetcher = async (userId: UUIDTypes) => {
 export default function EditUser({
   currentUserId,
   userId,
+  mutateUsers,
 }: {
   currentUserId: UUIDTypes;
   userId: string;
+  mutateUsers: () => void;
 }) {
   const { setModalContent, setModalOpen } = useGlobalState();
   const [messageApi, contextHolder] = message.useMessage();
@@ -110,6 +112,7 @@ export default function EditUser({
     } finally {
       setIsSaving(false);
       hideModal();
+      mutateUsers();
     }
   };
 

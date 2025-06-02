@@ -53,9 +53,11 @@ const templatesFetcher = async (userId: UUIDTypes) => {
 export default function EditUser({
   currentUserId,
   userId,
+  mutateUsers,
 }: {
   currentUserId: UUIDTypes;
   userId: string;
+  mutateUsers: () => void;
 }) {
   const { setModalContent, setModalOpen } = useGlobalState();
   const [messageApi, contextHolder] = message.useMessage();
@@ -110,6 +112,7 @@ export default function EditUser({
     } finally {
       setIsSaving(false);
       hideModal();
+      mutateUsers();
     }
   };
 
@@ -189,15 +192,14 @@ export default function EditUser({
                     htmlFor="first_name"
                     className="inline-block mb-2 text-sm"
                   >
-                    Nombre
+                    First name
                   </label>
                   <input
                     type="text"
                     id="first_name"
-                    {...register("first_name")}
                     required
                     disabled
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
+                    className="disabled:bg-gray-50 disabled:text-gray-500 w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
                   />
                 </div>
                 <div>
@@ -205,15 +207,14 @@ export default function EditUser({
                     htmlFor="last_name"
                     className="inline-block mb-2 text-sm"
                   >
-                    Apellido
+                    Last name
                   </label>
                   <input
                     type="text"
                     id="name"
-                    {...register("last_name")}
                     required
                     disabled
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
+                    className="disabled:bg-gray-50 disabled:text-gray-500 w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
                   />
                 </div>
                 <div>
@@ -227,9 +228,8 @@ export default function EditUser({
                     disabled
                     type="text"
                     id="username"
-                    {...register("username")}
                     required
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
+                    className="disabled:bg-gray-50 disabled:text-gray-500 w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
                   />
                 </div>
                 <div>
@@ -240,9 +240,8 @@ export default function EditUser({
                     disabled
                     type="email"
                     id="email"
-                    {...register("email")}
                     required
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
+                    className="disabled:bg-gray-50 disabled:text-gray-500 w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
                   />
                 </div>
               </fieldset>

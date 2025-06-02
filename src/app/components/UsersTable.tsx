@@ -7,9 +7,11 @@ import { UUIDTypes } from "uuid";
 export default function UsersTable({
   currentUserId,
   users,
+  mutateUsers,
 }: {
   currentUserId: UUIDTypes;
   users: UserType[] | null;
+  mutateUsers: () => void;
 }) {
   return (
     <div className="max-w-[1200px] mx-auto w-full">
@@ -20,20 +22,6 @@ export default function UsersTable({
           gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))",
         }}
       >
-        {/* <Link
-          href="/admin/users/add"
-          title="Agregar Usuario"
-          className="border-dashed bg-white border border-gray-200 hover:bg-gray-50 rounded-2xl p-4 flex hover:text-cyan-500 justify-center items-center"
-        >
-          <span className="text-center">
-            <Icon
-              icon="solar:add-square-broken"
-              fontSize={24}
-              className="mx-auto mb-2"
-            />
-            <span>Agregar Usuario</span>
-          </span>
-        </Link> */}
         {users?.map(({ first_name, last_name, id, role, image_url }) => {
           return (
             <div
@@ -58,7 +46,11 @@ export default function UsersTable({
                 {role?.name}
               </div>
               <div className="flex gap-2 items-center justify-center">
-                <EditUser currentUserId={currentUserId} userId={id} />
+                <EditUser
+                  mutateUsers={mutateUsers}
+                  currentUserId={currentUserId}
+                  userId={id}
+                />
                 <DeleteUser userId={id} />
               </div>
             </div>

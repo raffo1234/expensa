@@ -1,10 +1,12 @@
 "use client";
 
+import userFetcher from "@/fetchers/userFetcher";
 import { usePathname } from "next/navigation";
 import useCheckPermission from "@/hooks/useCheckPermission";
 import { Permissions } from "@/types/propertyState";
 import Link from "next/link";
 import { Icon } from "@iconify/react/dist/iconify.js";
+import { preload } from "swr";
 
 export default function AsideMenu({
   userRoleId,
@@ -129,6 +131,7 @@ export default function AsideMenu({
       <Link
         href={href}
         title={title}
+        onMouseEnter={() => preload("users", userFetcher)}
         className={`${
           href === currentPath ? "bg-gray-100" : "hover:bg-gray-50"
         }  rounded-xl py-3 px-4 gap-3.5 flex items-center transition-colors duration-300 `}

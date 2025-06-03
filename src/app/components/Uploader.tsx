@@ -225,6 +225,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
               CustomFileStateType.fileNotSupported,
               "bg-rose-50"
             );
+            setUploading(false);
             continue;
         }
 
@@ -239,6 +240,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
             CustomFileStateType.noDcimFile,
             "bg-rose-50"
           );
+          setUploading(false);
           continue;
         }
 
@@ -253,6 +255,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
               CustomFileStateType.errorLoading,
               "bg-rose-50"
             );
+            setUploading(false);
             continue;
           }
 
@@ -444,7 +447,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                     key={index}
                     className={`${bgColor} last:rounded-b-xl flex text-sm items-center gap-2 first:border-0 border-t border-gray-200`}
                   >
-                    <div key={index} className="truncate flex-1 px-5 py-2">
+                    <div className="truncate flex-1 px-5 py-2">
                       {patientName}
                     </div>
                     <div className="w-40 flex flex-col gap-1 whitespace-nowrap flex-shrink-0 text-center border-l border-gray-200">

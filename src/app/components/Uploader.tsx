@@ -16,6 +16,7 @@ import {
   CustomFileType,
   Study,
 } from "@/types/customFileType";
+import { v4 as uuidv4 } from "uuid";
 
 Archive.init({
   workerUrl: "/libarchive.js/dist/worker-bundle.js",
@@ -127,24 +128,32 @@ async function insertDataSetToDb(
   }
 }
 
-const editFileAtIndex = (
-  files: CustomFileType[],
+const editFileById = (
   setFiles: React.Dispatch<React.SetStateAction<CustomFileType[]>>,
-  index: number,
+  id: CustomFileType["id"],
   state: CustomFileStateType,
   bgColor: string,
   studies: Study[] = []
 ) => {
   setFiles((prevFiles) => {
-    if (index >= 0 && index < prevFiles.length) {
-      const updatedFiles = prevFiles.map((item, fileIndex) =>
-        fileIndex === index ? { ...item, state, bgColor, studies } : item
-      );
-      return updatedFiles;
-    } else {
-      console.warn(`Index ${index} is out of bounds for files array.`);
+    const updatedFiles = prevFiles.map((file) =>
+      file.id === id ? { ...file, state, bgColor, studies } : file
+    );
+
+    if (
+      !updatedFiles.some(
+        (file, index) =>
+          prevFiles[index]?.id === file.id &&
+          (prevFiles[index]?.state !== state ||
+            prevFiles[index]?.bgColor !== bgColor ||
+            prevFiles[index]?.studies !== studies)
+      )
+    ) {
+      console.warn(`No file found with id: ${id}`);
       return prevFiles;
     }
+
+    return updatedFiles;
   });
 };
 
@@ -163,6 +172,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       setFiles((prev) => [
         ...prev,
         {
+          id: uuidv4(),
           studies: [],
           file,
           patientName: file.name,
@@ -188,10 +198,9 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
 
       const selectedFile = files[index].file;
 
-      editFileAtIndex(
-        files,
+      editFileById(
         setFiles,
-        index,
+        files[index].id,
         CustomFileStateType.processing,
         "bg-cyan-50"
       );
@@ -218,10 +227,9 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
             extractedFiles = { [selectedFile.name]: selectedFile };
             break;
           default:
-            editFileAtIndex(
-              files,
+            editFileById(
               setFiles,
-              index,
+              files[index].id,
               CustomFileStateType.fileNotSupported,
               "bg-rose-50"
             );
@@ -233,10 +241,9 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
           await findAllDicomFilesWithDifferentStudyDescriptions(extractedFiles);
 
         if (differentStudyDescriptions.length === 0) {
-          editFileAtIndex(
-            files,
+          editFileById(
             setFiles,
-            index,
+            files[index].id,
             CustomFileStateType.noDcimFile,
             "bg-rose-50"
           );
@@ -248,10 +255,9 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         for (const study of differentStudyDescriptions) {
           const insertedData = await insertDataSetToDb(userId, study.metadata);
           if (!insertedData) {
-            editFileAtIndex(
-              files,
+            editFileById(
               setFiles,
-              index,
+              files[index].id,
               CustomFileStateType.errorLoading,
               "bg-rose-50"
             );
@@ -266,10 +272,9 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                 ? CustomFileStateType.inserted
                 : CustomFileStateType.duplicated,
             });
-          editFileAtIndex(
-            files,
+          editFileById(
             setFiles,
-            index,
+            files[index].id,
             insertedData.isNew
               ? CustomFileStateType.inserted
               : CustomFileStateType.duplicated,
@@ -278,10 +283,9 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
           );
         }
       } catch {
-        editFileAtIndex(
-          files,
+        editFileById(
           setFiles,
-          index,
+          files[index].id,
           CustomFileStateType.errorLoading,
           "bg-rose-50"
         );
@@ -328,6 +332,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         setFiles((prev) => [
           ...prev,
           {
+            id: uuidv4(),
             studies: [],
             file,
             patientName: metadata.patientName ?? "",
@@ -343,6 +348,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       setFiles((prev) => [
         ...prev,
         {
+          id: uuidv4(),
           studies: [],
           file,
           patientName: file.name,

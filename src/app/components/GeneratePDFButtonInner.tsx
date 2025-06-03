@@ -3,6 +3,7 @@ import ContentPDFDocument from "./ContentPDFDocument";
 import { DicomType } from "@/types/dicomType";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
+import toast from "react-hot-toast";
 
 const IconLoading = () => {
   return (
@@ -85,6 +86,7 @@ export default function GeneratePDFButtonInner({
   useEffect(() => {
     if (!instance.loading) {
       triggerDownload();
+      toast.success("Download completed successfully!");
     }
   }, [instance.loading]);
 

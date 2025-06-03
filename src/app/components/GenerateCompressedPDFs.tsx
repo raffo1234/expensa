@@ -1,5 +1,6 @@
 "use client";
 
+import toast from "react-hot-toast";
 import JSZip from "jszip";
 import { BlobProvider } from "@react-pdf/renderer";
 import { saveAs } from "file-saver";
@@ -97,6 +98,7 @@ export default function GenerateCompressedPDFs({
 
     zip.generateAsync({ type: "blob" }).then((content) => {
       saveAs(content, `patient_reports_${now}.zip`);
+      toast.success("Download completed successfully!");
       setIsLoading(false);
     });
   }

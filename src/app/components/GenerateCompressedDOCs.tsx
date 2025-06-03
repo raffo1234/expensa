@@ -1,5 +1,6 @@
 "use client";
 
+import toast from "react-hot-toast";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { useState } from "react";
@@ -70,8 +71,9 @@ export default function GenerateCompressedDOCXs({
     });
 
     zip.generateAsync({ type: "blob" }).then((content) => {
-      saveAs(content, `patient_reports_${now}.zip`);
       setIsLoading(false);
+      toast.success("Download completed successfully!");
+      saveAs(content, `patient_reports_${now}.zip`);
     });
   }
 

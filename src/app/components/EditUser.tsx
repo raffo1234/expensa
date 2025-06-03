@@ -195,6 +195,7 @@ export default function EditUser({
                     First name
                   </label>
                   <input
+                    {...register("first_name")}
                     type="text"
                     id="first_name"
                     required
@@ -210,6 +211,7 @@ export default function EditUser({
                     Last name
                   </label>
                   <input
+                    {...register("last_name")}
                     type="text"
                     id="name"
                     required
@@ -225,6 +227,7 @@ export default function EditUser({
                     Username
                   </label>
                   <input
+                    {...register("username")}
                     disabled
                     type="text"
                     id="username"
@@ -237,6 +240,7 @@ export default function EditUser({
                     Email
                   </label>
                   <input
+                    {...register("email")}
                     disabled
                     type="email"
                     id="email"

@@ -11,6 +11,7 @@ export enum CustomFileStateType {
 }
 
 export type CustomFileType = {
+  id: string;
   studies: Study[];
   file: File;
   patientName: string;

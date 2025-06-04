@@ -8,6 +8,8 @@ import { SubmitHandler, useForm } from "react-hook-form";
 import useSWR, { mutate } from "swr";
 import UploaderTemplateImageUploader from "./TemplateImageUploader";
 import { Icon } from "@iconify/react/dist/iconify.js";
+import FieldsSection from "./FieldsSection";
+import FieldLabel from "./FieldLabel";
 
 type Inputs = {
   name: string;
@@ -85,13 +87,11 @@ export default function EditTemplate({ id }: { id: string }) {
           </div>
           <form onSubmit={handleSubmit(onSubmit)}>
             <fieldset className="flex flex-col gap-4">
-              <div className="flex p-7 flex-col gap-4 border border-gray-100 rounded-xl bg-white">
+              <FieldsSection>
                 <h2 className="font-semibold">General Information</h2>
                 <div className="flex gap-4 items-center">
                   <div className="grow-1">
-                    <label htmlFor="name" className="inline-block mb-2 text-sm">
-                      Name
-                    </label>
+                    <FieldLabel htmlFor="name">Name</FieldLabel>
                     <input
                       type="text"
                       id="name"
@@ -101,12 +101,7 @@ export default function EditTemplate({ id }: { id: string }) {
                     />
                   </div>
                   <div className="grow-1">
-                    <label
-                      htmlFor="description"
-                      className="inline-block mb-2 text-sm"
-                    >
-                      Description
-                    </label>
+                    <FieldLabel htmlFor="description">Description</FieldLabel>
                     <input
                       type="text"
                       id="description"
@@ -116,54 +111,48 @@ export default function EditTemplate({ id }: { id: string }) {
                     />
                   </div>
                 </div>
-              </div>
-              <div className="flex p-7 flex-col gap-4 border border-gray-100 rounded-xl bg-white">
+              </FieldsSection>
+              <FieldsSection>
                 <h2 className="font-semibold">
                   Header Image <br />
                 </h2>
-                <fieldset className="flex flex-col items-center gap-4 w-full">
-                  <UploaderTemplateImageUploader
-                    templateId={id}
-                    imageFileName="header_image_url"
-                    userId={template.user_id}
-                    fileNamePrefix="header"
-                    mutate={mutateTemplate}
-                    templateImageUrl={template.header_image_url}
-                  />
-                </fieldset>
-              </div>
-              <div className="flex p-7 flex-col gap-4 border border-gray-100 rounded-xl bg-white">
+                <UploaderTemplateImageUploader
+                  templateId={id}
+                  imageFileName="header_image_url"
+                  userId={template.user_id}
+                  fileNamePrefix="header"
+                  mutate={mutateTemplate}
+                  templateImageUrl={template.header_image_url}
+                />
+              </FieldsSection>
+              <FieldsSection>
                 <h2 className="font-semibold">
                   Sign Image <br />
                   <span className="text-sm text-gray-500 font-normal">
                     Image dimensions: (75pt x 76.5pt) o (100px x 102px)
                   </span>
                 </h2>
-                <fieldset className="flex items-center gap-4 w-full">
-                  <UploaderTemplateImageUploader
-                    templateId={id}
-                    imageFileName="sign_image_url"
-                    userId={template.user_id}
-                    previewImageWidth="75pt"
-                    fileNamePrefix="sign"
-                    templateImageUrl={template.sign_image_url}
-                    mutate={mutateTemplate}
-                  />
-                </fieldset>
-              </div>
-              <div className="flex p-7 flex-col gap-4 border border-gray-100 rounded-xl bg-white">
+                <UploaderTemplateImageUploader
+                  templateId={id}
+                  imageFileName="sign_image_url"
+                  userId={template.user_id}
+                  previewImageWidth="75pt"
+                  fileNamePrefix="sign"
+                  templateImageUrl={template.sign_image_url}
+                  mutate={mutateTemplate}
+                />
+              </FieldsSection>
+              <FieldsSection>
                 <h2 className="font-semibold">Footer Image</h2>
-                <fieldset className="flex items-center gap-4 w-full">
-                  <UploaderTemplateImageUploader
-                    templateId={id}
-                    imageFileName="footer_image_url"
-                    userId={template.user_id}
-                    fileNamePrefix="footer"
-                    templateImageUrl={template.footer_image_url}
-                    mutate={mutateTemplate}
-                  />
-                </fieldset>
-              </div>
+                <UploaderTemplateImageUploader
+                  templateId={id}
+                  imageFileName="footer_image_url"
+                  userId={template.user_id}
+                  fileNamePrefix="footer"
+                  templateImageUrl={template.footer_image_url}
+                  mutate={mutateTemplate}
+                />
+              </FieldsSection>
             </fieldset>
           </form>
         </>

@@ -3,19 +3,14 @@
 import FormSkeleton from "@/components/FormSkeleton";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
-import { useEffect, useMemo } from "react";
-import { SubmitHandler, useForm } from "react-hook-form";
-import useSWR, { mutate } from "swr";
+import { useState } from "react";
+import useSWR from "swr";
 import UploaderTemplateImageUploader from "./TemplateImageUploader";
 import { Icon } from "@iconify/react/dist/iconify.js";
-
-type Inputs = {
-  name: string;
-  description: string;
-  header_image_url: string;
-  footer_image_url: string;
-  sign_image_url: string;
-};
+import FieldsSection from "./FieldsSection";
+import FieldLabel from "./FieldLabel";
+import DotsLoading from "./DotsLoading";
+import { useDebouncedCallback } from "use-debounce";
 
 const fetcher = async (id: string) => {
   const { data, error } = await supabase
@@ -28,42 +23,32 @@ const fetcher = async (id: string) => {
 };
 
 export default function EditTemplate({ id }: { id: string }) {
+  const [isSaving, setIsSaving] = useState({ state: false, field: "" });
+
   const {
     data: template,
     isLoading,
     mutate: mutateTemplate,
   } = useSWR(id, () => fetcher(id));
 
-  const { reset, register, handleSubmit } = useForm<Inputs>({
-    mode: "onBlur",
-    defaultValues: useMemo(() => {
-      return template;
-    }, [template]),
-  });
+  const debouncedInput = useDebouncedCallback((event) => {
+    updateTemplate(event.target.name, event.target.value);
+  }, 350);
 
-  const onSubmit: SubmitHandler<Inputs> = async (data) => {
+  const updateTemplate = async (fieldName: string, data: string) => {
+    setIsSaving((prev) => ({ ...prev, state: true, field: fieldName }));
     try {
-      const { data: updatedTemplate } = await supabase
+      await supabase
         .from("template")
-        .update(data)
-        .eq("id", id)
-        .select()
-        .single();
-      if (updatedTemplate) {
-        await mutateTemplate(updatedTemplate);
-        await mutate("templates");
-        await reset();
-        window.location.href = "/admin/templates";
-      }
+        .update({ [fieldName]: data })
+        .eq("id", id);
     } catch (error) {
       console.error(error);
     } finally {
+      setIsSaving((prev) => ({ ...prev, state: false, field: fieldName }));
+      await mutateTemplate();
     }
   };
-
-  useEffect(() => {
-    reset(template);
-  }, [template]);
 
   return (
     <>
@@ -83,101 +68,88 @@ export default function EditTemplate({ id }: { id: string }) {
               <Icon icon="solar:backspace-line-duotone" fontSize={36} />
             </Link>
           </div>
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <fieldset className="flex flex-col gap-4">
-              <div className="flex p-7 flex-col gap-4 border border-gray-100 rounded-xl bg-white">
-                <h2 className="font-semibold">
-                  Header Image <br />
-                </h2>
-                <fieldset className="flex flex-col items-center gap-4 w-full">
-                  <UploaderTemplateImageUploader
-                    templateId={id}
-                    imageFileName="header_image_url"
-                    userId={template.user_id}
-                    fileNamePrefix="header"
-                    mutate={mutateTemplate}
-                    templateImageUrl={template.header_image_url}
-                  />
-                </fieldset>
-              </div>
-              <div className="flex p-7 flex-col gap-4 border border-gray-100 rounded-xl bg-white">
-                <h2 className="font-semibold">
-                  Sign Image <br />
-                  <span className="text-sm text-gray-500 font-normal">
-                    Image dimensions: (75pt x 76.5pt) o (100px x 102px)
-                  </span>
-                </h2>
-                <fieldset className="flex items-center gap-4 w-full">
-                  <UploaderTemplateImageUploader
-                    templateId={id}
-                    imageFileName="sign_image_url"
-                    userId={template.user_id}
-                    previewImageWidth="75pt"
-                    fileNamePrefix="sign"
-                    templateImageUrl={template.sign_image_url}
-                    mutate={mutateTemplate}
-                  />
-                </fieldset>
-              </div>
-              <div className="flex p-7 flex-col gap-4 border border-gray-100 rounded-xl bg-white">
-                <h2 className="font-semibold">Footer Image</h2>
-                <fieldset className="flex items-center gap-4 w-full">
-                  <UploaderTemplateImageUploader
-                    templateId={id}
-                    imageFileName="footer_image_url"
-                    userId={template.user_id}
-                    fileNamePrefix="footer"
-                    templateImageUrl={template.footer_image_url}
-                    mutate={mutateTemplate}
-                  />
-                </fieldset>
-              </div>
-              <div className="flex p-7 flex-col gap-4 border border-gray-100 rounded-xl bg-white">
-                <h2 className="font-semibold">General Information</h2>
-                <div>
-                  <label htmlFor="name" className="inline-block mb-2 text-sm">
-                    Name
-                  </label>
+          <fieldset className="flex flex-col gap-4">
+            <FieldsSection>
+              <h2 className="font-semibold">General Information</h2>
+              <div className="flex gap-4 items-center">
+                <div className="grow-1 relative">
+                  <FieldLabel htmlFor="name">Name</FieldLabel>
                   <input
                     type="text"
                     id="name"
-                    {...register("name")}
+                    name="name"
+                    defaultValue={template.name}
                     required
+                    onChange={debouncedInput}
                     className="w-full px-4 bg-white py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
                   />
-                </div>
-                <div>
-                  <label
-                    htmlFor="description"
-                    className="inline-block mb-2 text-sm"
+                  <div
+                    className={`${isSaving.state && isSaving.field === "name" ? "opacity-100" : "opacity-0"} transition-opacity duration-300 absolute right-2 -bottom-3 sm:-bottom-4`}
                   >
-                    Description
-                  </label>
+                    <DotsLoading />
+                  </div>
+                </div>
+                <div className="grow-1 relative">
+                  <FieldLabel htmlFor="description">Description</FieldLabel>
                   <input
                     type="text"
                     id="description"
-                    {...register("description")}
+                    name="description"
+                    defaultValue={template.description}
+                    onChange={debouncedInput}
                     required
                     className="w-full bg-white px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
                   />
+                  <div
+                    className={`${isSaving.state && isSaving.field === "description" ? "opacity-100" : "opacity-0"} transition-opacity duration-300 absolute right-2 -bottom-3 sm:-bottom-4`}
+                  >
+                    <DotsLoading />
+                  </div>
                 </div>
               </div>
-            </fieldset>
-            <footer className="flex items-center gap-3.5 justify-end mt-6 pt-6">
-              <Link
-                href="/admin/templates"
-                className="font-semibold  disabled:border-gray-100 disabled:bg-gray-100 inline-block py-3 px-10 bg-white text-sm border border-gray-100 rounded-lg transition-colors hover:border-gray-200 duration-500 active:border-gray-300"
-              >
-                Cancel
-              </Link>
-              <button
-                type="submit"
-                className="text-white font-semibold disabled:border-gray-100 disabled:bg-gray-100 inline-block py-3 px-10 text-sm bg-cyan-500 hover:bg-cyan-400 transition-colors duration-500 rounded-lg"
-              >
-                Save
-              </button>
-            </footer>
-          </form>
+            </FieldsSection>
+            <FieldsSection>
+              <h2 className="font-semibold">
+                Header Image <br />
+              </h2>
+              <UploaderTemplateImageUploader
+                templateId={id}
+                imageFileName="header_image_url"
+                userId={template.user_id}
+                fileNamePrefix="header"
+                mutate={mutateTemplate}
+                templateImageUrl={template.header_image_url}
+              />
+            </FieldsSection>
+            <FieldsSection>
+              <h2 className="font-semibold">
+                Sign Image <br />
+                <span className="text-sm text-gray-500 font-normal">
+                  Image dimensions: (75pt x 76.5pt) o (100px x 102px)
+                </span>
+              </h2>
+              <UploaderTemplateImageUploader
+                templateId={id}
+                imageFileName="sign_image_url"
+                userId={template.user_id}
+                previewImageWidth="75pt"
+                fileNamePrefix="sign"
+                templateImageUrl={template.sign_image_url}
+                mutate={mutateTemplate}
+              />
+            </FieldsSection>
+            <FieldsSection>
+              <h2 className="font-semibold">Footer Image</h2>
+              <UploaderTemplateImageUploader
+                templateId={id}
+                imageFileName="footer_image_url"
+                userId={template.user_id}
+                fileNamePrefix="footer"
+                templateImageUrl={template.footer_image_url}
+                mutate={mutateTemplate}
+              />
+            </FieldsSection>
+          </fieldset>
         </>
       )}
     </>

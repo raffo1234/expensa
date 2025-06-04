@@ -10,7 +10,7 @@ import { Toaster } from "react-hot-toast";
 import { ReactScan } from "@/components/ReactScan";
 
 export const metadata: Metadata = {
-  title: "Your Scans, Instantly Accessible",
+  title: "Cadia - Your Scans, Instantly Accessible",
   description: "Process DICOM & Create Reports with Ease",
   icons: {
     icon: "/favicon.png",

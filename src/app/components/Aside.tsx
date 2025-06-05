@@ -4,6 +4,17 @@ import { Icon } from "@iconify/react";
 import { useState } from "react";
 import Image from "next/image";
 import AsideMenu from "./AsideMenu";
+import { supabase } from "@/lib/supabase";
+import useSWR from "swr";
+
+const roleFetcher = async (roleId: string) => {
+  const { data, error } = await supabase
+    .from("role")
+    .select("name")
+    .eq("id", roleId);
+  if (error) throw error;
+  return data;
+};
 
 export default function Aside({
   userRoleId,
@@ -15,6 +26,7 @@ export default function Aside({
   userImage: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const { data: role } = useSWR("user-role", () => roleFetcher(userRoleId));
 
   return (
     <div className="flex-shrink-0">
@@ -42,11 +54,12 @@ export default function Aside({
               height={48}
               width={48}
             />
-            <div className="">
+            <div>
               <p className="text-sm leading-3 mb-1 text-gray-500">Welcome</p>
               <h3 className="font-semibold text-gray-700 text-lg">
                 {userName}
               </h3>
+              <p className="text-xs text-gray-500">{role?.[0]?.name}</p>
             </div>
           </div>
         </header>

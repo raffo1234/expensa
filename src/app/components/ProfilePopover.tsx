@@ -63,7 +63,7 @@ export default async function ProfilePopover() {
                     await signOut();
                   }}
                 >
-                  <button className="hover:text-red-500 w-full px-6 py-4 flex items-center gap-3.5 text-left transition-colors">
+                  <button className="hover:text-red-500 cursor-pointer w-full px-6 py-4 flex items-center gap-3.5 text-left transition-colors">
                     <Icon
                       icon="solar:inbox-out-linear"
                       className="-rotate-90"
@@ -86,7 +86,25 @@ export default async function ProfilePopover() {
             type="submit"
             className="cursor-pointer flex gap-4 hover:bg-rose-400 px-6 py-2 bg-black text-white rounded-full transition-colors duration-700 active:bg-gray-900"
           >
-            <Icon icon="solar:login-3-broken" fontSize={24}></Icon>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+            >
+              <g
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeWidth="1.5"
+              >
+                <path d="M8 16c0 2.828 0 4.243.879 5.121c.641.642 1.568.815 3.121.862M8 8c0-2.828 0-4.243.879-5.121C9.757 2 11.172 2 14 2h1c2.828 0 4.243 0 5.121.879C21 3.757 21 5.172 21 8v8c0 2.828 0 4.243-.879 5.121c-.768.769-1.946.865-4.121.877M3 9.5v5c0 2.357 0 3.535.732 4.268S5.643 19.5 8 19.5M3.732 5.232C4.464 4.5 5.643 4.5 8 4.5" />
+                <path
+                  strokeLinejoin="round"
+                  d="M6 12h9m0 0l-2.5 2.5M15 12l-2.5-2.5"
+                />
+              </g>
+            </svg>
             <span>Sign in</span>
           </button>
         </form>

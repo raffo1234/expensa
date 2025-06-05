@@ -2,6 +2,8 @@ import { PropertyType } from "@/types/propertyState";
 import { create } from "zustand";
 
 type GlobalState = {
+  roleId: string | undefined;
+  setRoleId: (id: string) => void;
   propertyId: string | undefined;
   show: () => void;
   hide: () => void;
@@ -22,6 +24,8 @@ type GlobalState = {
 };
 
 export const useGlobalState = create<GlobalState>((set) => ({
+  roleId: undefined,
+  setRoleId: (id) => set(() => ({ roleId: id })),
   propertyId: undefined,
   setPropertyId: (id) => set(() => ({ propertyId: id })),
   show: () => set(() => ({ isDisplayed: true })),

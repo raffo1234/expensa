@@ -44,9 +44,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           if (error) {
             console.error("Error fetching user role in JWT callback:", error);
           } else if (dbUser?.role_id) {
-            token.template_id = dbUser.template_id;
             token.user_id = dbUser.id;
-            token.role_id = dbUser.role_id;
           }
         } catch (error) {
           console.error("Error fetching user role in JWT callback:", error);
@@ -57,8 +55,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, token }) {
       if (token?.role_id && token?.user_id) {
         session.user.id = token.user_id as string;
-        session.user.role_id = token.role_id as string;
-        session.user.template_id = token.template_id as string | null;
       }
       return session;
     },

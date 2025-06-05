@@ -2,6 +2,7 @@ import "../globals.css";
 import { auth } from "@/lib/auth";
 import Aside from "@/components/Aside";
 import Header from "@/components/Header";
+import { supabase } from "@/lib/supabase";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -12,6 +13,17 @@ export default async function AdminLayout({
 }: Readonly<AdminLayoutProps>) {
   const session = await auth();
   const user = session?.user;
+
+  if (user?.id) {
+    const { data } = await supabase
+      .from("user")
+      .select("role_id, template_id")
+      .eq("id", user?.id)
+      .single();
+
+    user.role_id = data?.role_id;
+    user.template_id = data?.template_id;
+  }
 
   return (
     <>

@@ -6,9 +6,27 @@ import { supabase } from "@/lib/supabase";
 
 export default async function ProfilePopover() {
   const session = await auth();
-  const roleId = session?.user?.role_id;
-  const { data } = await supabase.from("role").select("name").eq("id", roleId);
-  
+  const user = session?.user;
+  let roleName = undefined;
+
+  if (user?.id) {
+    const { data } = await supabase
+      .from("user")
+      .select("role_id, template_id")
+      .eq("id", user?.id)
+      .single();
+
+    if (data) {
+      const { data: role } = await supabase
+        .from("role")
+        .select("name")
+        .eq("id", data?.role_id)
+        .single();
+
+      roleName = role?.name;
+    }
+  }
+
   return (
     <>
       {session ? (
@@ -49,7 +67,7 @@ export default async function ProfilePopover() {
                 <p className="text-center text-sm font-semibold w-full mb-1">
                   {session.user?.name}
                 </p>
-                <p className="text-sm text-gray-500">{data?.[0]?.name}</p>
+                <p className="text-sm text-gray-500">{roleName}</p>
               </li>
               <li>
                 <Link

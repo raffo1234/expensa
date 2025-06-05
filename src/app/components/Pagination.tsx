@@ -737,6 +737,27 @@ export default function Pagination({
                   )}
                 </button>
               </th>
+              <th className="w-42 py-1">
+                <button
+                  disabled={!!noData}
+                  type="button"
+                  onClick={() => handleSort("completed_at")}
+                  className="py-3 w-full text-left px-2 rounded-lg cursor-pointer uppercase text-xs font-semibold hover:bg-cyan-50 bg-slate-50 transition-colors duration-300"
+                >
+                  Completed Date
+                  {sortColumn === "completed_at" && sortDirection && (
+                    <Icon
+                      icon={
+                        sortDirection === "asc"
+                          ? "solar:arrow-up-outline"
+                          : "solar:arrow-down-outline"
+                      }
+                      className="inline-block ml-1"
+                      fontSize={12}
+                    />
+                  )}
+                </button>
+              </th>
               <th title="Modalidad" className="w-13 px-1">
                 <button
                   disabled={!!noData}
@@ -804,6 +825,7 @@ export default function Pagination({
                     modality,
                     study_date,
                     created_at,
+                    completed_at,
                     state,
                     gender,
                     institution,
@@ -811,6 +833,9 @@ export default function Pagination({
                   index
                 ) => {
                   const createdAt = new Date(created_at);
+                  const completedAt = completed_at
+                    ? new Date(completed_at)
+                    : null;
 
                   return (
                     <tr
@@ -897,6 +922,18 @@ export default function Pagination({
                             locale: es,
                           }
                         )}
+                      </td>
+                      <td className="whitespace-nowrap py-5 px-2">
+                        {completedAt
+                          ? formatInTimeZone(
+                              completedAt,
+                              "America/Lima",
+                              "dd MMMM yyyy, hh:mm a",
+                              {
+                                locale: es,
+                              }
+                            )
+                          : ""}
                       </td>
                       <td className="py-5 px-2 text-center">{modality}</td>
                       <td className="py-2 px-2">

@@ -283,6 +283,7 @@ export default function Report({
             onClick={() =>
               updateDicom(dicom.id, {
                 state: DicomStateEnum.COMPLETED,
+                completed_at: new Date(),
               })
             }
             title={`Save as ${DicomStateEnum.COMPLETED}`}

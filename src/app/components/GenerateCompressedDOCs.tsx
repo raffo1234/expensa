@@ -15,7 +15,7 @@ const fetchSelectedDicoms = async (selectedIds: Set<string>) => {
   const { data, error } = await supabase
     .from("dicom")
     .select(
-      "id, patient_id, patient_name, study_date, study_description, patient_age, birthday, report, template(header_image_url,sign_image_url,footer_image_url)"
+      "id, user_id, patient_id, patient_name, study_date, study_description, patient_age, birthday, report, template(header_image_url,sign_image_url,footer_image_url)"
     )
     .in("id", idsToFetch);
 
@@ -65,7 +65,7 @@ export default function GenerateCompressedDOCXs({
 
     selectedDicoms.forEach((dicom, index) => {
       zip.file(
-        `${dicom.patient_id}_${dicom.patient_name}_${now}_${index + 1}.docx`,
+        `${dicom.patient_name}_${now}_${dicom.user_id}.docx`,
         docxBlobs[index]
       );
     });

@@ -4,7 +4,7 @@ import { useDebouncedCallback } from "use-debounce";
 import extractAgeWidthUnit from "@/lib/extractAgeWithUnit";
 import React, { useEffect } from "react";
 import TextareaAutosize from "react-textarea-autosize";
-
+import toast from "react-hot-toast";
 import Image from "next/image";
 import { TemplateType } from "@/types/templateType";
 import { Icon } from "@iconify/react/dist/iconify.js";
@@ -70,6 +70,7 @@ export default function Report({
       console.error(error);
     } finally {
       mutate();
+      toast.success("Report updated successfully!");
     }
   };
 
@@ -283,6 +284,7 @@ export default function Report({
             onClick={() =>
               updateDicom(dicom.id, {
                 state: DicomStateEnum.COMPLETED,
+                completed_at: new Date(),
               })
             }
             title={`Save as ${DicomStateEnum.COMPLETED}`}

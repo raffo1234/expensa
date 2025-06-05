@@ -33,7 +33,11 @@ export default async function Layout({ children }: Readonly<LayoutProps>) {
   return (
     <html lang="es">
       <body id="admin">
-        <Toaster />
+        <Toaster
+          toastOptions={{
+            className: "text-xs",
+          }}
+        />
         <ReactScan />
         <SWRConfig value={{ fallback: initialPermissions }}>
           {children}

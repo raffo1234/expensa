@@ -569,7 +569,7 @@ export default function Pagination({
               <th className="w-6 text-center uppercase text-xs font-semibold py-4">
                 #
               </th>
-              <th className="w-25 px-1">
+              <th className="w-25 px-[1px]">
                 <button
                   type="button"
                   disabled={!!noData}
@@ -590,7 +590,7 @@ export default function Pagination({
                   )}
                 </button>
               </th>
-              <th className="w-36">
+              <th className="w-36 px-[1px]">
                 <button
                   onClick={() => handleSort("institution")}
                   disabled={!!noData}
@@ -611,7 +611,7 @@ export default function Pagination({
                   )}
                 </button>
               </th>
-              <th className="w-40 px-1">
+              <th className="w-34 px-[1px]">
                 <button
                   disabled={!!noData}
                   onClick={() => handleSort("patient_name")}
@@ -632,7 +632,7 @@ export default function Pagination({
                   )}
                 </button>
               </th>
-              <th className="w-14 py-2">
+              <th className="w-14 px-[1px]">
                 <button
                   disabled={!!noData}
                   type="button"
@@ -653,7 +653,7 @@ export default function Pagination({
                   )}
                 </button>
               </th>
-              <th className="w-16 px-1">
+              <th className="w-16 px-[1px]">
                 <button
                   disabled={!!noData}
                   type="button"
@@ -674,14 +674,15 @@ export default function Pagination({
                   )}
                 </button>
               </th>
-              <th className="w-40 py-1">
+              <th className="w-38 px-[1px]">
                 <button
                   disabled={!!noData}
                   type="button"
+                  title="Study Description"
                   onClick={() => handleSort("study_description")}
                   className="py-3 w-full text-left px-2 rounded-lg cursor-pointer uppercase text-xs font-semibold hover:bg-cyan-50 bg-slate-50 transition-colors duration-300"
                 >
-                  Study Description
+                  Study Desc...
                   {sortColumn === "study_description" && sortDirection && (
                     <Icon
                       icon={
@@ -695,7 +696,7 @@ export default function Pagination({
                   )}
                 </button>
               </th>
-              <th className="w-30 px-1">
+              <th className="w-28 px-[1px]">
                 <button
                   disabled={!!noData}
                   type="button"
@@ -716,7 +717,7 @@ export default function Pagination({
                   )}
                 </button>
               </th>
-              <th className="w-42 py-1">
+              <th className="w-28 px-[1px]">
                 <button
                   disabled={!!noData}
                   type="button"
@@ -725,6 +726,27 @@ export default function Pagination({
                 >
                   Receipt Date
                   {sortColumn === "created_at" && sortDirection && (
+                    <Icon
+                      icon={
+                        sortDirection === "asc"
+                          ? "solar:arrow-up-outline"
+                          : "solar:arrow-down-outline"
+                      }
+                      className="inline-block ml-1"
+                      fontSize={12}
+                    />
+                  )}
+                </button>
+              </th>
+              <th className="w-34 px-[1px]">
+                <button
+                  disabled={!!noData}
+                  type="button"
+                  onClick={() => handleSort("completed_at")}
+                  className="py-3 w-full text-left px-2 rounded-lg cursor-pointer uppercase text-xs font-semibold hover:bg-cyan-50 bg-slate-50 transition-colors duration-300"
+                >
+                  Completed Date
+                  {sortColumn === "completed_at" && sortDirection && (
                     <Icon
                       icon={
                         sortDirection === "asc"
@@ -804,6 +826,7 @@ export default function Pagination({
                     modality,
                     study_date,
                     created_at,
+                    completed_at,
                     state,
                     gender,
                     institution,
@@ -811,6 +834,29 @@ export default function Pagination({
                   index
                 ) => {
                   const createdAt = new Date(created_at);
+                  const completedAt = completed_at
+                    ? new Date(completed_at)
+                    : null;
+
+                  const completedAtFormatted = completedAt
+                    ? formatInTimeZone(
+                        completedAt,
+                        "America/Lima",
+                        "dd MMMM yyyy, hh:mm a",
+                        {
+                          locale: es,
+                        }
+                      )
+                    : "";
+
+                  const createdAtFormatted = formatInTimeZone(
+                    createdAt,
+                    "America/Lima",
+                    "dd MMMM yyyy, hh:mm a",
+                    {
+                      locale: es,
+                    }
+                  );
 
                   return (
                     <tr
@@ -888,15 +934,17 @@ export default function Pagination({
                       <td className="whitespace-nowrap py-5 px-2">
                         {formatDateYYYYMMDD(study_date)}
                       </td>
-                      <td className="whitespace-nowrap py-5 px-2">
-                        {formatInTimeZone(
-                          createdAt,
-                          "America/Lima",
-                          "dd MMMM yyyy, hh:mm a",
-                          {
-                            locale: es,
-                          }
-                        )}
+                      <td
+                        title={createdAtFormatted}
+                        className="whitespace-nowrap truncate py-5 px-2"
+                      >
+                        {createdAtFormatted}
+                      </td>
+                      <td
+                        title={completedAtFormatted}
+                        className="whitespace-nowrap truncate py-5 px-2"
+                      >
+                        {completedAtFormatted}
                       </td>
                       <td className="py-5 px-2 text-center">{modality}</td>
                       <td className="py-2 px-2">

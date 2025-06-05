@@ -13,7 +13,6 @@ import Link from "next/link";
 import formatDateYYYYMMDD from "@/lib/formatDateYYYYMMDD";
 import { DicomStateEnum } from "@/enums/dicomStateEnum";
 import { supabase } from "@/lib/supabase";
-import GeneratePDFButton from "@/components/GeneratePDFButton";
 import { UUIDTypes } from "uuid";
 import useSWR from "swr";
 import LoadingReportComponent from "./LoadingReportComponent";

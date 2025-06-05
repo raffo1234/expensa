@@ -13,11 +13,13 @@ import Link from "next/link";
 import formatDateYYYYMMDD from "@/lib/formatDateYYYYMMDD";
 import { DicomStateEnum } from "@/enums/dicomStateEnum";
 import { supabase } from "@/lib/supabase";
-import DOCXPreview from "@/components/DOCXPreview";
 import GeneratePDFButton from "@/components/GeneratePDFButton";
 import { UUIDTypes } from "uuid";
 import useSWR from "swr";
 import LoadingReportComponent from "./LoadingReportComponent";
+import DownloadButtons from "./DownloadButtons";
+import PreviewPDFButton from "./PreviewPDFButton";
+import CompleteDicomButton from "./CompleteDicomButton";
 
 function putFirst(array: TemplateType[], element: TemplateType | undefined) {
   if (element)
@@ -39,11 +41,11 @@ const fetcher = async (id: UUIDTypes) => {
 export default function Report({
   templates,
   dicomId,
-  userId,
+  userRoleId,
 }: {
   templates: TemplateType[] | [];
   dicomId: string;
-  userId: string;
+  userRoleId: string;
 }) {
   const {
     data: dicom,
@@ -162,8 +164,8 @@ export default function Report({
               {dicom.state}
             </div>
           ) : null}
-          <GeneratePDFButton dicom={dicom} label="PDF" />
-          <DOCXPreview dicom={dicom} />
+
+          <DownloadButtons dicom={dicom} userRoleId={userRoleId} />
         </div>
       </div>
       <div className="bg-gray-200 overflow-auto">
@@ -279,22 +281,21 @@ export default function Report({
             Save as {DicomStateEnum.DRAFT}
           </button>
         ) : null}
-        {dicom.state === DicomStateEnum.DRAFT ? (
-          <button
-            onClick={() =>
-              updateDicom(dicom.id, {
-                state: DicomStateEnum.COMPLETED,
-                completed_at: new Date(),
-              })
-            }
-            title={`Save as ${DicomStateEnum.COMPLETED}`}
-            type="button"
-            className="px-6 py-2 font-semibold text-cyan-600 border-cyan-200 cursor-pointer border bg-cyan-50 rounded-xl"
-          >
-            Save as {DicomStateEnum.COMPLETED}
-          </button>
-        ) : null}
-        <GeneratePDFButton isDownloadable={false} dicom={dicom} label="PDF" />
+        <CompleteDicomButton
+          userRoleId={userRoleId}
+          dicomState={dicom.state}
+          onClick={() =>
+            updateDicom(dicom.id, {
+              state: DicomStateEnum.COMPLETED,
+              completed_at: new Date(),
+            })
+          }
+        />
+        <PreviewPDFButton
+          userRoleId={userRoleId}
+          isDownloadable={false}
+          dicom={dicom}
+        />
       </div>
     </>
   );

@@ -14,18 +14,14 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
 import TableSkeleton from "@/components/FormSkeleton";
-// import GeneratePDFButton from "@/components/GeneratePDFButton";
-// import DOCXPreview from "./DOCXPreview";
 import { useDebouncedCallback } from "use-debounce";
 import { startOfDay, formatISO, endOfDay, format } from "date-fns";
 import DateRangeButtonCalendar from "./DateRangeButtonCalendar";
-// import { UUIDTypes } from "uuid";
 import UploadButton from "./UploadButton";
-// import useCheckPermission from "@/hooks/useCheckPermission";
 import useCheckboxSelection from "@/hooks/useCheckboxSelection";
 import GenerateCompressedPDFs from "./GenerateCompressedPDFs";
 import GenerateCompressedDOCs from "./GenerateCompressedDOCs";
-import DicomActions from "./TableActions";
+import DicomActionButtons from "./TableActionButtons";
 
 type SortDirection = "asc" | "desc" | null;
 
@@ -947,7 +943,7 @@ export default function Pagination({
                       <td className="py-5 px-2 text-center">{modality}</td>
                       <td className="py-2 px-2">
                         {result.data ? (
-                          <DicomActions
+                          <DicomActionButtons
                             userRoleId={userRoleId}
                             dicom={result.data[index]}
                             mutate={mutate}

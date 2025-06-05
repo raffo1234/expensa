@@ -3,12 +3,12 @@ import GeneratePDFButtonInner from "./GeneratePDFButtonInner";
 import { useRef, useState } from "react";
 
 export default function GeneratePDFButton({
-  label,
   dicom,
+  label = "PDF",
   isDownloadable = true,
 }: {
-  label: string;
   dicom: DicomType;
+  label?: string;
   isDownloadable?: boolean;
 }) {
   const downloadLinkRef = useRef<HTMLAnchorElement>(null);

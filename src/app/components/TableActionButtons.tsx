@@ -9,7 +9,7 @@ import { DicomType } from "@/types/dicomType";
 import useCheckPermission from "@/hooks/useCheckPermission";
 import { Permissions } from "@/types/propertyState";
 
-export default function DicomActions({
+export default function DicomActionButtons({
   dicom,
   userRoleId,
   mutate,
@@ -23,9 +23,6 @@ export default function DicomActions({
 
   const { hasPermission: canDelete, isLoading: isLoadingCanDelete } =
     useCheckPermission(userRoleId, Permissions.DELETE_REPORT);
-
-  const { hasPermission: canComplete, isLoading: isLoadingCanComplete } =
-    useCheckPermission(userRoleId, Permissions.COMPLETE_REPORT);
 
   const deleteDicom = async (id: UUIDTypes) => {
     const confirmationMessage = confirm(
@@ -47,38 +44,33 @@ export default function DicomActions({
     }
   };
 
-  if (isLoadingCanDownload || isLoadingCanDelete || isLoadingCanComplete)
-    return null;
+  if (isLoadingCanDownload || isLoadingCanDelete) return null;
 
   return (
     <div className="flex gap-1 justify-end">
       {dicom.state === DicomStateEnum.COMPLETED && canDownload ? (
-        dicom ? (
-          <>
-            <GeneratePDFButton dicom={dicom} label="PDF" />
-            <DOCXPreview dicom={dicom} />
-          </>
-        ) : null
+        <>
+          <GeneratePDFButton dicom={dicom} label="PDF" />
+          <DOCXPreview dicom={dicom} />
+        </>
       ) : null}
-      {canComplete ? (
-        <Link
-          href={`/admin/dicoms/${dicom.id}`}
-          title="Inform"
-          className="py-2 px-6 flex gap-3 items-center font-semibold bg-cyan-500 text-white rounded-full cursor-pointer"
-        >
-          <Icon
-            icon={`${
-              dicom.state === DicomStateEnum.COMPLETED
-                ? "solar:file-check-linear"
-                : "solar:document-add-linear"
-            }`}
-            fontSize={24}
-          />
-          <span>
-            {dicom.state !== DicomStateEnum.COMPLETED ? "Inform" : "Amend"}
-          </span>
-        </Link>
-      ) : null}
+      <Link
+        href={`/admin/dicoms/${dicom.id}`}
+        title="Inform"
+        className="py-2 px-6 flex gap-3 items-center font-semibold bg-cyan-500 text-white rounded-full cursor-pointer"
+      >
+        <Icon
+          icon={`${
+            dicom.state === DicomStateEnum.COMPLETED
+              ? "solar:file-check-linear"
+              : "solar:document-add-linear"
+          }`}
+          fontSize={24}
+        />
+        <span>
+          {dicom.state !== DicomStateEnum.COMPLETED ? "Inform" : "Amend"}
+        </span>
+      </Link>
       {canDelete ? (
         <button
           title="Delete Dicom"

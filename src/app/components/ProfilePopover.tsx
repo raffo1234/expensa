@@ -2,10 +2,13 @@ import { Icon } from "@iconify/react";
 import Link from "next/link";
 import Image from "next/image";
 import { signIn, signOut, auth } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 
 export default async function ProfilePopover() {
   const session = await auth();
-
+  const roleId = session?.user?.role_id;
+  const { data } = await supabase.from("role").select("name").eq("id", roleId);
+  
   return (
     <>
       {session ? (
@@ -43,9 +46,10 @@ export default async function ProfilePopover() {
                   ) : null}
                   <div className="w-3 h-3 absolute top-9 right-0 rounded-full bg-green-400 border-2 border-white" />
                 </div>
-                <p className="text-center text-sm font-semibold w-full">
+                <p className="text-center text-sm font-semibold w-full mb-1">
                   {session.user?.name}
                 </p>
+                <p className="text-sm text-gray-500">{data?.[0]?.name}</p>
               </li>
               <li>
                 <Link

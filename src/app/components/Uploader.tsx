@@ -1,6 +1,6 @@
 "use client";
 
-import { fileTypeFromBlob } from "file-type";
+import { fileTypeFromBuffer } from "file-type";
 import { Archive } from "libarchive.js";
 import { supabase } from "@/lib/supabase";
 import React, { useCallback, useState, type ChangeEvent } from "react";
@@ -204,26 +204,28 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         CustomFileStateType.processing,
         "bg-cyan-50"
       );
-      const extension = await fileTypeFromBlob(selectedFile);
+
+      const fileBuffer = await selectedFile.arrayBuffer();
+      const extensionFromBuffer = await fileTypeFromBuffer(fileBuffer);
+      const mime = extensionFromBuffer?.mime;
+
       console.warn(
-        `Processing file at index ${index}: ${selectedFile.name}, type: ${extension?.ext}`
+        `Processing file at index ${index}: ${selectedFile.name}, type: ${mime}`
       );
 
       try {
         let extractedFiles: ExtractedFilesObject = {};
-        switch (extension?.ext) {
-          case "zip":
+        switch (mime) {
+          case "application/zip":
+          case "application/x-zip-compressed":
             extractedFiles = await processZipFile(selectedFile);
             break;
-          case "rar":
+          case "application/x-compressed":
+          case "application/x-rar-compressed":
             const archiveRar = await Archive.open(selectedFile);
             extractedFiles = await archiveRar.extractFiles();
             break;
-          case "tar":
-            const archiveTar = await Archive.open(selectedFile);
-            extractedFiles = await archiveTar.extractFiles();
-            break;
-          case "dcm":
+          case "application/dicom":
             extractedFiles = { [selectedFile.name]: selectedFile };
             break;
           default:
@@ -301,19 +303,20 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
 
     const compressedMimeTypes = [
       "application/zip",
-      "application/x-rar-compressed",
-      "application/gzip",
-      "application/x-tar",
+      "application/x-zip-compressed",
+      "application/x-compressed", //.rar
+      "application/x-rar-compressed", //.rar
     ];
 
     const nonCompressedFiles: ExtractedFilesObject = {};
     const compressedFiles: File[] = [];
 
     for (const file of acceptedFiles) {
-      const fileTypeResult = await fileTypeFromBlob(file);
-      const mimeType = fileTypeResult?.mime;
-      const isCompressed = mimeType
-        ? compressedMimeTypes.includes(mimeType)
+      const fileBuffer = await file.arrayBuffer();
+      const extensionFromBuffer = await fileTypeFromBuffer(fileBuffer);
+
+      const isCompressed = extensionFromBuffer
+        ? compressedMimeTypes.includes(extensionFromBuffer.mime)
         : false;
 
       if (isCompressed) {

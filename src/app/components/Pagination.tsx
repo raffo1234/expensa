@@ -43,6 +43,7 @@ const fetcher = async (
     { startDate: Date | null; endDate: Date | null } | null,
     { startDate: Date | null; endDate: Date | null } | null,
     DicomStateEnum | null,
+    boolean,
   ]
 ): Promise<{ data: DicomType[] | null; total: number } | null> => {
   const [
@@ -56,6 +57,7 @@ const fetcher = async (
     studyDateRange,
     receiptDateRange,
     filteredByState,
+    canViewCompleted,
   ] = key;
 
   const start = (page - 1) * pageSize;
@@ -69,10 +71,18 @@ const fetcher = async (
     .eq("user_id", userId)
     .range(start, end);
 
+  if (canViewCompleted) {
+    dataQuery = dataQuery.eq("state", DicomStateEnum.COMPLETED);
+  }
+
   let countQuery = supabase
     .from(tableName)
     .select("id", { count: "exact", head: true })
     .eq("user_id", userId);
+
+  if (canViewCompleted) {
+    dataQuery = dataQuery.eq("state", DicomStateEnum.COMPLETED);
+  }
 
   if (sortColumn && sortDirection) {
     dataQuery = dataQuery.order(sortColumn, {
@@ -216,6 +226,7 @@ export default function Pagination({
     studyDateRange,
     receiptDateRange,
     filteredByState,
+    true,
   ];
 
   const {

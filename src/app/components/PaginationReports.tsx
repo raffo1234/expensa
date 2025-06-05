@@ -704,7 +704,6 @@ export default function PaginationReports({
                               <GeneratePDFButton
                                 label="PDF"
                                 dicom={data[index]}
-                                userId={userId}
                               />
                               <DOCXPreview dicom={data[index]} />
                             </>

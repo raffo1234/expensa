@@ -1,7 +1,7 @@
 "use client";
 
 import toast from "react-hot-toast";
-import { Permissions } from "@/types/propertyState";
+// import { Permissions } from "@/types/propertyState";
 import { DicomStateEnum } from "@/enums/dicomStateEnum";
 import extractAgeWidthUnit from "@/lib/extractAgeWithUnit";
 import formatDateYYYYMMDD from "@/lib/formatDateYYYYMMDD";
@@ -14,17 +14,18 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
 import TableSkeleton from "@/components/FormSkeleton";
-import GeneratePDFButton from "@/components/GeneratePDFButton";
-import DOCXPreview from "./DOCXPreview";
+// import GeneratePDFButton from "@/components/GeneratePDFButton";
+// import DOCXPreview from "./DOCXPreview";
 import { useDebouncedCallback } from "use-debounce";
 import { startOfDay, formatISO, endOfDay, format } from "date-fns";
 import DateRangeButtonCalendar from "./DateRangeButtonCalendar";
-import { UUIDTypes } from "uuid";
+// import { UUIDTypes } from "uuid";
 import UploadButton from "./UploadButton";
-import useCheckPermission from "@/hooks/useCheckPermission";
+// import useCheckPermission from "@/hooks/useCheckPermission";
 import useCheckboxSelection from "@/hooks/useCheckboxSelection";
 import GenerateCompressedPDFs from "./GenerateCompressedPDFs";
 import GenerateCompressedDOCs from "./GenerateCompressedDOCs";
+import DicomActions from "./TableActions";
 
 type SortDirection = "asc" | "desc" | null;
 
@@ -174,8 +175,8 @@ export default function Pagination({
     null
   );
 
-  const { hasPermission, isLoading: isLoadingPermissionDownloadReport } =
-    useCheckPermission(userRoleId, Permissions.DOWNLOAD_REPORT);
+  // const { hasPermission, isLoading: isLoadingPermissionDownloadReport } =
+  //   useCheckPermission(userRoleId, Permissions.DOWNLOAD_REPORT);
 
   const [studyDateRange, setStudyDateRange] = useState<DateRangeType | null>(
     null
@@ -337,25 +338,25 @@ export default function Pagination({
     }
   };
 
-  const deleteDicom = async (id: UUIDTypes) => {
-    const confirmationMessage = confirm(
-      "Are you sure you want to delete this item?"
-    );
-    if (!confirmationMessage) return;
+  // const deleteDicom = async (id: UUIDTypes) => {
+  //   const confirmationMessage = confirm(
+  //     "Are you sure you want to delete this item?"
+  //   );
+  //   if (!confirmationMessage) return;
 
-    try {
-      const { error: errorDelete } = await supabase
-        .from("dicom")
-        .delete()
-        .eq("id", id);
+  //   try {
+  //     const { error: errorDelete } = await supabase
+  //       .from("dicom")
+  //       .delete()
+  //       .eq("id", id);
 
-      if (errorDelete) throw new Error("Could not sync image");
-    } catch (error) {
-      console.error("Error deleting", error);
-    } finally {
-      mutate();
-    }
-  };
+  //     if (errorDelete) throw new Error("Could not sync image");
+  //   } catch (error) {
+  //     console.error("Error deleting", error);
+  //   } finally {
+  //     mutate();
+  //   }
+  // };
 
   const filterByState = (state: DicomStateEnum) => {
     if (filteredByState === state) {
@@ -505,10 +506,7 @@ export default function Pagination({
         </div>
       </div>
 
-      {isLoading ||
-        (isLoadingPermissionDownloadReport && (
-          <TableSkeleton rows={pageSize} cols={7} />
-        ))}
+      {isLoading ? <TableSkeleton rows={pageSize} cols={7} /> : null}
 
       {error && (
         <p className="text-sm px-4 py-2 border border-rose-200 flex items-center gap-3 bg-rose-50 rounded-xl text-rose-700">
@@ -948,7 +946,14 @@ export default function Pagination({
                       </td>
                       <td className="py-5 px-2 text-center">{modality}</td>
                       <td className="py-2 px-2">
-                        <div className="flex gap-1 justify-end">
+                        {result.data ? (
+                          <DicomActions
+                            userRoleId={userRoleId}
+                            dicom={result.data[index]}
+                            mutate={mutate}
+                          />
+                        ) : null}
+                        {/* <div className="flex gap-1 justify-end">
                           {state === DicomStateEnum.COMPLETED &&
                           hasPermission ? (
                             result.data?.[index] ? (
@@ -1002,7 +1007,7 @@ export default function Pagination({
                               />
                             </svg>
                           </button>
-                        </div>
+                        </div> */}
                       </td>
                     </tr>
                   );

@@ -162,7 +162,7 @@ export default function Report({
               {dicom.state}
             </div>
           ) : null}
-          <GeneratePDFButton dicom={dicom} userId={userId} label="PDF" />
+          <GeneratePDFButton dicom={dicom} label="PDF" />
           <DOCXPreview dicom={dicom} />
         </div>
       </div>
@@ -294,12 +294,7 @@ export default function Report({
             Save as {DicomStateEnum.COMPLETED}
           </button>
         ) : null}
-        <GeneratePDFButton
-          isDownloadable={false}
-          dicom={dicom}
-          userId={userId}
-          label="PDF"
-        />
+        <GeneratePDFButton isDownloadable={false} dicom={dicom} label="PDF" />
       </div>
     </>
   );

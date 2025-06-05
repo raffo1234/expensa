@@ -5,10 +5,8 @@ import { useRef, useState } from "react";
 export default function GeneratePDFButton({
   label,
   dicom,
-  userId,
   isDownloadable = true,
 }: {
-  userId: string;
   label: string;
   dicom: DicomType;
   isDownloadable?: boolean;
@@ -35,7 +33,6 @@ export default function GeneratePDFButton({
       {isDisplayedLink ? (
         <GeneratePDFButtonInner
           handleLeave={handleLeave}
-          userId={userId}
           label={label}
           dicom={dicom}
           isDownloadable={isDownloadable}

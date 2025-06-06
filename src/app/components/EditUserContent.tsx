@@ -77,7 +77,7 @@ export default function EditUserContent({
   const {
     hasPermission: canHaveResident,
     isLoading: isLoadingCanHaveResident,
-  } = useCheckPermission(userRoleId, Permissions.ASSIGN_RESIDENT);
+  } = useCheckPermission(userRoleId, Permissions.CAN_HAVE_RESIDENT);
 
   const {
     hasPermission: canAssignResident,
@@ -93,14 +93,11 @@ export default function EditUserContent({
     adminRolesKey,
     rolesFetcher
   );
+
   const { data: templates, isLoading: isLoadingTemplates } = useSWR(
     "admin-templates-as-locations",
     () => templatesFetcher(currentUserId)
   );
-
-  //   const residents = users?.filter(
-  //     (user) => user.role_id === "33d19e51-de3c-43a0-baa3-e921b45d6567"
-  //   );
 
   const { data: user } = useSWR(`admin-${userId}`, () => fetcher(userId));
 
@@ -141,7 +138,8 @@ export default function EditUserContent({
     isLoadingUsers ||
     isLoadingRoles ||
     isLoadingTemplates ||
-    isLoadingCanHaveResident
+    isLoadingCanHaveResident ||
+    isLoadingCanAssignResident
   )
     return "loading ...";
 
@@ -205,7 +203,7 @@ export default function EditUserContent({
               </div>
             </div>
           </FieldsSection>
-          {canHaveResident || canAssignResident ? (
+          {canHaveResident ? (
             <FieldsSection>
               <h2 className="font-semibold">Residents</h2>
               <div className="flex gap-1 items-center">

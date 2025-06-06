@@ -7,21 +7,27 @@ type Params = Promise<{ id: string }>;
 export default async function Page({ params }: { params: Params }) {
   const { id } = await params;
   const session = await auth();
-  const user = session?.user;
 
-  const { data } = await supabase
+  const { data: user } = await supabase
     .from("user")
-    .select("role_id, template_id")
-    .eq("id", user?.id)
+    .select("id, role_id, template_id")
+    .eq("id", id)
+    .single();
+
+  const { data: currentUser } = await supabase
+    .from("user")
+    .select("id, role_id, template_id")
+    .eq("id", session?.user?.id)
     .single();
 
   if (!user?.id) return null;
 
   return (
     <EditUserContent
-      userId={id}
-      currentUserRoleId={data?.role_id}
-      currentUserId={user?.id}
+      userId={user?.id}
+      userRoleId={user?.role_id}
+      currentUserId={currentUser?.id}
+      currentUserRoleId={currentUser?.role_id}
     />
   );
 }

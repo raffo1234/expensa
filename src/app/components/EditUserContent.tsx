@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { Permissions } from "@/types/propertyState";
 import { supabase } from "@/lib/supabase";
 import FieldsSection from "./FieldsSection";
@@ -10,8 +9,8 @@ import useSWR from "swr";
 import { UUIDTypes } from "uuid";
 import useCheckPermission from "@/hooks/useCheckPermission";
 import { adminRolesKey } from "@/constants";
-import { UserType } from "@/types/userType";
 import { Icon } from "@iconify/react/dist/iconify.js";
+import ResidentItem from "./ResidentItem";
 
 async function fetcher(userId: string) {
   const { data, error } = await supabase
@@ -41,6 +40,17 @@ const rolesFetcher = async () => {
   return data;
 };
 
+const usersFetcher = async () => {
+  const { data, error } = await supabase
+    .from("user")
+    .select(
+      "id, image_url, username, email, role_id, first_name, last_name, role(id, name)"
+    )
+    .order("name", { ascending: true });
+  if (error) throw error;
+  return data;
+};
+
 const templatesFetcher = async (userId: UUIDTypes) => {
   const { data, error } = await supabase
     .from("template")
@@ -55,21 +65,29 @@ export default function EditUserContent({
   currentUserId,
   currentUserRoleId,
   userId,
-  users,
+  userRoleId,
 }: {
   currentUserId: string;
   currentUserRoleId: string;
   userId: string;
-  users: UserType[];
+  userRoleId: string;
 }) {
-  console.log(userId);
-
   const [isSaving, setIsSaving] = useState(false);
+
+  const {
+    hasPermission: canHaveResident,
+    isLoading: isLoadingCanHaveResident,
+  } = useCheckPermission(userRoleId, Permissions.ASSIGN_RESIDENT);
 
   const {
     hasPermission: canAssignResident,
     isLoading: isLoadingCanAssignResident,
   } = useCheckPermission(currentUserRoleId, Permissions.ASSIGN_RESIDENT);
+
+  const { data: users, isLoading: isLoadingUsers } = useSWR(
+    "admin-users",
+    usersFetcher
+  );
 
   const { data: roles, isLoading: isLoadingRoles } = useSWR(
     adminRolesKey,
@@ -80,10 +98,10 @@ export default function EditUserContent({
     () => templatesFetcher(currentUserId)
   );
 
-  const residents = users?.filter(
-    (user) => user.role_id === "33d19e51-de3c-43a0-baa3-e921b45d6567"
-  );
-  console.log();
+  //   const residents = users?.filter(
+  //     (user) => user.role_id === "33d19e51-de3c-43a0-baa3-e921b45d6567"
+  //   );
+
   const { data: user } = useSWR(`admin-${userId}`, () => fetcher(userId));
 
   const { reset, register, handleSubmit } = useForm<Inputs>({
@@ -119,7 +137,13 @@ export default function EditUserContent({
     reset(user);
   }, [user]);
 
-  if (isLoadingRoles || isLoadingTemplates) return "loading ...";
+  if (
+    isLoadingUsers ||
+    isLoadingRoles ||
+    isLoadingTemplates ||
+    isLoadingCanHaveResident
+  )
+    return "loading ...";
 
   return (
     <>
@@ -181,21 +205,19 @@ export default function EditUserContent({
               </div>
             </div>
           </FieldsSection>
-          {canAssignResident || !isLoadingCanAssignResident ? (
+          {canHaveResident || canAssignResident ? (
             <FieldsSection>
               <h2 className="font-semibold">Residents</h2>
               <div className="flex gap-1 items-center">
-                {residents?.map(({ image_url, id, first_name, last_name }) => (
-                  <Image
-                    key={id}
-                    src={image_url}
-                    width={48}
-                    height={48}
-                    className={`${true ? "border-cyan-200" : "border-transparent"} border-3 rounded-full`}
-                    alt={`${first_name} ${last_name}`}
-                    title={`${first_name} ${last_name}`}
-                  />
-                ))}
+                {users?.map((user) => {
+                  return user.role_id ? (
+                    <ResidentItem
+                      isEditable={canAssignResident}
+                      key={user.id}
+                      user={user}
+                    />
+                  ) : null;
+                })}
               </div>
             </FieldsSection>
           ) : null}

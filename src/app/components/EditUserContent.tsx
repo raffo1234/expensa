@@ -179,7 +179,7 @@ export default function EditUserContent({
         </FieldsSection>
         {users && user?.role_id ? (
           <ResidentList
-            currentUserId={currentUserId}
+            currentUserId={user.id}
             currentUserRoleId={currentUserRoleId}
             userRoleId={user.role_id}
             users={users}

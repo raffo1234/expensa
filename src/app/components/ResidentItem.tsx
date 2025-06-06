@@ -46,11 +46,14 @@ export default function ResidentItem({
   if (isLoading) return "loading...";
   if (!canBeAssigned) return null;
 
+  const isNotCurrentResident =
+    !!user.supervisor_user_id && user.supervisor_user_id !== currentUserId;
+
   return (
     <button
       type="button"
-      disabled={!isEditable}
-      className={`${isEditable ? "cursor-pointer" : ""} ${user.supervisor_user_id ? "border-cyan-100" : "border-transparent"} border-5 rounded-full`}
+      disabled={!isEditable || isNotCurrentResident}
+      className={`${isEditable ? "cursor-pointer" : ""} ${user.supervisor_user_id ? "border-cyan-100" : "border-transparent"} border-5 rounded-full disabled:opacity-50 disabled:pointer-events-none`}
     >
       <Image
         key={id}

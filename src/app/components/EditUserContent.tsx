@@ -1,11 +1,9 @@
 "use client";
 
-import { Permissions } from "@/types/propertyState";
 import { supabase } from "@/lib/supabase";
 import FieldsSection from "./FieldsSection";
 import useSWR from "swr";
 import { UUIDTypes } from "uuid";
-import useCheckPermission from "@/hooks/useCheckPermission";
 import { adminRolesKey } from "@/constants";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import toast from "react-hot-toast";
@@ -178,6 +176,7 @@ export default function EditUserContent({
         </FieldsSection>
         {users && user?.role_id ? (
           <ResidentList
+            currentUserId={currentUserId}
             currentUserRoleId={currentUserRoleId}
             userRoleId={user.role_id}
             users={users}

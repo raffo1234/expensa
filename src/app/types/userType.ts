@@ -17,4 +17,5 @@ export type UserType = {
   role?: RoleType;
   template_id?: UUIDTypes;
   template?: TemplateType;
+  supervisor_user_id?: string | null;
 };

@@ -7,9 +7,11 @@ import { Permissions } from "@/types/propertyState";
 export default function ResidentList({
   userRoleId,
   users,
+  currentUserId,
   currentUserRoleId,
 }: {
   currentUserRoleId: string;
+  currentUserId: string;
   userRoleId: string;
   users: UserType[];
 }) {
@@ -38,6 +40,7 @@ export default function ResidentList({
               isEditable={canAssignResident}
               key={user.id}
               user={user}
+              currentUserId={currentUserId}
             />
           ) : null;
         })}

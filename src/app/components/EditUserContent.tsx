@@ -7,7 +7,6 @@ import { UUIDTypes } from "uuid";
 import { adminRolesKey } from "@/constants";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import toast from "react-hot-toast";
-import Image from "next/image";
 import ResidentList from "./ResidentList";
 import { UserType } from "@/types/userType";
 import EditUserHeader from "./EditUserHeader";
@@ -15,7 +14,23 @@ import EditUserHeader from "./EditUserHeader";
 async function fetcher(userId: string) {
   const { data } = (await supabase
     .from("user")
-    .select("*, role(name)")
+    .select(
+      `
+      *,
+      role (
+        id,
+        name
+      ),
+      template: user_template_id_fkey (
+        id,
+        name
+      ),
+      residents: user (
+        id,
+        first_name
+      )
+    `
+    )
     .eq("id", userId)
     .single()) as { data: UserType | null };
   return data;
@@ -60,7 +75,7 @@ export default function EditUserContent({
   const { data: user, mutate: mutateUser } = useSWR(`admin-${userId}`, () =>
     fetcher(userId)
   );
-
+  console.log(user);
   const { data: users, isLoading: isLoadingUsers } = useSWR(
     "admin-users",
     usersFetcher
@@ -170,32 +185,6 @@ export default function EditUserContent({
         ) : null}
         <FieldsSection>
           <h2 className="font-semibold">General Information</h2>
-          <div>
-            <label htmlFor="first_name" className="inline-block mb-2 text-sm">
-              First name
-            </label>
-            <input
-              defaultValue={user.first_name}
-              type="text"
-              id="first_name"
-              required
-              disabled
-              className="disabled:bg-gray-50 disabled:text-gray-500 w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
-            />
-          </div>
-          <div>
-            <label htmlFor="last_name" className="inline-block mb-2 text-sm">
-              Last name
-            </label>
-            <input
-              defaultValue={user.last_name}
-              type="text"
-              id="name"
-              required
-              disabled
-              className="disabled:bg-gray-50 disabled:text-gray-500 w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
-            />
-          </div>
           <div>
             <label htmlFor="username" className="inline-block mb-2 text-sm">
               Username

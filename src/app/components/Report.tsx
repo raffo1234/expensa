@@ -7,7 +7,6 @@ import TextareaAutosize from "react-textarea-autosize";
 import toast from "react-hot-toast";
 import Image from "next/image";
 import { TemplateType } from "@/types/templateType";
-import { Icon } from "@iconify/react/dist/iconify.js";
 import { DicomType } from "@/types/dicomType";
 import Link from "next/link";
 import formatDateYYYYMMDD from "@/lib/formatDateYYYYMMDD";
@@ -20,12 +19,6 @@ import DownloadButtons from "./DownloadButtons";
 import PreviewPDFButton from "./PreviewPDFButton";
 import CompleteDicomButton from "./CompleteDicomButton";
 import ListOfTemplates from "./ListOfTemplates";
-
-function putFirst(array: TemplateType[], element: TemplateType | undefined) {
-  if (element)
-    return [element, ...array.filter((item) => item.id !== element.id)];
-  return array;
-}
 
 const fetcher = async (id: UUIDTypes) => {
   const { data } = (await supabase
@@ -105,6 +98,7 @@ export default function Report({
             }
             dicom={dicom}
             activeTemplate={dicom.template}
+            userRoleId={userRoleId}
           />
         ) : null}
         <div className="flex items-center gap-1">

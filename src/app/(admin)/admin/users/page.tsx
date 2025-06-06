@@ -28,7 +28,7 @@ export default async function Page() {
       requiredPermission={Permissions.MANAGE_USERS}
       fallback={<FallbackPermission />}
     >
-      <UsersPageContent currentUserId={user.id} userRoleId={user.role_id} />
+      <UsersPageContent />
     </CheckPermission>
   );
 }

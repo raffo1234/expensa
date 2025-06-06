@@ -73,7 +73,7 @@ export default function EditUser({
   const { setModalContent, setModalOpen } = useGlobalState();
   const [messageApi, contextHolder] = message.useMessage();
   const [isSaving, setIsSaving] = useState(false);
-  console.log("hi", userRoleId);
+  
   const {
     hasPermission: canAssignResident,
     isLoading: isLoadingCanAssignResident,
@@ -91,8 +91,8 @@ export default function EditUser({
   const residents = users.filter(
     (user) => user.role_id === "33d19e51-de3c-43a0-baa3-e921b45d6567"
   );
-
-  const { data: user } = useSWR(userId, () => fetcher(userId));
+  console.log();
+  const { data: user } = useSWR(`admin-${userId}`, () => fetcher(userId));
 
   const success = () => {
     messageApi.open({
@@ -223,6 +223,7 @@ export default function EditUser({
                             height={48}
                             className={`${true ? "border-cyan-200" : "border-transparent"} border-3 rounded-full`}
                             alt={`${first_name} ${last_name}`}
+                            title={`${first_name} ${last_name}`}
                           />
                         )
                       )}

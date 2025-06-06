@@ -1,7 +1,9 @@
 import DeleteUser from "@/components/DeleteUser";
 import EditUser from "@/components/EditUser";
 import { UserType } from "@/types/userType";
+import { Icon } from "@iconify/react/dist/iconify.js";
 import Image from "next/image";
+import Link from "next/link";
 import { UUIDTypes } from "uuid";
 
 export default function UsersTable({
@@ -50,14 +52,16 @@ export default function UsersTable({
                 </div>
                 <div className="flex gap-2 items-center justify-center">
                   {role_id ? (
-                    <EditUser
-                      mutateUsers={mutateUsers}
-                      currentUserId={currentUserId}
-                      userId={id}
-                      users={users}
-                      userRoleId={role_id}
-                      currentRoleId={userRoleId}
-                    />
+                    <Link
+                      type="button"
+                      href={`/admin/users/edit/${id}`}
+                      className="rounded-full w-11 h-11 border-gray-100 hover:border-gray-200 transition-colors duration-500 border flex items-center justify-center"
+                    >
+                      <Icon
+                        icon="solar:clapperboard-edit-broken"
+                        fontSize={24}
+                      />
+                    </Link>
                   ) : null}
                   <DeleteUser userId={id} />
                 </div>

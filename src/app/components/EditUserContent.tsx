@@ -112,8 +112,10 @@ export default function EditUserContent({
 
   return (
     <>
-      <EditUserHeader user={user} />
       <fieldset className="flex flex-col gap-4">
+        <FieldsSection>
+          <EditUserHeader user={user} />
+        </FieldsSection>
         <FieldsSection>
           <h2 className="font-semibold">Role and Location</h2>
           <div className="flex items-center gap-4 w-full">
@@ -185,19 +187,6 @@ export default function EditUserContent({
         ) : null}
         <FieldsSection>
           <h2 className="font-semibold">General Information</h2>
-          <div>
-            <label htmlFor="username" className="inline-block mb-2 text-sm">
-              Username
-            </label>
-            <input
-              defaultValue={user.username}
-              disabled
-              type="text"
-              id="username"
-              required
-              className="disabled:bg-gray-50 disabled:text-gray-500 w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
-            />
-          </div>
           <div>
             <label htmlFor="email" className="inline-block mb-2 text-sm">
               Email

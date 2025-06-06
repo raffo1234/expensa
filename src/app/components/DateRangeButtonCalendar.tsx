@@ -66,12 +66,12 @@ export default function DateRangeButtonCalendar({
   return (
     <>
       <div
-        className={`${dateRange ? "bg-gray-100 pr-9" : "pr-4 bg-cyan-400 text-white"} w-fit font-semibold rounded-full flex items-center relative`}
+        className={`${dateRange ? "bg-gray-100 pr-9" : "bg-cyan-400 text-white"} w-fit font-semibold rounded-full flex items-center relative`}
       >
         <button
           onClick={toggle}
           type="button"
-          className="cursor-pointer text-white text-sm px-4 py-2 rounded-full bg-cyan-400"
+          className={`${dateRange ? "px-3" : "pl-6 pr-2"} cursor-pointer text-white text-sm py-2 rounded-full bg-cyan-400`}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -101,7 +101,7 @@ export default function DateRangeButtonCalendar({
         <button
           onClick={toggle}
           type="button"
-          className={`${isOpen ? "px-4" : ""} text-sm cursor-pointer h-full`}
+          className={`${dateRange ? "" : "pr-6"} py-1 text-sm cursor-pointer h-full`}
         >
           {dateRange ? (
             <div className="flex items-center gap-1 px-1">

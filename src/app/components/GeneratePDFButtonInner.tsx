@@ -59,12 +59,10 @@ const IconButton = ({ isDownloadable }: { isDownloadable: boolean }) => {
 export default function GeneratePDFButtonInner({
   label,
   dicom,
-  userId,
   handleLeave,
   isDownloadable = true,
 }: {
   handleLeave: () => void;
-  userId: string;
   label: string;
   dicom: DicomType;
   isDownloadable?: boolean;
@@ -93,7 +91,9 @@ export default function GeneratePDFButtonInner({
   return (
     <Link
       download={
-        isDownloadable ? `${dicom.patient_name}_${nowMs}_${userId}.pdf` : null
+        isDownloadable
+          ? `${dicom.patient_name}_${nowMs}_${dicom.user_id}.pdf`
+          : null
       }
       ref={downloadLinkRef}
       href={instance.url ? instance.url : ""}

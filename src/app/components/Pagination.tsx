@@ -1,7 +1,7 @@
 "use client";
 
 import toast from "react-hot-toast";
-import { Permissions } from "@/types/propertyState";
+// import { Permissions } from "@/types/propertyState";
 import { DicomStateEnum } from "@/enums/dicomStateEnum";
 import extractAgeWidthUnit from "@/lib/extractAgeWithUnit";
 import formatDateYYYYMMDD from "@/lib/formatDateYYYYMMDD";
@@ -14,17 +14,14 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
 import TableSkeleton from "@/components/FormSkeleton";
-import GeneratePDFButton from "@/components/GeneratePDFButton";
-import DOCXPreview from "./DOCXPreview";
 import { useDebouncedCallback } from "use-debounce";
 import { startOfDay, formatISO, endOfDay, format } from "date-fns";
 import DateRangeButtonCalendar from "./DateRangeButtonCalendar";
-import { UUIDTypes } from "uuid";
 import UploadButton from "./UploadButton";
-import useCheckPermission from "@/hooks/useCheckPermission";
 import useCheckboxSelection from "@/hooks/useCheckboxSelection";
 import GenerateCompressedPDFs from "./GenerateCompressedPDFs";
 import GenerateCompressedDOCs from "./GenerateCompressedDOCs";
+import DicomActionButtons from "./TableActionButtons";
 
 type SortDirection = "asc" | "desc" | null;
 
@@ -46,6 +43,10 @@ const fetcher = async (
     { startDate: Date | null; endDate: Date | null } | null,
     { startDate: Date | null; endDate: Date | null } | null,
     DicomStateEnum | null,
+    boolean,
+    boolean,
+    boolean,
+    boolean,
   ]
 ): Promise<{ data: DicomType[] | null; total: number } | null> => {
   const [
@@ -59,6 +60,10 @@ const fetcher = async (
     studyDateRange,
     receiptDateRange,
     filteredByState,
+    canViewNew,
+    canViewViewed,
+    canViewDraft,
+    canViewCompleted,
   ] = key;
 
   const start = (page - 1) * pageSize;
@@ -76,6 +81,33 @@ const fetcher = async (
     .from(tableName)
     .select("id", { count: "exact", head: true })
     .eq("user_id", userId);
+
+  const canViewByState: string[] = [];
+  if (canViewNew) {
+    canViewByState.push(`state.eq.`);
+  }
+  if (canViewViewed) {
+    canViewByState.push(`state.eq.VIEWED`);
+  }
+  if (canViewDraft) {
+    canViewByState.push(`state.eq.DRAFT`);
+  }
+  if (canViewCompleted) {
+    canViewByState.push(`state.eq.COMPLETED`);
+  }
+
+  if (canViewByState.length > 0) {
+    if (canViewByState.length === 1) {
+      const filterPart = canViewByState[0].split(".");
+      if (filterPart.length === 3 && filterPart[1] === "eq") {
+        dataQuery = dataQuery.eq(filterPart[0], filterPart[2]);
+      }
+    } else {
+      dataQuery = dataQuery.or(canViewByState.join(","));
+    }
+  } else {
+    dataQuery = dataQuery.eq("state", "any");
+  }
 
   if (sortColumn && sortDirection) {
     dataQuery = dataQuery.order(sortColumn, {
@@ -156,10 +188,18 @@ export default function Pagination({
   tableName,
   userId,
   userRoleId,
+  canViewNew,
+  canViewViewed,
+  canViewDraft,
+  canViewCompleted,
 }: {
   tableName: "dicom";
   userId: string;
   userRoleId: string;
+  canViewNew: boolean;
+  canViewViewed: boolean;
+  canViewDraft: boolean;
+  canViewCompleted: boolean;
 }) {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const {
@@ -174,8 +214,8 @@ export default function Pagination({
     null
   );
 
-  const { hasPermission, isLoading: isLoadingPermissionDownloadReport } =
-    useCheckPermission(userRoleId, Permissions.DOWNLOAD_REPORT);
+  // const { hasPermission, isLoading: isLoadingPermissionDownloadReport } =
+  //   useCheckPermission(userRoleId, Permissions.DOWNLOAD_REPORT);
 
   const [studyDateRange, setStudyDateRange] = useState<DateRangeType | null>(
     null
@@ -219,6 +259,10 @@ export default function Pagination({
     studyDateRange,
     receiptDateRange,
     filteredByState,
+    canViewNew,
+    canViewViewed,
+    canViewDraft,
+    canViewCompleted,
   ];
 
   const {
@@ -337,26 +381,6 @@ export default function Pagination({
     }
   };
 
-  const deleteDicom = async (id: UUIDTypes) => {
-    const confirmationMessage = confirm(
-      "Are you sure you want to delete this item?"
-    );
-    if (!confirmationMessage) return;
-
-    try {
-      const { error: errorDelete } = await supabase
-        .from("dicom")
-        .delete()
-        .eq("id", id);
-
-      if (errorDelete) throw new Error("Could not sync image");
-    } catch (error) {
-      console.error("Error deleting", error);
-    } finally {
-      mutate();
-    }
-  };
-
   const filterByState = (state: DicomStateEnum) => {
     if (filteredByState === state) {
       setFilteredByState(null);
@@ -463,12 +487,12 @@ export default function Pagination({
           <DateRangeButtonCalendar
             dateRange={studyDateRange}
             handleDateRangeChange={handleStudyDateRangeChange}
-            label="Study Date Range"
+            label="Study Date"
           />
           <DateRangeButtonCalendar
             dateRange={receiptDateRange}
             handleDateRangeChange={handleReceiptDateRangeChange}
-            label="Receipt Date Range"
+            label="Receipt Date"
           />
         </div>
         <div className="flex rounded-full items-center">
@@ -505,10 +529,7 @@ export default function Pagination({
         </div>
       </div>
 
-      {isLoading ||
-        (isLoadingPermissionDownloadReport && (
-          <TableSkeleton rows={pageSize} cols={7} />
-        ))}
+      {isLoading ? <TableSkeleton rows={pageSize} cols={7} /> : null}
 
       {error && (
         <p className="text-sm px-4 py-2 border border-rose-200 flex items-center gap-3 bg-rose-50 rounded-xl text-rose-700">
@@ -948,61 +969,13 @@ export default function Pagination({
                       </td>
                       <td className="py-5 px-2 text-center">{modality}</td>
                       <td className="py-2 px-2">
-                        <div className="flex gap-1 justify-end">
-                          {state === DicomStateEnum.COMPLETED &&
-                          hasPermission ? (
-                            result.data?.[index] ? (
-                              <>
-                                <GeneratePDFButton
-                                  dicom={result.data[index]}
-                                  label="PDF"
-                                  userId={userId}
-                                />
-                                <DOCXPreview dicom={result.data[index]} />
-                              </>
-                            ) : null
-                          ) : null}
-                          <Link
-                            href={`/admin/dicoms/${id}`}
-                            title="Inform"
-                            className="py-2 px-6 flex gap-3 items-center font-semibold border bg-cyan-500 text-white rounded-full cursor-pointer"
-                          >
-                            <Icon
-                              icon={`${
-                                state === DicomStateEnum.COMPLETED
-                                  ? "solar:file-check-linear"
-                                  : "solar:document-add-linear"
-                              }`}
-                              fontSize={24}
-                            />
-                            <span>
-                              {state !== DicomStateEnum.COMPLETED
-                                ? "Inform"
-                                : "Amend"}
-                            </span>
-                          </Link>
-                          <button
-                            title="Delete Dicom"
-                            onClick={() => deleteDicom(id)}
-                            type="button"
-                            className=" hover:bg-white flex-shrink-0 transition-colors duration-300 cursor-pointer bg-gray-100 w-11 h-11 rounded-full border-gray-200 border-dashed border text-rose-400 flex items-center justify-center"
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="24"
-                              height="24"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                fill="none"
-                                stroke="currentColor"
-                                strokeLinecap="round"
-                                strokeWidth="1.5"
-                                d="M9.17 4a3.001 3.001 0 0 1 5.66 0m5.67 2h-17m14.874 9.4c-.177 2.654-.266 3.981-1.131 4.79s-2.195.81-4.856.81h-.774c-2.66 0-3.99 0-4.856-.81c-.865-.809-.953-2.136-1.13-4.79l-.46-6.9m13.666 0l-.2 3M9.5 11l.5 5m4.5-5l-.5 5"
-                              />
-                            </svg>
-                          </button>
-                        </div>
+                        {result.data ? (
+                          <DicomActionButtons
+                            userRoleId={userRoleId}
+                            dicom={result.data[index]}
+                            mutate={mutate}
+                          />
+                        ) : null}
                       </td>
                     </tr>
                   );

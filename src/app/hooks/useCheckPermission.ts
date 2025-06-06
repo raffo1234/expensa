@@ -38,7 +38,7 @@ function useCheckPermission(userRoleId: string, requiredPermission: string) {
 
   return {
     permission,
-    hasPermission: permissionsCount && permissionsCount > 0,
+    hasPermission: !!(permissionsCount && permissionsCount > 0),
     isLoading,
   };
 }

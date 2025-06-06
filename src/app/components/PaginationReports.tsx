@@ -87,7 +87,7 @@ const fetcher = async (
   } else {
     dataQuery = dataQuery.order("created_at", { ascending: false });
   }
-
+  
   if (searchWord && searchWord.length > 0) {
     dataQuery = dataQuery.or(
       `patient_id.ilike.%${searchWord}%,patient_name.ilike.%${searchWord}%,institution.ilike.%${searchWord}%,study_description.ilike.%${searchWord}%`
@@ -704,7 +704,6 @@ export default function PaginationReports({
                               <GeneratePDFButton
                                 label="PDF"
                                 dicom={data[index]}
-                                userId={userId}
                               />
                               <DOCXPreview dicom={data[index]} />
                             </>

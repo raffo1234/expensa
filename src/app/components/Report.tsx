@@ -7,23 +7,18 @@ import TextareaAutosize from "react-textarea-autosize";
 import toast from "react-hot-toast";
 import Image from "next/image";
 import { TemplateType } from "@/types/templateType";
-import { Icon } from "@iconify/react/dist/iconify.js";
 import { DicomType } from "@/types/dicomType";
 import Link from "next/link";
 import formatDateYYYYMMDD from "@/lib/formatDateYYYYMMDD";
 import { DicomStateEnum } from "@/enums/dicomStateEnum";
 import { supabase } from "@/lib/supabase";
-import DOCXPreview from "@/components/DOCXPreview";
-import GeneratePDFButton from "@/components/GeneratePDFButton";
 import { UUIDTypes } from "uuid";
 import useSWR from "swr";
 import LoadingReportComponent from "./LoadingReportComponent";
-
-function putFirst(array: TemplateType[], element: TemplateType | undefined) {
-  if (element)
-    return [element, ...array.filter((item) => item.id !== element.id)];
-  return array;
-}
+import DownloadButtons from "./DownloadButtons";
+import PreviewPDFButton from "./PreviewPDFButton";
+import CompleteDicomButton from "./CompleteDicomButton";
+import ListOfTemplates from "./ListOfTemplates";
 
 const fetcher = async (id: UUIDTypes) => {
   const { data } = (await supabase
@@ -39,11 +34,11 @@ const fetcher = async (id: UUIDTypes) => {
 export default function Report({
   templates,
   dicomId,
-  userId,
+  userRoleId,
 }: {
   templates: TemplateType[] | [];
   dicomId: string;
-  userId: string;
+  userRoleId: string;
 }) {
   const {
     data: dicom,
@@ -51,13 +46,6 @@ export default function Report({
     isLoading,
     mutate,
   } = useSWR(`admin-${dicomId}`, () => fetcher(dicomId));
-
-  const sortedTemplates = putFirst(templates, dicom?.template);
-
-  const handleTemplateActive = (dicomId: string, newTemplate: TemplateType) => {
-    updateDicom(dicomId, { template_id: newTemplate.id });
-    localStorage.setItem("dicomActiveTemplateId", newTemplate.id);
-  };
 
   const debouncedTextarea = useDebouncedCallback((value) => {
     if (dicom?.id) updateDicom(dicom?.id, { report: value });
@@ -102,40 +90,17 @@ export default function Report({
         <span className="font-semibold">{dicom.patient_id}</span>
       </h2>
       <div className="sm:flex mb-6 items-center">
-        <div
-          className="grid gap-2 mb-4 sm:mb-0 flex-grow-1"
-          style={{
-            gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))",
-          }}
-        >
-          {sortedTemplates.map((template) => {
-            const { id, name } = template;
-            return (
-              <button
-                key={id}
-                type="button"
-                title={name}
-                onClick={() => handleTemplateActive(dicomId, template)}
-                className={`
-                  ${
-                    id === dicom.template_id
-                      ? "bg-rose-50 border-rose-200"
-                      : "bg-gray-50 border-gray-200"
-                  } 
-                cursor-pointer truncate text-center p-3 rounded-xl border`}
-              >
-                {name}
-              </button>
-            );
-          })}
-          <Link
-            href="/admin/templates"
-            className="flex items-center cursor-pointer text-center p-1 transition-colors duration-300 text-gray-500 hover:text-cyan-400 group"
-            title="Add template"
-          >
-            <Icon icon="solar:add-circle-linear" fontSize={32} />
-          </Link>
-        </div>
+        {dicom?.template ? (
+          <ListOfTemplates
+            templates={templates}
+            updateTemplate={(newTemplate) =>
+              updateDicom(dicomId, { template_id: newTemplate.id })
+            }
+            dicom={dicom}
+            activeTemplate={dicom.template}
+            userRoleId={userRoleId}
+          />
+        ) : null}
         <div className="flex items-center gap-1">
           {dicom.state ? (
             <div
@@ -162,8 +127,8 @@ export default function Report({
               {dicom.state}
             </div>
           ) : null}
-          <GeneratePDFButton dicom={dicom} userId={userId} label="PDF" />
-          <DOCXPreview dicom={dicom} />
+
+          <DownloadButtons dicom={dicom} userRoleId={userRoleId} />
         </div>
       </div>
       <div className="bg-gray-200 overflow-auto">
@@ -279,26 +244,20 @@ export default function Report({
             Save as {DicomStateEnum.DRAFT}
           </button>
         ) : null}
-        {dicom.state === DicomStateEnum.DRAFT ? (
-          <button
-            onClick={() =>
-              updateDicom(dicom.id, {
-                state: DicomStateEnum.COMPLETED,
-                completed_at: new Date(),
-              })
-            }
-            title={`Save as ${DicomStateEnum.COMPLETED}`}
-            type="button"
-            className="px-6 py-2 font-semibold text-cyan-600 border-cyan-200 cursor-pointer border bg-cyan-50 rounded-xl"
-          >
-            Save as {DicomStateEnum.COMPLETED}
-          </button>
-        ) : null}
-        <GeneratePDFButton
+        <CompleteDicomButton
+          userRoleId={userRoleId}
+          dicomState={dicom.state}
+          onClick={() =>
+            updateDicom(dicom.id, {
+              state: DicomStateEnum.COMPLETED,
+              completed_at: new Date(),
+            })
+          }
+        />
+        <PreviewPDFButton
+          userRoleId={userRoleId}
           isDownloadable={false}
           dicom={dicom}
-          userId={userId}
-          label="PDF"
         />
       </div>
     </>

@@ -42,7 +42,7 @@ export default function GlobalModal() {
           isModalOpen
             ? "translate-y-0 opacity-100"
             : "translate-y-10 opacity-80"
-        } bg-white transition-all duration-300 md:max-w-screen-md mx-auto w-full px-8 min-h-lvh md:min-h-0 md:px-10 py-12 md:rounded-2xl`}
+        } bg-slate-50 transition-all duration-300 md:max-w-screen-md mx-auto w-full px-8 min-h-lvh md:min-h-0 md:px-10 py-12 md:rounded-2xl`}
       >
         {modalContent}
         <button

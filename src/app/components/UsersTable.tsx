@@ -1,22 +1,10 @@
 import DeleteUser from "@/components/DeleteUser";
-import EditUser from "@/components/EditUser";
 import { UserType } from "@/types/userType";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import Image from "next/image";
 import Link from "next/link";
-import { UUIDTypes } from "uuid";
 
-export default function UsersTable({
-  currentUserId,
-  users,
-  mutateUsers,
-  userRoleId,
-}: {
-  currentUserId: UUIDTypes;
-  users: UserType[] | null;
-  mutateUsers: () => void;
-  userRoleId: string;
-}) {
+export default function UsersTable({ users }: { users: UserType[] | null }) {
   return (
     <div className="max-w-[1200px] mx-auto w-full">
       <h1 className="mb-6 font-semibold text-lg block">Users</h1>

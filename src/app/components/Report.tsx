@@ -19,6 +19,7 @@ import LoadingReportComponent from "./LoadingReportComponent";
 import DownloadButtons from "./DownloadButtons";
 import PreviewPDFButton from "./PreviewPDFButton";
 import CompleteDicomButton from "./CompleteDicomButton";
+import ListOfTemplates from "./ListOfTemplates";
 
 function putFirst(array: TemplateType[], element: TemplateType | undefined) {
   if (element)
@@ -52,13 +53,6 @@ export default function Report({
     isLoading,
     mutate,
   } = useSWR(`admin-${dicomId}`, () => fetcher(dicomId));
-
-  const sortedTemplates = putFirst(templates, dicom?.template);
-
-  const handleTemplateActive = (dicomId: string, newTemplate: TemplateType) => {
-    updateDicom(dicomId, { template_id: newTemplate.id });
-    localStorage.setItem("dicomActiveTemplateId", newTemplate.id);
-  };
 
   const debouncedTextarea = useDebouncedCallback((value) => {
     if (dicom?.id) updateDicom(dicom?.id, { report: value });
@@ -103,40 +97,16 @@ export default function Report({
         <span className="font-semibold">{dicom.patient_id}</span>
       </h2>
       <div className="sm:flex mb-6 items-center">
-        <div
-          className="grid gap-2 mb-4 sm:mb-0 flex-grow-1"
-          style={{
-            gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))",
-          }}
-        >
-          {sortedTemplates.map((template) => {
-            const { id, name } = template;
-            return (
-              <button
-                key={id}
-                type="button"
-                title={name}
-                onClick={() => handleTemplateActive(dicomId, template)}
-                className={`
-                  ${
-                    id === dicom.template_id
-                      ? "bg-rose-50 border-rose-200"
-                      : "bg-gray-50 border-gray-200"
-                  } 
-                cursor-pointer truncate text-center p-3 rounded-xl border`}
-              >
-                {name}
-              </button>
-            );
-          })}
-          <Link
-            href="/admin/templates"
-            className="flex items-center cursor-pointer text-center p-1 transition-colors duration-300 text-gray-500 hover:text-cyan-400 group"
-            title="Add template"
-          >
-            <Icon icon="solar:add-circle-linear" fontSize={32} />
-          </Link>
-        </div>
+        {dicom?.template ? (
+          <ListOfTemplates
+            templates={templates}
+            updateTemplate={(newTemplate) =>
+              updateDicom(dicomId, { template_id: newTemplate.id })
+            }
+            dicom={dicom}
+            activeTemplate={dicom.template}
+          />
+        ) : null}
         <div className="flex items-center gap-1">
           {dicom.state ? (
             <div

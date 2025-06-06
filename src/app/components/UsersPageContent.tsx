@@ -11,6 +11,7 @@ interface UsersPageContentProps {
 
 const UsersPageContent: React.FC<UsersPageContentProps> = ({
   currentUserId,
+  userRoleId,
 }) => {
   const {
     data: users,
@@ -28,6 +29,7 @@ const UsersPageContent: React.FC<UsersPageContentProps> = ({
       mutateUsers={mutate}
       currentUserId={currentUserId}
       users={users}
+      userRoleId={userRoleId}
     />
   );
 };

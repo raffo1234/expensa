@@ -3,23 +3,22 @@
 import { Permissions } from "@/types/propertyState";
 import { supabase } from "@/lib/supabase";
 import FieldsSection from "./FieldsSection";
-import { useEffect } from "react";
 import useSWR from "swr";
 import { UUIDTypes } from "uuid";
 import useCheckPermission from "@/hooks/useCheckPermission";
 import { adminRolesKey } from "@/constants";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import ResidentItem from "./ResidentItem";
 import toast from "react-hot-toast";
 import Image from "next/image";
+import ResidentList from "./ResidentList";
+import { UserType } from "@/types/userType";
 
 async function fetcher(userId: string) {
-  const { data, error } = await supabase
+  const { data } = (await supabase
     .from("user")
     .select("*, role(name)")
     .eq("id", userId)
-    .single();
-  if (error) throw error;
+    .single()) as { data: UserType | null };
   return data;
 }
 
@@ -33,11 +32,10 @@ const rolesFetcher = async () => {
 };
 
 const usersFetcher = async () => {
-  const { data, error } = await supabase
+  const { data } = (await supabase
     .from("user")
     .select("*")
-    .order("name", { ascending: true });
-  if (error) throw error;
+    .order("name", { ascending: true })) as { data: UserType[] | null };
   return data;
 };
 
@@ -63,16 +61,6 @@ export default function EditUserContent({
   const { data: user, mutate: mutateUser } = useSWR(`admin-${userId}`, () =>
     fetcher(userId)
   );
-
-  const {
-    hasPermission: canHaveResident,
-    isLoading: isLoadingCanHaveResident,
-  } = useCheckPermission(user?.role_id, Permissions.CAN_HAVE_RESIDENT);
-
-  const {
-    hasPermission: canAssignResident,
-    isLoading: isLoadingCanAssignResident,
-  } = useCheckPermission(currentUserRoleId, Permissions.ASSIGN_RESIDENT);
 
   const { data: users, isLoading: isLoadingUsers } = useSWR(
     "admin-users",
@@ -103,13 +91,7 @@ export default function EditUserContent({
     }
   };
 
-  if (
-    isLoadingUsers ||
-    isLoadingRoles ||
-    isLoadingTemplates ||
-    isLoadingCanHaveResident ||
-    isLoadingCanAssignResident
-  )
+  if (isLoadingUsers || isLoadingRoles || isLoadingTemplates)
     return "loading ...";
 
   if (!user) return null;
@@ -121,13 +103,13 @@ export default function EditUserContent({
           src={user.image_url}
           width={50}
           height={50}
-          alt={user.first_name}
+          alt={user.first_name as string}
           className="rounded-full"
         />
         <span>
           {user.first_name} {user.last_name}
           <span className="text-sm block text-gray-500 font-normal">
-            {user.role.name}
+            {user.role?.name}
           </span>
         </span>
       </h2>
@@ -175,7 +157,7 @@ export default function EditUserContent({
                   onChange={(event) =>
                     updateUser("template_id", event.target.value)
                   }
-                  defaultValue={user.template_id}
+                  defaultValue={user.template_id as string}
                   className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500 bg-white"
                 >
                   <option value="">Select ...</option>
@@ -194,21 +176,12 @@ export default function EditUserContent({
             </div>
           </div>
         </FieldsSection>
-        {canHaveResident ? (
-          <FieldsSection>
-            <h2 className="font-semibold">Residents</h2>
-            <div className="flex gap-1 items-center">
-              {users?.map((user) => {
-                return (
-                  <ResidentItem
-                    isEditable={canAssignResident}
-                    key={user.id}
-                    user={user}
-                  />
-                );
-              })}
-            </div>
-          </FieldsSection>
+        {users && user?.role_id ? (
+          <ResidentList
+            currentUserRoleId={currentUserRoleId}
+            userRoleId={user.role_id}
+            users={users}
+          />
         ) : null}
         <FieldsSection>
           <h2 className="font-semibold">General Information</h2>

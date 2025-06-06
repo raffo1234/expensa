@@ -14,21 +14,23 @@ export default function ResidentItem({
   const [isActive, setIsActive] = useState(false);
   const { id, image_url, first_name, last_name, role_id } = user;
 
-  const { hasPermission: canBeAssigned, isLoading: isLoadingCanHaveResident } =
-    useCheckPermission(role_id as string, Permissions.AVAILABLE_TO_BE_ASSIGNED);
+  const { hasPermission: canBeAssigned, isLoading } = useCheckPermission(
+    role_id as string,
+    Permissions.AVAILABLE_TO_BE_ASSIGNED
+  );
 
   const handleSelection = () => {
     setIsActive((prev) => !prev);
   };
 
-  if (isLoadingCanHaveResident) return "loading...";
+  if (isLoading) return "loading...";
   if (!canBeAssigned) return null;
 
   return (
     <button
       type="button"
       disabled={!isEditable}
-      className={`${isActive ? "border-cyan-100" : "border-transparent"} border-5 rounded-full cursor-pointer`}
+      className={`${isEditable ? "cursor-pointer" : ""} ${isActive ? "border-cyan-100" : "border-transparent"} border-5 rounded-full`}
     >
       <Image
         key={id}

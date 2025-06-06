@@ -2,7 +2,7 @@ import useCheckPermission from "@/hooks/useCheckPermission";
 import Image from "next/image";
 import { Permissions } from "@/types/propertyState";
 import { UserType } from "@/types/userType";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export default function ResidentItem({
   user,
@@ -20,10 +20,6 @@ export default function ResidentItem({
   const handleSelection = () => {
     setIsActive((prev) => !prev);
   };
-
-  useEffect(() => {
-    console.log(isActive);
-  }, [isActive]);
 
   if (isLoadingCanHaveResident) return "loading...";
   if (!canBeAssigned) return null;

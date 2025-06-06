@@ -3,8 +3,7 @@
 import { Permissions } from "@/types/propertyState";
 import { supabase } from "@/lib/supabase";
 import FieldsSection from "./FieldsSection";
-import { useEffect, useMemo, useReducer, useState } from "react";
-import { SubmitHandler, useForm } from "react-hook-form";
+import { useEffect } from "react";
 import useSWR from "swr";
 import { UUIDTypes } from "uuid";
 import useCheckPermission from "@/hooks/useCheckPermission";
@@ -12,25 +11,17 @@ import { adminRolesKey } from "@/constants";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import ResidentItem from "./ResidentItem";
 import toast from "react-hot-toast";
+import Image from "next/image";
 
 async function fetcher(userId: string) {
   const { data, error } = await supabase
     .from("user")
-    .select()
+    .select("*, role(name)")
     .eq("id", userId)
     .single();
   if (error) throw error;
   return data;
 }
-
-type Inputs = {
-  username: string;
-  email: string;
-  first_name: string;
-  last_name: string;
-  role_id: string;
-  template_id: UUIDTypes | null;
-};
 
 const rolesFetcher = async () => {
   const { data, error } = await supabase
@@ -44,9 +35,7 @@ const rolesFetcher = async () => {
 const usersFetcher = async () => {
   const { data, error } = await supabase
     .from("user")
-    .select(
-      "id, image_url, username, email, role_id, first_name, last_name, role(id, name)"
-    )
+    .select("*")
     .order("name", { ascending: true });
   if (error) throw error;
   return data;
@@ -63,22 +52,22 @@ const templatesFetcher = async (userId: UUIDTypes) => {
 };
 
 export default function EditUserContent({
+  userId,
   currentUserId,
   currentUserRoleId,
-  userId,
-  userRoleId,
 }: {
+  userId: string;
   currentUserId: string;
   currentUserRoleId: string;
-  userId: string;
-  userRoleId: string;
 }) {
-  const [isSaving, setIsSaving] = useState(false);
+  const { data: user, mutate: mutateUser } = useSWR(`admin-${userId}`, () =>
+    fetcher(userId)
+  );
 
   const {
     hasPermission: canHaveResident,
     isLoading: isLoadingCanHaveResident,
-  } = useCheckPermission(userRoleId, Permissions.CAN_HAVE_RESIDENT);
+  } = useCheckPermission(user?.role_id, Permissions.CAN_HAVE_RESIDENT);
 
   const {
     hasPermission: canAssignResident,
@@ -100,21 +89,17 @@ export default function EditUserContent({
     () => templatesFetcher(currentUserId)
   );
 
-  const { data: user } = useSWR(`admin-${userId}`, () => fetcher(userId));
-
-  const updateUser = async (fieldName: string, data: string) => {
-    setIsSaving(true);
+  const updateUser = async (fieldName: string, value: string) => {
     try {
-      const { error } = await supabase
+      await supabase
         .from("user")
-        .update({ [fieldName]: data })
+        .update({ [fieldName]: value })
         .eq("id", userId);
-
-      if (!error) toast.success("User Updated successfully!");
     } catch (error) {
       console.error(error);
     } finally {
-      setIsSaving(false);
+      toast.success("User was updated successfully!");
+      mutateUser();
     }
   };
 
@@ -127,9 +112,25 @@ export default function EditUserContent({
   )
     return "loading ...";
 
+  if (!user) return null;
+
   return (
     <>
-      <h2 className="mb-6 font-semibold text-lg block">Edit User</h2>
+      <h2 className="flex gap-2 items-center mb-6 font-semibold text-lg">
+        <Image
+          src={user.image_url}
+          width={50}
+          height={50}
+          alt={user.first_name}
+          className="rounded-full"
+        />
+        <span>
+          {user.first_name} {user.last_name}
+          <span className="text-sm block text-gray-500 font-normal">
+            {user.role.name}
+          </span>
+        </span>
+      </h2>
 
       <fieldset className="flex flex-col gap-4">
         <FieldsSection>
@@ -198,13 +199,13 @@ export default function EditUserContent({
             <h2 className="font-semibold">Residents</h2>
             <div className="flex gap-1 items-center">
               {users?.map((user) => {
-                return user.role_id ? (
+                return (
                   <ResidentItem
                     isEditable={canAssignResident}
                     key={user.id}
                     user={user}
                   />
-                ) : null;
+                );
               })}
             </div>
           </FieldsSection>

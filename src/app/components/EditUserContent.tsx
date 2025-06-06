@@ -10,6 +10,7 @@ import toast from "react-hot-toast";
 import Image from "next/image";
 import ResidentList from "./ResidentList";
 import { UserType } from "@/types/userType";
+import EditUserHeader from "./EditUserHeader";
 
 async function fetcher(userId: string) {
   const { data } = (await supabase
@@ -96,22 +97,7 @@ export default function EditUserContent({
 
   return (
     <>
-      <h2 className="flex gap-2 items-center mb-6 font-semibold text-lg">
-        <Image
-          src={user.image_url}
-          width={50}
-          height={50}
-          alt={user.first_name as string}
-          className="rounded-full"
-        />
-        <span>
-          {user.first_name} {user.last_name}
-          <span className="text-sm block text-gray-500 font-normal">
-            {user.role?.name}
-          </span>
-        </span>
-      </h2>
-
+      <EditUserHeader user={user} />
       <fieldset className="flex flex-col gap-4">
         <FieldsSection>
           <h2 className="font-semibold">Role and Location</h2>

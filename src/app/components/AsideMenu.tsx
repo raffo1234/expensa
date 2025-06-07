@@ -117,7 +117,7 @@ export default function AsideMenu({
     {
       href: "/admin/residents",
       title: "Residents",
-      iconName: "solar:user-linear",
+      iconName: "solar:shield-user-outline",
     },
   ];
 

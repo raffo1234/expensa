@@ -26,11 +26,11 @@ export default function EditUserHeader({ user }: { user: UserType }) {
   if (isLoadingUser) return null;
 
   return (
-    <h2 className="flex gap-2 items-center font-semibold text-lg">
+    <h2 className="flex gap-4 items-center font-semibold text-lg">
       <Image
         src={user.image_url}
-        width={50}
-        height={50}
+        width={48}
+        height={48}
         alt={user.first_name as string}
         className="rounded-full"
       />
@@ -41,7 +41,11 @@ export default function EditUserHeader({ user }: { user: UserType }) {
           {supervisor ? (
             <>
               <Icon icon="solar:arrow-right-outline" className="inline-block" />
-              <Link target="_blank" href={`/admin/users/edit/${supervisor.id}`} className="text-gray-800 border-b border-gray-800">
+              <Link
+                target="_blank"
+                href={`/admin/users/edit/${supervisor.id}`}
+                className="text-gray-800 border-b border-gray-800"
+              >
                 {supervisor?.first_name} {supervisor?.last_name}
               </Link>
             </>

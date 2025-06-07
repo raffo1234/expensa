@@ -1,5 +1,6 @@
 "use client";
 
+import Fuse from "fuse.js";
 import { useDebouncedCallback } from "use-debounce";
 import extractAgeWidthUnit from "@/lib/extractAgeWithUnit";
 import React, { useEffect } from "react";
@@ -70,7 +71,16 @@ export default function Report({
 
       if (dicom.state !== DicomStateEnum.COMPLETED && !dicom.template) {
         const storedTemplateId = localStorage.getItem("dicomActiveTemplateId");
-        if (storedTemplateId) {
+        if (!storedTemplateId) {
+          const fuse = new Fuse(templates, {
+            includeScore: true,
+            keys: ["name", "description"],
+          });
+          const result = fuse.search(dicom.institution);
+          if (result.length > 0) {
+            updateDicom(dicomId, { template_id: result[0].item.id });
+          }
+        } else {
           updateDicom(dicomId, { template_id: storedTemplateId });
         }
       }
@@ -90,17 +100,15 @@ export default function Report({
         <span className="font-semibold">{dicom.patient_id}</span>
       </h2>
       <div className="sm:flex mb-6 items-center">
-        {dicom?.template ? (
-          <ListOfTemplates
-            templates={templates}
-            updateTemplate={(newTemplate) =>
-              updateDicom(dicomId, { template_id: newTemplate.id })
-            }
-            dicom={dicom}
-            activeTemplate={dicom.template}
-            userRoleId={userRoleId}
-          />
-        ) : null}
+        <ListOfTemplates
+          templates={templates}
+          updateTemplate={(newTemplate) =>
+            updateDicom(dicomId, { template_id: newTemplate.id })
+          }
+          dicom={dicom}
+          activeTemplate={dicom.template}
+          userRoleId={userRoleId}
+        />
         <div className="flex items-center gap-1">
           {dicom.state ? (
             <div

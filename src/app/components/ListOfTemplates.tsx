@@ -20,7 +20,7 @@ export default function ListOfTemplates({
 }: {
   templates: TemplateType[];
   updateTemplate: (newTemplate: TemplateType) => void;
-  activeTemplate: TemplateType;
+  activeTemplate: TemplateType | undefined;
   dicom: DicomType;
   userRoleId: string;
 }) {

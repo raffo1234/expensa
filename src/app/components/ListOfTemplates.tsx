@@ -71,6 +71,7 @@ export default function ListOfTemplates({
       {canViewTemplates ? (
         <Link
           href="/admin/templates"
+          target="_blank"
           className="flex items-center cursor-pointer text-center p-1 transition-colors duration-300 text-gray-500 hover:text-cyan-400 group"
           title="Go to templates"
         >

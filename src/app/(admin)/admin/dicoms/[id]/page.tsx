@@ -32,7 +32,9 @@ export default async function Page({ params }: { params: Params }) {
 
   const { data: templates } = (await supabase
     .from("template")
-    .select("id, name, header_image_url, sign_image_url, footer_image_url")
+    .select(
+      "id, name, description, header_image_url, sign_image_url, footer_image_url"
+    )
     .eq("user_id", userId)
     .order("created_at", { ascending: false })) as {
     data: TemplateType[] | null;

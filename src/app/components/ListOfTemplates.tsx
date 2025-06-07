@@ -1,6 +1,5 @@
 import { DicomType } from "@/types/dicomType";
 import { TemplateType } from "@/types/templateType";
-import { Icon } from "@iconify/react/dist/iconify.js";
 import Link from "next/link";
 import { Permissions } from "@/types/propertyState";
 import useCheckPermission from "@/hooks/useCheckPermission";
@@ -42,7 +41,7 @@ export default function ListOfTemplates({
 
   return (
     <div
-      className="grid gap-2 mb-4 sm:mb-0 flex-grow-1"
+      className="grid gap-2 mb-6 flex-grow-1"
       style={{
         gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))",
       }}

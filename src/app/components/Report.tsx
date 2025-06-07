@@ -99,20 +99,19 @@ export default function Report({
         <span className="text-gray-600 text-sm">ID:</span>{" "}
         <span className="font-semibold">{dicom.patient_id}</span>
       </h2>
-      <div className="sm:flex mb-6 items-center">
-        <ListOfTemplates
-          templates={templates}
-          updateTemplate={(newTemplate) =>
-            updateDicom(dicomId, { template_id: newTemplate.id })
-          }
-          dicom={dicom}
-          activeTemplate={dicom.template}
-          userRoleId={userRoleId}
-        />
-        <div className="flex items-center gap-1">
-          {dicom.state ? (
-            <div
-              className={`
+      <ListOfTemplates
+        templates={templates}
+        updateTemplate={(newTemplate) =>
+          updateDicom(dicomId, { template_id: newTemplate.id })
+        }
+        dicom={dicom}
+        activeTemplate={dicom.template}
+        userRoleId={userRoleId}
+      />
+      <div className="flex items-center gap-1 justify-end mb-6">
+        {dicom.state ? (
+          <div
+            className={`
               font-semibold uppercase
               ${
                 dicom.state === DicomStateEnum.VIEWED
@@ -130,14 +129,12 @@ export default function Report({
                   : ""
               }  
               py-1 px-5 text-sm uppercase rounded-full border`}
-              title={dicom.state}
-            >
-              {dicom.state}
-            </div>
-          ) : null}
-
-          <DownloadButtons dicom={dicom} userRoleId={userRoleId} />
-        </div>
+            title={dicom.state}
+          >
+            {dicom.state}
+          </div>
+        ) : null}
+        <DownloadButtons dicom={dicom} userRoleId={userRoleId} />
       </div>
       <div className="bg-gray-200 overflow-auto">
         <div

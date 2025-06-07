@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useState } from "react";
 import useSWR from "swr";
 import UploaderTemplateImageUploader from "./TemplateImageUploader";
-import { Icon } from "@iconify/react/dist/iconify.js";
 import FieldsSection from "./FieldsSection";
 import FieldLabel from "./FieldLabel";
 import DotsLoading from "./DotsLoading";

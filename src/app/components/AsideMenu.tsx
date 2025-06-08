@@ -60,6 +60,11 @@ export default function AsideMenu({
           },
         ]
       : []),
+    {
+      href: "/admin/pacs",
+      title: "Pacs",
+      iconName: "solar:archive-down-minimlistic-linear",
+    },
     ...(hasViewDicomsPermission
       ? [
           {

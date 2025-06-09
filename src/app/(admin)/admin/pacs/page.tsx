@@ -5,7 +5,10 @@ import { useState } from "react";
 const GRUPOQUITO = { ip: "168.121.46.225", port: 3201, aet: "PACS-GRUPOQUITO" };
 
 interface Dataset {
-  [tag: string]: unknown;
+  patientName: string;
+  studyDate: string;
+  studyDescription: string;
+  modalitiesInStudy: string;
 }
 
 export default function PacsQuery() {
@@ -57,21 +60,13 @@ export default function PacsQuery() {
       {error && <p className="text-red-600">❌ {error}</p>}
 
       <ul className="space-y-2">
-        {studies.map((study, index) => (
+        {studies.map(({ patientName, studyDate }, index) => (
           <li key={index} className="border p-2 rounded bg-gray-100">
             <p>
-              <strong>Patient Name:</strong> {extractText(study["00100010"])}
+              <strong>Patient Name:</strong> {patientName}
             </p>
             <p>
-              <strong>Study Date:</strong> {extractText(study["00080020"])}
-            </p>
-            <p>
-              <strong>Study Description:</strong>{" "}
-              {extractText(study["00081030"])}
-            </p>
-            <p>
-              <strong>Study Instance UID:</strong>{" "}
-              {extractText(study["0020000D"])}
+              <strong>Study Date:</strong> {studyDate}
             </p>
           </li>
         ))}

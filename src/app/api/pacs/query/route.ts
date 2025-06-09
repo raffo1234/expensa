@@ -1,6 +1,18 @@
 import { Client, requests, constants } from "dcmjs-dimse";
 import type { EventEmitter } from "events";
 
+function extractValue(dataset: any, tag: string): string {
+  const field = dataset[tag];
+  if (!field || !Array.isArray(field.Value) || field.Value.length === 0)
+    return "(empty)";
+  // Value array can contain strings or objects (sometimes PersonName)
+  if (typeof field.Value[0] === "string") return field.Value[0];
+  // Handle PersonName (PN) type objects
+  if (typeof field.Value[0] === "object" && field.Value[0].Alphabetic)
+    return field.Value[0].Alphabetic;
+  return "(unknown)";
+}
+
 export const runtime = "nodejs";
 
 export async function POST(req: Request): Promise<Response> {
@@ -39,9 +51,15 @@ export async function POST(req: Request): Promise<Response> {
       const status = res.getStatus();
 
       if (status === constants.Status.Pending && res.hasDataset()) {
-        const dataset = res.getDataset();
+        const dataset = res.getDataset().elements;
         console.log("📦 Dataset received:", dataset);
-        results.push(dataset);
+
+        results.push({
+          patientName: dataset.PatientName.Alphabetic,
+          studyDate: dataset.StudyDate,
+          studyDescription: dataset.StudyDescription,
+          modalitiesInStudy: dataset.ModalitiesInStudy,
+        });
       }
 
       if (status === constants.Status.Success) {

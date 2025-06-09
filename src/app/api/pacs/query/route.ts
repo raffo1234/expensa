@@ -1,0 +1,64 @@
+import { Client, requests, constants } from "dcmjs-dimse";
+import type { EventEmitter } from "events";
+
+export const runtime = "nodejs";
+
+export async function POST(req: Request): Promise<Response> {
+  const body = await req.json();
+  const {
+    ip,
+    port,
+    aet,
+    clientAet = "MY_CLIENT_AE",
+    startDate,
+    endDate,
+    modality,
+  } = body;
+
+  if (!ip || !port || !aet || !startDate || !endDate) {
+    return Response.json(
+      { ok: false, error: "Missing required fields" },
+      { status: 400 }
+    );
+  }
+
+  const format = (d: string) => d.replace(/-/g, "");
+  const query = {
+    QueryRetrieveLevel: "STUDY",
+    StudyDate: `${format(startDate)}-${format(endDate)}`,
+    ...(modality && { ModalitiesInStudy: modality }),
+  };
+
+  const results: any[] = [];
+  const client = new Client();
+  const request = requests.CFindRequest.createStudyFindRequest(query);
+  const emitter = request as unknown as EventEmitter;
+
+  const resultsPromise = new Promise<any[]>((resolve, reject) => {
+    emitter.on("response", (res) => {
+      const status = res.getStatus();
+
+      if (status === constants.Status.Pending && res.hasDataset()) {
+        const dataset = res.getDataset();
+        console.log("📦 Dataset received:", dataset);
+        results.push(dataset);
+      }
+
+      if (status === constants.Status.Success) {
+        console.log("✅ C-FIND Success — resolving results");
+        resolve(results);
+      }
+    });
+
+    emitter.on("error", (err) => {
+      console.error("❌ C-FIND error:", err);
+      reject(err);
+    });
+  });
+
+  client.addRequest(request);
+  await client.send(ip, port, clientAet, aet);
+  const studies = await resultsPromise;
+
+  return Response.json({ ok: true, studies });
+}

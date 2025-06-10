@@ -11,6 +11,8 @@ import { useState } from "react";
 
 export default function Pac({ pac }: { pac: PacType }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setLoading] = useState(false);
   const { id, ip, aet_server, aet_client, port } = pac;
 
   const updatePac = async (id: string, newData: Partial<PacType>) => {
@@ -27,6 +29,37 @@ export default function Pac({ pac }: { pac: PacType }) {
   const debouncedUpdate = useDebouncedCallback((id, value) => {
     updatePac(id, value);
   }, 300);
+
+  const verifyConnection = async (pac: PacType) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/pacs/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ip: pac.ip,
+          port: pac.port,
+          aet: pac.aet_server,
+          startDate: "2025-06-08",
+          endDate: "2025-06-09",
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.ok) {
+        // setStudies(data.studies);
+      } else {
+        setError(data.error || "Query failed");
+      }
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <>
@@ -54,6 +87,13 @@ export default function Pac({ pac }: { pac: PacType }) {
         <div className="px-12 py-10 border-t border-gray-200">
           <div className="flex-col items-start gap-1 flex md:flex-row sm:gap-3.5 md:items-center">
             <div className="flex gap-3.5 items-center">
+              <button
+                disabled={isLoading}
+                type="button"
+                onClick={() => verifyConnection(pac)}
+              >
+                Check {error ? "fail" : "success"}
+              </button>
               <input
                 onChange={(event) =>
                   debouncedUpdate(id, { ip: event.target.value })

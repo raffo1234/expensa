@@ -6,9 +6,9 @@ export const runtime = "nodejs";
 export async function POST(req: Request): Promise<Response> {
   const { CEchoRequest } = requests;
   const body = await req.json();
-  const { ip, port, aet, clientAet = "MY_CLIENT_AE" } = body;
+  const { ip, port, aet_server, aet_client = "MY_CLIENT_AE" } = body;
 
-  if (!ip || !port || !aet) {
+  if (!ip || !port || !aet_server) {
     return Response.json(
       { ok: false, error: "Missing required fields" },
       { status: 400 }
@@ -41,7 +41,7 @@ export async function POST(req: Request): Promise<Response> {
   client.addRequest(request);
 
   try {
-    await client.send(ip, port, clientAet, aet);
+    await client.send(ip, port, aet_client, aet_server);
     const status = await statusPromise;
 
     return Response.json({ ok: true, status });

@@ -4,4 +4,5 @@ export type PacType = {
   port: string;
   aet_server: string;
   aet_client?: string;
+  is_verified: boolean;
 };

@@ -11,8 +11,8 @@ import useCheckboxSelection from "@/hooks/useCheckboxSelection";
 import Link from "next/link";
 import { useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
-
-const GRUPOQUITO = { ip: "168.121.46.225", port: 3201, aet: "PACS-GRUPOQUITO" };
+import PacsList from "./PacsList";
+import { PacType } from "@/types/PacType";
 
 interface TableRowType {
   id: string;
@@ -22,16 +22,22 @@ interface Dataset {
   id: string;
   patientId: string;
   patientName: string;
-  studyDate: string;
   studyDescription: string;
+  studyDate: string;
+  studyTime: string;
   modalitiesInStudy: string;
+  patientBirthDate: string;
+  patientSex: string;
 }
 
 export default function PacsPageContent({
+  userId,
   userRoleId,
 }: {
   userRoleId: string;
+  userId: string | null;
 }) {
+  const [activePac, setActivePac] = useState<PacType | null>(null);
   const [search, setSearch] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [studies, setStudies] = useState<Dataset[]>([]);
@@ -47,20 +53,23 @@ export default function PacsPageContent({
     isAllItemsSelected,
   } = useCheckboxSelection<TableRowType>();
 
-  const fetchStudies = async () => {
+  const fetchStudies = async (activePac: PacType | null) => {
     setLoading(true);
     setError(null);
+
+    if (!activePac) return;
 
     try {
       const response = await fetch("/api/pacs/query", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ip: GRUPOQUITO.ip,
-          port: GRUPOQUITO.port,
-          aet: GRUPOQUITO.aet,
-          startDate: "2025-06-08",
-          endDate: "2025-06-09",
+          ip: activePac.ip,
+          port: activePac.port,
+          aet_server: activePac.aet_server,
+          aet_client: activePac.aet_client,
+          startDate: "2025-06-09",
+          endDate: "2025-06-10",
         }),
       });
 
@@ -97,12 +106,20 @@ export default function PacsPageContent({
 
   return (
     <>
+      {activePac?.aet_server}
+      <PacsList
+        setActivePac={setActivePac}
+        activePac={activePac}
+        userId={userId}
+        userRoleId={userRoleId}
+      />
       <div className="flex mb-6 w-full justify-between items-center gap-2">
         <div className="flex max-w-xl items-center gap-2 mx-auto sm:mx-0">
           <button
-            onClick={fetchStudies}
+            disabled={!activePac}
+            onClick={() => fetchStudies(activePac)}
             title="Fetch Pacs"
-            className="cursor-pointer px-6 w-fit mx-auto text-white justify-center py-2 rounded-full bg-black flex gap-3 items-center"
+            className="disabled:opacity-70  disabled:pointer-events-none cursor-pointer px-6 w-fit mx-auto text-white justify-center py-2 rounded-full bg-black flex gap-3 items-center"
           >
             <span>Fetch</span>
             <svg
@@ -164,19 +181,14 @@ export default function PacsPageContent({
             </g>
           </svg>
         </div>
-        {selectedIds.size > 0 ? (
-          <>
-            actions
-            {/* <GenerateCompressedPDFs selectedIds={selectedIds} />
-            <GenerateCompressedDOCs selectedIds={selectedIds} /> */}
-          </>
-        ) : null}
+        {selectedIds.size > 0 ? <>actions</> : null}
       </div>
 
       <div className="bg-white shadow rounded-xl overflow-auto">
         <table className="text-sm w-full table-fixed">
           <thead>
             <tr className="border-b border-gray-200">
+              <th className="w-13 py-4 text-center"></th>
               <th className="w-6 text-center uppercase text-xs font-semibold py-4">
                 #
               </th>
@@ -235,31 +247,13 @@ export default function PacsPageContent({
                   Study Desc...
                 </button>
               </th>
-              <th className="w-28 px-[1px]">
-                <button
-                  disabled={!!noData}
-                  type="button"
-                  className="py-3 w-full text-left px-2 rounded-lg cursor-pointer uppercase text-xs font-semibold hover:bg-cyan-50 bg-slate-50 transition-colors duration-300"
-                >
-                  Study Date
-                </button>
-              </th>
-              <th className="w-28 px-[1px]">
-                <button
-                  disabled={!!noData}
-                  type="button"
-                  className="py-3 w-full text-left px-2 rounded-lg cursor-pointer uppercase text-xs font-semibold hover:bg-cyan-50 bg-slate-50 transition-colors duration-300"
-                >
-                  Receipt Date
-                </button>
-              </th>
               <th className="w-34 px-[1px]">
                 <button
                   disabled={!!noData}
                   type="button"
                   className="py-3 w-full text-left px-2 rounded-lg cursor-pointer uppercase text-xs font-semibold hover:bg-cyan-50 bg-slate-50 transition-colors duration-300"
                 >
-                  Completed Date
+                  Study Date
                 </button>
               </th>
               <th title="Modalidad" className="w-13 px-1">
@@ -277,7 +271,7 @@ export default function PacsPageContent({
           {noData ? (
             <tbody>
               <tr>
-                <td colSpan={12} className="text-center">
+                <td colSpan={11} className="text-center">
                   <div className="relative w-full overflow-hidden">
                     <div className="absolute top-1/2 -translate-x-1/2 left-1/2 -translate-y-1/2 w-1/3 aspect-square rounded-full border border-gray-100"></div>
                     <div className="absolute top-1/2 -translate-x-1/2 left-1/2 -translate-y-1/2 w-1/2 aspect-square rounded-full border border-gray-100"></div>
@@ -307,11 +301,26 @@ export default function PacsPageContent({
             <tbody className="whitespace-nowrap">
               {studies?.map(
                 (
-                  { id, patientName, patientId, studyDescription, studyDate },
+                  {
+                    id,
+                    patientId,
+                    patientName,
+                    studyDescription,
+                    studyDate,
+                    studyTime,
+                    modalitiesInStudy,
+                    patientBirthDate,
+                    patientSex,
+                  },
                   index
                 ) => {
                   return (
-                    <tr key={id}>
+                    <tr
+                      key={id}
+                      className={`${index % 2 === 0 ? "bg-gray-50" : ""} ${
+                        index === 0 ? " " : "border-t border-gray-200"
+                      }`}
+                    >
                       <td className="py-3 pl-2 pr-1 text-center">
                         <div className="relative w-fit cursor-pointer">
                           <input
@@ -351,33 +360,28 @@ export default function PacsPageContent({
                           {patientId}
                         </Link>
                       </td>
-                      {/* <td
-                        title={institution}
-                        className="truncate whitespace-nowrap py-5 px-2"
-                      >
-                        {institution}
-                      </td> */}
+                      <td className="truncate whitespace-nowrap py-5 px-2">
+                        {activePac?.aet_server}
+                      </td>
                       <td
                         title={patientName}
                         className="truncate whitespace-nowrap py-5 px-2"
                       >
                         {patientName}
                       </td>
-                      {/* <td className="py-5 px-2 text-center">{gender}</td>
+                      <td className="py-5 px-2 text-center">{patientSex}</td>
                       <td className="whitespace-nowrap py-5 px-2">
-                        {extractAgeWidthUnit(patientAge).value}{" "}
-                        {extractAgeWidthUnit(patientAge).unit}
-                      </td> */}
-                      <td
-                        title={studyDescription}
-                        className="truncate whitespace-nowrap py-5 px-2"
-                      >
-                        {studyDescription}
+                        {patientBirthDate}
+                      </td>
+                      <td className="truncate whitespace-nowrap py-5 px-2">
+                        studyDescription
                       </td>
                       <td className="whitespace-nowrap py-5 px-2">
-                        {formatDateYYYYMMDD(studyDate)}
+                        {formatDateYYYYMMDD(studyDate)} {studyTime}
                       </td>
-                      {/* <td className="py-5 px-2 text-center">{modality}</td> */}
+                      <td className="py-5 px-2 text-center">
+                        {modalitiesInStudy}
+                      </td>
                       <td className="py-2 px-2"></td>
                     </tr>
                   );

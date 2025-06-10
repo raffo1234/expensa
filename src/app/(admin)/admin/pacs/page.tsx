@@ -12,5 +12,7 @@ export default async function Page() {
     .eq("id", user?.id)
     .single();
 
-  return data?.role_id ? <PacsPageContent userRoleId={data?.role_id} /> : null;
+  return data?.role_id ? (
+    <PacsPageContent userId={user?.id} userRoleId={data?.role_id} />
+  ) : null;
 }

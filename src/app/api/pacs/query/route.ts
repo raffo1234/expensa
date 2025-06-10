@@ -1,18 +1,6 @@
 import { Client, requests, constants } from "dcmjs-dimse";
 import type { EventEmitter } from "events";
 
-function extractValue(dataset: any, tag: string): string {
-  const field = dataset[tag];
-  if (!field || !Array.isArray(field.Value) || field.Value.length === 0)
-    return "(empty)";
-  // Value array can contain strings or objects (sometimes PersonName)
-  if (typeof field.Value[0] === "string") return field.Value[0];
-  // Handle PersonName (PN) type objects
-  if (typeof field.Value[0] === "object" && field.Value[0].Alphabetic)
-    return field.Value[0].Alphabetic;
-  return "(unknown)";
-}
-
 export const runtime = "nodejs";
 
 export async function POST(req: Request): Promise<Response> {
@@ -20,14 +8,14 @@ export async function POST(req: Request): Promise<Response> {
   const {
     ip,
     port,
-    aet,
-    clientAet = "MY_CLIENT_AE",
+    aet_server,
+    aet_client = "MY_CLIENT_AE",
     startDate,
     endDate,
     modality,
   } = body;
 
-  if (!ip || !port || !aet || !startDate || !endDate) {
+  if (!ip || !port || !aet_server || !startDate || !endDate) {
     return Response.json(
       { ok: false, error: "Missing required fields" },
       { status: 400 }
@@ -55,10 +43,14 @@ export async function POST(req: Request): Promise<Response> {
         console.log("📦 Dataset received:", dataset);
 
         results.push({
-          patientName: dataset.PatientName.Alphabetic,
           studyDate: dataset.StudyDate,
-          studyDescription: dataset.StudyDescription,
+          studyTime: dataset.StudyTime,
           modalitiesInStudy: dataset.ModalitiesInStudy,
+          studyDescription: dataset.StudyDescription,
+          patientName: dataset.PatientName.Alphabetic,
+          patientId: dataset.PatientID,
+          patientBirthDate: dataset.PatientBirthDate,
+          patientSex: dataset.PatientSex,
         });
       }
 
@@ -75,7 +67,7 @@ export async function POST(req: Request): Promise<Response> {
   });
 
   client.addRequest(request);
-  await client.send(ip, port, clientAet, aet);
+  await client.send(ip, port, aet_client, aet_server);
   const studies = await resultsPromise;
 
   return Response.json({ ok: true, studies });

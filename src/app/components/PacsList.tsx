@@ -1,0 +1,74 @@
+"use client";
+
+import { Permissions } from "@/types/propertyState";
+import useCheckPermission from "@/hooks/useCheckPermission";
+import { PacType } from "@/types/PacType";
+import { supabase } from "@/lib/supabase";
+import useSWR from "swr";
+
+const pacsFetcher = async () => {
+  const { data, error } = await supabase.from("pac").select("*");
+
+  if (error) throw error;
+  return data;
+};
+
+export default function PacsList({
+  setActivePac,
+  activePac,
+  userRoleId,
+  userId,
+}: {
+  setActivePac: React.Dispatch<React.SetStateAction<PacType | null>>;
+  activePac: PacType | null;
+  userRoleId: string;
+  userId: string | null;
+}) {
+  const { hasPermission: canManagePacs, isLoading: isLoading } =
+    useCheckPermission(userRoleId, Permissions.MANAGE_PACS);
+
+  const {
+    data: pacs,
+    error: errorPacs,
+    isLoading: isLoadingPacs,
+  } = useSWR(`admin-permissions-${userId}`, pacsFetcher);
+
+  const handlePacActive = (newPac: PacType) => {
+    setActivePac(newPac);
+    localStorage.setItem("pacActiveId", newPac.id);
+  };
+
+  if (!userId || !pacs || isLoading || isLoading) return null;
+
+  return (
+    <div
+      className="grid gap-2 mb-6 flex-grow-1"
+      style={{
+        gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))",
+      }}
+    >
+      {canManagePacs
+        ? pacs.map((pac) => {
+            const { id, aet_server } = pac;
+            return (
+              <button
+                key={id}
+                type="button"
+                title={aet_server}
+                onClick={() => handlePacActive(pac)}
+                className={`
+                          ${
+                            id === activePac?.id
+                              ? "bg-rose-50 border-rose-200"
+                              : "bg-gray-50 border-gray-200"
+                          } 
+                        cursor-pointer truncate text-center p-3 rounded-xl border`}
+              >
+                {aet_server}
+              </button>
+            );
+          })
+        : null}
+    </div>
+  );
+}

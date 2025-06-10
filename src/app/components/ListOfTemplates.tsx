@@ -4,14 +4,22 @@ import Link from "next/link";
 import { Permissions } from "@/types/propertyState";
 import useCheckPermission from "@/hooks/useCheckPermission";
 
+function putFirst(array: TemplateType[], element: TemplateType | undefined) {
+  if (element)
+    return [element, ...array.filter((item) => item.id !== element.id)];
+  return array;
+}
+
 export default function ListOfTemplates({
   templates,
   updateTemplate,
+  activeTemplate,
   dicom,
   userRoleId,
 }: {
   templates: TemplateType[];
   updateTemplate: (newTemplate: TemplateType) => void;
+  activeTemplate: TemplateType | undefined;
   dicom: DicomType;
   userRoleId: string;
 }) {
@@ -27,6 +35,7 @@ export default function ListOfTemplates({
     updateTemplate(newTemplate);
     localStorage.setItem("dicomActiveTemplateId", newTemplate.id);
   };
+  const sortedTemplates = putFirst(templates, activeTemplate);
 
   if (!dicom || isLoading || isLoadingCanChangeTemplate) return null;
 
@@ -38,7 +47,7 @@ export default function ListOfTemplates({
       }}
     >
       {canChangeTemplates
-        ? templates.map((template) => {
+        ? sortedTemplates.map((template) => {
             const { id, name } = template;
             return (
               <button

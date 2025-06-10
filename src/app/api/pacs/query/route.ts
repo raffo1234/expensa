@@ -16,7 +16,7 @@ export async function POST(req: Request): Promise<Response> {
     endDate,
     modality,
   } = body;
-  console.log({ body });
+
   if (!ip || !port || !aet_server) {
     return Response.json(
       { ok: false, error: "Missing required fields" },

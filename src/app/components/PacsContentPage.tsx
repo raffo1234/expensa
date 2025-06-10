@@ -1,19 +1,20 @@
 "use client";
 
+import toast from "react-hot-toast";
 import useCheckPermission from "@/hooks/useCheckPermission";
 import { Permissions } from "@/types/propertyState";
 import PacsQuery from "./PacsQuery";
-import { useState } from "react";
 import { supabase } from "@/lib/supabase";
-import useSWR from "swr";
+import useSWR, { mutate } from "swr";
 import AddPac from "./AddPac";
 import DeletePac from "./DeletePac";
+import { PacType } from "@/types/PacType";
 
 const pacsFetcher = async () => {
   const { data, error } = await supabase
     .from("pac")
     .select("*")
-    .order("aet_server", { ascending: true });
+    .order("created_at", { ascending: true });
   if (error) throw error;
   return data;
 };
@@ -23,12 +24,26 @@ export default function PacsPageContent({
 }: {
   userRoleId: string;
 }) {
-  const [isOpenForm, setIsOpenForm] = useState(false);
   const { hasPermission: canManagePacs, isLoading: isLoadingPermission } =
     useCheckPermission(userRoleId, Permissions.MANAGE_PACS);
 
   const { data: pacs, error, isLoading } = useSWR("admin-pacs", pacsFetcher);
-  console.log(pacs);
+
+  const updatePac = async (id: string, newData: Partial<PacType>) => {
+    try {
+      await supabase.from("pac").update(newData).eq("id", id);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      mutate("admin-pacs");
+      toast.success("Report updated successfully!");
+    }
+  };
+
+  const handleOnBlur = (id: string, newData: Partial<PacType>) => {
+    updatePac(id, newData);
+  };
+
   if (error) return null;
   if (isLoading || isLoadingPermission) return "loading ...";
   if (!canManagePacs) return null;
@@ -39,13 +54,44 @@ export default function PacsPageContent({
         {pacs?.map(({ id, ip, port, aet_client, aet_server }) => (
           <div
             key={id}
-            className="relative border-t first:border-t-0 border-gray-200 flex gap-3.5 first:rounded-t-xl items-center justify-between text-left transition-colors duration-300 pl-6 pr-20 py-4"
+            className="relative border-t first:border-t-0 border-gray-200 flex gap-3.5 first:rounded-t-xl items-center justify-between text-left transition-colors duration-300 pl-6 pr-20 py-2"
           >
-            <span className="flex gap-3.5 items-center">
-              <span>{ip}</span>
-              <span className="text-sm text-gray-500">{port}</span>
-              <span className="text-sm text-gray-500">{aet_server}</span>
-              <span className="text-sm text-gray-500">{aet_client}</span>
+            <span className="flex-col items-start gap-1 flex md:flex-row sm:gap-3.5 md:items-center">
+              <div className="flex gap-3.5 items-center">
+                <input
+                  onBlur={(event) =>
+                    handleOnBlur(id, { ip: event.target.value })
+                  }
+                  placeholder="IP"
+                  defaultValue={ip}
+                  className="w-33 p-2 border border-transparent rounded-xl focus:outline-1 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
+                />
+                <span>:</span>
+                <input
+                  placeholder="Port"
+                  defaultValue={port}
+                  className="w-13 text-sm text-gray-500 p-2 border border-transparent rounded-xl focus:outline-1 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
+                  onBlur={(event) =>
+                    handleOnBlur(id, { port: event.target.value })
+                  }
+                />
+              </div>
+              <input
+                placeholder="AET Server"
+                defaultValue={aet_server}
+                onBlur={(event) =>
+                  handleOnBlur(id, { aet_server: event.target.value })
+                }
+                className="text-sm  text-gray-500 p-2 border border-transparent rounded-xl focus:outline-1 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
+              />
+              <input
+                onBlur={(event) =>
+                  handleOnBlur(id, { aet_client: event.target.value })
+                }
+                placeholder="AET Client, Optional..."
+                defaultValue={aet_client}
+                className="text-sm  text-gray-500 p-2 border border-transparent rounded-xl focus:outline-1 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
+              />
             </span>
             <DeletePac pacId={id} />
           </div>

@@ -7,7 +7,7 @@ import { Permissions } from "@/types/propertyState";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import useCheckboxSelection from "@/hooks/useCheckboxSelection";
 import Link from "next/link";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
 import PacsList from "./PacsList";
 import { PacType } from "@/types/PacType";
@@ -17,6 +17,18 @@ import upsertStudy from "@/lib/upsertStudy";
 
 interface TableRowType {
   id: string;
+}
+
+type Study = {
+  dicom: DicomType;
+  state: StudyState;
+};
+
+enum StudyState {
+  Selected = "Selected",
+  Loading = "Loading",
+  Inserted = "Inserted",
+  Duplicated = "Duplicated",
 }
 
 export default function PacsPageContent({
@@ -29,7 +41,7 @@ export default function PacsPageContent({
   const [activePac, setActivePac] = useState<PacType | null>(null);
   const [search, setSearch] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [studies, setStudies] = useState<DicomType[]>([]);
+  const [studies, setStudies] = useState<Study[]>([]);
   const [error, setError] = useState<string | null>(null);
   const { hasPermission: canManagePacs, isLoading: isLoadingPermission } =
     useCheckPermission(userRoleId, Permissions.MANAGE_PACS);
@@ -65,7 +77,13 @@ export default function PacsPageContent({
       const data = await response.json();
       console.log(data);
       if (data.ok) {
-        setStudies(data.studies);
+        const transformedStudies: Study[] = data.studies.map(
+          (dicom: DicomType) => ({
+            dicom,
+            state: StudyState.Selected,
+          })
+        );
+        setStudies(transformedStudies);
       } else {
         setError(data.error || "Query failed");
       }
@@ -82,30 +100,42 @@ export default function PacsPageContent({
 
   const noData = loading && !error && studies && studies.length === 0;
 
+  const updateItemState = useCallback((id: string, newState: StudyState) => {
+    setStudies((prev) =>
+      prev.map((item) =>
+        item.dicom.id === id ? { ...item, state: newState } : item
+      )
+    );
+  }, []);
+
   const upsertStudyBulk = async () => {
     for (const item of selectedIds) {
       if (!userId) continue;
 
-      const metadata = studies.filter((study) => study.id === item);
+      const metadata = studies.filter((study) => study.dicom.id === item);
+
       if (metadata.length === 0 || !activePac?.aet_server) continue;
+
+      if (metadata[0].state !== StudyState.Selected) continue;
 
       const result = await upsertStudy(
         userId,
         activePac.aet_server,
-        metadata[0]
+        metadata[0].dicom
       );
-      console.log({ result });
+
+      updateItemState(
+        item,
+        result.isNew ? StudyState.Inserted : StudyState.Duplicated
+      );
     }
   };
-
-  console.log({ selectedIds });
 
   if (isLoadingPermission) return null;
   if (!canManagePacs) return null;
 
   return (
     <>
-      {activePac?.aet_server}
       <PacsList
         setActivePac={setActivePac}
         activePac={activePac}
@@ -283,7 +313,7 @@ export default function PacsPageContent({
                   M
                 </button>
               </th>
-              <th className="w-98"></th>
+              <th className="w-28"></th>
             </tr>
           </thead>
           {noData ? (
@@ -317,95 +347,113 @@ export default function PacsPageContent({
             </tbody>
           ) : (
             <tbody className="whitespace-nowrap">
-              {studies?.map(
-                (
-                  {
-                    id,
-                    patient_id,
-                    patient_name,
-                    study_description,
-                    study_date,
-                    institution,
-                    modality,
-                    birthday,
-                    gender,
-                  },
-                  index
-                ) => {
-                  const patientAge = getAgeFromYYYYMMDD(birthday);
-                  const patientAgeFormatted = `${extractAgeWidthUnit(patientAge as string).value} ${extractAgeWidthUnit(patientAge as string).unit}`;
+              {studies.map((study, index) => {
+                const dicom = study.dicom;
 
-                  return (
-                    <tr
-                      key={id}
-                      className={`${index % 2 === 0 ? "bg-gray-50" : ""} ${
-                        index === 0 ? " " : "border-t border-gray-200"
-                      }`}
+                const state = study.state;
+                const {
+                  id,
+                  patient_id,
+                  patient_name,
+                  study_description,
+                  study_date,
+                  institution,
+                  modality,
+                  birthday,
+                  gender,
+                } = dicom;
+                const patientAge = getAgeFromYYYYMMDD(birthday);
+                const patientAgeFormatted = `${extractAgeWidthUnit(patientAge as string).value} ${extractAgeWidthUnit(patientAge as string).unit}`;
+
+                return (
+                  <tr
+                    key={id}
+                    className={`${index % 2 === 0 ? "bg-gray-50" : ""} ${
+                      index === 0 ? " " : "border-t border-gray-200"
+                    }`}
+                  >
+                    <td className="py-3 pl-2 pr-1 text-center">
+                      <div className="relative w-fit cursor-pointer">
+                        <input
+                          id={id}
+                          type="checkbox"
+                          className="hidden peer"
+                          checked={isItemSelected(id)}
+                          onChange={() => toggleItemSelected(id)}
+                        />
+                        <label
+                          htmlFor={id}
+                          className="block cursor-pointer p-2 w-9 h-9 text-gray-400"
+                        ></label>
+                        <div className="pointer-events-none bg-white w-5 h-5 border-2 peer-checked:border-cyan-400 rounded-sm text-gray-400 peer-checked:text-cyan-400 absolute top-1/2 -translate-x-1/2 -translate-y-1/2 left-1/2"></div>
+                        <svg
+                          className="hidden peer-checked:text-cyan-400 pointer-events-none peer-checked:block absolute top-1/2 -translate-x-1/2 -translate-y-1/2 left-1/2"
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                        >
+                          <g fill="none" fillRule="evenodd">
+                            <path d="m12.593 23.258l-.011.002l-.071.035l-.02.004l-.014-.004l-.071-.035q-.016-.005-.024.005l-.004.01l-.017.428l.005.02l.01.013l.104.074l.015.004l.012-.004l.104-.074l.012-.016l.004-.017l-.017-.427q-.004-.016-.017-.018m.265-.113l-.013.002l-.185.093l-.01.01l-.003.011l.018.43l.005.012l.008.007l.201.093q.019.005.029-.008l.004-.014l-.034-.614q-.005-.018-.02-.022m-.715.002a.02.02 0 0 0-.027.006l-.006.014l-.034.614q.001.018.017.024l.015-.002l.201-.093l.01-.008l.004-.011l.017-.43l-.003-.012l-.01-.01z" />
+                            <path
+                              fill="currentColor"
+                              d="M21.546 5.111a1.5 1.5 0 0 1 0 2.121L10.303 18.475a1.6 1.6 0 0 1-2.263 0L2.454 12.89a1.5 1.5 0 1 1 2.121-2.121l4.596 4.596L19.424 5.111a1.5 1.5 0 0 1 2.122 0"
+                            />
+                          </g>
+                        </svg>
+                      </div>
+                    </td>
+                    <td className="whitespace-nowrap py-5 text-center">
+                      {index + 1}
+                    </td>
+                    <td className="py-5 px-2">
+                      <Link href={`/admin/dicoms/${id}`} className="text-sm">
+                        {patient_id}
+                      </Link>
+                    </td>
+                    <td className="truncate whitespace-nowrap py-5 px-2">
+                      {institution}
+                    </td>
+                    <td
+                      title={patient_name}
+                      className="truncate whitespace-nowrap py-5 px-2"
                     >
-                      <td className="py-3 pl-2 pr-1 text-center">
-                        <div className="relative w-fit cursor-pointer">
-                          <input
-                            id={id}
-                            type="checkbox"
-                            className="hidden peer"
-                            checked={isItemSelected(id)}
-                            onChange={() => toggleItemSelected(id)}
+                      {patient_name}
+                    </td>
+                    <td className="py-5 px-2 text-center">{gender}</td>
+                    <td className="whitespace-nowrap py-5 px-2">
+                      {patientAgeFormatted}
+                    </td>
+                    <td className="truncate whitespace-nowrap py-5 px-2">
+                      {study_description}
+                    </td>
+                    <td className="whitespace-nowrap py-5 px-2">
+                      {formatDateYYYYMMDD(study_date)}
+                    </td>
+                    <td className="py-5 px-2 text-center">{modality}</td>
+                    <td className="py-2 px-2">
+                      {state === StudyState.Duplicated ||
+                      state === StudyState.Inserted ? (
+                        <Link
+                          key={id}
+                          target="_blank"
+                          href={`/admin/dicoms/${id}`}
+                          className="flex gap-2 first:border-t-0 border-t border-gray-200 px-5 py-2 text-left underline hover:text-cyan-500 transition-colors duration-300 underline-offset-4 w-full justify-center"
+                        >
+                          <Icon
+                            icon={`${state === StudyState.Duplicated ? "solar:check-read-bold" : "solar:verified-check-bold"}`}
+                            fontSize={24}
+                            className="text-cyan-500 flex-shrink-0"
                           />
-                          <label
-                            htmlFor={id}
-                            className="block cursor-pointer p-2 w-9 h-9 text-gray-400"
-                          ></label>
-                          <div className="pointer-events-none bg-white w-5 h-5 border-2 peer-checked:border-cyan-400 rounded-sm text-gray-400 peer-checked:text-cyan-400 absolute top-1/2 -translate-x-1/2 -translate-y-1/2 left-1/2"></div>
-                          <svg
-                            className="hidden peer-checked:text-cyan-400 pointer-events-none peer-checked:block absolute top-1/2 -translate-x-1/2 -translate-y-1/2 left-1/2"
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                          >
-                            <g fill="none" fillRule="evenodd">
-                              <path d="m12.593 23.258l-.011.002l-.071.035l-.02.004l-.014-.004l-.071-.035q-.016-.005-.024.005l-.004.01l-.017.428l.005.02l.01.013l.104.074l.015.004l.012-.004l.104-.074l.012-.016l.004-.017l-.017-.427q-.004-.016-.017-.018m.265-.113l-.013.002l-.185.093l-.01.01l-.003.011l.018.43l.005.012l.008.007l.201.093q.019.005.029-.008l.004-.014l-.034-.614q-.005-.018-.02-.022m-.715.002a.02.02 0 0 0-.027.006l-.006.014l-.034.614q.001.018.017.024l.015-.002l.201-.093l.01-.008l.004-.011l.017-.43l-.003-.012l-.01-.01z" />
-                              <path
-                                fill="currentColor"
-                                d="M21.546 5.111a1.5 1.5 0 0 1 0 2.121L10.303 18.475a1.6 1.6 0 0 1-2.263 0L2.454 12.89a1.5 1.5 0 1 1 2.121-2.121l4.596 4.596L19.424 5.111a1.5 1.5 0 0 1 2.122 0"
-                              />
-                            </g>
-                          </svg>
-                        </div>
-                      </td>
-                      <td className="whitespace-nowrap py-5 text-center">
-                        {index + 1}
-                      </td>
-                      <td className="py-5 px-2">
-                        <Link href={`/admin/dicoms/${id}`} className="text-sm">
-                          {patient_id}
+                          <span className="flex-grow-1">{state}</span>
                         </Link>
-                      </td>
-                      <td className="truncate whitespace-nowrap py-5 px-2">
-                        {institution}
-                      </td>
-                      <td
-                        title={patient_name}
-                        className="truncate whitespace-nowrap py-5 px-2"
-                      >
-                        {patient_name}
-                      </td>
-                      <td className="py-5 px-2 text-center">{gender}</td>
-                      <td className="whitespace-nowrap py-5 px-2">
-                        {patientAgeFormatted}
-                      </td>
-                      <td className="truncate whitespace-nowrap py-5 px-2">
-                        {study_description}
-                      </td>
-                      <td className="whitespace-nowrap py-5 px-2">
-                        {formatDateYYYYMMDD(study_date)}
-                      </td>
-                      <td className="py-5 px-2 text-center">{modality}</td>
-                      <td className="py-2 px-2"></td>
-                    </tr>
-                  );
-                }
-              )}
+                      ) : (
+                        <span className="px-5 py-2">{state}</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           )}
         </table>

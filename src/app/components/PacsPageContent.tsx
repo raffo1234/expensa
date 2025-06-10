@@ -39,6 +39,7 @@ export default function PacsPageContent({
   userRoleId: string;
   userId: string | undefined;
 }) {
+  const [isDisplayedFetchFilters, setIsDisplayedFetchFilters] = useState(false);
   const [activePac, setActivePac] = useState<PacType | null>(null);
   // const [search, setSearch] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -159,7 +160,7 @@ export default function PacsPageContent({
             disabled={!activePac || loading}
             onClick={() => handleFetch(activePac)}
             title="Fetch Pacs"
-            className="disabled:opacity-70  disabled:pointer-events-none cursor-pointer px-6 w-fit mx-auto text-white justify-center py-2 rounded-full bg-black flex gap-3 items-center"
+            className="disabled:opacity-70 border border-transparent disabled:pointer-events-none cursor-pointer px-6 w-fit mx-auto text-white justify-center py-2 rounded-full bg-black flex gap-3 items-center"
           >
             <span>Fetch</span>
             <span className="block w-6">
@@ -192,13 +193,23 @@ export default function PacsPageContent({
               )}
             </span>
           </button>
-          <input
-            type="text"
-            className="bg-white w-full rounded-full border border-gray-200 outline-0 py-2 px-5"
-            placeholder="Search ..."
-            // defaultValue={search ?? ""}
-            onChange={(event) => debouncedSearch(event.target.value)}
-          />
+          <button
+            onClick={() => setIsDisplayedFetchFilters((prev) => !prev)}
+            title="Display filter for Fetch Pacs"
+            className={`${isDisplayedFetchFilters ? "border-cyan-500 text-cyan-500" : ""} p-2 border-gray-200 border rounded-lg cursor-pointer`}
+            type="button"
+          >
+            <Icon icon="solar:filter-outline" fontSize={16} />
+          </button>
+          {isDisplayedFetchFilters ? (
+            <input
+              type="text"
+              name="fetch-search"
+              className="bg-white w-full rounded-full border border-gray-200 outline-0 py-2 px-5"
+              placeholder="Patient name"
+              onChange={(event) => debouncedSearch(event.target.value)}
+            />
+          ) : null}
         </div>
       </div>
       <div className="w-fit pl-2 flex item-center mb-4 gap-2">

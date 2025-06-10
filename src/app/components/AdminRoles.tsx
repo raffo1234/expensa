@@ -33,10 +33,7 @@ export function Permission({
   permission,
   roleId,
 }: {
-  permission: {
-    id: string;
-    name: string;
-  };
+  permission: { id: string; name: string };
   roleId: string;
 }) {
   const { id, name } = permission;
@@ -51,12 +48,9 @@ export function Permission({
 
   const onChange = async (checked: boolean) => {
     if (checked) {
-      await supabase.from("role_permission").insert([
-        {
-          role_id: roleId,
-          permission_id: id,
-        },
-      ]);
+      await supabase
+        .from("role_permission")
+        .insert([{ role_id: roleId, permission_id: id }]);
       await mutate();
     } else {
       await supabase
@@ -107,11 +101,7 @@ export function Permissions({ roleId }: { roleId: string }) {
 export function Role({
   role,
 }: {
-  role: {
-    id: string;
-    name: string;
-    description: string;
-  };
+  role: { id: string; name: string; description: string };
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const { id, name, description } = role;

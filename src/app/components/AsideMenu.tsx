@@ -17,6 +17,10 @@ export default function AsideMenu({
 }) {
   const currentPath = usePathname();
 
+  const { hasPermission: hasManagePacsPermission } = useCheckPermission(
+    userRoleId,
+    Permissions.MANAGE_PACS
+  );
   const { hasPermission: hasRolesPermission } = useCheckPermission(
     userRoleId,
     Permissions.MANAGE_ROLES
@@ -57,6 +61,15 @@ export default function AsideMenu({
             href: "/admin/dicom",
             title: "Upload Files",
             iconName: "solar:cloud-upload-broken",
+          },
+        ]
+      : []),
+    ...(hasManagePacsPermission
+      ? [
+          {
+            href: "/admin/pacs",
+            title: "Pacs",
+            iconName: "solar:archive-down-minimlistic-linear",
           },
         ]
       : []),

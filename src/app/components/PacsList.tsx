@@ -5,6 +5,8 @@ import useCheckPermission from "@/hooks/useCheckPermission";
 import { PacType } from "@/types/PacType";
 import { supabase } from "@/lib/supabase";
 import useSWR from "swr";
+import Link from "next/link";
+import { Icon } from "@iconify/react/dist/iconify.js";
 
 const pacsFetcher = async () => {
   const { data, error } = await supabase
@@ -54,8 +56,9 @@ export default function PacsList({
         gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))",
       }}
     >
-      {canManagePacs
-        ? pacs.map((pac) => {
+      {canManagePacs ? (
+        <>
+          {pacs.map((pac) => {
             const { id, aet_server } = pac;
             return (
               <button
@@ -74,8 +77,17 @@ export default function PacsList({
                 {aet_server}
               </button>
             );
-          })
-        : null}
+          })}
+          <Link
+            target="_blank"
+            title="Pacs Settings"
+            href="/admin/pacs/settings"
+            className="p-3 border border-gray-200 rounded-xl w-fit hover:border-cyan-400 hover:text-cyan-400 transition-colors duration-300"
+          >
+            <Icon icon="solar:settings-linear" fontSize={24} />
+          </Link>
+        </>
+      ) : null}
     </div>
   );
 }

@@ -75,8 +75,7 @@ export default function AddPac() {
             </div>
             <div>
               <label htmlFor="aet_client" className="inline-block mb-2 text-sm">
-                AET Client{" "}
-                <span className="text-gray-500 text-xs">Optional</span>
+                AET Client
               </label>
               <input
                 type="text"

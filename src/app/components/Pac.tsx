@@ -172,7 +172,7 @@ export default function Pac({ pac }: { pac: PacType }) {
               onChange={(event) =>
                 debouncedUpdate(id, { aet_client: event.target.value })
               }
-              placeholder="AET Client (Optional)"
+              placeholder="AET Client"
               defaultValue={aet_client}
               className="text-sm text-gray-500 p-2 border border-transparent rounded-xl focus:outline-1 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
             />

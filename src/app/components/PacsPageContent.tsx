@@ -35,7 +35,7 @@ export default function PacsPageContent({
   userRoleId,
 }: {
   userRoleId: string;
-  userId: string | null;
+  userId: string | undefined;
 }) {
   const [activePac, setActivePac] = useState<PacType | null>(null);
   const [search, setSearch] = useState<string | null>(null);

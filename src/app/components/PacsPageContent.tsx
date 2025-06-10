@@ -307,6 +307,7 @@ export default function PacsPageContent({
                     patientName,
                     studyDescription,
                     studyDate,
+                    institutionName,
                     studyTime,
                     modalitiesInStudy,
                     patientBirthDate,
@@ -361,7 +362,7 @@ export default function PacsPageContent({
                         </Link>
                       </td>
                       <td className="truncate whitespace-nowrap py-5 px-2">
-                        {activePac?.aet_server}
+                        {institutionName}
                       </td>
                       <td
                         title={patientName}

@@ -47,6 +47,8 @@ export async function POST(req: Request): Promise<Response> {
           id: uuidv4(),
           studyDate: dataset.StudyDate,
           studyTime: dataset.StudyTime,
+          study: dataset.StudyTime,
+          institutionName: aet_server,
           modalitiesInStudy: dataset.ModalitiesInStudy,
           studyDescription: dataset.StudyDescription,
           patientName: dataset.PatientName.Alphabetic,

@@ -67,12 +67,9 @@ export default function GeneratePDFButtonInner({
   dicom: DicomType;
   isDownloadable?: boolean;
 }) {
-  const nowMs = Date.now();
   const downloadLinkRef = useRef<HTMLAnchorElement>(null);
 
-  const [instance] = usePDF({
-    document: <ContentPDFDocument dicom={dicom} />,
-  });
+  const [instance] = usePDF({ document: <ContentPDFDocument dicom={dicom} /> });
 
   const triggerDownload = () => {
     if (downloadLinkRef.current) {
@@ -92,7 +89,7 @@ export default function GeneratePDFButtonInner({
     <Link
       download={
         isDownloadable
-          ? `${dicom.patient_name}_${nowMs}_${dicom.user_id}.pdf`
+          ? `${dicom.patient_name}-${dicom.study_description}-${dicom.study_date}.pdf`
           : null
       }
       ref={downloadLinkRef}

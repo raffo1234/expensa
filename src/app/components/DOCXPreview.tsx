@@ -34,8 +34,8 @@ export default function DOCXPreview({ dicom }: { dicom: DicomType }) {
     try {
       const doc = await createDocxDocument(dicom);
       const blob = await Packer.toBlob(doc);
-      const now = Date.now();
-      const filename = `${dicom.patient_name}_${dicom.user_id}_${now}.docx`;
+
+      const filename = `${dicom.patient_name}-${dicom.study_description}-${dicom.study_date}.docx`;
       setIsLoading(false);
       toast.success("Download completed successfully!");
       saveAs(blob, filename);

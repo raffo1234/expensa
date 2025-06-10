@@ -91,7 +91,7 @@ export default function GenerateCompressedPDFs({
 
     selectedDicoms.forEach((dicom, index) => {
       zip.file(
-        `${dicom.patient_name}_${now}_${dicom.user_id}.pdf`,
+        `${dicom.patient_name}-${dicom.study_description}-${dicom.study_date}.pdf`,
         pdfBlobs[index]
       );
     });

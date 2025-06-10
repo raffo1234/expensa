@@ -65,7 +65,7 @@ export default function GenerateCompressedDOCXs({
 
     selectedDicoms.forEach((dicom, index) => {
       zip.file(
-        `${dicom.patient_name}_${now}_${dicom.user_id}.docx`,
+        `${dicom.patient_name}-${dicom.study_description}-${dicom.study_date}.docx`,
         docxBlobs[index]
       );
     });

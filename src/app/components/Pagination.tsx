@@ -952,7 +952,7 @@ export default function Pagination({
                         {study_description}
                       </td>
                       <td className="whitespace-nowrap py-5 px-2">
-                        {formatDateYYYYMMDD(study_date)}
+                        {formatDateYYYYMMDD(study_date)} 
                       </td>
                       <td
                         title={createdAtFormatted}

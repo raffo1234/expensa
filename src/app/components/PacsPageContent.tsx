@@ -1,5 +1,6 @@
 "use client";
 
+import { format, formatISO } from "date-fns";
 import DateRangeButtonCalendar from "./DateRangeButtonCalendar";
 import extractAgeWidthUnit from "@/lib/extractAgeWithUnit";
 import useCheckPermission from "@/hooks/useCheckPermission";
@@ -9,12 +10,12 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import useCheckboxSelection from "@/hooks/useCheckboxSelection";
 import Link from "next/link";
 import { useCallback, useState } from "react";
-import { useDebouncedCallback } from "use-debounce";
 import PacsList from "./PacsList";
 import { PacType } from "@/types/PacType";
 import getAgeFromYYYYMMDD from "@/lib/getAgeFromYYYYMMDD";
 import { DicomType } from "@/types/dicomType";
 import upsertStudy from "@/lib/upsertStudy";
+import { toZonedTime } from "date-fns-tz";
 
 interface TableRowType {
   id: string;
@@ -66,7 +67,11 @@ export default function PacsPageContent({
     // isAllItemsSelected,
   } = useCheckboxSelection<TableRowType>();
 
-  const fetchStudies = async (activePac: PacType | null) => {
+  const fetchStudies = async (
+    activePac: PacType | null,
+    startDate: string | null,
+    endDate: string | null
+  ) => {
     setLoading(true);
     setError(null);
 
@@ -81,8 +86,8 @@ export default function PacsPageContent({
           port: activePac.port,
           aet_server: activePac.aet_server,
           aet_client: activePac.aet_client,
-          startDate: "2025-06-09",
-          endDate: "2025-06-10",
+          startDate,
+          endDate,
         }),
       });
 
@@ -105,10 +110,6 @@ export default function PacsPageContent({
       setLoading(false);
     }
   };
-
-  const debouncedSearch = useDebouncedCallback((value) => {
-    console.log(value);
-  }, 300);
 
   const noData = loading && !error && studies && studies.length === 0;
 
@@ -154,14 +155,34 @@ export default function PacsPageContent({
   };
 
   const handleFetch = async (activePac: PacType | null) => {
-    await fetchStudies(activePac);
+    const timeZone = "America/Lima";
+    const zonedStart = studyDateRange?.startDate
+      ? toZonedTime(studyDateRange?.startDate, timeZone)
+      : null;
+
+    const zonedEnd = studyDateRange?.endDate
+      ? toZonedTime(studyDateRange?.endDate, timeZone)
+      : null;
+
+    const start = zonedStart ? formatISO(zonedStart) : null;
+    const formattedStart = start ? format(new Date(start), "yyyy-MM-dd") : null;
+    const end = zonedEnd ? formatISO(zonedEnd) : null;
+    const formattedEnd = end ? format(new Date(end), "yyyy-MM-dd") : null;
+
+    console.log({ formattedStart });
+    console.log({ formattedEnd });
+
+    await fetchStudies(activePac, formattedStart, formattedEnd);
   };
 
   if (isLoadingPermission) return null;
   if (!canManagePacs) return null;
 
+  console.log({ studyDateRange: studyDateRange?.startDate });
   return (
     <>
+      {/* {studyDateRange?.startDate}
+      {studyDateRange?.endDate} */}
       <PacsList
         setActivePac={setActivePac}
         activePac={activePac}
@@ -219,13 +240,6 @@ export default function PacsPageContent({
       </div>
       {isDisplayedFetchFilters ? (
         <div className="flex gap-3.5 items-center mb-6">
-          <input
-            type="text"
-            name="fetch-search"
-            className="bg-white rounded-full border border-gray-200 outline-0 py-2 px-5"
-            placeholder="Patient name"
-            onChange={(event) => debouncedSearch(event.target.value)}
-          />
           <DateRangeButtonCalendar
             dateRange={studyDateRange}
             handleDateRangeChange={handleStudyDateRangeChange}

@@ -1,10 +1,12 @@
+"use client";
+
 import { adminPacsKey } from "@/constants";
 import { supabase } from "@/lib/supabase";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { useState } from "react";
 import { mutate } from "swr";
 
-export default function DeleteRole({ pacId }: { pacId: string }) {
+export default function DeletePac({ pacId }: { pacId: string }) {
   const [isDeleting, setIsDeleting] = useState(false);
   const deleteItem = async (pacId: string) => {
     const confirmationMessage = confirm(

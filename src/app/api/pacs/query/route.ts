@@ -45,16 +45,16 @@ export async function POST(req: Request): Promise<Response> {
 
         results.push({
           id: uuidv4(),
-          studyDate: dataset.StudyDate,
+          study_date: dataset.StudyDate,
           studyTime: dataset.StudyTime,
           study: dataset.StudyTime,
-          institutionName: aet_server,
-          modalitiesInStudy: dataset.ModalitiesInStudy,
-          studyDescription: dataset.StudyDescription,
-          patientName: dataset.PatientName.Alphabetic,
-          patientId: dataset.PatientID,
-          patientBirthDate: dataset.PatientBirthDate,
-          patientSex: dataset.PatientSex,
+          institution: aet_server,
+          modality: dataset.ModalitiesInStudy,
+          study_description: dataset.StudyDescription,
+          patient_name: dataset.PatientName.Alphabetic,
+          patient_id: dataset.PatientID,
+          birthday: dataset.PatientBirthDate,
+          gender: dataset.PatientSex,
         });
       }
 

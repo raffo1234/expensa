@@ -13,22 +13,10 @@ import { useDebouncedCallback } from "use-debounce";
 import PacsList from "./PacsList";
 import { PacType } from "@/types/PacType";
 import getAgeFromYYYYMMDD from "@/lib/getAgeFromYYYYMMDD";
+import { DicomType } from "@/types/dicomType";
 
 interface TableRowType {
   id: string;
-}
-
-interface Dataset {
-  id: string;
-  patientId: string;
-  patientName: string;
-  studyDescription: string;
-  studyDate: string;
-  studyTime?: string;
-  modalitiesInStudy: string;
-  patientBirthDate: string;
-  patientSex: string;
-  institutionName: string;
 }
 
 export default function PacsPageContent({
@@ -41,7 +29,7 @@ export default function PacsPageContent({
   const [activePac, setActivePac] = useState<PacType | null>(null);
   const [search, setSearch] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [studies, setStudies] = useState<Dataset[]>([]);
+  const [studies, setStudies] = useState<DicomType[]>([]);
   const [error, setError] = useState<string | null>(null);
   const { hasPermission: canManagePacs, isLoading: isLoadingPermission } =
     useCheckPermission(userRoleId, Permissions.MANAGE_PACS);
@@ -50,8 +38,8 @@ export default function PacsPageContent({
     selectedIds,
     isItemSelected,
     toggleItemSelected,
-    handleSelectAllClick,
-    isAllItemsSelected,
+    // handleSelectAllClick,
+    // isAllItemsSelected,
   } = useCheckboxSelection<TableRowType>();
 
   const fetchStudies = async (activePac: PacType | null) => {
@@ -101,7 +89,7 @@ export default function PacsPageContent({
         };
       })
     : [];
-
+  console.log(items);
   if (isLoadingPermission) return null;
   if (!canManagePacs) return null;
 
@@ -153,7 +141,7 @@ export default function PacsPageContent({
         </div>
       </div>
       <div className="w-fit pl-2 flex item-center mb-4 gap-2">
-        <div className="relative w-9 h-9">
+        {/* <div className="relative w-9 h-9">
           <input
             id="all"
             type="checkbox"
@@ -181,8 +169,16 @@ export default function PacsPageContent({
               />
             </g>
           </svg>
-        </div>
-        {selectedIds.size > 0 ? <>actions</> : null}
+        </div> */}
+        {selectedIds.size > 0 ? (
+          <button
+            type="button"
+            title="Insert to Database"
+            className="cursor-pointer hover:text-cyan-400 p-2 rounded-lg border border-gray-200 bg-gray-50 transition-colors duration-300 hover:bg-gray-100"
+          >
+            <Icon icon="solar:database-outline" fontSize={24} />
+          </button>
+        ) : null}
       </div>
 
       <div className="bg-white shadow rounded-xl overflow-auto">
@@ -304,18 +300,18 @@ export default function PacsPageContent({
                 (
                   {
                     id,
-                    patientId,
-                    patientName,
-                    studyDescription,
-                    studyDate,
-                    institutionName,
-                    modalitiesInStudy,
-                    patientBirthDate,
-                    patientSex,
+                    patient_id,
+                    patient_name,
+                    study_description,
+                    study_date,
+                    institution,
+                    modality,
+                    birthday,
+                    gender,
                   },
                   index
                 ) => {
-                  const patientAge = getAgeFromYYYYMMDD(patientBirthDate);
+                  const patientAge = getAgeFromYYYYMMDD(birthday);
                   const patientAgeFormatted = `${extractAgeWidthUnit(patientAge as string).value} ${extractAgeWidthUnit(patientAge as string).unit}`;
 
                   return (
@@ -361,31 +357,29 @@ export default function PacsPageContent({
                       </td>
                       <td className="py-5 px-2">
                         <Link href={`/admin/dicoms/${id}`} className="text-sm">
-                          {patientId}
+                          {patient_id}
                         </Link>
                       </td>
                       <td className="truncate whitespace-nowrap py-5 px-2">
-                        {institutionName}
+                        {institution}
                       </td>
                       <td
-                        title={patientName}
+                        title={patient_name}
                         className="truncate whitespace-nowrap py-5 px-2"
                       >
-                        {patientName}
+                        {patient_name}
                       </td>
-                      <td className="py-5 px-2 text-center">{patientSex}</td>
+                      <td className="py-5 px-2 text-center">{gender}</td>
                       <td className="whitespace-nowrap py-5 px-2">
                         {patientAgeFormatted}
                       </td>
                       <td className="truncate whitespace-nowrap py-5 px-2">
-                        {studyDescription}
+                        {study_description}
                       </td>
                       <td className="whitespace-nowrap py-5 px-2">
-                        {formatDateYYYYMMDD(studyDate)}
+                        {formatDateYYYYMMDD(study_date)}
                       </td>
-                      <td className="py-5 px-2 text-center">
-                        {modalitiesInStudy}
-                      </td>
+                      <td className="py-5 px-2 text-center">{modality}</td>
                       <td className="py-2 px-2"></td>
                     </tr>
                   );

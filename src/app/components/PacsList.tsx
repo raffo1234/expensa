@@ -22,7 +22,7 @@ export default function PacsList({
   setActivePac: React.Dispatch<React.SetStateAction<PacType | null>>;
   activePac: PacType | null;
   userRoleId: string;
-  userId: string | null;
+  userId: string | undefined;
 }) {
   const { hasPermission: canManagePacs, isLoading: isLoading } =
     useCheckPermission(userRoleId, Permissions.MANAGE_PACS);

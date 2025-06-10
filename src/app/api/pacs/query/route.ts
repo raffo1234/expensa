@@ -1,3 +1,4 @@
+import { DicomType } from "@/types/dicomType";
 import { Client, requests, constants } from "dcmjs-dimse";
 import type { EventEmitter } from "events";
 import { v4 as uuidv4 } from "uuid";
@@ -30,12 +31,12 @@ export async function POST(req: Request): Promise<Response> {
     ...(modality && { ModalitiesInStudy: modality }),
   };
 
-  const results: any[] = [];
+  const results: Partial<DicomType>[] = [];
   const client = new Client();
   const request = requests.CFindRequest.createStudyFindRequest(query);
   const emitter = request as unknown as EventEmitter;
 
-  const resultsPromise = new Promise<any[]>((resolve, reject) => {
+  const resultsPromise = new Promise((resolve, reject) => {
     emitter.on("response", (res) => {
       const status = res.getStatus();
 
@@ -46,8 +47,6 @@ export async function POST(req: Request): Promise<Response> {
         results.push({
           id: uuidv4(),
           study_date: dataset.StudyDate,
-          studyTime: dataset.StudyTime,
-          study: dataset.StudyTime,
           institution: aet_server,
           modality: dataset.ModalitiesInStudy,
           study_description: dataset.StudyDescription,

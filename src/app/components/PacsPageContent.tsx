@@ -5,7 +5,6 @@ import useCheckPermission from "@/hooks/useCheckPermission";
 import formatDateYYYYMMDD from "@/lib/formatDateYYYYMMDD";
 import { Permissions } from "@/types/propertyState";
 import { Icon } from "@iconify/react/dist/iconify.js";
-
 import useCheckboxSelection from "@/hooks/useCheckboxSelection";
 import Link from "next/link";
 import { useState } from "react";
@@ -83,14 +82,6 @@ export default function PacsPageContent({
 
   const noData = loading && !error && studies && studies.length === 0;
 
-  const items = studies
-    ? studies?.map(({ id }) => {
-        return {
-          id,
-        };
-      })
-    : [];
-
   const upsertStudyBulk = async () => {
     for (const item of selectedIds) {
       if (!userId) continue;
@@ -104,12 +95,7 @@ export default function PacsPageContent({
         metadata[0]
       );
       console.log({ result });
-      //   console.log(`Processed item ${item}: ${result}`);
     }
-
-    if (userId && activePac?.aet_server) {
-    }
-    //   upsertStudy(userId, activePac.aet_server, metadata);
   };
 
   console.log({ selectedIds });
@@ -129,31 +115,41 @@ export default function PacsPageContent({
       <div className="flex mb-6 w-full justify-between items-center gap-2">
         <div className="flex max-w-xl items-center gap-2 mx-auto sm:mx-0">
           <button
-            disabled={!activePac}
+            disabled={!activePac || loading}
             onClick={() => fetchStudies(activePac)}
             title="Fetch Pacs"
             className="disabled:opacity-70  disabled:pointer-events-none cursor-pointer px-6 w-fit mx-auto text-white justify-center py-2 rounded-full bg-black flex gap-3 items-center"
           >
             <span>Fetch</span>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-            >
-              <g
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeWidth="1.5"
-              >
-                <path d="M17 9.002c2.175.012 3.353.109 4.121.877C22 10.758 22 12.172 22 15v1c0 2.829 0 4.243-.879 5.122C20.243 22 18.828 22 16 22H8c-2.828 0-4.243 0-5.121-.878C2 20.242 2 18.829 2 16v-1c0-2.828 0-4.242.879-5.121c.768-.768 1.946-.865 4.121-.877" />
-                <path
-                  strokeLinejoin="round"
-                  d="M12 2v13m0 0l-3-3.5m3 3.5l3-3.5"
+            <span className="block w-6">
+              {loading ? (
+                <Icon
+                  icon="solar:record-broken"
+                  className="animate-spin"
+                  fontSize={20}
                 />
-              </g>
-            </svg>
+              ) : (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                >
+                  <g
+                    fill="none"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeWidth="1.5"
+                  >
+                    <path d="M17 9.002c2.175.012 3.353.109 4.121.877C22 10.758 22 12.172 22 15v1c0 2.829 0 4.243-.879 5.122C20.243 22 18.828 22 16 22H8c-2.828 0-4.243 0-5.121-.878C2 20.242 2 18.829 2 16v-1c0-2.828 0-4.242.879-5.121c.768-.768 1.946-.865 4.121-.877" />
+                    <path
+                      strokeLinejoin="round"
+                      d="M12 2v13m0 0l-3-3.5m3 3.5l3-3.5"
+                    />
+                  </g>
+                </svg>
+              )}
+            </span>
           </button>
           <input
             type="text"

@@ -14,7 +14,6 @@ export default async function upsertStudy(
     study_description: dataset.study_description,
   };
 
-  // 1. Check if record exists
   const { data: existing, error: fetchError } = await supabase
     .from("dicom")
     .select("id")

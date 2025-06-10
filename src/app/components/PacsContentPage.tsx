@@ -10,6 +10,7 @@ import AddPac from "./AddPac";
 import DeletePac from "./DeletePac";
 import { PacType } from "@/types/PacType";
 import { useDebouncedCallback } from "use-debounce";
+import { Icon } from "@iconify/react/dist/iconify.js";
 
 const pacsFetcher = async () => {
   const { data, error } = await supabase
@@ -53,49 +54,65 @@ export default function PacsPageContent({
     <>
       <div className="border border-gray-200 rounded-xl bg-white">
         {pacs?.map(({ id, ip, port, aet_client, aet_server }) => (
-          <div
-            key={id}
-            className="relative border-t first:border-t-0 border-gray-200 flex gap-3.5 first:rounded-t-xl items-center justify-between text-left transition-colors duration-300 pl-6 pr-20 py-2"
-          >
-            <span className="flex-col items-start gap-1 flex md:flex-row sm:gap-3.5 md:items-center">
-              <div className="flex gap-3.5 items-center">
-                <input
-                  onChange={(event) =>
-                    debouncedUpdate(id, { ip: event.target.value })
-                  }
-                  placeholder="IP"
-                  defaultValue={ip}
-                  className="w-33 p-2 border border-transparent rounded-xl focus:outline-1 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
+          <>
+            <div
+              key={id}
+              className="relative border-t first:border-t-0 border-gray-200 flex gap-3.5 first:rounded-t-xl items-center justify-between text-left transition-colors duration-300"
+            >
+              <button
+                type="button"
+                className="flex-col border-b border-gray-200 w-full items-start gap-1 flex md:flex-row sm:gap-3.5 md:items-center py-4 pl-6 pr-20"
+              >
+                <Icon
+                  icon="solar:alt-arrow-down-linear"
+                  fontSize={20}
+                  className={`
+                    ${true ? "rotate-180" : ""} 
+                  transition-transform duration-500 flex-shrink-0`}
                 />
-                <span>:</span>
+                <span>{aet_server}</span>
+              </button>
+              <DeletePac pacId={id} />
+            </div>
+            <div className="px-12 py-10">
+              <div className="flex-col items-start gap-1 flex md:flex-row sm:gap-3.5 md:items-center">
+                <div className="flex gap-3.5 items-center">
+                  <input
+                    onChange={(event) =>
+                      debouncedUpdate(id, { ip: event.target.value })
+                    }
+                    placeholder="IP"
+                    defaultValue={ip}
+                    className="w-33 p-2 border border-transparent rounded-xl focus:outline-1 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
+                  />
+                  <input
+                    placeholder="Port"
+                    defaultValue={port}
+                    className="w-13 text-sm text-gray-500 p-2 border border-transparent rounded-xl focus:outline-1 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
+                    onChange={(event) =>
+                      debouncedUpdate(id, { port: event.target.value })
+                    }
+                  />
+                </div>
                 <input
-                  placeholder="Port"
-                  defaultValue={port}
-                  className="w-13 text-sm text-gray-500 p-2 border border-transparent rounded-xl focus:outline-1 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
+                  placeholder="AET Server"
+                  defaultValue={aet_server}
                   onChange={(event) =>
-                    debouncedUpdate(id, { port: event.target.value })
+                    debouncedUpdate(id, { aet_server: event.target.value })
                   }
+                  className="text-sm  text-gray-500 p-2 border border-transparent rounded-xl focus:outline-1 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
+                />
+                <input
+                  onChange={(event) =>
+                    debouncedUpdate(id, { aet_client: event.target.value })
+                  }
+                  placeholder="AET Client, Optional..."
+                  defaultValue={aet_client}
+                  className="text-sm  text-gray-500 p-2 border border-transparent rounded-xl focus:outline-1 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
                 />
               </div>
-              <input
-                placeholder="AET Server"
-                defaultValue={aet_server}
-                onChange={(event) =>
-                  debouncedUpdate(id, { aet_server: event.target.value })
-                }
-                className="text-sm  text-gray-500 p-2 border border-transparent rounded-xl focus:outline-1 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
-              />
-              <input
-                onChange={(event) =>
-                  debouncedUpdate(id, { aet_client: event.target.value })
-                }
-                placeholder="AET Client, Optional..."
-                defaultValue={aet_client}
-                className="text-sm  text-gray-500 p-2 border border-transparent rounded-xl focus:outline-1 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
-              />
-            </span>
-            <DeletePac pacId={id} />
-          </div>
+            </div>
+          </>
         ))}
         <AddPac />
       </div>

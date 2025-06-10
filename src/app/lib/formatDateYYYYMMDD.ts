@@ -8,11 +8,11 @@ export default function formatDateYYYYMMDD(dateString: string) {
   }
 
   const year = dateString.substring(0, 4);
-  const month = dateString.substring(4, 6);
-  const day = dateString.substring(6, 8);
+  const month = dateString.substring(5, 6);
+  const day = dateString.substring(7, 8);
 
   const date = new Date(`${year}-${month}-${day}`);
-
+  console.log({ date });
   if (isNaN(date.getTime())) {
     return null;
   }

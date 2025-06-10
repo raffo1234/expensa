@@ -1,5 +1,7 @@
 "use client";
 
+import { format, formatISO } from "date-fns";
+import DateRangeButtonCalendar from "./DateRangeButtonCalendar";
 import extractAgeWidthUnit from "@/lib/extractAgeWithUnit";
 import useCheckPermission from "@/hooks/useCheckPermission";
 import formatDateYYYYMMDD from "@/lib/formatDateYYYYMMDD";
@@ -8,12 +10,12 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import useCheckboxSelection from "@/hooks/useCheckboxSelection";
 import Link from "next/link";
 import { useCallback, useState } from "react";
-import { useDebouncedCallback } from "use-debounce";
 import PacsList from "./PacsList";
 import { PacType } from "@/types/PacType";
 import getAgeFromYYYYMMDD from "@/lib/getAgeFromYYYYMMDD";
 import { DicomType } from "@/types/dicomType";
 import upsertStudy from "@/lib/upsertStudy";
+import { toZonedTime } from "date-fns-tz";
 
 interface TableRowType {
   id: string;
@@ -32,6 +34,12 @@ enum StudyState {
   Duplicated = "Duplicated",
 }
 
+interface DateRangeType {
+  startDate: Date;
+  endDate: Date;
+  key: string;
+}
+
 export default function PacsPageContent({
   userId,
   userRoleId,
@@ -39,6 +47,10 @@ export default function PacsPageContent({
   userRoleId: string;
   userId: string | undefined;
 }) {
+  const [studyDateRange, setStudyDateRange] = useState<DateRangeType | null>(
+    null
+  );
+  const [isDisplayedFetchFilters, setIsDisplayedFetchFilters] = useState(false);
   const [activePac, setActivePac] = useState<PacType | null>(null);
   // const [search, setSearch] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -55,7 +67,11 @@ export default function PacsPageContent({
     // isAllItemsSelected,
   } = useCheckboxSelection<TableRowType>();
 
-  const fetchStudies = async (activePac: PacType | null) => {
+  const fetchStudies = async (
+    activePac: PacType | null,
+    startDate: string | null,
+    endDate: string | null
+  ) => {
     setLoading(true);
     setError(null);
 
@@ -70,8 +86,8 @@ export default function PacsPageContent({
           port: activePac.port,
           aet_server: activePac.aet_server,
           aet_client: activePac.aet_client,
-          startDate: "2025-06-09",
-          endDate: "2025-06-10",
+          startDate,
+          endDate,
         }),
       });
 
@@ -94,10 +110,6 @@ export default function PacsPageContent({
       setLoading(false);
     }
   };
-
-  const debouncedSearch = useDebouncedCallback((value) => {
-    console.log(value);
-  }, 300);
 
   const noData = loading && !error && studies && studies.length === 0;
 
@@ -138,28 +150,52 @@ export default function PacsPageContent({
     }
   };
 
+  const handleStudyDateRangeChange = (newRange: DateRangeType | null) => {
+    setStudyDateRange(newRange);
+  };
+
   const handleFetch = async (activePac: PacType | null) => {
-    await fetchStudies(activePac);
+    const timeZone = "America/Lima";
+    const zonedStart = studyDateRange?.startDate
+      ? toZonedTime(studyDateRange?.startDate, timeZone)
+      : null;
+
+    const zonedEnd = studyDateRange?.endDate
+      ? toZonedTime(studyDateRange?.endDate, timeZone)
+      : null;
+
+    const start = zonedStart ? formatISO(zonedStart) : null;
+    const formattedStart = start ? format(new Date(start), "yyyy-MM-dd") : null;
+    const end = zonedEnd ? formatISO(zonedEnd) : null;
+    const formattedEnd = end ? format(new Date(end), "yyyy-MM-dd") : null;
+
+    console.log({ formattedStart });
+    console.log({ formattedEnd });
+
+    await fetchStudies(activePac, formattedStart, formattedEnd);
   };
 
   if (isLoadingPermission) return null;
   if (!canManagePacs) return null;
 
+  console.log({ studyDateRange: studyDateRange?.startDate });
   return (
     <>
+      {/* {studyDateRange?.startDate}
+      {studyDateRange?.endDate} */}
       <PacsList
         setActivePac={setActivePac}
         activePac={activePac}
         userId={userId}
         userRoleId={userRoleId}
       />
-      <div className="flex mb-6 w-full justify-between items-center gap-2">
+      <div className="flex mb-3 w-full justify-between items-center gap-2">
         <div className="flex max-w-xl items-center gap-2 mx-auto sm:mx-0">
           <button
             disabled={!activePac || loading}
             onClick={() => handleFetch(activePac)}
             title="Fetch Pacs"
-            className="disabled:opacity-70  disabled:pointer-events-none cursor-pointer px-6 w-fit mx-auto text-white justify-center py-2 rounded-full bg-black flex gap-3 items-center"
+            className="disabled:opacity-70 border border-transparent disabled:pointer-events-none cursor-pointer px-6 w-fit mx-auto text-white justify-center py-2 rounded-full bg-black flex gap-3 items-center"
           >
             <span>Fetch</span>
             <span className="block w-6">
@@ -192,15 +228,25 @@ export default function PacsPageContent({
               )}
             </span>
           </button>
-          <input
-            type="text"
-            className="bg-white w-full rounded-full border border-gray-200 outline-0 py-2 px-5"
-            placeholder="Search ..."
-            // defaultValue={search ?? ""}
-            onChange={(event) => debouncedSearch(event.target.value)}
-          />
+          <button
+            onClick={() => setIsDisplayedFetchFilters((prev) => !prev)}
+            title="Filter Pacs"
+            className={`${isDisplayedFetchFilters ? "border-cyan-200 text-cyan-500" : "hover:border-cyan-200 hover:text-cyan-500 border-gray-200"} p-2 border rounded-lg cursor-pointer transition-colors duration-300`}
+            type="button"
+          >
+            <Icon icon="solar:filter-outline" fontSize={16} />
+          </button>
         </div>
       </div>
+      {isDisplayedFetchFilters ? (
+        <div className="flex gap-3.5 items-center mb-6">
+          <DateRangeButtonCalendar
+            dateRange={studyDateRange}
+            handleDateRangeChange={handleStudyDateRangeChange}
+            label="Study Date"
+          />
+        </div>
+      ) : null}
       <div className="w-fit pl-2 flex item-center mb-4 gap-2">
         {/* <div className="relative w-9 h-9">
           <input

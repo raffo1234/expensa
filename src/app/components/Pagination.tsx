@@ -1,7 +1,6 @@
 "use client";
 
 import toast from "react-hot-toast";
-// import { Permissions } from "@/types/propertyState";
 import { DicomStateEnum } from "@/enums/dicomStateEnum";
 import extractAgeWidthUnit from "@/lib/extractAgeWithUnit";
 import formatDateYYYYMMDD from "@/lib/formatDateYYYYMMDD";
@@ -953,7 +952,7 @@ export default function Pagination({
                         {study_description}
                       </td>
                       <td className="whitespace-nowrap py-5 px-2">
-                        {formatDateYYYYMMDD(study_date)}
+                        {formatDateYYYYMMDD(study_date)} 
                       </td>
                       <td
                         title={createdAtFormatted}

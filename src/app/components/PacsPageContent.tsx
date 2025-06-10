@@ -21,6 +21,7 @@ interface TableRowType {
 
 type Study = {
   dicom: DicomType;
+  dicomId: string;
   state: StudyState;
 };
 
@@ -45,7 +46,7 @@ export default function PacsPageContent({
   const [error, setError] = useState<string | null>(null);
   const { hasPermission: canManagePacs, isLoading: isLoadingPermission } =
     useCheckPermission(userRoleId, Permissions.MANAGE_PACS);
-
+  console.log(setSearch);
   const {
     selectedIds,
     isItemSelected,
@@ -75,7 +76,7 @@ export default function PacsPageContent({
       });
 
       const data = await response.json();
-      console.log(data);
+
       if (data.ok) {
         const transformedStudies: Study[] = data.studies.map(
           (dicom: DicomType) => ({
@@ -100,13 +101,18 @@ export default function PacsPageContent({
 
   const noData = loading && !error && studies && studies.length === 0;
 
-  const updateItemState = useCallback((id: string, newState: StudyState) => {
-    setStudies((prev) =>
-      prev.map((item) =>
-        item.dicom.id === id ? { ...item, state: newState } : item
-      )
-    );
-  }, []);
+  const updateItemState = useCallback(
+    (id: string, insertedDicomId: string, newState: StudyState) => {
+      setStudies((prev) =>
+        prev.map((item) =>
+          item.dicom.id === id
+            ? { ...item, dicomId: insertedDicomId, state: newState }
+            : item
+        )
+      );
+    },
+    []
+  );
 
   const upsertStudyBulk = async () => {
     for (const item of selectedIds) {
@@ -123,9 +129,10 @@ export default function PacsPageContent({
         activePac.aet_server,
         metadata[0].dicom
       );
-
+      console.log({ result });
       updateItemState(
         item,
+        result.id,
         result.isNew ? StudyState.Inserted : StudyState.Duplicated
       );
     }
@@ -220,18 +227,17 @@ export default function PacsPageContent({
             </g>
           </svg>
         </div> */}
-        {selectedIds.size > 0 ? (
-          <button
-            type="button"
-            onClick={() => upsertStudyBulk()}
-            title="Insert to Database"
-            className="cursor-pointer hover:text-cyan-400 p-2 rounded-lg border border-gray-200 bg-gray-50 transition-colors duration-300 hover:bg-gray-100"
-          >
-            <Icon icon="solar:database-outline" fontSize={24} />
-          </button>
-        ) : null}
-      </div>
 
+        <button
+          disabled={selectedIds.size === 0}
+          type="button"
+          onClick={() => upsertStudyBulk()}
+          title="Insert to Database"
+          className="disabled:opacity-50 disabled:pointer-events-none cursor-pointer hover:text-cyan-400 p-2 rounded-lg border border-gray-200 bg-gray-50 transition-colors duration-300 hover:bg-gray-100"
+        >
+          <Icon icon="solar:database-outline" fontSize={24} />
+        </button>
+      </div>
       <div className="bg-white shadow rounded-xl overflow-auto">
         <table className="text-sm w-full table-fixed">
           <thead>
@@ -349,7 +355,7 @@ export default function PacsPageContent({
             <tbody className="whitespace-nowrap">
               {studies.map((study, index) => {
                 const dicom = study.dicom;
-
+                const dicomId = study.dicomId;
                 const state = study.state;
                 const {
                   id,
@@ -437,7 +443,7 @@ export default function PacsPageContent({
                         <Link
                           key={id}
                           target="_blank"
-                          href={`/admin/dicoms/${id}`}
+                          href={`/admin/dicoms/${dicomId}`}
                           className="flex gap-2 first:border-t-0 border-t border-gray-200 px-5 py-2 text-left underline hover:text-cyan-500 transition-colors duration-300 underline-offset-4 w-full justify-center"
                         >
                           <Icon
@@ -448,7 +454,7 @@ export default function PacsPageContent({
                           <span className="flex-grow-1">{state}</span>
                         </Link>
                       ) : (
-                        <span className="px-5 py-2">{state}</span>
+                        ""
                       )}
                     </td>
                   </tr>

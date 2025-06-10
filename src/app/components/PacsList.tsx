@@ -38,7 +38,11 @@ export default function PacsList({
     localStorage.setItem("pacActiveId", newPac.id);
   };
 
-  if (!userId || !pacs || isLoading || isLoading) return null;
+  if (errorPacs) return null;
+
+  if (isLoadingPacs || isLoading) return "loading...";
+
+  if (!userId || !pacs) return null;
 
   return (
     <div

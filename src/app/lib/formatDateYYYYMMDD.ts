@@ -12,7 +12,7 @@ export default function formatDateYYYYMMDD(dateString: string) {
   const day = dateString.substring(7, 8);
 
   const date = new Date(`${year}-${month}-${day}`);
-  console.log({ date });
+
   if (isNaN(date.getTime())) {
     return null;
   }

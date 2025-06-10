@@ -32,7 +32,7 @@ export default function getAgeFromYYYYMMDD(dateString: string) {
   if (years === 0 && months === 0) {
     weeks = differenceInWeeks(now, birthDate);
   }
-
+  console.log({ years, months, weeks });
   return formatAge({ years, months, weeks });
 }
 

@@ -13,6 +13,7 @@ import { useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
 import PacsList from "./PacsList";
 import { PacType } from "@/types/PacType";
+import getAgeFromYYYYMMDD from "@/lib/getAgeFromYYYYMMDD";
 
 interface TableRowType {
   id: string;
@@ -315,6 +316,9 @@ export default function PacsPageContent({
                   },
                   index
                 ) => {
+                  const patientAge = getAgeFromYYYYMMDD(patientBirthDate);
+                  const patientAgeFormatted = `${extractAgeWidthUnit(patientAge as string).value} ${extractAgeWidthUnit(patientAge as string).unit}`;
+                    
                   return (
                     <tr
                       key={id}
@@ -372,7 +376,7 @@ export default function PacsPageContent({
                       </td>
                       <td className="py-5 px-2 text-center">{patientSex}</td>
                       <td className="whitespace-nowrap py-5 px-2">
-                        {patientBirthDate}
+                        {patientAgeFormatted}
                       </td>
                       <td className="truncate whitespace-nowrap py-5 px-2">
                         studyDescription

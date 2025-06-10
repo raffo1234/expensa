@@ -26,9 +26,7 @@ const fetcher = async (id: UUIDTypes) => {
     .from("dicom")
     .select("*, template(*)")
     .eq("id", id)
-    .single()) as {
-    data: DicomType | null;
-  };
+    .single()) as { data: DicomType | null };
   return data;
 };
 
@@ -74,9 +72,16 @@ export default function Report({
         if (!storedTemplateId) {
           const fuse = new Fuse(templates, {
             includeScore: true,
+            useExtendedSearch: true,
             keys: ["name", "description"],
           });
-          const result = fuse.search(dicom.institution);
+          const institutionName = dicom.institution
+            .split(" ")
+            .map((item) => `${item}$`)
+            .join(" | ");
+
+          const result = fuse.search(institutionName);
+
           if (result.length > 0) {
             updateDicom(dicomId, { template_id: result[0].item.id });
           }
@@ -238,9 +243,7 @@ export default function Report({
         {!dicom.state || dicom.state === DicomStateEnum.VIEWED ? (
           <button
             onClick={() =>
-              updateDicom(dicom.id, {
-                state: DicomStateEnum.DRAFT,
-              })
+              updateDicom(dicom.id, { state: DicomStateEnum.DRAFT })
             }
             title={`Save as ${DicomStateEnum.DRAFT}`}
             type="button"

@@ -5,8 +5,7 @@ import useCheckPermission from "@/hooks/useCheckPermission";
 import formatDateYYYYMMDD from "@/lib/formatDateYYYYMMDD";
 import { Permissions } from "@/types/propertyState";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { formatInTimeZone } from "date-fns-tz";
-import es from "date-fns/locale/es";
+
 import useCheckboxSelection from "@/hooks/useCheckboxSelection";
 import Link from "next/link";
 import { useState } from "react";
@@ -25,10 +24,11 @@ interface Dataset {
   patientName: string;
   studyDescription: string;
   studyDate: string;
-  studyTime: string;
+  studyTime?: string;
   modalitiesInStudy: string;
   patientBirthDate: string;
   patientSex: string;
+  institutionName: string;
 }
 
 export default function PacsPageContent({
@@ -309,7 +309,6 @@ export default function PacsPageContent({
                     studyDescription,
                     studyDate,
                     institutionName,
-                    studyTime,
                     modalitiesInStudy,
                     patientBirthDate,
                     patientSex,
@@ -318,7 +317,7 @@ export default function PacsPageContent({
                 ) => {
                   const patientAge = getAgeFromYYYYMMDD(patientBirthDate);
                   const patientAgeFormatted = `${extractAgeWidthUnit(patientAge as string).value} ${extractAgeWidthUnit(patientAge as string).unit}`;
-                    
+
                   return (
                     <tr
                       key={id}
@@ -379,10 +378,10 @@ export default function PacsPageContent({
                         {patientAgeFormatted}
                       </td>
                       <td className="truncate whitespace-nowrap py-5 px-2">
-                        studyDescription
+                        {studyDescription}
                       </td>
                       <td className="whitespace-nowrap py-5 px-2">
-                        {formatDateYYYYMMDD(studyDate)} {studyTime}
+                        {formatDateYYYYMMDD(studyDate)}
                       </td>
                       <td className="py-5 px-2 text-center">
                         {modalitiesInStudy}

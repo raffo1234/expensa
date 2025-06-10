@@ -82,7 +82,7 @@ export default function PacsList({
             target="_blank"
             title="Pacs Settings"
             href="/admin/pacs/settings"
-            className="p-3 border border-gray-200 rounded-xl w-fit hover:border-cyan-400 hover:text-cyan-400 transition-colors duration-300"
+            className="p-3 border border-gray-200 rounded-xl w-fit hover:border-cyan-200 hover:text-cyan-400 transition-colors duration-300"
           >
             <Icon icon="solar:settings-linear" fontSize={24} />
           </Link>

@@ -1,5 +1,6 @@
 "use client";
 
+import DateRangeButtonCalendar from "./DateRangeButtonCalendar";
 import extractAgeWidthUnit from "@/lib/extractAgeWithUnit";
 import useCheckPermission from "@/hooks/useCheckPermission";
 import formatDateYYYYMMDD from "@/lib/formatDateYYYYMMDD";
@@ -32,6 +33,12 @@ enum StudyState {
   Duplicated = "Duplicated",
 }
 
+interface DateRangeType {
+  startDate: Date;
+  endDate: Date;
+  key: string;
+}
+
 export default function PacsPageContent({
   userId,
   userRoleId,
@@ -39,6 +46,9 @@ export default function PacsPageContent({
   userRoleId: string;
   userId: string | undefined;
 }) {
+  const [studyDateRange, setStudyDateRange] = useState<DateRangeType | null>(
+    null
+  );
   const [isDisplayedFetchFilters, setIsDisplayedFetchFilters] = useState(false);
   const [activePac, setActivePac] = useState<PacType | null>(null);
   // const [search, setSearch] = useState<string | null>(null);
@@ -139,6 +149,10 @@ export default function PacsPageContent({
     }
   };
 
+  const handleStudyDateRangeChange = (newRange: DateRangeType | null) => {
+    setStudyDateRange(newRange);
+  };
+
   const handleFetch = async (activePac: PacType | null) => {
     await fetchStudies(activePac);
   };
@@ -154,7 +168,7 @@ export default function PacsPageContent({
         userId={userId}
         userRoleId={userRoleId}
       />
-      <div className="flex mb-6 w-full justify-between items-center gap-2">
+      <div className="flex mb-3 w-full justify-between items-center gap-2">
         <div className="flex max-w-xl items-center gap-2 mx-auto sm:mx-0">
           <button
             disabled={!activePac || loading}
@@ -195,23 +209,30 @@ export default function PacsPageContent({
           </button>
           <button
             onClick={() => setIsDisplayedFetchFilters((prev) => !prev)}
-            title="Display filter for Fetch Pacs"
-            className={`${isDisplayedFetchFilters ? "border-cyan-500 text-cyan-500" : ""} p-2 border-gray-200 border rounded-lg cursor-pointer`}
+            title="Filter Pacs"
+            className={`${isDisplayedFetchFilters ? "border-cyan-200 text-cyan-500" : "hover:border-cyan-200 hover:text-cyan-500 border-gray-200"} p-2 border rounded-lg cursor-pointer transition-colors duration-300`}
             type="button"
           >
             <Icon icon="solar:filter-outline" fontSize={16} />
           </button>
-          {isDisplayedFetchFilters ? (
-            <input
-              type="text"
-              name="fetch-search"
-              className="bg-white w-full rounded-full border border-gray-200 outline-0 py-2 px-5"
-              placeholder="Patient name"
-              onChange={(event) => debouncedSearch(event.target.value)}
-            />
-          ) : null}
         </div>
       </div>
+      {isDisplayedFetchFilters ? (
+        <div className="flex gap-3.5 items-center mb-6">
+          <input
+            type="text"
+            name="fetch-search"
+            className="bg-white rounded-full border border-gray-200 outline-0 py-2 px-5"
+            placeholder="Patient name"
+            onChange={(event) => debouncedSearch(event.target.value)}
+          />
+          <DateRangeButtonCalendar
+            dateRange={studyDateRange}
+            handleDateRangeChange={handleStudyDateRangeChange}
+            label="Study Date"
+          />
+        </div>
+      ) : null}
       <div className="w-fit pl-2 flex item-center mb-4 gap-2">
         {/* <div className="relative w-9 h-9">
           <input

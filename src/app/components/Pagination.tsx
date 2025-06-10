@@ -1,7 +1,6 @@
 "use client";
 
 import toast from "react-hot-toast";
-// import { Permissions } from "@/types/propertyState";
 import { DicomStateEnum } from "@/enums/dicomStateEnum";
 import extractAgeWidthUnit from "@/lib/extractAgeWithUnit";
 import formatDateYYYYMMDD from "@/lib/formatDateYYYYMMDD";

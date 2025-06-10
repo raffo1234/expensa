@@ -9,6 +9,7 @@ import useSWR, { mutate } from "swr";
 import AddPac from "./AddPac";
 import DeletePac from "./DeletePac";
 import { PacType } from "@/types/PacType";
+import { useDebouncedCallback } from "use-debounce";
 
 const pacsFetcher = async () => {
   const { data, error } = await supabase
@@ -40,9 +41,9 @@ export default function PacsPageContent({
     }
   };
 
-  const handleOnBlur = (id: string, newData: Partial<PacType>) => {
-    updatePac(id, newData);
-  };
+  const debouncedUpdate = useDebouncedCallback((id, value) => {
+    updatePac(id, value);
+  }, 300);
 
   if (error) return null;
   if (isLoading || isLoadingPermission) return "loading ...";
@@ -59,8 +60,8 @@ export default function PacsPageContent({
             <span className="flex-col items-start gap-1 flex md:flex-row sm:gap-3.5 md:items-center">
               <div className="flex gap-3.5 items-center">
                 <input
-                  onBlur={(event) =>
-                    handleOnBlur(id, { ip: event.target.value })
+                  onChange={(event) =>
+                    debouncedUpdate(id, { ip: event.target.value })
                   }
                   placeholder="IP"
                   defaultValue={ip}
@@ -71,22 +72,22 @@ export default function PacsPageContent({
                   placeholder="Port"
                   defaultValue={port}
                   className="w-13 text-sm text-gray-500 p-2 border border-transparent rounded-xl focus:outline-1 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
-                  onBlur={(event) =>
-                    handleOnBlur(id, { port: event.target.value })
+                  onChange={(event) =>
+                    debouncedUpdate(id, { port: event.target.value })
                   }
                 />
               </div>
               <input
                 placeholder="AET Server"
                 defaultValue={aet_server}
-                onBlur={(event) =>
-                  handleOnBlur(id, { aet_server: event.target.value })
+                onChange={(event) =>
+                  debouncedUpdate(id, { aet_server: event.target.value })
                 }
                 className="text-sm  text-gray-500 p-2 border border-transparent rounded-xl focus:outline-1 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
               />
               <input
-                onBlur={(event) =>
-                  handleOnBlur(id, { aet_client: event.target.value })
+                onChange={(event) =>
+                  debouncedUpdate(id, { aet_client: event.target.value })
                 }
                 placeholder="AET Client, Optional..."
                 defaultValue={aet_client}

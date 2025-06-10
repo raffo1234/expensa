@@ -1,5 +1,6 @@
 import { Client, requests, constants } from "dcmjs-dimse";
 import type { EventEmitter } from "events";
+import { v4 as uuidv4 } from "uuid";
 
 export const runtime = "nodejs";
 
@@ -43,6 +44,7 @@ export async function POST(req: Request): Promise<Response> {
         console.log("📦 Dataset received:", dataset);
 
         results.push({
+          id: uuidv4(),
           studyDate: dataset.StudyDate,
           studyTime: dataset.StudyTime,
           modalitiesInStudy: dataset.ModalitiesInStudy,

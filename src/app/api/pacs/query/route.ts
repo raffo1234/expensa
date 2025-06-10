@@ -41,7 +41,7 @@ export async function POST(req: Request): Promise<Response> {
 
       if (status === constants.Status.Pending && res.hasDataset()) {
         const dataset = res.getDataset().elements;
-        console.log("📦 Dataset received:", dataset);
+        console.warn("📦 Dataset received:", dataset);
 
         results.push({
           id: uuidv4(),

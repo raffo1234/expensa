@@ -14,6 +14,7 @@ import PacsList from "./PacsList";
 import { PacType } from "@/types/PacType";
 import getAgeFromYYYYMMDD from "@/lib/getAgeFromYYYYMMDD";
 import { DicomType } from "@/types/dicomType";
+import upsertStudy from "@/lib/upsertStudy";
 
 interface TableRowType {
   id: string;
@@ -89,7 +90,30 @@ export default function PacsPageContent({
         };
       })
     : [];
-  console.log(items);
+
+  const upsertStudyBulk = async () => {
+    for (const item of selectedIds) {
+      if (!userId) continue;
+
+      const metadata = studies.filter((study) => study.id === item);
+      if (metadata.length === 0 || !activePac?.aet_server) continue;
+
+      const result = await upsertStudy(
+        userId,
+        activePac.aet_server,
+        metadata[0]
+      );
+      console.log({ result });
+      //   console.log(`Processed item ${item}: ${result}`);
+    }
+
+    if (userId && activePac?.aet_server) {
+    }
+    //   upsertStudy(userId, activePac.aet_server, metadata);
+  };
+
+  console.log({ selectedIds });
+
   if (isLoadingPermission) return null;
   if (!canManagePacs) return null;
 
@@ -173,6 +197,7 @@ export default function PacsPageContent({
         {selectedIds.size > 0 ? (
           <button
             type="button"
+            onClick={() => upsertStudyBulk()}
             title="Insert to Database"
             className="cursor-pointer hover:text-cyan-400 p-2 rounded-lg border border-gray-200 bg-gray-50 transition-colors duration-300 hover:bg-gray-100"
           >

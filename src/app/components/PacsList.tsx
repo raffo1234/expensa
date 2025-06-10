@@ -7,7 +7,10 @@ import { supabase } from "@/lib/supabase";
 import useSWR from "swr";
 
 const pacsFetcher = async () => {
-  const { data, error } = await supabase.from("pac").select("*");
+  const { data, error } = await supabase
+    .from("pac")
+    .select("*")
+    .eq("is_verified", true);
 
   if (error) throw error;
   return data;

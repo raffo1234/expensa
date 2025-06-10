@@ -40,13 +40,13 @@ export default function PacsPageContent({
   userId: string | undefined;
 }) {
   const [activePac, setActivePac] = useState<PacType | null>(null);
-  const [search, setSearch] = useState<string | null>(null);
+  // const [search, setSearch] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [studies, setStudies] = useState<Study[]>([]);
   const [error, setError] = useState<string | null>(null);
   const { hasPermission: canManagePacs, isLoading: isLoadingPermission } =
     useCheckPermission(userRoleId, Permissions.MANAGE_PACS);
-  console.log(setSearch);
+
   const {
     selectedIds,
     isItemSelected,
@@ -138,6 +138,10 @@ export default function PacsPageContent({
     }
   };
 
+  const handleFetch = async (activePac: PacType | null) => {
+    await fetchStudies(activePac);
+  };
+
   if (isLoadingPermission) return null;
   if (!canManagePacs) return null;
 
@@ -153,7 +157,7 @@ export default function PacsPageContent({
         <div className="flex max-w-xl items-center gap-2 mx-auto sm:mx-0">
           <button
             disabled={!activePac || loading}
-            onClick={() => fetchStudies(activePac)}
+            onClick={() => handleFetch(activePac)}
             title="Fetch Pacs"
             className="disabled:opacity-70  disabled:pointer-events-none cursor-pointer px-6 w-fit mx-auto text-white justify-center py-2 rounded-full bg-black flex gap-3 items-center"
           >
@@ -192,7 +196,7 @@ export default function PacsPageContent({
             type="text"
             className="bg-white w-full rounded-full border border-gray-200 outline-0 py-2 px-5"
             placeholder="Search ..."
-            defaultValue={search ?? ""}
+            // defaultValue={search ?? ""}
             onChange={(event) => debouncedSearch(event.target.value)}
           />
         </div>

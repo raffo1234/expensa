@@ -14,7 +14,7 @@ export default function Pac({ pac }: { pac: PacType }) {
   const [isVerifying, setIsVerifying] = useState(false);
   const [data, setData] = useState<false | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { id, ip, aet_server, aet_client, port } = pac;
+  const { id, ip, aet_server, is_verified, aet_client, port } = pac;
 
   const updatePac = async (id: string, newData: Partial<PacType>) => {
     try {
@@ -42,17 +42,23 @@ export default function Pac({ pac }: { pac: PacType }) {
         body: JSON.stringify({
           ip: pac.ip,
           port: pac.port,
-          aet: pac.aet_server,
+          aet_server: pac.aet_server,
+          aet_client: pac.aet_client,
         }),
       });
 
       const data = await response.json();
-      setData(data.ok);
+
       if (!data.ok) {
         setError(data.error || "Query failed");
+        updatePac(id, { is_verified: false });
+      } else {
+        setData(data.ok);
+        updatePac(id, { is_verified: true });
       }
     } catch (err) {
       setError((err as Error).message);
+      updatePac(id, { is_verified: false });
     } finally {
       setIsVerifying(false);
     }
@@ -87,7 +93,7 @@ export default function Pac({ pac }: { pac: PacType }) {
             className={`${isOpen ? "rotate-180" : ""} transition-transform duration-500 flex-shrink-0`}
           />
           <span>{aet_server}</span>
-          {data ? (
+          {is_verified ? (
             <svg
               className="text-green-400"
               xmlns="http://www.w3.org/2000/svg"

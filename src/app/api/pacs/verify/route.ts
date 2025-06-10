@@ -19,36 +19,33 @@ export async function POST(req: Request): Promise<Response> {
   const request = new CEchoRequest();
   const emitter = request as unknown as EventEmitter;
 
-  const resultsPromise = new Promise<boolean>((resolve, reject) => {
-    emitter.on("response", (res) => {
-      const status = res.getStatus();
+  const TIMEOUT = 10000; // 10s timeout
 
-      if (status === constants.Status.Success) {
-        console.log("Happy!");
-        resolve(true);
-      }
+  const statusPromise = new Promise<boolean>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error("C-ECHO timeout after 15s"));
+    }, TIMEOUT);
+
+    emitter.on("response", (res) => {
+      clearTimeout(timer);
+      const status = res.getStatus();
+      resolve(status === constants.Status.Success);
     });
 
     emitter.on("error", (err) => {
-      console.error("❌ C-FIND error:", err);
+      clearTimeout(timer);
       reject(err);
-      resolve(false);
     });
   });
 
   client.addRequest(request);
 
-  //   client.on("networkError", (e) => {
-  //     console.log("Network error: ", e);
-  //   });
-
   try {
     await client.send(ip, port, clientAet, aet);
-    const status = await resultsPromise;
+    const status = await statusPromise;
 
     return Response.json({ ok: true, status });
   } catch (error) {
-    console.error("C-ECHO failed:", error);
     return Response.json({
       ok: false,
       error: error instanceof Error ? error.message : "C-ECHO failed",

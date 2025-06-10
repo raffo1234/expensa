@@ -7,12 +7,13 @@ import { useDebouncedCallback } from "use-debounce";
 import { supabase } from "@/lib/supabase";
 import { mutate } from "swr";
 import toast from "react-hot-toast";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function Pac({ pac }: { pac: PacType }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [data, setData] = useState<false | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setLoading] = useState(false);
   const { id, ip, aet_server, aet_client, port } = pac;
 
   const updatePac = async (id: string, newData: Partial<PacType>) => {
@@ -31,7 +32,7 @@ export default function Pac({ pac }: { pac: PacType }) {
   }, 300);
 
   const verifyConnection = async (pac: PacType) => {
-    setLoading(true);
+    setIsVerifying(true);
     setError(null);
 
     try {
@@ -42,24 +43,32 @@ export default function Pac({ pac }: { pac: PacType }) {
           ip: pac.ip,
           port: pac.port,
           aet: pac.aet_server,
-          startDate: "2025-06-08",
-          endDate: "2025-06-09",
         }),
       });
 
       const data = await response.json();
-
-      if (data.ok) {
-        // setStudies(data.studies);
-      } else {
+      setData(data.ok);
+      if (!data.ok) {
         setError(data.error || "Query failed");
       }
     } catch (err) {
       setError((err as Error).message);
     } finally {
-      setLoading(false);
+      setIsVerifying(false);
     }
   };
+  console.warn(error);
+
+  useEffect(() => {
+    if (error !== null || data !== null) {
+      const timeout = setTimeout(() => {
+        setError(null);
+        setData(null);
+      }, 2000);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [error, data]);
 
   return (
     <>
@@ -70,16 +79,46 @@ export default function Pac({ pac }: { pac: PacType }) {
         <button
           type="button"
           onClick={() => setIsOpen((prev) => !prev)}
-          className="flex-col cursor-pointer hover:bg-gray-50 first:rounded-t-xl w-full items-start gap-1 flex md:flex-row sm:gap-3.5 md:items-center py-4 pl-6 pr-20"
+          className={`${isOpen ? "bg-gray-50" : ""} flex-col cursor-pointer hover:bg-gray-50 first:rounded-t-xl w-full items-start gap-1 flex md:flex-row sm:gap-3.5 md:items-center py-4 pl-6 pr-20`}
         >
           <Icon
             icon="solar:alt-arrow-down-linear"
             fontSize={20}
-            className={`
-                            ${isOpen ? "rotate-180" : ""} 
-                          transition-transform duration-500 flex-shrink-0`}
+            className={`${isOpen ? "rotate-180" : ""} transition-transform duration-500 flex-shrink-0`}
           />
           <span>{aet_server}</span>
+          {data ? (
+            <svg
+              className="text-green-400"
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+            >
+              <g fill="none" stroke="currentColor" strokeWidth="1.5">
+                <circle cx="12" cy="12" r="10" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="m8.5 12.5l2 2l5-5"
+                />
+              </g>
+            </svg>
+          ) : null}
+          {error ? (
+            <svg
+              className="text-rose-400"
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+            >
+              <g fill="none" stroke="currentColor" strokeWidth="1.5">
+                <circle cx="12" cy="12" r="10" />
+                <path strokeLinecap="round" d="m14.5 9.5l-5 5m0-5l5 5" />
+              </g>
+            </svg>
+          ) : null}
         </button>
         <DeletePac pacId={id} />
       </div>
@@ -88,11 +127,21 @@ export default function Pac({ pac }: { pac: PacType }) {
           <div className="flex-col items-start gap-1 flex md:flex-row sm:gap-3.5 md:items-center">
             <div className="flex gap-3.5 items-center">
               <button
-                disabled={isLoading}
+                disabled={isVerifying}
                 type="button"
+                title="Verify connection"
                 onClick={() => verifyConnection(pac)}
+                className={`${isVerifying ? "pointer-events-none border-transparent" : "transition-colors duration-300 bg-gray-50 border-gray-200 cursor-pointer rounded-xl"} border p-2 text-cyan-500`}
               >
-                Check {error ? "fail" : "success"}
+                {isVerifying ? (
+                  <Icon
+                    icon="solar:record-broken"
+                    className="animate-spin"
+                    fontSize={24}
+                  />
+                ) : (
+                  <Icon icon="solar:shield-check-linear" fontSize={24} />
+                )}
               </button>
               <input
                 onChange={(event) =>
@@ -117,7 +166,7 @@ export default function Pac({ pac }: { pac: PacType }) {
               onChange={(event) =>
                 debouncedUpdate(id, { aet_server: event.target.value })
               }
-              className="text-sm  text-gray-500 p-2 border border-transparent rounded-xl focus:outline-1 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
+              className="text-sm text-gray-500 p-2 border border-transparent rounded-xl focus:outline-1 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
             />
             <input
               onChange={(event) =>
@@ -125,7 +174,7 @@ export default function Pac({ pac }: { pac: PacType }) {
               }
               placeholder="AET Client (Optional)"
               defaultValue={aet_client}
-              className="text-sm  text-gray-500 p-2 border border-transparent rounded-xl focus:outline-1 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
+              className="text-sm text-gray-500 p-2 border border-transparent rounded-xl focus:outline-1 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
             />
           </div>
         </div>

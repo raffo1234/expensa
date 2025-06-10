@@ -17,7 +17,7 @@ const pacsFetcher = async () => {
   return data;
 };
 
-export default function PacsPageContent({
+export default function PacsSettingsPageContent({
   userRoleId,
 }: {
   userRoleId: string;

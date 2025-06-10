@@ -1,4 +1,4 @@
-import PacsPageContent from "@/components/PacsPageContent";
+import PacsPageContent from "@/components/PacsSettingsPageContent";
 import { auth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 

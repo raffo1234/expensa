@@ -572,12 +572,18 @@ export default function Pagination({
           </svg>
         </div>
         {selectedIds.size > 0 ? (
-          result?.data?.[0] ? (
-            <>
-              <GenerateCompressedPDFs selectedIds={selectedIds} />
-              <GenerateCompressedDOCs selectedIds={selectedIds} />
-            </>
-          ) : null
+          <div className="flex items-center gap-2">
+            {result?.data?.[0] ? (
+              <>
+                <GenerateCompressedPDFs selectedIds={selectedIds} />
+                <GenerateCompressedDOCs selectedIds={selectedIds} />
+              </>
+            ) : null}
+            <span className="text-sm text-gray-600">
+              {selectedIds.size} item{selectedIds.size !== 1 ? "s" : ""}{" "}
+              selected
+            </span>
+          </div>
         ) : null}
       </div>
 
@@ -952,7 +958,7 @@ export default function Pagination({
                         {study_description}
                       </td>
                       <td className="whitespace-nowrap py-5 px-2">
-                        {formatDateYYYYMMDD(study_date)} 
+                        {formatDateYYYYMMDD(study_date)}
                       </td>
                       <td
                         title={createdAtFormatted}

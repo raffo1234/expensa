@@ -10,6 +10,7 @@ import { Toaster } from "react-hot-toast";
 import { ReactScan } from "@/components/ReactScan";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://cadia.pe/"),
   title: "Cadia - Your Scans, Instantly Accessible",
   description: "Process DICOM & Create Reports with Ease",
   icons: {

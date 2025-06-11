@@ -462,7 +462,10 @@ export default function PacsPageContent({
                     <td className="whitespace-nowrap py-5 text-center">
                       {index + 1}
                     </td>
-                    <td className="py-5 px-2">
+                    <td
+                      title={patient_id}
+                      className="py-5 px-2 truncate whitespace-nowrap"
+                    >
                       <Link href={`/admin/dicoms/${id}`} className="text-sm">
                         {patient_id}
                       </Link>

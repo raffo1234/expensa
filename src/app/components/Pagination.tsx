@@ -224,7 +224,7 @@ export default function Pagination({
 
   const debouncedSearch = useDebouncedCallback((value) => {
     handleSearchChange(value);
-  }, 300);
+  }, 650);
 
   const debouncedPerPage = useDebouncedCallback((value) => {
     handlePageSize(value);

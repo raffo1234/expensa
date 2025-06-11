@@ -17,7 +17,7 @@ export async function POST(req: Request): Promise<Response> {
     modality,
   } = body;
 
-  if (!ip || !port || !aet_server) {
+  if (!ip || !port || !aet_server || !startDate || !endDate) {
     return Response.json(
       { ok: false, error: "Missing required fields" },
       { status: 400 }
@@ -70,7 +70,7 @@ export async function POST(req: Request): Promise<Response> {
   });
 
   client.addRequest(request);
-  await client.send(ip, 3201, aet_client, aet_server);
+  await client.send(ip, port, aet_client, aet_server);
   const studies = await resultsPromise;
 
   return Response.json({ ok: true, studies });

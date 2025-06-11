@@ -41,14 +41,14 @@ export default function GenerateCompressedDOCXs({
 
     if (selectedDicomsData) {
       try {
-        const docxBlobs = await Promise.all(
-          selectedDicomsData.map(async (dicom) => {
-            // Type cast PartialDicomWithTemplate to DicomType as createDocxDocument expects the full type
-            const fullDicom: DicomType = dicom as DicomType;
-            const doc = await createDocxDocument(fullDicom);
-            return await Packer.toBlob(doc);
-          })
-        );
+        const docxBlobs = [];
+        for (const dicom of selectedDicomsData) {
+          const fullDicom: DicomType = dicom as DicomType;
+          const doc = await createDocxDocument(fullDicom);
+          const blob = await Packer.toBlob(doc);
+          docxBlobs.push(blob);
+        }
+
         await createAndDownloadZip(selectedDicomsData, docxBlobs);
       } catch (error) {
         console.error("Error generating DOCXs:", error);

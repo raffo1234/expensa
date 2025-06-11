@@ -41,9 +41,11 @@ export default function GenerateCompressedPDFs({
 
     if (selectedDicomsData) {
       try {
-        const pdfBlobs = await Promise.all(
-          selectedDicomsData.map(async (dicom) => await generatePdfUrl(dicom))
-        );
+        const pdfBlobs = [];
+        for (const dicom of selectedDicomsData) {
+          const pdfUrl = await generatePdfUrl(dicom);
+          pdfBlobs.push(pdfUrl);
+        }
         await createAndDownloadZip(selectedDicomsData, pdfBlobs);
       } catch (error) {
         console.error("Error generating PDFs:", error);

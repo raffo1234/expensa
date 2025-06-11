@@ -2,7 +2,7 @@
 
 import useCheckPermission from "@/hooks/useCheckPermission";
 import { Permissions } from "@/types/propertyState";
-import PacsQuery from "./PacsQuery";
+// import PacsQuery from "./PacsQuery";
 import { supabase } from "@/lib/supabase";
 import useSWR from "swr";
 import AddPac from "./AddPac";
@@ -37,7 +37,7 @@ export default function PacsSettingsPageContent({
         {pacs?.map((pac) => <Pac key={pac.id} pac={pac} />)}
         <AddPac />
       </div>
-      <PacsQuery userRoleId={userRoleId} />
+      {/* <PacsQuery userRoleId={userRoleId} /> */}
     </>
   );
 }

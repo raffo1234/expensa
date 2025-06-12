@@ -41,3 +41,32 @@ yarn-error.log*
 next-env.d.ts
 
 .env.local
+
+# Ignore environment files
+.env
+.env.*.local
+
+# Ignore Supabase generated keys
+.supabase/access-token
+.supabase/refresh-token
+
+# Ignore Supabase local state files
+.supabase/config.json
+.supabase/functions/_internal/*
+.supabase/temp/
+
+# Ignore Docker volumes (optional)
+volumes/
+*.pid
+
+# Ignore local storage (e.g. uploaded files if using file backend)
+supabase/storage
+storage/
+
+# Logs
+logs
+*.log
+
+# OS / Editor
+.vscode/
+.idea/

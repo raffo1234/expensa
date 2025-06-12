@@ -16,6 +16,7 @@ import { DicomType } from "@/types/dicomType";
 import upsertStudy from "@/lib/upsertStudy";
 import { toZonedTime } from "date-fns-tz";
 import formatDate from "@/lib/formatDate";
+import { Modalities } from "@/enums/modalities";
 
 interface TableRowType {
   id: string;
@@ -54,6 +55,7 @@ export default function PacsPageContent({
     endDate: now,
     key: "selection",
   });
+  const [modality, setModality] = useState<string>("");
   const [activePac, setActivePac] = useState<PacType | null>(null);
   const [loading, setLoading] = useState(false);
   const [studies, setStudies] = useState<Study[]>([]);
@@ -90,6 +92,7 @@ export default function PacsPageContent({
           aet_client: activePac.aet_client,
           startDate,
           endDate,
+          modality,
         }),
       });
 
@@ -153,7 +156,6 @@ export default function PacsPageContent({
   };
 
   const handleStudyDateRangeChange = (newRange: DateRangeType | null) => {
-    console.log(newRange);
     setStudyDateRange(newRange);
   };
 
@@ -175,6 +177,12 @@ export default function PacsPageContent({
     await fetchStudies(activePac, formattedStart, formattedEnd);
   };
 
+  const handleModality = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setModality(event.target.value);
+  };
+
+  const modalityKeys = Object.keys(Modalities);
+
   if (isLoadingPermission) return null;
   if (!canManagePacs) return null;
 
@@ -188,11 +196,29 @@ export default function PacsPageContent({
           userRoleId={userRoleId}
         />
       ) : null}
-      <DateRangeButtonCalendar
-        dateRange={studyDateRange}
-        handleDateRangeChange={handleStudyDateRangeChange}
-        label="Study Date"
-      />
+      <div className="flex gap-3 items-center">
+        <DateRangeButtonCalendar
+          dateRange={studyDateRange}
+          handleDateRangeChange={handleStudyDateRangeChange}
+          label="Study Date"
+        />
+        <div className="relative">
+          <select
+            onChange={handleModality}
+            className="w-30 truncate text-sm px-4 py-2 rounded-full border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500 bg-white"
+          >
+            <option value="">Modality</option>
+            {modalityKeys.map((modality, index) => (
+              <option title={modality} key={index}>
+                {modality}
+              </option>
+            ))}
+          </select>
+          <div className="absolute top-1/2 -translate-y-1/2 right-1 pr-3 pointer-events-none bg-white">
+            <Icon icon="solar:alt-arrow-down-linear" fontSize={16} />
+          </div>
+        </div>
+      </div>
       <button
         disabled={!activePac || !studyDateRange || loading}
         onClick={() => handleFetch(activePac)}

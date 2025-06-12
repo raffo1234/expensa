@@ -142,10 +142,7 @@ export default function PacsPageContent({
 
       if (metadata[0].state !== StudyState.Selected) continue;
 
-      const result = await upsertStudy(
-        userId,
-        metadata[0].dicom
-      );
+      const result = await upsertStudy(userId, metadata[0].dicom);
 
       updateItemState(
         item,
@@ -317,7 +314,7 @@ export default function PacsPageContent({
         <table className="text-sm w-full table-fixed">
           <thead>
             <tr className="border-b border-gray-200">
-              <th className="w-13 py-4 text-center"></th>
+              <th className="w-10 py-4 text-center"></th>
               <th className="w-6 text-center uppercase text-xs font-semibold py-4">
                 #
               </th>
@@ -491,9 +488,9 @@ export default function PacsPageContent({
                       title={patient_id}
                       className="py-5 px-2 truncate whitespace-nowrap"
                     >
-                      <Link href={`/admin/dicoms/${id}`} className="text-sm">
+                      <span className="text-sm">
                         {patient_id}
-                      </Link>
+                      </span>
                     </td>
                     <td className="truncate whitespace-nowrap py-5 px-2">
                       {institution}

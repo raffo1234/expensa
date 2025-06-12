@@ -71,18 +71,13 @@ export default function Report({
 
       if (dicom.state !== DicomStateEnum.COMPLETED && !dicom.template) {
         const storedTemplateId = localStorage.getItem("dicomActiveTemplateId");
+
         if (!storedTemplateId) {
           const fuse = new Fuse(templates, {
-            includeScore: true,
-            useExtendedSearch: true,
             keys: ["name", "description"],
           });
-          const institutionName = dicom.institution
-            .split(" ")
-            .map((item) => `${item}$`)
-            .join(" | ");
 
-          const result = fuse.search(institutionName);
+          const result = fuse.search(dicom.institution);
 
           if (result.length > 0) {
             updateDicom(dicomId, { template_id: result[0].item.id });

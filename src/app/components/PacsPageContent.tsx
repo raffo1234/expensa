@@ -4,7 +4,6 @@ import { format, formatISO } from "date-fns";
 import DateRangeButtonCalendar from "./DateRangeButtonCalendar";
 import extractAgeWidthUnit from "@/lib/extractAgeWithUnit";
 import useCheckPermission from "@/hooks/useCheckPermission";
-import formatDateYYYYMMDD from "@/lib/formatDateYYYYMMDD";
 import { Permissions } from "@/types/propertyState";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import useCheckboxSelection from "@/hooks/useCheckboxSelection";
@@ -16,6 +15,7 @@ import getAgeFromYYYYMMDD from "@/lib/getAgeFromYYYYMMDD";
 import { DicomType } from "@/types/dicomType";
 import upsertStudy from "@/lib/upsertStudy";
 import { toZonedTime } from "date-fns-tz";
+import formatDate from "@/lib/formatDate";
 
 interface TableRowType {
   id: string;
@@ -468,7 +468,7 @@ export default function PacsPageContent({
                       {study_description}
                     </td>
                     <td className="whitespace-nowrap py-5 px-2">
-                      {formatDateYYYYMMDD(study_date)}
+                      {formatDate(study_date)}
                     </td>
                     <td className="py-5 px-2 text-center">{modality}</td>
                     <td className="py-2 px-2">

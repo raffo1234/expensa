@@ -1,4 +1,4 @@
-import PacsPageContent from "@/components/PacsSettingsPageContent";
+import PacsSettingsPageContent from "@/components/PacsSettingsPageContent";
 import { auth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 
@@ -8,9 +8,11 @@ export default async function Page() {
 
   const { data } = await supabase
     .from("user")
-    .select("role_id")
+    .select("id, role_id")
     .eq("id", user?.id)
     .single();
 
-  return data?.role_id ? <PacsPageContent userRoleId={data?.role_id} /> : null;
+  return data?.role_id && data?.id ? (
+    <PacsSettingsPageContent userId={data?.id} userRoleId={data?.role_id} />
+  ) : null;
 }

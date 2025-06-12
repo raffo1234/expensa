@@ -11,6 +11,7 @@ import { adminPacsKey } from "@/constants";
 type Inputs = {
   ip: string;
   port: string;
+  institution_name: string;
   aet_server: string;
   aet_client: string;
   user_id: string;
@@ -40,6 +41,18 @@ export default function AddPac({ userId }: { userId: string }) {
           className="w-full items-center text-left hover:bg-gray-50 rounded-bl-xl rounded-br-xl transition-all duration-300 px-7 pt-4 pb-6 border-t border-gray-200"
         >
           <fieldset className="flex flex-col gap-4">
+            <div className="flex-grow-1">
+              <label htmlFor="institution_name" className="block mb-2 text-sm">
+                Institution Name
+              </label>
+              <input
+                type="text"
+                id="institution_name"
+                {...register("institution_name")}
+                required
+                className="bg-white w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
+              />
+            </div>
             <div className="flex gap-3.5 items-center">
               <div className="flex-grow-1">
                 <label htmlFor="ip" className="block mb-2 text-sm">

@@ -5,7 +5,6 @@ import getAgeFromYYYYMMDD from "./getAgeFromYYYYMMDD";
 
 export default async function upsertStudy(
   user_id: string,
-  aet_server: string,
   dataset: Partial<DicomType>
 ) {
   const matchFields = {
@@ -31,7 +30,7 @@ export default async function upsertStudy(
     id: uuidv4(),
     user_id,
     study_date: dataset.study_date,
-    institution: aet_server,
+    institution: dataset.institution,
     modality: dataset.modality,
     patient_age: dataset.birthday
       ? (getAgeFromYYYYMMDD(dataset.birthday) as string)

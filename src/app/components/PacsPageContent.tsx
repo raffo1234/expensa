@@ -86,6 +86,7 @@ export default function PacsPageContent({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          institution_name: activePac.institution_name,
           ip: activePac.ip,
           port: activePac.port,
           aet_server: activePac.aet_server,
@@ -143,7 +144,6 @@ export default function PacsPageContent({
 
       const result = await upsertStudy(
         userId,
-        activePac.aet_server,
         metadata[0].dicom
       );
 

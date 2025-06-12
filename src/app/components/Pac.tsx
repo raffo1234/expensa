@@ -14,7 +14,15 @@ export default function Pac({ pac }: { pac: PacType }) {
   const [isVerifying, setIsVerifying] = useState(false);
   const [data, setData] = useState<false | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { id, ip, aet_server, is_verified, aet_client, port } = pac;
+  const {
+    id,
+    ip,
+    aet_server,
+    is_verified,
+    institution_name,
+    aet_client,
+    port,
+  } = pac;
 
   const updatePac = async (id: string, newData: Partial<PacType>) => {
     try {
@@ -82,50 +90,67 @@ export default function Pac({ pac }: { pac: PacType }) {
         key={id}
         className="relative border-t first:border-t-0 border-gray-200 flex gap-3.5 first:rounded-t-xl items-center justify-between text-left transition-colors duration-300"
       >
-        <button
-          type="button"
-          onClick={() => setIsOpen((prev) => !prev)}
-          className={`${isOpen ? "bg-gray-50" : ""} flex-col cursor-pointer hover:bg-gray-50 first:rounded-t-xl w-full items-start gap-1 flex md:flex-row sm:gap-3.5 md:items-center py-4 pl-6 pr-20`}
+        <div
+          className={`${isOpen ? "bg-gray-50" : ""} flex-col cursor-pointer hover:bg-gray-50 first:rounded-t-xl w-full items-start gap-1 flex md:flex-row sm:gap-3.5 md:items-center pl-6 pr-20`}
         >
-          <Icon
-            icon="solar:alt-arrow-down-linear"
-            fontSize={20}
-            className={`${isOpen ? "rotate-180" : ""} transition-transform duration-500 flex-shrink-0`}
+          <button
+            type="button"
+            onClick={() => setIsOpen((prev) => !prev)}
+            className="cursor-pointer py-6"
+          >
+            <Icon
+              icon="solar:alt-arrow-down-linear"
+              fontSize={20}
+              className={`${isOpen ? "rotate-180" : ""} transition-transform duration-500 flex-shrink-0`}
+            />
+          </button>
+          <input
+            onChange={(event) =>
+              debouncedUpdate(id, { institution_name: event.target.value })
+            }
+            defaultValue={institution_name}
+            className=" w-40 p-2 border border-transparent rounded-xl focus:outline-1 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
+            name="institution_name"
           />
-          <span>{aet_server}</span>
-          {is_verified ? (
-            <svg
-              className="text-green-400"
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <g fill="none" stroke="currentColor" strokeWidth="1.5">
-                <circle cx="12" cy="12" r="10" />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="m8.5 12.5l2 2l5-5"
-                />
-              </g>
-            </svg>
-          ) : null}
-          {error ? (
-            <svg
-              className="text-rose-400"
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <g fill="none" stroke="currentColor" strokeWidth="1.5">
-                <circle cx="12" cy="12" r="10" />
-                <path strokeLinecap="round" d="m14.5 9.5l-5 5m0-5l5 5" />
-              </g>
-            </svg>
-          ) : null}
-        </button>
+          <button
+            type="button"
+            onClick={() => setIsOpen((prev) => !prev)}
+            className="cursor-pointer flex-1  py-6"
+          >
+            {is_verified ? (
+              <svg
+                className="text-green-400"
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+              >
+                <g fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <circle cx="12" cy="12" r="10" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="m8.5 12.5l2 2l5-5"
+                  />
+                </g>
+              </svg>
+            ) : null}
+            {error ? (
+              <svg
+                className="text-rose-400"
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+              >
+                <g fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <circle cx="12" cy="12" r="10" />
+                  <path strokeLinecap="round" d="m14.5 9.5l-5 5m0-5l5 5" />
+                </g>
+              </svg>
+            ) : null}
+          </button>
+        </div>
         <DeletePac pacId={id} />
       </div>
       {isOpen ? (

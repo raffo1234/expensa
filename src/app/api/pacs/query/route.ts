@@ -8,6 +8,7 @@ export const runtime = "nodejs";
 export async function POST(req: Request): Promise<Response> {
   const body = await req.json();
   const {
+    institution_name,
     ip,
     port,
     aet_server,
@@ -17,7 +18,7 @@ export async function POST(req: Request): Promise<Response> {
     modality,
   } = body;
 
-  if (!ip || !port || !aet_server || !startDate || !endDate) {
+  if (!institution_name || !ip || !port || !startDate || !endDate) {
     return Response.json(
       { ok: false, error: "Missing required fields" },
       { status: 400 }
@@ -47,7 +48,7 @@ export async function POST(req: Request): Promise<Response> {
         results.push({
           id: uuidv4(),
           study_date: dataset.StudyDate,
-          institution: aet_server,
+          institution: institution_name,
           modality: dataset.ModalitiesInStudy,
           study_description: dataset.StudyDescription,
           patient_name: dataset.PatientName.Alphabetic,

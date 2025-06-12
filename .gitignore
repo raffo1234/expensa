@@ -53,7 +53,9 @@ next-env.d.ts
 # Ignore Supabase local state files
 .supabase/config.json
 .supabase/functions/_internal/*
-.supabase/temp/
+.supabase/.temp/
+.supabase/.temp/*
+supabase/.temp/*
 
 # Ignore Docker volumes (optional)
 volumes/
@@ -70,3 +72,5 @@ logs
 # OS / Editor
 .vscode/
 .idea/
+
+

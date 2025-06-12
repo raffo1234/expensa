@@ -8,10 +8,11 @@ import useSWR from "swr";
 import AddPac from "./AddPac";
 import Pac from "./Pac";
 
-const pacsFetcher = async () => {
+const pacsFetcher = async (userId) => {
   const { data, error } = await supabase
     .from("pac")
     .select("*")
+    .eq("user_id", userId)
     .order("created_at", { ascending: true });
   if (error) throw error;
   return data;
@@ -19,13 +20,19 @@ const pacsFetcher = async () => {
 
 export default function PacsSettingsPageContent({
   userRoleId,
+  userId,
 }: {
   userRoleId: string;
+  userId: string;
 }) {
   const { hasPermission: canManagePacs, isLoading: isLoadingPermission } =
     useCheckPermission(userRoleId, Permissions.MANAGE_PACS);
 
-  const { data: pacs, error, isLoading } = useSWR("admin-pacs", pacsFetcher);
+  const {
+    data: pacs,
+    error,
+    isLoading,
+  } = useSWR("admin-pacs", () => pacsFetcher(userId));
 
   if (error) return null;
   if (isLoading || isLoadingPermission) return "loading ...";
@@ -35,7 +42,7 @@ export default function PacsSettingsPageContent({
     <>
       <div className="border border-gray-200 rounded-xl bg-white">
         {pacs?.map((pac) => <Pac key={pac.id} pac={pac} />)}
-        <AddPac />
+        <AddPac userId={userId} />
       </div>
       {/* <PacsQuery userRoleId={userRoleId} /> */}
     </>

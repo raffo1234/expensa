@@ -169,9 +169,6 @@ export default function PacsPageContent({
     const end = zonedEnd ? formatISO(zonedEnd) : null;
     const formattedEnd = end ? format(new Date(end), "yyyy-MM-dd") : null;
 
-    console.log({ formattedStart });
-    console.log({ formattedEnd });
-
     await fetchStudies(activePac, formattedStart, formattedEnd);
   };
 

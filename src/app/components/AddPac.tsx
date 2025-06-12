@@ -13,15 +13,18 @@ type Inputs = {
   port: string;
   aet_server: string;
   aet_client: string;
+  user_id: string;
 };
 
-export default function AddPac() {
+export default function AddPac({ userId }: { userId: string }) {
   const [isLoading, setIsLoading] = useState(false);
   const [displayForm, setDisplayForm] = useState(false);
   const { reset, register, handleSubmit } = useForm<Inputs>({ mode: "onBlur" });
 
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
     setIsLoading(true);
+    data.user_id = userId;
+
     await supabase.from("pac").insert([data]);
     await mutate(adminPacsKey);
     reset();

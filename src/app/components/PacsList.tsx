@@ -8,10 +8,11 @@ import useSWR from "swr";
 import Link from "next/link";
 import { Icon } from "@iconify/react/dist/iconify.js";
 
-const pacsFetcher = async () => {
+const pacsFetcher = async (userId) => {
   const { data, error } = await supabase
     .from("pac")
     .select("*")
+    .eq("user_id", userId)
     .eq("is_verified", true);
 
   if (error) throw error;
@@ -36,7 +37,7 @@ export default function PacsList({
     data: pacs,
     error: errorPacs,
     isLoading: isLoadingPacs,
-  } = useSWR(`admin-permissions-${userId}`, pacsFetcher);
+  } = useSWR(`admin-permissions-${userId}`, () => pacsFetcher(userId));
 
   const handlePacActive = (newPac: PacType) => {
     setActivePac(newPac);

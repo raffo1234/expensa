@@ -183,8 +183,24 @@ export default function PacsPageContent({
 
   const modalityKeys = Object.keys(Modalities);
 
-  if (isLoadingPermission) return null;
   if (!canManagePacs) return null;
+
+  if (isLoadingPermission)
+    return (
+      <div className="flex flex-col gap-3">
+        <div className="flex gap-3">
+          <div className="h-12 w-24 bg-gray-100 rounded-xl"></div>
+          <div className="h-12 w-24 bg-gray-100 rounded-xl"></div>
+        </div>
+        <div className="flex gap-3">
+          <div className="h-8 w-24 bg-gray-100 rounded-xl"></div>
+          <div className="h-8 w-24 bg-gray-100 rounded-xl"></div>
+        </div>
+        <div className="h-12 w-24 bg-gray-100 rounded-xl"></div>
+        <div className="w-10 h-12 rounded-xl animate-pulse bg-gray-100"></div>
+        <div className="w-full h-12 rounded-xl animate-pulse bg-gray-100"></div>
+      </div>
+    );
 
   return (
     <>

@@ -2,7 +2,6 @@
 
 import useCheckPermission from "@/hooks/useCheckPermission";
 import { Permissions } from "@/types/propertyState";
-// import PacsQuery from "./PacsQuery";
 import { supabase } from "@/lib/supabase";
 import useSWR from "swr";
 import AddPac from "./AddPac";
@@ -35,7 +34,15 @@ export default function PacsSettingsPageContent({
   } = useSWR("admin-pacs", () => pacsFetcher(userId));
 
   if (error) return null;
-  if (isLoading || isLoadingPermission) return "loading ...";
+  if (isLoading || isLoadingPermission)
+    return (
+      <div className="w-full flex flex-col gap-3">
+        <div className="w-full h-12 rounded-xl animate-pulse bg-white"></div>
+        <div className="w-full h-12 rounded-xl animate-pulse bg-white"></div>
+        <div className="w-full h-12 rounded-xl animate-pulse bg-white"></div>
+        <div className="w-full h-12 rounded-xl animate-pulse bg-white"></div>
+      </div>
+    );
   if (!canManagePacs) return null;
 
   return (
@@ -44,7 +51,6 @@ export default function PacsSettingsPageContent({
         {pacs?.map((pac) => <Pac key={pac.id} pac={pac} />)}
         <AddPac userId={userId} />
       </div>
-      {/* <PacsQuery userRoleId={userRoleId} /> */}
     </>
   );
 }

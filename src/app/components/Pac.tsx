@@ -129,7 +129,7 @@ export default function Pac({ pac }: { pac: PacType }) {
         <DeletePac pacId={id} />
       </div>
       {isOpen ? (
-        <div className="px-12 py-10 border-t border-gray-200">
+        <div className="px-6 py-10 border-t border-gray-200">
           <div className="flex-col items-start gap-1 flex md:flex-row sm:gap-3.5 md:items-center">
             <div className="flex gap-3.5 items-center">
               <button
@@ -140,13 +140,36 @@ export default function Pac({ pac }: { pac: PacType }) {
                 className={`${isVerifying ? "pointer-events-none border-transparent" : "transition-colors duration-300 bg-gray-50 border-gray-200 cursor-pointer rounded-xl"} border p-2 text-cyan-500`}
               >
                 {isVerifying ? (
-                  <Icon
-                    icon="solar:record-broken"
-                    className="animate-spin"
-                    fontSize={24}
-                  />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      fill="none"
+                      stroke="currentColor"
+                      strokeLinecap="round"
+                      strokeWidth="1.5"
+                      d="M7 3.338A9.95 9.95 0 0 1 12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12c0-1.821.487-3.53 1.338-5"
+                    />
+                  </svg>
                 ) : (
-                  <Icon icon="solar:shield-check-linear" fontSize={24} />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                  >
+                    <g fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M3 10.417c0-3.198 0-4.797.378-5.335c.377-.537 1.88-1.052 4.887-2.081l.573-.196C10.405 2.268 11.188 2 12 2s1.595.268 3.162.805l.573.196c3.007 1.029 4.51 1.544 4.887 2.081C21 5.62 21 7.22 21 10.417v1.574c0 5.638-4.239 8.375-6.899 9.536C13.38 21.842 13.02 22 12 22s-1.38-.158-2.101-.473C7.239 20.365 3 17.63 3 11.991z" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="m9.5 12.4l1.429 1.6l3.571-4"
+                      />
+                    </g>
+                  </svg>
                 )}
               </button>
               <input

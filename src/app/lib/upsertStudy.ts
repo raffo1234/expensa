@@ -1,6 +1,7 @@
 import { DicomType } from "@/types/dicomType";
 import { supabase } from "./supabase";
 import { v4 as uuidv4 } from "uuid";
+import getAgeFromYYYYMMDD from "./getAgeFromYYYYMMDD";
 
 export default async function upsertStudy(
   user_id: string,
@@ -32,6 +33,9 @@ export default async function upsertStudy(
     study_date: dataset.study_date,
     institution: aet_server,
     modality: dataset.modality,
+    patient_age: dataset.birthday
+      ? (getAgeFromYYYYMMDD(dataset.birthday) as string)
+      : undefined,
     study_description: dataset.study_description,
     patient_name: dataset.patient_name,
     patient_id: dataset.patient_id,

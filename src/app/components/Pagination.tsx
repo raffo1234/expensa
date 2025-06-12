@@ -201,6 +201,7 @@ export default function Pagination({
   canViewCompleted: boolean;
 }) {
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const pageSizeRef = useRef<HTMLInputElement>(null);
   const {
     selectedIds,
     isItemSelected,
@@ -405,8 +406,25 @@ export default function Pagination({
 
     setPage(1);
 
+    setPageSize(20);
+    if (pageSizeRef.current) {
+      pageSizeRef.current.value = "20";
+    }
+    const savedPageSize = localStorage.getItem("pageSize");
+    if (savedPageSize) localStorage.removeItem("pageSize");
+
     handleStudyDateRangeChange(null);
     handleReceiptDateRangeChange(null);
+
+    handleSelectAllClick([]);
+
+    setFilteredByState(null);
+    localStorage.removeItem("dicomStateFilter");
+
+    setSortColumn(null);
+    localStorage.removeItem("sortColumn");
+    setSortDirection(null);
+    localStorage.removeItem("sortDirection");
 
     toast.success("Filters was cleared Successfully!");
   };
@@ -473,7 +491,7 @@ export default function Pagination({
             />
           </div>
           <button
-            title="Clear Dates and Location"
+            title="Clear All Filters"
             onClick={clearLocalStorage}
             className="cursor-pointer text-cyan-400 hover:text-cyan-600 transition-colors duration-300"
           >
@@ -518,6 +536,7 @@ export default function Pagination({
             <span className="text-base font-semibold">{result?.total}</span>
           </span>
           <input
+            ref={pageSizeRef}
             onChange={(event) => debouncedPerPage(event.target.value)}
             type="text"
             name="pageSize"

@@ -47,11 +47,14 @@ export default function PacsPageContent({
   userRoleId: string;
   userId: string | undefined;
 }) {
-  const [studyDateRange, setStudyDateRange] = useState<DateRangeType | null>(
-    null
-  );
+  const now = new Date();
+
+  const [studyDateRange, setStudyDateRange] = useState<DateRangeType | null>({
+    startDate: now,
+    endDate: now,
+    key: "selection",
+  });
   const [activePac, setActivePac] = useState<PacType | null>(null);
-  // const [search, setSearch] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [studies, setStudies] = useState<Study[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -140,7 +143,7 @@ export default function PacsPageContent({
         activePac.aet_server,
         metadata[0].dicom
       );
-      console.log({ result });
+
       updateItemState(
         item,
         result.id,
@@ -150,6 +153,7 @@ export default function PacsPageContent({
   };
 
   const handleStudyDateRangeChange = (newRange: DateRangeType | null) => {
+    console.log(newRange);
     setStudyDateRange(newRange);
   };
 
@@ -174,25 +178,21 @@ export default function PacsPageContent({
   if (isLoadingPermission) return null;
   if (!canManagePacs) return null;
 
-  console.log({ studyDateRange: studyDateRange?.startDate });
   return (
     <>
-      {/* {studyDateRange?.startDate}
-      {studyDateRange?.endDate} */}
       <PacsList
         setActivePac={setActivePac}
         activePac={activePac}
         userId={userId}
         userRoleId={userRoleId}
       />
-
       <DateRangeButtonCalendar
         dateRange={studyDateRange}
         handleDateRangeChange={handleStudyDateRangeChange}
         label="Study Date"
       />
       <button
-        disabled={!activePac || loading}
+        disabled={!activePac || !studyDateRange || loading}
         onClick={() => handleFetch(activePac)}
         title="Fetch Pacs"
         className="my-6 disabled:opacity-70 border border-transparent disabled:pointer-events-none cursor-pointer px-6 w-fit text-white justify-center py-2 rounded-full bg-black flex gap-3 items-center"

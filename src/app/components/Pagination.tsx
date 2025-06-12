@@ -929,8 +929,12 @@ export default function Pagination({
                       <td className="whitespace-nowrap py-5 text-center">
                         {startItemNumber + index}
                       </td>
-                      <td className="py-5 px-2">
-                        <Link href={`/admin/dicoms/${id}`} className="text-sm">
+                      <td className="py-5 px-2 truncate whitespace-nowrap ">
+                        <Link
+                          title={patient_id}
+                          href={`/admin/dicoms/${id}`}
+                          className="text-sm"
+                        >
                           {patient_id}
                         </Link>
                       </td>

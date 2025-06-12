@@ -180,12 +180,14 @@ export default function PacsPageContent({
 
   return (
     <>
-      <PacsList
-        setActivePac={setActivePac}
-        activePac={activePac}
-        userId={userId}
-        userRoleId={userRoleId}
-      />
+      {userId ? (
+        <PacsList
+          setActivePac={setActivePac}
+          activePac={activePac}
+          userId={userId}
+          userRoleId={userRoleId}
+        />
+      ) : null}
       <DateRangeButtonCalendar
         dateRange={studyDateRange}
         handleDateRangeChange={handleStudyDateRangeChange}
@@ -195,7 +197,7 @@ export default function PacsPageContent({
         disabled={!activePac || !studyDateRange || loading}
         onClick={() => handleFetch(activePac)}
         title="Fetch Pacs"
-        className="my-6 disabled:opacity-70 border border-transparent disabled:pointer-events-none cursor-pointer px-6 w-fit text-white justify-center py-2 rounded-full bg-black flex gap-3 items-center"
+        className="my-6 disabled:opacity-50 border border-transparent disabled:pointer-events-none cursor-pointer px-6 w-fit text-white justify-center py-2 rounded-full bg-black flex gap-3 items-center"
       >
         <span>Fetch</span>
         <span className="block w-6">

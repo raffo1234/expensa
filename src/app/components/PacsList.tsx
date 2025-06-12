@@ -8,7 +8,7 @@ import useSWR from "swr";
 import Link from "next/link";
 import { Icon } from "@iconify/react/dist/iconify.js";
 
-const pacsFetcher = async (userId) => {
+const pacsFetcher = async (userId: string) => {
   const { data, error } = await supabase
     .from("pac")
     .select("*")
@@ -28,7 +28,7 @@ export default function PacsList({
   setActivePac: React.Dispatch<React.SetStateAction<PacType | null>>;
   activePac: PacType | null;
   userRoleId: string;
-  userId: string | undefined;
+  userId: string;
 }) {
   const { hasPermission: canManagePacs, isLoading: isLoading } =
     useCheckPermission(userRoleId, Permissions.MANAGE_PACS);

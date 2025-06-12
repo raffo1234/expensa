@@ -8,7 +8,7 @@ import useSWR from "swr";
 import AddPac from "./AddPac";
 import Pac from "./Pac";
 
-const pacsFetcher = async (userId) => {
+const pacsFetcher = async (userId: string) => {
   const { data, error } = await supabase
     .from("pac")
     .select("*")

@@ -205,9 +205,9 @@ export default function PacsPageContent({
         <div className="relative">
           <select
             onChange={handleModality}
-            className="w-30 truncate text-sm px-4 py-2 rounded-full border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500 bg-white"
+            className="w-36 truncate text-sm px-4 py-2 rounded-full border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500 bg-white"
           >
-            <option value="">Modality</option>
+            <option value="">All Modalities</option>
             {modalityKeys.map((modality, index) => (
               <option title={modality} key={index}>
                 {modality}

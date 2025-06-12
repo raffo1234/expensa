@@ -16,14 +16,14 @@ export default function CompleteDicomButton({
 
   if (isLoadingCanComplete) return null;
 
-  return dicomState === DicomStateEnum.DRAFT && canComplete ? (
+  return dicomState !== DicomStateEnum.COMPLETED && canComplete ? (
     <button
       onClick={onClick}
-      title={`Save as ${DicomStateEnum.COMPLETED}`}
+      title={DicomStateEnum.COMPLETED}
       type="button"
-      className="px-6 py-2 font-semibold text-cyan-600 border-cyan-200 cursor-pointer border bg-cyan-50 rounded-xl"
+      className="px-6 py-2 font-semibold text-cyan-600 border-cyan-200 cursor-pointer border bg-cyan-50 rounded-full"
     >
-      Save as {DicomStateEnum.COMPLETED}
+      {DicomStateEnum.COMPLETED}
     </button>
   ) : null;
 }

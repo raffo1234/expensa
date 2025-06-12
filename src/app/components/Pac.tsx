@@ -155,8 +155,8 @@ export default function Pac({ pac }: { pac: PacType }) {
       </div>
       {isOpen ? (
         <div className="px-6 py-10 border-t border-gray-200">
-          <div className="flex-col items-start gap-1 flex md:flex-row sm:gap-3.5 md:items-center">
-            <div className="flex gap-3.5 items-center">
+          <div className="flex-col items-start gap-2 flex md:flex-row md:items-center">
+            <div className="flex gap-3.5 items-center mb-2 sm:mb-0">
               <button
                 disabled={isVerifying}
                 type="button"
@@ -203,17 +203,17 @@ export default function Pac({ pac }: { pac: PacType }) {
                 }
                 placeholder="IP"
                 defaultValue={ip}
-                className="w-40 p-2 border border-transparent rounded-xl focus:outline-1 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
-              />
-              <input
-                placeholder="Port"
-                defaultValue={port}
-                className="w-16 text-sm text-gray-500 p-2 border border-transparent rounded-xl focus:outline-1 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
-                onChange={(event) =>
-                  debouncedUpdate(id, { port: event.target.value })
-                }
+                className="max-w-40 w-full p-2 border border-transparent rounded-xl focus:outline-1 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
               />
             </div>
+            <input
+              placeholder="Port"
+              defaultValue={port}
+              className="w-16 text-sm text-gray-500 p-2 border border-transparent rounded-xl focus:outline-1 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
+              onChange={(event) =>
+                debouncedUpdate(id, { port: event.target.value })
+              }
+            />
             <input
               placeholder="AET Server"
               defaultValue={aet_server}

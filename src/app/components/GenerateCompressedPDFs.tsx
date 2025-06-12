@@ -9,6 +9,7 @@ import ContentPDFDocument from "@/components/ContentPDFDocument";
 import { supabase } from "@/lib/supabase";
 import { PartialDicomWithTemplate } from "@/types/dicomType";
 import { useState } from "react";
+import { sanitize } from "@/lib/sanitize";
 
 const fetchSelectedDicoms = async (selectedIds: Set<string>) => {
   const idsToFetch = Array.from(selectedIds);
@@ -43,8 +44,13 @@ export default function GenerateCompressedPDFs({
       try {
         const pdfBlobs = [];
         for (const dicom of selectedDicomsData) {
-          const pdfUrl = await generatePdfUrl(dicom);
-          pdfBlobs.push(pdfUrl);
+          try {
+            const pdfUrl = await generatePdfUrl(dicom);
+            pdfBlobs.push(pdfUrl);
+          } catch {
+            console.warn(`Failed PDF for ${dicom.id}`);
+            toast.error(`Failed PDF for ${dicom.id}`);
+          }
         }
         await createAndDownloadZip(selectedDicomsData, pdfBlobs);
       } catch (error) {
@@ -92,10 +98,10 @@ export default function GenerateCompressedPDFs({
     const zip = new JSZip();
 
     selectedDicoms.forEach((dicom, index) => {
-      zip.file(
-        `${dicom.patient_name}-${dicom.study_description}-${dicom.study_date}.pdf`,
-        pdfBlobs[index]
+      const filename = sanitize(
+        `${dicom.patient_name}-${dicom.study_description}-${dicom.study_date}.pdf`
       );
+      zip.file(filename, pdfBlobs[index]);
     });
 
     zip.generateAsync({ type: "blob" }).then((content) => {

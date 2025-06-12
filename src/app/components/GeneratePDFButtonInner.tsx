@@ -4,6 +4,7 @@ import { DicomType } from "@/types/dicomType";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 import toast from "react-hot-toast";
+import { sanitize } from "@/lib/sanitize";
 
 const IconLoading = () => {
   return (
@@ -85,13 +86,13 @@ export default function GeneratePDFButtonInner({
     }
   }, [instance.loading]);
 
+  const filename = sanitize(
+    `${dicom.patient_name}-${dicom.study_description}-${dicom.study_date}.pdf`
+  );
+
   return (
     <Link
-      download={
-        isDownloadable
-          ? `${dicom.patient_name}-${dicom.study_description}-${dicom.study_date}.pdf`
-          : null
-      }
+      download={isDownloadable ? filename : null}
       ref={downloadLinkRef}
       href={instance.url ? instance.url : ""}
       title="Download PDF"

@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabase";
 import { PartialDicomWithTemplate } from "@/types/dicomType";
 import createDocxDocument from "@/lib/createDocxDocument";
 import { DicomType } from "@/types/dicomType";
+import { sanitize } from "@/lib/sanitize";
 
 const fetchSelectedDicoms = async (selectedIds: Set<string>) => {
   const idsToFetch = Array.from(selectedIds);
@@ -64,10 +65,10 @@ export default function GenerateCompressedDOCXs({
     const zip = new JSZip();
 
     selectedDicoms.forEach((dicom, index) => {
-      zip.file(
-        `${dicom.patient_name}-${dicom.study_description}-${dicom.study_date}.docx`,
-        docxBlobs[index]
+      const filename = sanitize(
+        `${dicom.patient_name}-${dicom.study_description}-${dicom.study_date}.docx`
       );
+      zip.file(filename, docxBlobs[index]);
     });
 
     zip.generateAsync({ type: "blob" }).then((content) => {

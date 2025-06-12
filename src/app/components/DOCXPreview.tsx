@@ -6,6 +6,7 @@ import { DicomType } from "@/types/dicomType";
 import createDocxDocument from "@/lib/createDocxDocument";
 import { saveAs } from "file-saver";
 import toast from "react-hot-toast";
+import { sanitize } from "@/lib/sanitize";
 
 const IconLoading = () => {
   return (
@@ -34,8 +35,9 @@ export default function DOCXPreview({ dicom }: { dicom: DicomType }) {
     try {
       const doc = await createDocxDocument(dicom);
       const blob = await Packer.toBlob(doc);
-
-      const filename = `${dicom.patient_name}-${dicom.study_description}-${dicom.study_date}.docx`;
+      const filename = sanitize(
+        `${dicom.patient_name}-${dicom.study_description}-${dicom.study_date}.docx`
+      );
       setIsLoading(false);
       toast.success("Download completed successfully!");
       saveAs(blob, filename);

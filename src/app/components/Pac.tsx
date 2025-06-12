@@ -91,7 +91,7 @@ export default function Pac({ pac }: { pac: PacType }) {
         className="relative border-t first:border-t-0 border-gray-200 flex gap-3.5 first:rounded-t-xl items-center justify-between text-left transition-colors duration-300"
       >
         <div
-          className={`${isOpen ? "bg-gray-50" : ""} flex-col cursor-pointer hover:bg-gray-50 first:rounded-t-xl w-full items-start gap-1 flex md:flex-row sm:gap-3.5 md:items-center pl-6 pr-20`}
+          className={`${isOpen ? "bg-gray-50" : ""} cursor-pointer hover:bg-gray-50 first:rounded-t-xl w-full gap-1 flex md:flex-row sm:gap-3.5 self-center pl-6 pr-18`}
         >
           <button
             type="button"
@@ -109,7 +109,7 @@ export default function Pac({ pac }: { pac: PacType }) {
               debouncedUpdate(id, { institution_name: event.target.value })
             }
             defaultValue={institution_name}
-            className=" w-40 p-2 border border-transparent rounded-xl focus:outline-1 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
+            className="focus:bg-white w-full max-w-40 p-2 border border-transparent rounded-xl focus:outline-1 self-center focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
             name="institution_name"
           />
           <button

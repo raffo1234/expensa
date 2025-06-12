@@ -50,7 +50,6 @@ export default function PacsPageContent({
   const [studyDateRange, setStudyDateRange] = useState<DateRangeType | null>(
     null
   );
-  const [isDisplayedFetchFilters, setIsDisplayedFetchFilters] = useState(false);
   const [activePac, setActivePac] = useState<PacType | null>(null);
   // const [search, setSearch] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -186,64 +185,49 @@ export default function PacsPageContent({
         userId={userId}
         userRoleId={userRoleId}
       />
-      <div className="flex mb-3 w-full justify-between items-center gap-2">
-        <div className="flex max-w-xl items-center gap-2 mx-auto sm:mx-0">
-          <button
-            disabled={!activePac || loading}
-            onClick={() => handleFetch(activePac)}
-            title="Fetch Pacs"
-            className="disabled:opacity-70 border border-transparent disabled:pointer-events-none cursor-pointer px-6 w-fit mx-auto text-white justify-center py-2 rounded-full bg-black flex gap-3 items-center"
-          >
-            <span>Fetch</span>
-            <span className="block w-6">
-              {loading ? (
-                <Icon
-                  icon="solar:record-broken"
-                  className="animate-spin"
-                  fontSize={20}
+
+      <DateRangeButtonCalendar
+        dateRange={studyDateRange}
+        handleDateRangeChange={handleStudyDateRangeChange}
+        label="Study Date"
+      />
+      <button
+        disabled={!activePac || loading}
+        onClick={() => handleFetch(activePac)}
+        title="Fetch Pacs"
+        className="my-6 disabled:opacity-70 border border-transparent disabled:pointer-events-none cursor-pointer px-6 w-fit text-white justify-center py-2 rounded-full bg-black flex gap-3 items-center"
+      >
+        <span>Fetch</span>
+        <span className="block w-6">
+          {loading ? (
+            <Icon
+              icon="solar:record-broken"
+              className="animate-spin"
+              fontSize={20}
+            />
+          ) : (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+            >
+              <g
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeWidth="1.5"
+              >
+                <path d="M17 9.002c2.175.012 3.353.109 4.121.877C22 10.758 22 12.172 22 15v1c0 2.829 0 4.243-.879 5.122C20.243 22 18.828 22 16 22H8c-2.828 0-4.243 0-5.121-.878C2 20.242 2 18.829 2 16v-1c0-2.828 0-4.242.879-5.121c.768-.768 1.946-.865 4.121-.877" />
+                <path
+                  strokeLinejoin="round"
+                  d="M12 2v13m0 0l-3-3.5m3 3.5l3-3.5"
                 />
-              ) : (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                >
-                  <g
-                    fill="none"
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeWidth="1.5"
-                  >
-                    <path d="M17 9.002c2.175.012 3.353.109 4.121.877C22 10.758 22 12.172 22 15v1c0 2.829 0 4.243-.879 5.122C20.243 22 18.828 22 16 22H8c-2.828 0-4.243 0-5.121-.878C2 20.242 2 18.829 2 16v-1c0-2.828 0-4.242.879-5.121c.768-.768 1.946-.865 4.121-.877" />
-                    <path
-                      strokeLinejoin="round"
-                      d="M12 2v13m0 0l-3-3.5m3 3.5l3-3.5"
-                    />
-                  </g>
-                </svg>
-              )}
-            </span>
-          </button>
-          <button
-            onClick={() => setIsDisplayedFetchFilters((prev) => !prev)}
-            title="Filter Pacs"
-            className={`${isDisplayedFetchFilters ? "border-cyan-200 text-cyan-500" : "hover:border-cyan-200 hover:text-cyan-500 border-gray-200"} p-2 border rounded-lg cursor-pointer transition-colors duration-300`}
-            type="button"
-          >
-            <Icon icon="solar:filter-outline" fontSize={16} />
-          </button>
-        </div>
-      </div>
-      {isDisplayedFetchFilters ? (
-        <div className="flex gap-3.5 items-center mb-6">
-          <DateRangeButtonCalendar
-            dateRange={studyDateRange}
-            handleDateRangeChange={handleStudyDateRangeChange}
-            label="Study Date"
-          />
-        </div>
-      ) : null}
+              </g>
+            </svg>
+          )}
+        </span>
+      </button>
       <div className="w-fit pl-2 flex item-center mb-4 gap-2">
         {/* <div className="relative w-9 h-9">
           <input

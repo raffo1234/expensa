@@ -42,18 +42,16 @@ export default function GlobalModal() {
           isModalOpen
             ? "translate-y-0 opacity-100"
             : "-translate-y-6 opacity-80"
-        } shadow-lg bg-slate-50 transition-all duration-300 md:max-w-screen-md mx-auto w-full px-8 min-h-lvh md:min-h-0 md:px-10 py-12 md:rounded-2xl`}
+        } shadow-lg bg-slate-50 transition-all duration-300 md:max-w-screen-md mx-auto w-full px-8 min-h-lvh md:min-h-0 md:px-10 pt-18 pb-12 md:rounded-2xl`}
       >
         {modalContent}
-        {false ? (
-          <button
-            type="button"
-            className="absolute right-2 top-2 rounded-full p-4 hover:text-gray-600"
-            onClick={onClose}
-          >
-            <Icon icon="solar:close-circle-broken" fontSize="42" />
-          </button>
-        ) : null}
+        <button
+          type="button"
+          className="cursor-pointer hover:text-cyan-400 transition-colors duration-300 absolute right-1 top-1 rounded-full p-4"
+          onClick={onClose}
+        >
+          <Icon icon="solar:close-circle-outline" fontSize="42" />
+        </button>
       </div>
     </div>
   );

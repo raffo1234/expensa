@@ -55,6 +55,7 @@ export default function PacsPageContent({
     endDate: now,
     key: "selection",
   });
+  const [isInserting, setIsInserting] = useState(false);
   const [modality, setModality] = useState<string>("");
   const [activePac, setActivePac] = useState<PacType | null>(null);
   const [loading, setLoading] = useState(false);
@@ -67,7 +68,7 @@ export default function PacsPageContent({
     selectedIds,
     isItemSelected,
     toggleItemSelected,
-    // handleSelectAllClick,
+    handleSelectAllClick,
     // isAllItemsSelected,
   } = useCheckboxSelection<TableRowType>();
 
@@ -133,14 +134,20 @@ export default function PacsPageContent({
   );
 
   const upsertStudyBulk = async () => {
+    setIsInserting(true);
+
     for (const item of selectedIds) {
       if (!userId) continue;
 
       const metadata = studies.filter((study) => study.dicom.id === item);
 
-      if (metadata.length === 0 || !activePac?.aet_server) continue;
+      if (metadata.length === 0 || !activePac?.aet_server) {
+        continue;
+      }
 
-      if (metadata[0].state !== StudyState.Selected) continue;
+      if (metadata[0].state !== StudyState.Selected) {
+        continue;
+      }
 
       const result = await upsertStudy(userId, metadata[0].dicom);
 
@@ -150,6 +157,7 @@ export default function PacsPageContent({
         result.isNew ? StudyState.Inserted : StudyState.Duplicated
       );
     }
+    setIsInserting(false);
   };
 
   const handleStudyDateRangeChange = (newRange: DateRangeType | null) => {
@@ -157,6 +165,7 @@ export default function PacsPageContent({
   };
 
   const handleFetch = async (activePac: PacType | null) => {
+    handleSelectAllClick([]);
     const timeZone = "America/Lima";
     const zonedStart = studyDateRange?.startDate
       ? toZonedTime(studyDateRange?.startDate, timeZone)
@@ -179,6 +188,12 @@ export default function PacsPageContent({
   };
 
   const modalityKeys = Object.keys(Modalities);
+
+  const areStudiesSelected = studies.some(
+    (study) =>
+      study.state === StudyState.Selected &&
+      Array.from(selectedIds).includes(study.dicom.id)
+  );
 
   if (!canManagePacs) return null;
 
@@ -301,13 +316,21 @@ export default function PacsPageContent({
         </div> */}
 
         <button
-          disabled={selectedIds.size === 0}
+          disabled={selectedIds.size === 0 || !areStudiesSelected}
           type="button"
           onClick={() => upsertStudyBulk()}
           title="Insert to Database"
           className="disabled:opacity-50 disabled:pointer-events-none cursor-pointer hover:text-cyan-400 p-2 rounded-lg border border-gray-200 bg-gray-50 transition-colors duration-300 hover:bg-gray-100"
         >
-          <Icon icon="solar:database-outline" fontSize={24} />
+          {isInserting ? (
+            <Icon
+              icon="solar:record-broken"
+              className="animate-spin"
+              fontSize={24}
+            />
+          ) : (
+            <Icon icon="solar:database-outline" fontSize={24} />
+          )}
         </button>
       </div>
       <div className="bg-white shadow rounded-xl overflow-auto">
@@ -488,9 +511,7 @@ export default function PacsPageContent({
                       title={patient_id}
                       className="py-5 px-2 truncate whitespace-nowrap"
                     >
-                      <span className="text-sm">
-                        {patient_id}
-                      </span>
+                      <span className="text-sm">{patient_id}</span>
                     </td>
                     <td className="truncate whitespace-nowrap py-5 px-2">
                       {institution}

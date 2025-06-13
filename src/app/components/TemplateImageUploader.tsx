@@ -207,7 +207,7 @@ export default function UploaderTemplateImageUploader({
         />
       </div>
       {templateImageUrl ? (
-        <div className="flex group justify-center w-full relative">
+        <div className="flex justify-center w-full relative">
           <Image
             src={templateImageUrl}
             alt={templateImageUrl}
@@ -220,7 +220,7 @@ export default function UploaderTemplateImageUploader({
             title="Remove image"
             onClick={deleteImage}
             type="button"
-            className="absolute -translate-y-1 group-hover:translate-y-0 top-3 hover:bg-white opacity-0 group-hover:opacity-100 transition-all duration-300 right-3 cursor-pointer bg-gray-100 w-11 h-11 rounded-full border-rose-300 border-dashed border text-rose-500 flex items-center justify-center"
+            className="absolute -translate-y-1 top-3 hover:bg-white transition-colors duration-300 right-3 cursor-pointer bg-gray-100 w-11 h-11 rounded-full border-rose-300 border-dashed border text-rose-500 flex items-center justify-center"
           >
             <Icon icon="solar:trash-bin-minimalistic-broken" fontSize={24} />
           </button>

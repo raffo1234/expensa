@@ -143,41 +143,45 @@ export default function DateRangeButtonCalendar({
           </button>
         ) : null}
       </div>
-      {isOpen ? (
+      <div
+        onClick={onCloseOutside}
+        className={`${
+          isOpen ? "bg-opacity-30 visible" : "opacity-0 bg-opacity-0 invisible"
+        } bg-[rgb(255,255,255,.9)] transition-all duration-300 overflow-auto fixed top-0 left-0 w-full h-lvh z-10 flex items-start pb-10 pt-30 justify-center`}
+      >
         <div
-          onClick={onCloseOutside}
-          className="bg-[rgb(255,255,255,.9)] overflow-auto fixed top-0 left-0 w-full h-lvh z-10 flex items-start pb-10 pt-30 justify-center"
+          className={`
+           ${isOpen ? "translate-y-0 opacity-100" : "-translate-y-6 opacity-80"}
+          bg-white rounded-2xl shadow-lg p-8 overflow-auto transition-all duration-300`}
         >
-          <div className="bg-white rounded-2xl shadow-lg p-8 overflow-auto">
-            <DateRangePicker
-              onChange={(item) => {
-                // @ts-expect-error: Unreachable code error
-                setState([item.selection]);
+          <DateRangePicker
+            onChange={(item) => {
+              // @ts-expect-error: Unreachable code error
+              setState([item.selection]);
 
-                if (item.selection.startDate && item.selection.endDate) {
-                  handleDateRangeChange({
-                    startDate: item.selection.startDate,
-                    endDate: item.selection.endDate,
-                    key: "selection",
-                  });
-                }
-              }}
-              moveRangeOnFirstSelection={false}
-              months={2}
-              ranges={state}
-              direction="horizontal"
-            />
-            <button
-              onClick={toggle}
-              type="button"
-              title="Done"
-              className="cursor-pointer mx-auto px-6 text-white justify-center py-2 rounded-full bg-black flex gap-2 items-center w-fit"
-            >
-              <span>Done</span>
-            </button>
-          </div>
+              if (item.selection.startDate && item.selection.endDate) {
+                handleDateRangeChange({
+                  startDate: item.selection.startDate,
+                  endDate: item.selection.endDate,
+                  key: "selection",
+                });
+              }
+            }}
+            moveRangeOnFirstSelection={false}
+            months={2}
+            ranges={state}
+            direction="horizontal"
+          />
+          <button
+            onClick={toggle}
+            type="button"
+            title="Done"
+            className="cursor-pointer mx-auto px-6 text-white justify-center py-2 rounded-full bg-black flex gap-2 items-center w-fit"
+          >
+            <span>Done</span>
+          </button>
         </div>
-      ) : null}
+      </div>
     </>
   );
 }

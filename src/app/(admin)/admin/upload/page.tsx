@@ -7,10 +7,12 @@ export default function Page() {
   const [uploadStatus, setUploadStatus] = useState("");
   const [uploadError, setUploadError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = event.target.files || [];
     setSelectedFile(selectedFiles[0]);
+    setUploadProgress(0); // Reset progress on file selection
   };
 
   const handleUpload = async () => {
@@ -21,6 +23,7 @@ export default function Page() {
 
     setUploadStatus("Generating upload URL...");
     setUploadError("");
+    setUploadProgress(0);
 
     try {
       const response = await fetch("/api/generate-r2-url", {
@@ -47,32 +50,43 @@ export default function Page() {
     }
   };
 
-  const uploadFileToR2 = async (url: string, file: File) => {
-    try {
-      const uploadResponse = await fetch(url, {
-        method: "PUT",
-        body: file,
-        headers: {
-          "Content-Type": file.type || "application/octet-stream",
-        },
-      });
+  const uploadFileToR2 = (url: string, file: File) => {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("PUT", url, true);
 
-      if (uploadResponse.ok) {
-        setUploadStatus("Upload to Cloudflare R2 successful!");
-        if (fileInputRef.current) {
-          fileInputRef.current.value = "";
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const progress = Math.round((event.loaded / event.total) * 100);
+          setUploadProgress(progress);
         }
-        setSelectedFile(null);
-      } else {
-        const errorText = await uploadResponse.text();
-        setUploadError(`Upload to Cloudflare R2 failed: ${errorText}`);
+      };
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          setUploadStatus("Upload to Cloudflare R2 successful!");
+          if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+          }
+          setSelectedFile(null);
+          resolve(xhr.responseText);
+        } else {
+          setUploadError(`Upload to Cloudflare R2 failed: ${xhr.statusText}`);
+          setUploadStatus("");
+          reject(xhr.statusText);
+        }
+      };
+
+      xhr.onerror = () => {
+        setUploadError(
+          "Upload to Cloudflare R2 failed due to a network error."
+        );
         setUploadStatus("");
-      }
-    } catch (error) {
-      console.error("Error uploading to Cloudflare R2:", error);
-      setUploadError("Upload to Cloudflare R2 failed.");
-      setUploadStatus("");
-    }
+        reject("Network Error");
+      };
+
+      xhr.send(file);
+    });
   };
 
   return (
@@ -86,12 +100,22 @@ export default function Page() {
       />
       <button
         onClick={handleUpload}
-        disabled={!selectedFile || uploadStatus !== ""}
+        disabled={
+          !selectedFile || uploadStatus === "Uploading to Cloudflare R2..."
+        }
       >
         {uploadStatus || "Upload"}
       </button>
       {uploadError && <p style={{ color: "red" }}>Error: {uploadError}</p>}
-      {uploadStatus && <p>{uploadStatus}</p>}
+      {uploadStatus && uploadStatus !== "Uploading to Cloudflare R2..." && (
+        <p>{uploadStatus}</p>
+      )}
+      {uploadStatus === "Uploading to Cloudflare R2..." && (
+        <div>
+          <p>Upload Progress: {uploadProgress}%</p>
+          <progress value={uploadProgress} max="100" />
+        </div>
+      )}
     </div>
   );
 }

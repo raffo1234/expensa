@@ -45,7 +45,7 @@ const fetcher = async (
     boolean,
     boolean,
     boolean,
-    boolean,
+    boolean
   ]
 ): Promise<{ data: DicomType[] | null; total: number } | null> => {
   const [
@@ -521,7 +521,11 @@ export default function Pagination({
               className={`
                 ${state === filteredByState ? "border-3 border-slate-50" : ""}
                 ${index === 0 ? "rounded-l-full" : ""}
-                ${index === Object.values(DicomStateEnum).length - 1 ? "rounded-r-full" : ""}
+                ${
+                  index === Object.values(DicomStateEnum).length - 1
+                    ? "rounded-r-full"
+                    : ""
+                }
                 cursor-pointer h-[36px] w-10 
                 ${state === DicomStateEnum.NEW ? "bg-white" : ""}
                 ${state === DicomStateEnum.VIEWED ? "bg-yellow-300" : ""}
@@ -804,7 +808,7 @@ export default function Pagination({
                   )}
                 </button>
               </th>
-              <th title="Modalidad" className="w-13 px-1">
+              <th title="Modality" className="w-13 px-1">
                 <button
                   disabled={!!noData}
                   type="button"
@@ -825,6 +829,7 @@ export default function Pagination({
                   )}
                 </button>
               </th>
+              <th className="w-15"></th>
               <th className="w-98"></th>
             </tr>
           </thead>
@@ -875,6 +880,7 @@ export default function Pagination({
                     state,
                     gender,
                     institution,
+                    dicom_url,
                   },
                   index
                 ) => {
@@ -996,6 +1002,19 @@ export default function Pagination({
                         {completedAtFormatted}
                       </td>
                       <td className="py-5 px-2 text-center">{modality}</td>
+                      <td className="px-2 text-center">
+                        <Link
+                          href={dicom_url}
+                          download
+                          title="Download"
+                          className="w-11 h-11 text-center flex items-center justify-center border border-gray-200 bg-gray-50 rounded-full transition-colors duration-300 hover:bg-gray-100 cursor-pointer hover:text-cyan-400 hover:border-cyan-200"
+                        >
+                          <Icon
+                            icon="solar:cloud-download-outline"
+                            fontSize={24}
+                          />
+                        </Link>
+                      </td>
                       <td className="py-2 px-2">
                         {result.data ? (
                           <DicomActionButtons

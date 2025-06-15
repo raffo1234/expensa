@@ -3,11 +3,10 @@ import DOCXPreview from "./DOCXPreview";
 import GeneratePDFButton from "./GeneratePDFButton";
 import Link from "next/link";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { UUIDTypes } from "uuid";
-import { supabase } from "@/lib/supabase";
 import { DicomType } from "@/types/dicomType";
 import useCheckPermission from "@/hooks/useCheckPermission";
 import { Permissions } from "@/types/propertyState";
+import deleteDicom from "@/lib/deleteDicom";
 
 export default function DicomActionButtons({
   dicom,
@@ -24,25 +23,25 @@ export default function DicomActionButtons({
   const { hasPermission: canDelete, isLoading: isLoadingCanDelete } =
     useCheckPermission(userRoleId, Permissions.DELETE_REPORT);
 
-  const deleteDicom = async (id: UUIDTypes) => {
-    const confirmationMessage = confirm(
-      "Are you sure you want to delete this item?"
-    );
-    if (!confirmationMessage) return;
+  // const deleteDicom = async (id: UUIDTypes) => {
+  //   const confirmationMessage = confirm(
+  //     "Are you sure you want to delete this item?"
+  //   );
+  //   if (!confirmationMessage) return;
 
-    try {
-      const { error: errorDelete } = await supabase
-        .from("dicom")
-        .delete()
-        .eq("id", id);
+  //   try {
+  //     const { error: errorDelete } = await supabase
+  //       .from("dicom")
+  //       .delete()
+  //       .eq("id", id);
 
-      if (errorDelete) throw new Error("Could not sync image");
-    } catch (error) {
-      console.error("Error deleting", error);
-    } finally {
-      mutate();
-    }
-  };
+  //     if (errorDelete) throw new Error("Could not sync image");
+  //   } catch (error) {
+  //     console.error("Error deleting", error);
+  //   } finally {
+  //     mutate();
+  //   }
+  // };
 
   if (isLoadingCanDownload || isLoadingCanDelete) return null;
 
@@ -74,7 +73,7 @@ export default function DicomActionButtons({
       {canDelete ? (
         <button
           title="Delete Dicom"
-          onClick={() => deleteDicom(dicom.id)}
+          onClick={() => deleteDicom(dicom.id, dicom.dicom_url, mutate)}
           type="button"
           className=" hover:bg-white flex-shrink-0 transition-colors duration-300 cursor-pointer bg-gray-100 w-11 h-11 rounded-full border-gray-200 border-dashed border text-rose-400 flex items-center justify-center"
         >

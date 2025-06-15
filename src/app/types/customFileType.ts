@@ -1,6 +1,8 @@
 export enum CustomFileStateType {
   selected = "Selected",
+  inserting = "Inserting...",
   processing = "Processing...",
+  uploading = "Uploading...",
   processed = "Processed",
   duplicated = "Duplicated",
   inserted = "Inserted",
@@ -8,6 +10,8 @@ export enum CustomFileStateType {
   noDcimFile = "No DICOM file",
   fileNotSupported = "File no supported!",
   errorLoading = "Error loading!",
+  errorInserting = "Error inserting!",
+  errorUploading = "Error uploading!",
 }
 
 export type CustomFileType = {

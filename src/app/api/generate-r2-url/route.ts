@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
 
     const client = new S3Client({
       endpoint: r2Endpoint,
-      region: "auto", // Cloudflare R2 doesn't require a specific region
+      region: "auto",
       credentials: {
         accessKeyId: r2AccessKeyId,
         secretAccessKey: r2SecretAccessKey,
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
       Key: `dicom/${filename}`,
     });
 
-    const signedUrl = await getSignedUrl(client, command, { expiresIn: 600 }); // URL expires in 10 minutes
+    const signedUrl = await getSignedUrl(client, command, { expiresIn: 600 });
 
     return NextResponse.json({ signedUrl });
   } catch (error) {

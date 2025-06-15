@@ -2,8 +2,8 @@
 
 import FallbackPermission from "@/components/FallbackPermission";
 import { Permissions } from "@/types/propertyState";
-import Uploader from "@/components/Uploader";
 import useCheckPermission from "@/hooks/useCheckPermission";
+import UploaderR2 from "./UploaderR2";
 
 export default function UploaderPage({
   userRoleId,
@@ -24,5 +24,5 @@ export default function UploaderPage({
 
   if (!hasPermission) return <FallbackPermission />;
 
-  return <Uploader userId={userId} />;
+  return <UploaderR2 userId={userId} />;
 }

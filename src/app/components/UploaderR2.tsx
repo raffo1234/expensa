@@ -323,7 +323,7 @@ const UploaderR2: React.FC<ImageUploaderProps> = ({
           );
 
           const filename = sanitize(`${now}_${selectedFile.name}`);
-          const publicUrl = `${process.env.NEXT_PUBLIC_PUBLIC_DEVELOPMENT_URL}/dicom/${filename}`;
+          const publicUrl = `${process.env.NEXT_PUBLIC_STORAGE_DOMAIN}/dicom/${filename}`;
 
           const { id: insertedId } = await insertNewDataSet(
             supabase,

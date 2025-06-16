@@ -2,7 +2,7 @@ import toast from "react-hot-toast";
 
 const deleteDicom = async (
   id: string,
-  dicomUrl: string,
+  dicomUrl: string | null,
   mutate: () => void,
   setIsDeleting: React.Dispatch<React.SetStateAction<boolean>>
 ) => {
@@ -22,13 +22,10 @@ const deleteDicom = async (
         // If your API route requires authentication (highly recommended for protected actions),
         // you would include a user's session token here. Example:
         // 'Authorization': `Bearer ${(await supabaseClient.auth.getSession())?.data.session?.access_token || ''}`
-        // (Assuming 'supabaseClient' is your client-side Supabase instance)
       },
-      // Send the necessary data (ID and the full DICOM URL) to the server
       body: JSON.stringify({ id, dicomUrl }),
     });
 
-    // Check if the server response indicates success
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(

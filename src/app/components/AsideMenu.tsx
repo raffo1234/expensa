@@ -47,6 +47,10 @@ export default function AsideMenu({
   );
   const { hasPermission: hasUploadDicomPermission, isLoading } =
     useCheckPermission(userRoleId, Permissions.UPLOAD_DICOM);
+  const { hasPermission: canViewResidents } = useCheckPermission(
+    userRoleId,
+    Permissions.VIEW_RESIDENTS
+  );
 
   const pages = [
     {
@@ -127,11 +131,15 @@ export default function AsideMenu({
           },
         ]
       : []),
-    {
-      href: "/admin/residents",
-      title: "Residents",
-      iconName: "solar:shield-user-outline",
-    },
+    ...(canViewResidents
+      ? [
+          {
+            href: "/admin/residents",
+            title: "Residents",
+            iconName: "solar:shield-user-outline",
+          },
+        ]
+      : []),
   ];
 
   if (isLoading)

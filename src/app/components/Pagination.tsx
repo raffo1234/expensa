@@ -405,6 +405,7 @@ export default function Pagination({
     }
 
     setPage(1);
+    localStorage.removeItem("page");
 
     setPageSize(20);
     if (pageSizeRef.current) {

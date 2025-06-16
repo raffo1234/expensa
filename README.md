@@ -35,3 +35,44 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
+
+### workflow DIMSE AET
+
++-----------------+      (1) User Request     +-----------------+
+| Vercel Frontend | ---------------------> | Vercel Backend  |
+| (cadia.pe)      |                         | (Next.js API)   |
++-----------------+                         +-----------------+
+      |                                             |
+      | (7) Get Public URL from DB                    | (2) Initiate C-MOVE
+      |                                             |   (Move Destination: Orthanc AE Title)
+      v                                             |
++-----------------+                         +-----------------+
+| Supabase DB     | <--------------------- | Remote AET Server |
+| (DICOM Metadata |                         | (SCP)             |
+| + R2 Public URL)|                         +-----------------+
++-----------------+                                   |
+                                                      | (3) Send DICOM Files via C-STORE
+                                                      v
+                                          +-----------------+
+                                          | Orthanc (DICOM  |
+                                          | Server - C-MOVE |
+                                          | Destination)    |
+                                          +-----------------+
+                                                      |
+                                                      | (4) Vercel Backend queries Orthanc (REST API)
+                                                      |     and retrieves DICOM data
+                                                      v
+                                          +-----------------+
+                                          | Cloudflare R2   |
+                                          | (Object Storage)|
+                                          +-----------------+
+                                                      ^
+                                                      | (5) Vercel Backend uploads
+                                                      |     DICOM data using presigned URL
+                                                      |
+                                          +-----------------+
+                                          | Vercel Backend  |
+                                          | (Next.js API)   |
+                                          +-----------------+
+                                                      ^
+                                                      | (6) Update Supabase DB with R2 Public URL

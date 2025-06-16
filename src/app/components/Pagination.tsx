@@ -485,7 +485,7 @@ export default function Pagination({
             <input
               ref={searchInputRef}
               type="text"
-              className="bg-white w-full rounded-full border border-gray-200 outline-0 py-2 px-5"
+              className="bg-white w-full rounded-full border border-gray-200 outline-0 px-5 py-2 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
               placeholder="Search ..."
               defaultValue={search ?? ""}
               onChange={(event) => debouncedSearch(event.target.value)}

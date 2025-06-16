@@ -1,7 +1,8 @@
+import { sanitize } from "./sanitize";
 import uploadFileToR2 from "./uploadFileToR2";
 
 export default async function uploadSignedFile(file: File, now: string) {
-  const filename = `${now}_${file.name}`;
+  const filename = sanitize(`${now}_${file.name}`);
 
   try {
     const response = await fetch("/api/generate-r2-url", {
@@ -16,7 +17,7 @@ export default async function uploadSignedFile(file: File, now: string) {
 
     if (response.ok && data?.signedUrl) {
       const signedUrl = await uploadFileToR2(data.signedUrl, file);
-      console.log({ signedUrl });
+
       return signedUrl;
     } else {
       console.error(data?.error || "Failed to generate upload URL.");

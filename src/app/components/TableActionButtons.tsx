@@ -7,6 +7,7 @@ import { DicomType } from "@/types/dicomType";
 import useCheckPermission from "@/hooks/useCheckPermission";
 import { Permissions } from "@/types/propertyState";
 import deleteDicom from "@/lib/deleteDicom";
+import { useState } from "react";
 
 export default function DicomActionButtons({
   dicom,
@@ -17,31 +18,12 @@ export default function DicomActionButtons({
   userRoleId: string;
   mutate: () => void;
 }) {
+  const [isDeleting, setIsDeleting] = useState(false);
   const { hasPermission: canDownload, isLoading: isLoadingCanDownload } =
     useCheckPermission(userRoleId, Permissions.DOWNLOAD_REPORT);
 
   const { hasPermission: canDelete, isLoading: isLoadingCanDelete } =
     useCheckPermission(userRoleId, Permissions.DELETE_REPORT);
-
-  // const deleteDicom = async (id: UUIDTypes) => {
-  //   const confirmationMessage = confirm(
-  //     "Are you sure you want to delete this item?"
-  //   );
-  //   if (!confirmationMessage) return;
-
-  //   try {
-  //     const { error: errorDelete } = await supabase
-  //       .from("dicom")
-  //       .delete()
-  //       .eq("id", id);
-
-  //     if (errorDelete) throw new Error("Could not sync image");
-  //   } catch (error) {
-  //     console.error("Error deleting", error);
-  //   } finally {
-  //     mutate();
-  //   }
-  // };
 
   if (isLoadingCanDownload || isLoadingCanDelete) return null;
 
@@ -73,24 +55,34 @@ export default function DicomActionButtons({
       {canDelete ? (
         <button
           title="Delete Dicom"
-          onClick={() => deleteDicom(dicom.id, dicom.dicom_url, mutate)}
+          onClick={() =>
+            deleteDicom(dicom.id, dicom.dicom_url, mutate, setIsDeleting)
+          }
           type="button"
           className=" hover:bg-white flex-shrink-0 transition-colors duration-300 cursor-pointer bg-gray-100 w-11 h-11 rounded-full border-gray-200 border-dashed border text-rose-400 flex items-center justify-center"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-          >
-            <path
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeWidth="1.5"
-              d="M9.17 4a3.001 3.001 0 0 1 5.66 0m5.67 2h-17m14.874 9.4c-.177 2.654-.266 3.981-1.131 4.79s-2.195.81-4.856.81h-.774c-2.66 0-3.99 0-4.856-.81c-.865-.809-.953-2.136-1.13-4.79l-.46-6.9m13.666 0l-.2 3M9.5 11l.5 5m4.5-5l-.5 5"
+          {isDeleting ? (
+            <Icon
+              icon="solar:record-broken"
+              className="animate-spin"
+              fontSize={24}
             />
-          </svg>
+          ) : (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+            >
+              <path
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeWidth="1.5"
+                d="M9.17 4a3.001 3.001 0 0 1 5.66 0m5.67 2h-17m14.874 9.4c-.177 2.654-.266 3.981-1.131 4.79s-2.195.81-4.856.81h-.774c-2.66 0-3.99 0-4.856-.81c-.865-.809-.953-2.136-1.13-4.79l-.46-6.9m13.666 0l-.2 3M9.5 11l.5 5m4.5-5l-.5 5"
+              />
+            </svg>
+          )}
         </button>
       ) : null}
     </div>

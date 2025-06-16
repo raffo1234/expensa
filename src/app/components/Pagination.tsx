@@ -45,7 +45,7 @@ const fetcher = async (
     boolean,
     boolean,
     boolean,
-    boolean
+    boolean,
   ]
 ): Promise<{ data: DicomType[] | null; total: number } | null> => {
   const [
@@ -1004,6 +1004,7 @@ export default function Pagination({
                       <td className="py-5 px-2 text-center">{modality}</td>
                       <td className="px-2 text-center">
                         <Link
+                          target="_blank"
                           href={dicom_url}
                           download
                           title="Download"

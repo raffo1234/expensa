@@ -137,6 +137,9 @@ export default function Report({
         activeTemplate={dicom.template}
         userRoleId={userRoleId}
       />
+      <div className="flex items-center gap-2 justify-end mb-4">
+        <DownloadButtons dicom={dicom} userRoleId={userRoleId} />
+      </div>
       <div className="flex items-center gap-1 justify-end mb-6">
         {!dicom.state || dicom.state === DicomStateEnum.VIEWED ? (
           <button
@@ -162,7 +165,6 @@ export default function Report({
             router.push("/admin/dicoms");
           }}
         />
-        <DownloadButtons dicom={dicom} userRoleId={userRoleId} />
       </div>
       <div className="bg-gray-200 overflow-auto">
         <div

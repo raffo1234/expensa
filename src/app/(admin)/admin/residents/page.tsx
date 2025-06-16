@@ -35,7 +35,7 @@ export default async function Page() {
     .single()) as { data: UserType | null };
 
   const residents = data?.residents;
-  console.log({ data });
+
   return (
     <>
       <h1 className="mb-6 font-semibold text-lg block">Residents</h1>

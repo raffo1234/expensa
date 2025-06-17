@@ -1,5 +1,6 @@
 "use client";
 
+import { Permissions } from "@/types/propertyState";
 import { fileTypeFromBuffer } from "file-type";
 import { Archive } from "libarchive.js";
 import { supabase } from "@/lib/supabase";
@@ -17,9 +18,10 @@ import {
   Study,
 } from "@/types/customFileType";
 import { v4 as uuidv4 } from "uuid";
-// import uploadSignedFile from "@/lib/uploadSignedFile";
 import { SupabaseClient } from "@supabase/supabase-js";
-// import { sanitize } from "@/lib/sanitize";
+import { sanitize } from "@/lib/sanitize";
+import uploadSignedFile from "@/lib/uploadSignedFile";
+import useCheckPermission from "@/hooks/useCheckPermission";
 
 Archive.init({
   workerUrl: "/libarchive.js/dist/worker-bundle.js",
@@ -65,8 +67,9 @@ interface DicomMetadata {
   institutionName?: string;
 }
 
-type ImageUploaderProps = {
+type UploaderR2Props = {
   userId: string;
+  userRoleId: string;
   onUploadSuccess?: () => void;
 };
 
@@ -156,23 +159,38 @@ const editFileById = (
   id: CustomFileType["id"],
   state: CustomFileStateType,
   bgColor: string,
+  isAvailableForR2Upload: boolean = false,
   studies: Study[] = []
-) => {
+): void => {
   setFiles((prevFiles) => {
-    const updatedFiles = prevFiles.map((file) =>
-      file.id === id ? { ...file, state, bgColor, studies } : file
-    );
+    let fileFoundAndChanged = false;
 
-    if (
-      !updatedFiles.some(
-        (file, index) =>
-          prevFiles[index]?.id === file.id &&
-          (prevFiles[index]?.state !== state ||
-            prevFiles[index]?.bgColor !== bgColor ||
-            prevFiles[index]?.studies !== studies)
-      )
-    ) {
-      console.warn(`No file found with id: ${id}`);
+    const updatedFiles = prevFiles.map((file) => {
+      if (file.id === id) {
+        if (
+          file.state !== state ||
+          file.bgColor !== bgColor ||
+          file.isAvailableForR2Upload !== isAvailableForR2Upload ||
+          file.studies !== studies
+        ) {
+          fileFoundAndChanged = true;
+          return {
+            ...file,
+            state,
+            bgColor,
+            isAvailableForR2Upload,
+            studies,
+          };
+        }
+
+        fileFoundAndChanged = true;
+        return file;
+      }
+      return file;
+    });
+
+    if (!fileFoundAndChanged) {
+      console.warn(`No file found with id: ${id} or no changes applied.`);
       return prevFiles;
     }
 
@@ -180,13 +198,19 @@ const editFileById = (
   });
 };
 
-const UploaderR2: React.FC<ImageUploaderProps> = ({
+const UploaderR2: React.FC<UploaderR2Props> = ({
   userId,
   onUploadSuccess,
+  userRoleId,
 }) => {
   const [uploading, setUploading] = useState(false);
   const [isDropping, setSiDropping] = useState(false);
   const [files, setFiles] = useState<CustomFileType[]>([]);
+
+  const { hasPermission: canStoreDicom } = useCheckPermission(
+    userRoleId,
+    Permissions.STORE_DICOM
+  );
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = event.target.files || [];
@@ -200,6 +224,7 @@ const UploaderR2: React.FC<ImageUploaderProps> = ({
           file,
           patientName: file.name,
           state: CustomFileStateType.selected,
+          isAvailableForR2Upload: false,
           bgColor: "bg-gray-50",
         },
       ]);
@@ -278,7 +303,7 @@ const UploaderR2: React.FC<ImageUploaderProps> = ({
           editFileById(
             setFiles,
             files[index].id,
-            CustomFileStateType.uploading,
+            CustomFileStateType.verifying,
             "bg-cyan-50"
           );
 
@@ -294,6 +319,7 @@ const UploaderR2: React.FC<ImageUploaderProps> = ({
               files[index].id,
               CustomFileStateType.duplicated,
               "bg-yellow-50",
+              false,
               studies
             );
             studies.push({
@@ -303,17 +329,31 @@ const UploaderR2: React.FC<ImageUploaderProps> = ({
             continue;
           }
 
-          // const now = Date.now().toString();
-          // const urlSigned = await uploadSignedFile(selectedFile, now);
-          // if (!urlSigned) {
-          //   editFileById(
-          //     setFiles,
-          //     files[index].id,
-          //     CustomFileStateType.errorUploading,
-          //     "bg-rose-50"
-          //   );
-          //   continue;
-          // }
+          let publicUrl = undefined;
+          const now = Date.now().toString();
+          const filename = sanitize(`${now}_${selectedFile.name}`);
+
+          if (files[index].isAvailableForR2Upload) {
+            editFileById(
+              setFiles,
+              files[index].id,
+              CustomFileStateType.uploading,
+              "bg-cyan-50"
+            );
+
+            const urlSigned = await uploadSignedFile(selectedFile, now);
+            if (!urlSigned) {
+              editFileById(
+                setFiles,
+                files[index].id,
+                CustomFileStateType.errorUploading,
+                "bg-rose-50"
+              );
+              continue;
+            }
+
+            publicUrl = `${process.env.NEXT_PUBLIC_STORAGE_DOMAIN}/dicom/${filename}`;
+          }
 
           editFileById(
             setFiles,
@@ -322,14 +362,11 @@ const UploaderR2: React.FC<ImageUploaderProps> = ({
             "bg-cyan-50"
           );
 
-          // const filename = sanitize(`${now}_${selectedFile.name}`);
-          // const publicUrl = `${process.env.NEXT_PUBLIC_STORAGE_DOMAIN}/dicom/${filename}`;
-
           const { id: insertedId } = await insertNewDataSet(
             supabase,
             userId,
             study.metadata,
-            undefined
+            publicUrl
           );
 
           if (!insertedId) {
@@ -353,6 +390,7 @@ const UploaderR2: React.FC<ImageUploaderProps> = ({
               files[index].id,
               CustomFileStateType.inserted,
               "bg-green-50",
+              false,
               studies
             );
           }
@@ -412,6 +450,7 @@ const UploaderR2: React.FC<ImageUploaderProps> = ({
             file,
             patientName: metadata.patientName ?? "",
             state: CustomFileStateType.selected,
+            isAvailableForR2Upload: false,
             bgColor: "bg-gray-50",
           },
         ]);
@@ -429,6 +468,7 @@ const UploaderR2: React.FC<ImageUploaderProps> = ({
           patientName: file.name,
           state: CustomFileStateType.selected,
           bgColor: "bg-gray-50",
+          isAvailableForR2Upload: false,
         },
       ]);
     });
@@ -439,6 +479,31 @@ const UploaderR2: React.FC<ImageUploaderProps> = ({
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
   });
+
+  const toggleR2UploadAvailabilityById = (
+    files: CustomFileType[],
+    setFiles: React.Dispatch<React.SetStateAction<CustomFileType[]>>,
+    idToToggle: CustomFileType["id"]
+  ) => {
+    setFiles((prevFiles) => {
+      const newFiles = prevFiles.map((file) =>
+        file.id === idToToggle
+          ? { ...file, isAvailableForR2Upload: !file.isAvailableForR2Upload }
+          : file
+      );
+
+      const fileFound = newFiles.some((file) => file.id === idToToggle);
+      if (!fileFound) {
+        console.warn(`No file found with id: ${idToToggle}`);
+      }
+
+      return newFiles;
+    });
+  };
+
+  const handleIsAvailableForR2 = (id: string) => {
+    toggleR2UploadAvailabilityById(files, setFiles, id);
+  };
 
   return (
     <>
@@ -517,21 +582,50 @@ const UploaderR2: React.FC<ImageUploaderProps> = ({
 
       {files.length > 0 ? (
         <div className="border w-full border-gray-200 rounded-xl mt-6 mx-auto max-w-md">
-          <div className="text-sm font-semibold px-5 py-2 bg-gray-100 rounded-t-xl">
-            Selected File{files.length === 1 ? "" : "s"} ({files.length})
+          <div className="flex bg-gray-100 rounded-t-xl">
+            {canStoreDicom ? (
+              <div className="w-18 border-gray-200 border-r text-center text-sm font-semibold py-2 first:rounded-tl-xl">
+                Store
+              </div>
+            ) : null}
+            <div className="text-sm font-semibold px-5 py-2 first:rounded-tl-xl">
+              Selected File{files.length === 1 ? "" : "s"} ({files.length})
+            </div>
           </div>
           <div className="border-t border-gray-200">
             {Array.from(sortFilesByName(files)).map(
-              ({ patientName, state, bgColor, studies }, index) => {
+              ({ id, patientName, state, bgColor, studies }, index) => {
                 return (
                   <div
-                    key={index}
-                    className={`${bgColor} last:rounded-b-xl flex text-sm items-center gap-2 first:border-0 border-t border-gray-200`}
+                    key={id}
+                    className={`${bgColor} last:rounded-b-xl flex text-sm items-center first:border-0 border-t border-gray-200`}
                   >
-                    <div className="truncate flex-1 px-5 py-2">
+                    {canStoreDicom ? (
+                      <div
+                        className={`${
+                          state !== CustomFileStateType.selected
+                            ? "opacity-50 pointer-events-none"
+                            : ""
+                        } w-18 text-center border-r border-gray-200 flex items-center justify-center py-[6px]`}
+                      >
+                        <label className="inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            value=""
+                            disabled={state !== CustomFileStateType.selected}
+                            onChange={() =>
+                              handleIsAvailableForR2(files[index].id)
+                            }
+                            className="sr-only peer"
+                          />
+                          <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-100 dark:peer-focus:ring-cyan-100 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-400 peer-checked:bg-cyan-400 dark:peer-checked:bg-cyan-400"></div>
+                        </label>
+                      </div>
+                    ) : null}
+                    <div className="truncate flex-1 px-5 py-2 border-r border-gray-200">
                       {patientName}
                     </div>
-                    <div className="w-40 flex flex-col gap-1 whitespace-nowrap flex-shrink-0 text-center border-l border-gray-200">
+                    <div className="w-40 whitespace-nowrap flex-shrink-0 flex items-center justify-center">
                       {state === CustomFileStateType.duplicated ||
                       state === CustomFileStateType.inserted ? (
                         studies.map(({ id, state }) => (
@@ -539,7 +633,7 @@ const UploaderR2: React.FC<ImageUploaderProps> = ({
                             key={id}
                             target="_blank"
                             href={`/admin/dicoms/${id}`}
-                            className="flex gap-2 first:border-t-0 border-t border-gray-200 px-5 py-2 text-left underline hover:text-cyan-500 transition-colors duration-300 underline-offset-4 w-full justify-center"
+                            className="flex gap-2 first:border-t-0 border-t border-gray-200 px-5 py-1 text-left underline hover:text-cyan-500 transition-colors duration-300 underline-offset-4 w-full justify-center"
                           >
                             <Icon
                               icon={`${
@@ -548,7 +642,7 @@ const UploaderR2: React.FC<ImageUploaderProps> = ({
                                   : "solar:verified-check-bold"
                               }`}
                               fontSize={24}
-                              className="text-cyan-500"
+                              className="text-cyan-400"
                             />
                             <span className="flex-grow-1">{state}</span>
                           </Link>

@@ -24,5 +24,5 @@ export default function UploaderPage({
 
   if (!hasPermission) return <FallbackPermission />;
 
-  return <UploaderR2 userId={userId} />;
+  return <UploaderR2 userId={userId} userRoleId={userRoleId} />;
 }

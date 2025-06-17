@@ -36,6 +36,7 @@ export enum Permissions {
   AVAILABLE_TO_BE_ASSIGNED = "AVAILABLE_TO_BE_ASSIGNED",
   CAN_HAVE_RESIDENT = "CAN_HAVE_RESIDENT",
   MANAGE_PACS = "MANAGE_PACS",
+  STORE_DICOM = "STORE_DICOM",
 }
 
 export enum PropertyCurrency {

@@ -9,6 +9,7 @@ import useSWR from "swr";
 import AddRole from "./AddRole";
 import DeleteRole from "./DeleteRole";
 import { adminRolesKey } from "@/constants";
+import toast from "react-hot-toast";
 
 const permissionsFetcher = async () => {
   const { data, error } = await supabase
@@ -36,6 +37,7 @@ export function Permission({
   permission: { id: string; name: string };
   roleId: string;
 }) {
+  const [isUpdating, setIsUpdating] = useState(false);
   const { id, name } = permission;
 
   const {
@@ -47,11 +49,14 @@ export function Permission({
   );
 
   const onChange = async (checked: boolean) => {
+    setIsUpdating(true);
     if (checked) {
       await supabase
         .from("role_permission")
         .insert([{ role_id: roleId, permission_id: id }]);
       await mutate();
+      setIsUpdating(false);
+      toast.success("Role updated successfully!");
     } else {
       await supabase
         .from("role_permission")
@@ -59,6 +64,8 @@ export function Permission({
         .eq("role_id", roleId)
         .eq("permission_id", id);
       await mutate();
+      setIsUpdating(false);
+      toast.success("Role updated successfully!");
     }
   };
 
@@ -68,9 +75,9 @@ export function Permission({
         <div className="w-[44px] h-[22px] rounded-3xl bg-gray-100" />
       ) : (
         <Switch
-          loading={isLoading}
+          loading={isLoading || isUpdating}
           id={id}
-          disabled={isLoading}
+          disabled={isLoading || isUpdating}
           defaultChecked={count ? count > 0 : false}
           onChange={onChange}
         />
@@ -105,6 +112,7 @@ export function Role({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const { id, name, description } = role;
+
   return (
     <>
       <div className="relative first:rounded-t-xl first:border-0 border-t border-gray-200 hover:bg-gray-50">

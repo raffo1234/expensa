@@ -1,4 +1,5 @@
 export enum CustomFileStateType {
+  verifying = "Verifying ...",
   selected = "Selected",
   inserting = "Inserting...",
   processing = "Processing...",
@@ -20,6 +21,7 @@ export type CustomFileType = {
   file: File;
   patientName: string;
   state: CustomFileStateType;
+  isAvailableForR2Upload: boolean;
   bgColor: string;
 };
 

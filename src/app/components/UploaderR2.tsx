@@ -17,9 +17,9 @@ import {
   Study,
 } from "@/types/customFileType";
 import { v4 as uuidv4 } from "uuid";
-import uploadSignedFile from "@/lib/uploadSignedFile";
+// import uploadSignedFile from "@/lib/uploadSignedFile";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { sanitize } from "@/lib/sanitize";
+// import { sanitize } from "@/lib/sanitize";
 
 Archive.init({
   workerUrl: "/libarchive.js/dist/worker-bundle.js",
@@ -303,17 +303,17 @@ const UploaderR2: React.FC<ImageUploaderProps> = ({
             continue;
           }
 
-          const now = Date.now().toString();
-          const urlSigned = await uploadSignedFile(selectedFile, now);
-          if (!urlSigned) {
-            editFileById(
-              setFiles,
-              files[index].id,
-              CustomFileStateType.errorUploading,
-              "bg-rose-50"
-            );
-            continue;
-          }
+          // const now = Date.now().toString();
+          // const urlSigned = await uploadSignedFile(selectedFile, now);
+          // if (!urlSigned) {
+          //   editFileById(
+          //     setFiles,
+          //     files[index].id,
+          //     CustomFileStateType.errorUploading,
+          //     "bg-rose-50"
+          //   );
+          //   continue;
+          // }
 
           editFileById(
             setFiles,
@@ -322,14 +322,14 @@ const UploaderR2: React.FC<ImageUploaderProps> = ({
             "bg-cyan-50"
           );
 
-          const filename = sanitize(`${now}_${selectedFile.name}`);
-          const publicUrl = `${process.env.NEXT_PUBLIC_STORAGE_DOMAIN}/dicom/${filename}`;
+          // const filename = sanitize(`${now}_${selectedFile.name}`);
+          // const publicUrl = `${process.env.NEXT_PUBLIC_STORAGE_DOMAIN}/dicom/${filename}`;
 
           const { id: insertedId } = await insertNewDataSet(
             supabase,
             userId,
             study.metadata,
-            publicUrl
+            undefined
           );
 
           if (!insertedId) {

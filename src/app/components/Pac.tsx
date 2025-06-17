@@ -91,7 +91,9 @@ export default function Pac({ pac }: { pac: PacType }) {
         className="relative border-t first:border-t-0 border-gray-200 flex gap-3.5 first:rounded-t-xl items-center justify-between text-left transition-colors duration-300"
       >
         <div
-          className={`${isOpen ? "bg-gray-50" : ""} cursor-pointer hover:bg-gray-50 first:rounded-t-xl w-full gap-1 flex md:flex-row sm:gap-3.5 self-center pl-6 pr-18`}
+          className={`${
+            isOpen ? "bg-gray-50" : ""
+          } cursor-pointer hover:bg-gray-50 first:rounded-t-xl w-full gap-1 flex md:flex-row sm:gap-3.5 self-center pl-6 pr-18`}
         >
           <button
             type="button"
@@ -101,7 +103,9 @@ export default function Pac({ pac }: { pac: PacType }) {
             <Icon
               icon="solar:alt-arrow-down-linear"
               fontSize={20}
-              className={`${isOpen ? "rotate-180" : ""} transition-transform duration-500 flex-shrink-0`}
+              className={`${
+                isOpen ? "rotate-180" : ""
+              } transition-transform duration-500 flex-shrink-0`}
             />
           </button>
           <input
@@ -162,10 +166,15 @@ export default function Pac({ pac }: { pac: PacType }) {
                 type="button"
                 title="Verify connection"
                 onClick={() => verifyConnection(pac)}
-                className={`${isVerifying ? "pointer-events-none border-transparent" : "transition-colors duration-300 bg-gray-50 border-gray-200 cursor-pointer rounded-xl"} border p-2 text-cyan-500`}
+                className={`${
+                  isVerifying
+                    ? "pointer-events-none border-transparent"
+                    : "transition-colors duration-300 bg-gray-50 border-gray-200 cursor-pointer rounded-xl"
+                } border p-2 text-cyan-500`}
               >
                 {isVerifying ? (
                   <svg
+                    className="animate-spin"
                     xmlns="http://www.w3.org/2000/svg"
                     width="24"
                     height="24"

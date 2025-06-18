@@ -22,6 +22,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { sanitize } from "@/lib/sanitize";
 import uploadSignedFile from "@/lib/uploadSignedFile";
 import useCheckPermission from "@/hooks/useCheckPermission";
+import editCustomFileById from "@/lib/editCustomFileById";
 
 Archive.init({
   workerUrl: "/libarchive.js/dist/worker-bundle.js",
@@ -132,14 +133,14 @@ async function insertNewDataSet(
         study_description: dataSet.studyDescription,
         modality: dataSet.modality,
         study_date: dataSet.studyDate,
-        gender: dataSet.patientSex, // Assuming 'gender' is the column name
-        birthday: dataSet.patientBirthDate, // Assuming 'birthday' is the column name
-        institution: dataSet.institutionName, // Assuming 'institution' is the column name
+        gender: dataSet.patientSex,
+        birthday: dataSet.patientBirthDate,
+        institution: dataSet.institutionName,
         dicom_url: publicUrl,
       },
     ])
-    .select("id") // Select only the ID of the newly inserted row
-    .single(); // Expect only one row back
+    .select("id")
+    .single();
 
   if (error) {
     console.error("Error inserting record:", error.message);
@@ -153,50 +154,6 @@ async function insertNewDataSet(
     return { id: null, error: new Error("Insert operation returned no data.") };
   }
 }
-
-const editFileById = (
-  setFiles: React.Dispatch<React.SetStateAction<CustomFileType[]>>,
-  id: CustomFileType["id"],
-  state: CustomFileStateType,
-  bgColor: string,
-  isAvailableForR2Upload: boolean = false,
-  studies: Study[] = []
-): void => {
-  setFiles((prevFiles) => {
-    let fileFoundAndChanged = false;
-
-    const updatedFiles = prevFiles.map((file) => {
-      if (file.id === id) {
-        if (
-          file.state !== state ||
-          file.bgColor !== bgColor ||
-          file.isAvailableForR2Upload !== isAvailableForR2Upload ||
-          file.studies !== studies
-        ) {
-          fileFoundAndChanged = true;
-          return {
-            ...file,
-            state,
-            bgColor,
-            isAvailableForR2Upload,
-            studies,
-          };
-        }
-
-        fileFoundAndChanged = true;
-        return file;
-      }
-      return file;
-    });
-
-    if (!fileFoundAndChanged) {
-      console.warn(`No file found with id: ${id} or no changes applied.`);
-      return prevFiles;
-    }
-
-    return updatedFiles;
-  });
-};
 
 const UploaderR2: React.FC<UploaderR2Props> = ({
   userId,
@@ -245,13 +202,10 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
 
       const selectedFile = files[index].file;
 
-      editFileById(
-        setFiles,
-        files[index].id,
-        CustomFileStateType.processing,
-        "bg-cyan-50",
-        files[index].isAvailableForR2Upload
-      );
+      editCustomFileById(setFiles, files[index].id, {
+        state: CustomFileStateType.processing,
+        bgColor: "bg-cyan-50",
+      });
 
       const fileBuffer = await selectedFile.arrayBuffer();
       const extensionFromBuffer = await fileTypeFromBuffer(fileBuffer);
@@ -277,13 +231,10 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
             extractedFiles = { [selectedFile.name]: selectedFile };
             break;
           default:
-            editFileById(
-              setFiles,
-              files[index].id,
-              CustomFileStateType.fileNotSupported,
-              "bg-rose-50",
-              files[index].isAvailableForR2Upload
-            );
+            editCustomFileById(setFiles, files[index].id, {
+              state: CustomFileStateType.fileNotSupported,
+              bgColor: "bg-rose-50",
+            });
             continue;
         }
 
@@ -291,25 +242,19 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
           await findAllDicomFilesWithDifferentStudyDescriptions(extractedFiles);
 
         if (differentStudyDescriptions.length === 0) {
-          editFileById(
-            setFiles,
-            files[index].id,
-            CustomFileStateType.noDcimFile,
-            "bg-rose-50",
-            files[index].isAvailableForR2Upload
-          );
+          editCustomFileById(setFiles, files[index].id, {
+            state: CustomFileStateType.noDcimFile,
+            bgColor: "bg-rose-50",
+          });
           continue;
         }
 
         const studies: Study[] = [];
         for (const study of differentStudyDescriptions) {
-          editFileById(
-            setFiles,
-            files[index].id,
-            CustomFileStateType.verifying,
-            "bg-cyan-50",
-            files[index].isAvailableForR2Upload
-          );
+          editCustomFileById(setFiles, files[index].id, {
+            state: CustomFileStateType.verifying,
+            bgColor: "bg-cyan-50",
+          });
 
           const { id } = await checkIfDataSetExists(
             supabase,
@@ -318,14 +263,11 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
           );
 
           if (id) {
-            editFileById(
-              setFiles,
-              files[index].id,
-              CustomFileStateType.duplicated,
-              "bg-yellow-50",
-              files[index].isAvailableForR2Upload,
-              studies
-            );
+            editCustomFileById(setFiles, files[index].id, {
+              state: CustomFileStateType.duplicated,
+              bgColor: "bg-yellow-50",
+              studies,
+            });
             studies.push({
               id: id.toString(),
               state: CustomFileStateType.duplicated,
@@ -338,36 +280,27 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
           const filename = sanitize(`${now}_${selectedFile.name}`);
 
           if (files[index].isAvailableForR2Upload) {
-            editFileById(
-              setFiles,
-              files[index].id,
-              CustomFileStateType.uploading,
-              "bg-cyan-50",
-              files[index].isAvailableForR2Upload
-            );
+            editCustomFileById(setFiles, files[index].id, {
+              state: CustomFileStateType.uploading,
+              bgColor: "bg-cyan-50",
+            });
 
             const urlSigned = await uploadSignedFile(selectedFile, now);
             if (!urlSigned) {
-              editFileById(
-                setFiles,
-                files[index].id,
-                CustomFileStateType.errorUploading,
-                "bg-rose-50",
-                files[index].isAvailableForR2Upload
-              );
+              editCustomFileById(setFiles, files[index].id, {
+                state: CustomFileStateType.errorUploading,
+                bgColor: "bg-rose-50",
+              });
               continue;
             }
 
             publicUrl = `${process.env.NEXT_PUBLIC_STORAGE_DOMAIN}/dicom/${filename}`;
           }
 
-          editFileById(
-            setFiles,
-            files[index].id,
-            CustomFileStateType.inserting,
-            "bg-cyan-50",
-            files[index].isAvailableForR2Upload
-          );
+          editCustomFileById(setFiles, files[index].id, {
+            state: CustomFileStateType.inserting,
+            bgColor: "bg-cyan-50",
+          });
 
           const { id: insertedId } = await insertNewDataSet(
             supabase,
@@ -377,13 +310,10 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
           );
 
           if (!insertedId) {
-            editFileById(
-              setFiles,
-              files[index].id,
-              CustomFileStateType.errorInserting,
-              "bg-rose-50",
-              files[index].isAvailableForR2Upload
-            );
+            editCustomFileById(setFiles, files[index].id, {
+              state: CustomFileStateType.errorInserting,
+              bgColor: "bg-rose-50",
+            });
             continue;
           }
 
@@ -393,23 +323,18 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
               state: CustomFileStateType.inserted,
             });
 
-            editFileById(
-              setFiles,
-              files[index].id,
-              CustomFileStateType.inserted,
-              "bg-green-50",
-              files[index].isAvailableForR2Upload,
-              studies
-            );
+            editCustomFileById(setFiles, files[index].id, {
+              state: CustomFileStateType.inserted,
+              bgColor: "bg-green-50",
+              studies,
+            });
           }
         }
       } catch {
-        editFileById(
-          setFiles,
-          files[index].id,
-          CustomFileStateType.errorLoading,
-          "bg-rose-50"
-        );
+        editCustomFileById(setFiles, files[index].id, {
+          state: CustomFileStateType.errorLoading,
+          bgColor: "bg-rose-50",
+        });
       }
     }
     if (onUploadSuccess) onUploadSuccess();
@@ -488,29 +413,13 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
     onDrop,
   });
 
-  const toggleR2UploadAvailabilityById = (
-    files: CustomFileType[],
-    setFiles: React.Dispatch<React.SetStateAction<CustomFileType[]>>,
-    idToToggle: CustomFileType["id"]
+  const handleIsAvailableForR2 = (
+    id: string,
+    isAvailableForR2Upload: boolean
   ) => {
-    setFiles((prevFiles) => {
-      const newFiles = prevFiles.map((file) =>
-        file.id === idToToggle
-          ? { ...file, isAvailableForR2Upload: !file.isAvailableForR2Upload }
-          : file
-      );
-
-      const fileFound = newFiles.some((file) => file.id === idToToggle);
-      if (!fileFound) {
-        console.warn(`No file found with id: ${idToToggle}`);
-      }
-
-      return newFiles;
+    editCustomFileById(setFiles, id, {
+      isAvailableForR2Upload: !isAvailableForR2Upload,
     });
-  };
-
-  const handleIsAvailableForR2 = (id: string) => {
-    toggleR2UploadAvailabilityById(files, setFiles, id);
   };
 
   const selectAllFiles = useCallback(
@@ -657,7 +566,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                   return (
                     <div
                       key={id}
-                      className={`${bgColor} last:rounded-b-xl flex text-sm items-center first:border-0 border-t border-gray-200`}
+                      className={`${bgColor} last:rounded-b-xl flex text-sm first:border-0 border-t border-gray-200`}
                     >
                       {canStoreDicom ? (
                         <div
@@ -674,7 +583,10 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                               checked={files[index].isAvailableForR2Upload}
                               disabled={state !== CustomFileStateType.selected}
                               onChange={() =>
-                                handleIsAvailableForR2(files[index].id)
+                                handleIsAvailableForR2(
+                                  files[index].id,
+                                  files[index].isAvailableForR2Upload
+                                )
                               }
                               className="sr-only peer"
                             />
@@ -682,10 +594,10 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                           </label>
                         </div>
                       ) : null}
-                      <div className="truncate flex-1 px-5 py-2 border-r border-gray-200">
-                        {patientName}
+                      <div className="truncate flex-1 flex items-center px-5 py-2 border-r border-gray-200">
+                        <div className="truncate">{patientName}</div>
                       </div>
-                      <div className="w-40 whitespace-nowrap flex-shrink-0 flex items-center justify-center">
+                      <div className="w-40 whitespace-nowrap flex-shrink-0 text-center">
                         {state === CustomFileStateType.duplicated ||
                         state === CustomFileStateType.inserted ? (
                           studies.map(({ id, state }) => (
@@ -695,20 +607,22 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                               href={`/admin/dicoms/${id}`}
                               className="flex gap-2 first:border-t-0 border-t border-gray-200 px-5 py-1 text-left underline hover:text-cyan-500 transition-colors duration-300 underline-offset-4 w-full justify-center"
                             >
-                              <Icon
-                                icon={`${
-                                  state === CustomFileStateType.duplicated
-                                    ? "solar:check-read-bold"
-                                    : "solar:verified-check-bold"
-                                }`}
-                                fontSize={24}
-                                className="text-cyan-400"
-                              />
-                              <span className="flex-grow-1">{state}</span>
+                              <span className="flex gap-2">
+                                <Icon
+                                  icon={`${
+                                    state === CustomFileStateType.duplicated
+                                      ? "solar:check-read-bold"
+                                      : "solar:verified-check-bold"
+                                  }`}
+                                  fontSize={24}
+                                  className="text-cyan-400"
+                                />
+                                <span className="flex-grow-1">{state}</span>
+                              </span>
                             </Link>
                           ))
                         ) : (
-                          <span className="px-5 py-2">{state}</span>
+                          <div className="px-5 py-2">{state}</div>
                         )}
                       </div>
                     </div>

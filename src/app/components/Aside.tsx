@@ -23,7 +23,7 @@ export default function Aside({
 }: {
   userRoleId: string;
   userName: string;
-  userImage: string;
+  userImage: string | undefined | null;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const { data: role } = useSWR("user-role", () => roleFetcher(userRoleId));
@@ -47,13 +47,17 @@ export default function Aside({
       >
         <header className="mb-20">
           <div className="flex gap-4 items-center">
-            <Image
-              src={userImage}
-              alt={userName}
-              className="rounded-full bg-neutral-200"
-              height={48}
-              width={48}
-            />
+            {userImage ? (
+              <Image
+                src={userImage}
+                alt={userName}
+                className="rounded-full bg-neutral-200"
+                height={48}
+                width={48}
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-gray-100" />
+            )}
             <div>
               <p className="text-sm leading-3 mb-1 text-gray-500">Welcome</p>
               <h3 className="font-semibold text-gray-700 text-lg">

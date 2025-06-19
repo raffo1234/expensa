@@ -12,6 +12,7 @@ const nextConfig: NextConfig = {
         "https://ihykrbwvzhpvedkygqfk.supabase.co/storage/v1/object/public/**"
       ),
       new URL("https://lh3.googleusercontent.com/**"),
+      new URL("https://s.yimg.com/ag/**"),
     ],
   },
   experimental: {

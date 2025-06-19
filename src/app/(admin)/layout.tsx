@@ -30,7 +30,7 @@ export default async function AdminLayout({
       <Header />
       <div className="border-t border-gray-200">
         <main className="flex items-start w-full z-10 relative">
-          {user && user?.role_id && user?.name && user?.image ? (
+          {user && user?.role_id && user?.name ? (
             <Aside
               userRoleId={user.role_id}
               userName={user.name}

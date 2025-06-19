@@ -9,7 +9,7 @@ const UsersPageContent = () => {
 
   if (isLoading) return <div>Loading users...</div>;
   if (error) return <div>Error loading users</div>;
-  if (!users) return null;
+  if (!users || users.length === 0) return null;
 
   return <UsersTable users={users} />;
 };

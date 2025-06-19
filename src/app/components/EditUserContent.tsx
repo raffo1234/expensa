@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import FieldsSection from "./FieldsSection";
 import useSWR from "swr";
 import { UUIDTypes } from "uuid";
-import { adminRolesKey } from "@/constants";
+import { adminRolesKey, adminUsersKey } from "@/constants";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import toast from "react-hot-toast";
 import ResidentList from "./ResidentList";
@@ -54,7 +54,7 @@ const usersFetcher = async () => {
   return data;
 };
 
-const templatesFetcher = async (userId: UUIDTypes) => {
+const templatesByUserFetcher = async (userId: UUIDTypes) => {
   const { data, error } = await supabase
     .from("template")
     .select("*")
@@ -76,9 +76,9 @@ export default function EditUserContent({
   const { data: user, mutate: mutateUser } = useSWR(`admin-${userId}`, () =>
     fetcher(userId)
   );
-  console.log(user);
+  
   const { data: users, isLoading: isLoadingUsers } = useSWR(
-    "admin-users",
+    adminUsersKey,
     usersFetcher
   );
 
@@ -88,11 +88,13 @@ export default function EditUserContent({
   );
 
   const { data: templates, isLoading: isLoadingTemplates } = useSWR(
-    "admin-templates-as-locations",
-    () => templatesFetcher(currentUserId)
+    `admin-templates-by-user-${currentUserId}`,
+    () => templatesByUserFetcher(currentUserId)
   );
 
-  const updateUser = async (fieldName: string, value: string) => {
+  const updateUser = async (fieldName: string, value: string | null) => {
+    if (value === "") value = null;
+
     try {
       await supabase
         .from("user")
@@ -156,6 +158,7 @@ export default function EditUserContent({
                   }
                   className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500 bg-white"
                 >
+                  <option value="">Select ...</option>
                   {roles?.map(({ id, name }) => {
                     return (
                       <option value={id} key={id}>

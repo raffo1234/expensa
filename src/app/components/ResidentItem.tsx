@@ -5,6 +5,7 @@ import { UserType } from "@/types/userType";
 import { supabase } from "@/lib/supabase";
 import toast from "react-hot-toast";
 import { mutate } from "swr";
+import { adminUsersKey } from "@/constants";
 
 export default function ResidentItem({
   user,
@@ -38,7 +39,7 @@ export default function ResidentItem({
     } catch (error) {
       console.error(error);
     } finally {
-      mutate("admin-users");
+      mutate(adminUsersKey);
       toast.success("User was assigned successfully!");
     }
   };

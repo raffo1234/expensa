@@ -85,7 +85,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         try {
           const { data: dbUser, error } = await supabase
             .from("user")
-            .select("id")
+            .select("id, role_id")
             .eq("email", token.email)
             .single();
 
@@ -93,6 +93,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             console.error("Error fetching user role in JWT callback:", error);
           } else if (dbUser?.id) {
             token.user_id = dbUser.id;
+            token.user_role_id = dbUser.role_id;
           }
         } catch (error) {
           console.error("Error fetching user role in JWT callback:", error);
@@ -103,6 +104,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, token }) {
       if (token?.user_id) {
         session.user.id = token.user_id as string;
+        session.user.role_id = token.user_id as string;
       }
       return session;
     },

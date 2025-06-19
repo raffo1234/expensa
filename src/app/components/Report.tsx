@@ -14,22 +14,13 @@ import Link from "next/link";
 import formatDateYYYYMMDD from "@/lib/formatDateYYYYMMDD";
 import { DicomStateEnum } from "@/enums/dicomStateEnum";
 import { supabase } from "@/lib/supabase";
-import { UUIDTypes } from "uuid";
 import useSWR from "swr";
 import LoadingReportComponent from "./LoadingReportComponent";
 import DownloadButtons from "./DownloadButtons";
 import PreviewPDFButton from "./PreviewPDFButton";
 import CompleteDicomButton from "./CompleteDicomButton";
 import ListOfTemplates from "./ListOfTemplates";
-
-const fetcher = async (id: UUIDTypes) => {
-  const { data } = (await supabase
-    .from("dicom")
-    .select("*, template(*)")
-    .eq("id", id)
-    .single()) as { data: DicomType | null };
-  return data;
-};
+import fetcherDicom from "@/fetchers/dicomFetcher";
 
 export default function Report({
   templates,
@@ -46,7 +37,7 @@ export default function Report({
     error,
     isLoading,
     mutate,
-  } = useSWR(`admin-${dicomId}`, () => fetcher(dicomId));
+  } = useSWR(`admin-${dicomId}`, () => fetcherDicom(dicomId));
 
   const debouncedTextarea = useDebouncedCallback((value) => {
     if (dicom?.id) updateDicom(dicom?.id, { report: value });

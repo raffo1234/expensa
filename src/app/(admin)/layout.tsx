@@ -14,27 +14,24 @@ export default async function AdminLayout({
   const session = await auth();
   const user = session?.user;
 
-  if (user?.id) {
-    const { data } = await supabase
-      .from("user")
-      .select("role_id, template_id")
-      .eq("id", user?.id)
-      .single();
+  const { data } = await supabase
+    .from("user")
+    .select("role_id")
+    .eq("id", user?.id)
+    .single();
 
-    user.role_id = data?.role_id;
-    user.template_id = data?.template_id;
-  }
+  if (!user || !data) return null;
 
   return (
     <>
       <Header />
       <div className="border-t border-gray-200">
         <main className="flex items-start w-full z-10 relative">
-          {user && user?.role_id && user?.name ? (
+          {user && data?.role_id && user.name ? (
             <Aside
-              userRoleId={user.role_id}
-              userName={user.name}
+              userRoleId={data.role_id}
               userImage={user.image}
+              userName={user.name}
             />
           ) : null}
           <section

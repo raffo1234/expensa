@@ -4,17 +4,8 @@ import { Icon } from "@iconify/react";
 import { useState } from "react";
 import Image from "next/image";
 import AsideMenu from "./AsideMenu";
-import { supabase } from "@/lib/supabase";
 import useSWR from "swr";
-
-const roleFetcher = async (roleId: string) => {
-  const { data, error } = await supabase
-    .from("role")
-    .select("name")
-    .eq("id", roleId);
-  if (error) throw error;
-  return data;
-};
+import roleFetcher from "@/fetchers/roleFetcher";
 
 export default function Aside({
   userRoleId,
@@ -27,6 +18,12 @@ export default function Aside({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const { data: role } = useSWR("user-role", () => roleFetcher(userRoleId));
+
+  const closeMenu = () => {
+    setIsOpen(false);
+  };
+
+  const roleName = role ? role[0]?.name : "...";
 
   return (
     <div className="flex-shrink-0">
@@ -63,16 +60,13 @@ export default function Aside({
               <h3 className="font-semibold text-gray-700 text-lg">
                 {userName}
               </h3>
-              <p className="text-xs text-gray-500">{role?.[0]?.name}</p>
+              <p className="text-xs text-gray-500">{roleName}</p>
             </div>
           </div>
         </header>
         <nav>
           <ul className="flex flex-col">
-            <AsideMenu
-              closeMenu={() => setIsOpen(false)}
-              userRoleId={userRoleId}
-            />
+            <AsideMenu closeMenu={closeMenu} userRoleId={userRoleId} />
           </ul>
         </nav>
       </section>

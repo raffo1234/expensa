@@ -7,6 +7,7 @@ import { Permissions } from "@/types/propertyState";
 import Link from "next/link";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { preload } from "swr";
+import { adminUsersKey } from "@/constants";
 
 export default function AsideMenu({
   userRoleId,
@@ -101,6 +102,7 @@ export default function AsideMenu({
             href: "/admin/users",
             title: "Users",
             iconName: "solar:user-linear",
+            onMouseEnter: () => preload(adminUsersKey, userFetcher),
           },
         ]
       : []),
@@ -152,12 +154,12 @@ export default function AsideMenu({
       </div>
     );
 
-  return pages.map(({ href, title, iconName }) => (
+  return pages.map(({ href, title, iconName, onMouseEnter }) => (
     <li key={href}>
       <Link
         href={href}
         title={title}
-        onMouseEnter={() => preload("users", userFetcher)}
+        onMouseEnter={onMouseEnter}
         className={`${
           href === currentPath
             ? "bg-gray-100 font-semibold"

@@ -1,4 +1,4 @@
-import { auth, signIn } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import Image from "next/image";
 import Link from "next/link";
@@ -44,21 +44,15 @@ export default async function Index() {
           </svg>
         </Link>
       ) : (
-        <form
-          action={async () => {
-            "use server";
-            await signIn("google");
-          }}
+        <Link
+          href="/session/new"
+          title="Sing In to Explore"
+          type="submit"
+          className="cursor-pointer text-lg flex items-center gap-4 px-8 py-3 bg-black text-white rounded-full transition-colors duration-700 hover:bg-gray-800 active:bg-gray-900"
         >
-          <button
-            title="Sing In to Explore"
-            type="submit"
-            className="cursor-pointer text-lg flex items-center gap-4 px-8 py-3 bg-black text-white rounded-full transition-colors duration-700 hover:bg-gray-800 active:bg-gray-900"
-          >
-            <span>Sing In to Explore</span>
-            <Icon icon="solar:arrow-right-linear" fontSize={24}></Icon>
-          </button>
-        </form>
+          <span>Sing In to Explore</span>
+          <Icon icon="solar:arrow-right-linear" fontSize={24}></Icon>
+        </Link>
       )}
 
       <div className="relative w-full max-w-[1000px] mx-auto sm:aspect-[5/3] aspect-[4/3]">

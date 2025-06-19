@@ -2,6 +2,8 @@ import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import syncUserWithDatabase from "@/lib/syncUserWithDatabase";
 import { supabase } from "./supabase";
+import CredentialsProvider from "next-auth/providers/credentials";
+import bcrypt from "bcryptjs";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -15,6 +17,49 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           access_type: "offline",
           response_type: "code",
         },
+      },
+      checks: ["pkce"],
+    }),
+    CredentialsProvider({
+      name: "Sign in with Email/Password",
+      async authorize(credentials) {
+        console.log({credentials})
+        const email = credentials?.email;
+        const password = credentials?.password;
+        
+        if (!email || !password) {
+          return null; 
+        }
+
+        try {
+          const { data: user, error } = await supabase
+            .from("user") 
+            .select("id, email, password") 
+            .eq("email", email)
+            .single();
+
+          if (error) {
+            console.error("Error fetching user:", error);
+            return null; 
+          }
+
+          if (!user) {
+            return null; 
+          }
+
+          const isPasswordValid = await bcrypt.compare(password as string, user.password);
+            
+          if (isPasswordValid) {
+            return { id: user.id, name: user.email, email: user.email };
+          } else {
+            return null; 
+          }
+        } catch (error) {
+          console.error("Error during authorization:", error);
+          return null;
+        }
+
+        return null; 
       },
     }),
   ],

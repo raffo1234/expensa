@@ -5,7 +5,8 @@ import { useGlobalState } from "@/lib/globalState";
 import { useEffect } from "react";
 
 export default function GlobalModal() {
-  const { isModalOpen, modalContent, setModalOpen } = useGlobalState();
+  const { isModalOpen, modalContent, setModalContent, setModalOpen } =
+    useGlobalState();
 
   const onClose = () => {
     if (!isModalOpen) return;
@@ -38,11 +39,16 @@ export default function GlobalModal() {
       } bg-[rgb(255,255,255,.9)] md:pt-10 fixed top-0 left-0  w-full h-lvh z-50 overflow-auto transition-all duration-300`}
     >
       <div
+        onAnimationEnd={() => {
+          if (!isModalOpen) {
+            setModalContent(null);
+          }
+        }}
         className={`${
           isModalOpen
             ? "translate-y-0 opacity-100"
             : "-translate-y-6 opacity-80"
-        } shadow-lg bg-slate-50 transition-all duration-300 md:max-w-screen-md mx-auto w-full px-8 min-h-lvh md:min-h-0 md:px-10 pt-18 pb-12 md:rounded-2xl`}
+        } shadow-lg bg-slate-50 transition-all duration-300 md:max-w-screen-md mx-auto w-full px-4 sm:px-6 min-h-lvh md:min-h-0 md:px-8 pt-18 pb-12 md:rounded-2xl`}
       >
         {modalContent}
         <button

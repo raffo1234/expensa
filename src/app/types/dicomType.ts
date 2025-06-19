@@ -6,7 +6,7 @@ export type DicomType = {
   id: string;
   dicom_url: string;
   user_id: string;
-  user: UserType;
+  user?: UserType;
   patient_name: string;
   patient_age: string;
   patient_id: string;

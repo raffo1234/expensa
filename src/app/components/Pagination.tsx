@@ -21,6 +21,7 @@ import useCheckboxSelection from "@/hooks/useCheckboxSelection";
 import GenerateCompressedPDFs from "./GenerateCompressedPDFs";
 import GenerateCompressedDOCs from "./GenerateCompressedDOCs";
 import DicomActionButtons from "./TableActionButtons";
+import ShareReportButton from "./ShareReportButton";
 
 type SortDirection = "asc" | "desc" | null;
 
@@ -830,6 +831,7 @@ export default function Pagination({
                   )}
                 </button>
               </th>
+              <th className="w-10"></th>
               <th className="w-15"></th>
               <th className="w-98"></th>
             </tr>
@@ -1003,22 +1005,24 @@ export default function Pagination({
                         {completedAtFormatted}
                       </td>
                       <td className="py-5 px-2 text-center">{modality}</td>
+                      <td className="py-2 px-2">
+                        <ShareReportButton id={id} userId={userId} />
+                      </td>
                       <td className="px-2 text-center">
                         {dicom_url ? (
-
                           <Link
-                          target="_blank"
-                          href={dicom_url}
-                          download
-                          title="Download"
-                          className="w-11 h-11 text-center flex items-center justify-center border border-gray-200 bg-gray-50 rounded-full transition-colors duration-300 hover:bg-gray-100 cursor-pointer hover:text-cyan-400 hover:border-cyan-200"
+                            target="_blank"
+                            href={dicom_url}
+                            download
+                            title="Download"
+                            className="w-11 h-11 text-center flex items-center justify-center border border-gray-200 bg-gray-50 rounded-full transition-colors duration-300 hover:bg-gray-100 cursor-pointer hover:text-cyan-400 hover:border-cyan-200"
                           >
-                          <Icon
-                            icon="solar:cloud-download-outline"
-                            fontSize={24}
+                            <Icon
+                              icon="solar:cloud-download-outline"
+                              fontSize={24}
                             />
-                        </Link>
-                          ): null}
+                          </Link>
+                        ) : null}
                       </td>
                       <td className="py-2 px-2">
                         {result.data ? (

@@ -130,7 +130,7 @@ export default function Report({
       />
       <div className="z-20 relative">
         <Sticky>
-          <div className="bg-gray-50 py-6">
+          <div className="bg-gray-50/50 py-6">
             <div className="flex justify-between mb-4">
               <PreviewPDFButton
                 userRoleId={userRoleId}

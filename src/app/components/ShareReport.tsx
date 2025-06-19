@@ -119,17 +119,17 @@ export default function ShareReport({
                 <input
                   readOnly
                   disabled
-                  title={`${process.env.NEXT_PUBLIC_AUTH_URL}/view/pdf/${sharedLinkId}`}
+                  title={`${process.env.NEXT_PUBLIC_URL}/view/pdf/${sharedLinkId}`}
                   type="text"
                   id="direct-link"
-                  value={`${process.env.NEXT_PUBLIC_AUTH_URL}/view/pdf/${sharedLinkId}`}
+                  value={`${process.env.NEXT_PUBLIC_URL}/view/pdf/${sharedLinkId}`}
                   required
                   className="text-gray-500 w-full px-4 bg-white py-2.5 rounded-xl border border-gray-200 focus:outline-none"
                 />
                 <button
                   onClick={() =>
                     copyLink(
-                      `${process.env.NEXT_PUBLIC_AUTH_URL}/view/pdf/${sharedLinkId}`
+                      `${process.env.NEXT_PUBLIC_URL}/view/pdf/${sharedLinkId}`
                     )
                   }
                   className="hover:bg-cyan-50 hover:border-cyan-200 cursor-pointer transition-colors duration-300 absolute right-1 top-1/2 -translate-y-1/2 text-sm bg-gray-50 border px-5 py-2 border-gray-200 rounded-lg"

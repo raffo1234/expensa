@@ -41,7 +41,7 @@ export default function ListOfTemplates({
 
   return (
     <div
-      className="grid gap-2 mb-6 flex-grow-1"
+      className="grid gap-2 flex-grow-1"
       style={{
         gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))",
       }}

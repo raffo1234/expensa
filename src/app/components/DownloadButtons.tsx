@@ -17,9 +17,9 @@ export default function DownloadButtons({
   if (isLoadingCanDownload) return null;
 
   return canDownload ? (
-    <>
+    <div className="flex items-center gap-2">
       <GeneratePDFButton dicom={dicom} label="PDF" />
       <DOCXPreview dicom={dicom} />
-    </>
+    </div>
   ) : null;
 }

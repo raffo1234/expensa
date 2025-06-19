@@ -40,6 +40,7 @@
     "react-hot-toast": "^2.5.2",
     "react-number-format": "^5.4.4",
     "react-scan": "^0.3.4",
+    "react-sticky-el": "^2.1.1",
     "react-textarea-autosize": "^8.5.9",
     "swr": "^2.3.3",
     "text-mask-addons": "^3.8.0",

@@ -6415,6 +6415,11 @@ react-scan@^0.3.4:
   optionalDependencies:
     unplugin "2.1.0"
 
+react-sticky-el@^2.1.1:
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/react-sticky-el/-/react-sticky-el-2.1.1.tgz#6a142a3f766b2a4b71d0014743142696d80bf01e"
+  integrity sha512-likcCH5HN86qQGdOMbvMMJQXJQzelvxuGovFglnBlu8qqgPaee90hO4sws9oSwnsnRPows6Ry7RAd+tazVCS+w==
+
 react-textarea-autosize@^8.5.9:
   version "8.5.9"
   resolved "https://registry.npmjs.org/react-textarea-autosize/-/react-textarea-autosize-8.5.9.tgz"

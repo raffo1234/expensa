@@ -1,5 +1,6 @@
 "use client";
 
+import Sticky from "react-sticky-el";
 import { useRouter } from "next/navigation";
 import Fuse from "fuse.js";
 import { useDebouncedCallback } from "use-debounce";
@@ -10,7 +11,6 @@ import toast from "react-hot-toast";
 import Image from "next/image";
 import { TemplateType } from "@/types/templateType";
 import { DicomType } from "@/types/dicomType";
-import Link from "next/link";
 import formatDateYYYYMMDD from "@/lib/formatDateYYYYMMDD";
 import { DicomStateEnum } from "@/enums/dicomStateEnum";
 import { supabase } from "@/lib/supabase";
@@ -128,36 +128,49 @@ export default function Report({
         activeTemplate={dicom.template}
         userRoleId={userRoleId}
       />
-      <div className="flex items-center gap-2 justify-end mb-4">
-        <DownloadButtons dicom={dicom} userRoleId={userRoleId} />
+      <div className="z-20 relative">
+        <Sticky>
+          <div className="bg-gray-50 py-6">
+            <div className="flex justify-between mb-4">
+              <PreviewPDFButton
+                userRoleId={userRoleId}
+                isDownloadable={false}
+                dicom={dicom}
+              />
+              <DownloadButtons dicom={dicom} userRoleId={userRoleId} />
+            </div>
+            <div className="flex justify-end gap-2">
+              {!dicom.state || dicom.state === DicomStateEnum.VIEWED ? (
+                <button
+                  onClick={async () => {
+                    await updateDicom(dicom.id, {
+                      state: DicomStateEnum.DRAFT,
+                    });
+                    router.push("/admin/dicoms");
+                  }}
+                  title={DicomStateEnum.DRAFT}
+                  type="button"
+                  className="px-6 py-2 font-semibold text-orange-600 border-orange-200 cursor-pointer border bg-orange-50 rounded-full"
+                >
+                  {DicomStateEnum.DRAFT}
+                </button>
+              ) : null}
+              <CompleteDicomButton
+                userRoleId={userRoleId}
+                dicomState={dicom.state}
+                onClick={async () => {
+                  await updateDicom(dicom.id, {
+                    state: DicomStateEnum.COMPLETED,
+                    completed_at: new Date(),
+                  });
+                  router.push("/admin/dicoms");
+                }}
+              />
+            </div>
+          </div>
+        </Sticky>
       </div>
-      <div className="flex items-center gap-1 justify-end mb-6">
-        {!dicom.state || dicom.state === DicomStateEnum.VIEWED ? (
-          <button
-            onClick={async () => {
-              await updateDicom(dicom.id, { state: DicomStateEnum.DRAFT });
-              router.push("/admin/dicoms");
-            }}
-            title={DicomStateEnum.DRAFT}
-            type="button"
-            className="px-6 py-2 font-semibold text-orange-600 border-orange-200 cursor-pointer border bg-orange-50 rounded-full"
-          >
-            {DicomStateEnum.DRAFT}
-          </button>
-        ) : null}
-        <CompleteDicomButton
-          userRoleId={userRoleId}
-          dicomState={dicom.state}
-          onClick={async () => {
-            await updateDicom(dicom.id, {
-              state: DicomStateEnum.COMPLETED,
-              completed_at: new Date(),
-            });
-            router.push("/admin/dicoms");
-          }}
-        />
-      </div>
-      <div className="bg-gray-200 overflow-auto">
+      <div className="bg-gray-200 overflow-auto relative z-10">
         <div
           style={{ width: "595pt", fontFamily: "Arial" }}
           className="p-[60pt] pb-[120pt] relative mx-auto bg-white overflow-hidden"
@@ -246,21 +259,6 @@ export default function Report({
             ) : null}
           </div>
         </div>
-      </div>
-      <div className="flex justify-end mt-6 gap-3">
-        <Link
-          href="/admin/dicoms"
-          className="flex items-center border px-6 cursor-pointer py-2 border-gray-200 text-gray-700 rounded-xl font-semibold"
-          type="button"
-          title="Back"
-        >
-          <span>Back</span>
-        </Link>
-        <PreviewPDFButton
-          userRoleId={userRoleId}
-          isDownloadable={false}
-          dicom={dicom}
-        />
       </div>
     </>
   );

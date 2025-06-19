@@ -15,19 +15,13 @@ export default async function Page({ params }: { params: Params }) {
   const session = await auth();
   const user = session?.user;
 
-  if (user?.id) {
-    const { data } = await supabase
-      .from("user")
-      .select("role_id, template_id")
-      .eq("id", user?.id)
-      .single();
+  const { data } = await supabase
+    .from("user")
+    .select("role_id")
+    .eq("id", user?.id)
+    .single();
 
-    user.role_id = data?.role_id;
-    user.template_id = data?.template_id;
-  }
-
-  if (!user?.id || !user.role_id) return null;
-
+  if (!user?.id || !data?.role_id) return null;
   const userId = user?.id;
 
   const { data: templates } = (await supabase
@@ -45,7 +39,7 @@ export default async function Page({ params }: { params: Params }) {
   return (
     <>
       <div className="flex mb-4 print:hidden items-center justify-between">
-        <h1 className="font-semibold text-lg block">Medical Report</h1>
+        <h1 className="font-semibold text-lg block">Report Editor</h1>
         <Link
           href="/admin/dicoms"
           title="Templates"
@@ -68,14 +62,14 @@ export default async function Page({ params }: { params: Params }) {
         </Link>
       </div>
       <CheckPermission
-        userRoleId={user.role_id}
+        userRoleId={data.role_id}
         requiredPermission={Permissions.GENERATE_REPORT}
         fallback={<FallbackPermission />}
         loadingComponent={<LoadingReportComponent />}
       >
         <Report
           dicomId={id}
-          userRoleId={user.role_id}
+          userRoleId={data.role_id}
           templates={templates || []}
         />
       </CheckPermission>

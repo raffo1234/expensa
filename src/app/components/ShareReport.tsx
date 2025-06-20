@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import toast from "react-hot-toast";
 import FieldLabel from "./FieldLabel";
 import FieldsSection from "./FieldsSection";
 import { supabase } from "@/lib/supabase";
 import getExpirationTime from "@/lib/getExpirationTime";
+import DotsLoading from "./DotsLoading";
 
 type TimeType = "24 hours" | "48 hours" | "84 months";
 
@@ -23,32 +24,15 @@ export default function ShareReport({
   dicomId: string;
 }) {
   const [time, setTime] = useState<TimeType | null>(Time._24Hours);
-  const [sharedLinkId, setSharedLinkId] = useState<string | null>(null);
+  const [isSharing, setIsSharing] = useState(false);
 
   const createShareLink = async (
     userId: string,
     dicomId: string,
     time: TimeType | null
   ) => {
+    setIsSharing(true);
     const expireAt = getExpirationTime(time as Time);
-
-    const values = {
-      dicom_id: dicomId,
-      created_by: userId,
-      expire_at: expireAt,
-    };
-
-    const { data: existing, error: fetchError } = await supabase
-      .from("shared_link")
-      .select("id")
-      .match(values)
-      .maybeSingle();
-
-    if (fetchError) throw fetchError;
-
-    if (existing) {
-      return existing.id;
-    }
 
     const { data } = await supabase
       .from("shared_link")
@@ -63,14 +47,11 @@ export default function ShareReport({
       .single();
 
     if (data) {
-      setSharedLinkId(data.id);
+      await copyLink(`${process.env.NEXT_PUBLIC_URL}/view/pdf/${data.id}`);
     }
+    setIsSharing(false);
   };
 
-  const handleTimeChange = (newTime: TimeType) => {
-    createShareLink(userId, dicomId, newTime);
-    setTime(newTime);
-  };
   const copyLink = async (link: string) => {
     if (!link) return toast.error("Failed to create share link");
 
@@ -83,12 +64,6 @@ export default function ShareReport({
     toast.success("Email shared successfully!");
   };
 
-  useEffect(() => {
-    if (time) {
-      createShareLink(userId, dicomId, time);
-    }
-  }, [dicomId, time, userId]);
-
   return (
     <>
       <h1 className="font-semibold text-xl mb-6">Share</h1>
@@ -99,7 +74,7 @@ export default function ShareReport({
           return (
             <button
               key={key}
-              onClick={() => handleTimeChange(Time[key as keyof typeof Time])}
+              onClick={() => setTime(Time[key as keyof typeof Time])}
               className={`${value === time ? "bg-cyan-50 border-cyan-200" : "border-transparent"} border px-5 py-2 rounded-lg cursor-pointer transition-colors duration-300`}
             >
               {value}
@@ -115,16 +90,19 @@ export default function ShareReport({
               Anyone with the link can access
             </div>
             <div className="relative w-full">
-              <div className="truncate text-gray-500 pr-30 w-full px-4 bg-white py-2.5 rounded-xl border border-gray-200">
-                {`${process.env.NEXT_PUBLIC_URL}/view/pdf/${sharedLinkId}`}
+              <div className="truncate text-gray-500 pr-40 w-full px-4 bg-white py-2.5 rounded-xl border border-gray-200">
+                {`${process.env.NEXT_PUBLIC_URL}/view/pdf/${dicomId}`}
+              </div>
+              <div
+                className={`${isSharing ? "opacity-100" : "opacity-0"} transition-opacity duration-300 absolute top-1/2 -translate-y-1/2 right-30`}
+              >
+                <DotsLoading />
               </div>
               <button
-                onClick={() =>
-                  copyLink(
-                    `${process.env.NEXT_PUBLIC_URL}/view/pdf/${sharedLinkId}`
-                  )
-                }
-                className="hover:bg-cyan-50 hover:border-cyan-200 cursor-pointer transition-colors duration-300 absolute right-1 top-1/2 -translate-y-1/2 text-sm bg-gray-50 border px-5 py-2 border-gray-200 rounded-lg"
+                type="button"
+                disabled={isSharing}
+                onClick={() => createShareLink(userId, dicomId, time)}
+                className={`${isSharing ? "opacity-50" : ""} hover:bg-cyan-50 hover:border-cyan-200 cursor-pointer transition-colors duration-300 absolute right-1 top-1/2 -translate-y-1/2 text-sm bg-gray-50 border px-5 py-2 border-gray-200 rounded-lg`}
               >
                 Copy link
               </button>

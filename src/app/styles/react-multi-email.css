@@ -1,0 +1,21 @@
+.react-multi-email {
+  display: flex;
+  flex-grow: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 4px;
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-xl);
+}
+
+.react-multi-email input {
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: 6px 4px;
+}
+
+.react-multi-email input:focus-visible {
+  border: none;
+  outline: none;
+}

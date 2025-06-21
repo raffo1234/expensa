@@ -38,11 +38,9 @@ export default function UploaderPage({
       } else {
         const errorData = await response.json();
         console.error(errorData.error || "Failed to send email.");
-        toast.error("Failed to send email.");
       }
     } catch (error) {
       console.error("Error sending email:", error);
-      toast.error("Failed to send email.");
     }
   };
 

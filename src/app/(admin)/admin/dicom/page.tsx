@@ -1,8 +1,7 @@
 import UploaderPage from "@/components/UploaderPage";
+import ViewAllDicomsLink from "@/components/ViewAllDicomsLink";
 import { auth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
-import { Icon } from "@iconify/react/dist/iconify.js";
-import Link from "next/link";
 
 export default async function Page() {
   const session = await auth();
@@ -19,7 +18,7 @@ export default async function Page() {
     user.template_id = data?.template_id;
   }
 
-  if (!user?.id || !user.role_id) return null;
+  if (!user?.id || !user?.email || !user.role_id) return null;
 
   return (
     <>
@@ -30,16 +29,13 @@ export default async function Page() {
             DCM, Compressed files
           </span>
         </h1>
-        <Link
-          href="/admin/dicoms"
-          className="flex items-center gap-2 cursor-pointer text-center p-3 text-cyan-400 group"
-          title="View All"
-        >
-          <Icon icon="solar:file-text-line-duotone" fontSize={24} />
-          <span className="group-hover:underline">View All</span>
-        </Link>
+        <ViewAllDicomsLink userRoleId={user.role_id} />
       </div>
-      <UploaderPage userId={user.id} userRoleId={user.role_id} />
+      <UploaderPage
+        userEmail={user.email}
+        userId={user.id}
+        userRoleId={user.role_id}
+      />
     </>
   );
 }

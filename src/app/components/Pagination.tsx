@@ -215,9 +215,6 @@ export default function Pagination({
     null
   );
 
-  // const { hasPermission, isLoading: isLoadingPermissionDownloadReport } =
-  //   useCheckPermission(userRoleId, Permissions.DOWNLOAD_REPORT);
-
   const [studyDateRange, setStudyDateRange] = useState<DateRangeType | null>(
     null
   );
@@ -1027,6 +1024,7 @@ export default function Pagination({
                       <td className="py-2 px-2">
                         {result.data ? (
                           <DicomActionButtons
+                            activeUserId={userId}
                             userRoleId={userRoleId}
                             dicom={result.data[index]}
                             mutate={mutate}

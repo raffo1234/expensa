@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import Aside from "@/components/Aside";
 import Header from "@/components/Header";
 import { supabase } from "@/lib/supabase";
+import { SessionProvider } from "next-auth/react";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -23,7 +24,7 @@ export default async function AdminLayout({
   if (!user || !data) return null;
 
   return (
-    <>
+    <SessionProvider session={session}>
       <Header />
       <div className="border-t border-gray-200">
         <main className="flex items-start w-full z-10 relative">
@@ -45,6 +46,6 @@ export default async function AdminLayout({
           </section>
         </main>
       </div>
-    </>
+    </SessionProvider>
   );
 }

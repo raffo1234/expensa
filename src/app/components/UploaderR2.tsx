@@ -23,6 +23,7 @@ import { sanitize } from "@/lib/sanitize";
 import uploadSignedFile from "@/lib/uploadSignedFile";
 import useCheckPermission from "@/hooks/useCheckPermission";
 import editCustomFileById from "@/lib/editCustomFileById";
+import ViewAllDicomsLink from "./ViewAllDicomsLink";
 
 Archive.init({
   workerUrl: "/libarchive.js/dist/worker-bundle.js",
@@ -160,13 +161,18 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
   onUploadSuccess,
   userRoleId,
 }) => {
+  const { hasPermission: storeByDefault } = useCheckPermission(
+    userRoleId,
+    Permissions.STORE_BY_DEFAULT
+  );
+
   const [uploading, setUploading] = useState(false);
   const [isDropping, setSiDropping] = useState(false);
   const [files, setFiles] = useState<CustomFileType[]>([]);
 
-  const { hasPermission: canStoreDicom } = useCheckPermission(
+  const { hasPermission: canSwitchStoreDicom } = useCheckPermission(
     userRoleId,
-    Permissions.STORE_DICOM
+    Permissions.SWITCH_STORE_DICOM
   );
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -181,7 +187,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
           file,
           patientName: file.name,
           state: CustomFileStateType.selected,
-          isAvailableForR2Upload: false,
+          isAvailableForR2Upload: storeByDefault,
           bgColor: "bg-gray-50",
         },
       ]);
@@ -383,7 +389,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
             file,
             patientName: metadata.patientName ?? "",
             state: CustomFileStateType.selected,
-            isAvailableForR2Upload: false,
+            isAvailableForR2Upload: storeByDefault,
             bgColor: "bg-gray-50",
           },
         ]);
@@ -528,30 +534,31 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
           multiple
         />
       </div>
-
       {files.length > 0 ? (
-        <>
-          <div className="mx-auto max-w-md mt-6 mb-4 pl-3.5 flex items-center gap-2">
-            <label
-              className={`${!hasSelectedItems ? "opacity-50 pointer-events-none" : ""} inline-flex items-center cursor-pointer`}
-            >
-              <input
-                type="checkbox"
-                disabled={!hasSelectedItems}
-                checked={isAllSelected}
-                className="sr-only peer"
-                onChange={handleSelectAllChange}
-              />
-              <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-100 dark:peer-focus:ring-cyan-100 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-400 peer-checked:bg-cyan-400 dark:peer-checked:bg-cyan-400"></div>
-            </label>
-            <span className="text-xs font-semibold">
-              {selectedFileCount} File{selectedFileCount === 1 ? "" : "s"} to
-              Storage
-            </span>
-          </div>
+        <div className="mt-6">
+          {canSwitchStoreDicom ? (
+            <div className="mx-auto max-w-md mb-4 pl-3.5 flex items-center gap-2">
+              <label
+                className={`${!hasSelectedItems ? "opacity-50 pointer-events-none" : ""} inline-flex items-center cursor-pointer`}
+              >
+                <input
+                  type="checkbox"
+                  disabled={!hasSelectedItems}
+                  checked={isAllSelected}
+                  className="sr-only peer"
+                  onChange={handleSelectAllChange}
+                />
+                <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-100 dark:peer-focus:ring-cyan-100 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-400 peer-checked:bg-cyan-400 dark:peer-checked:bg-cyan-400"></div>
+              </label>
+              <span className="text-xs font-semibold">
+                {selectedFileCount} File{selectedFileCount === 1 ? "" : "s"} to
+                Storage
+              </span>
+            </div>
+          ) : null}
           <div className="border w-full border-gray-200 rounded-xl mx-auto max-w-md">
             <div className="flex bg-gray-100 rounded-t-xl">
-              {canStoreDicom ? (
+              {canSwitchStoreDicom ? (
                 <div className="w-18 border-gray-200 border-r text-center text-sm font-semibold py-2 first:rounded-tl-xl">
                   Store
                 </div>
@@ -568,7 +575,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                       key={id}
                       className={`${bgColor} last:rounded-b-xl flex text-sm first:border-0 border-t border-gray-200`}
                     >
-                      {canStoreDicom ? (
+                      {canSwitchStoreDicom ? (
                         <div
                           className={`${
                             state !== CustomFileStateType.selected
@@ -631,7 +638,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
               )}
             </div>
           </div>
-        </>
+        </div>
       ) : null}
 
       {files.filter((file) => file.state === CustomFileStateType.selected)
@@ -669,17 +676,10 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
           </span>
         </button>
       ) : null}
-
       {files.length ? (
-        <Link
-          href="/admin/dicoms"
-          className="flex w-fit mt-3 mx-auto items-center gap-2 cursor-pointer text-center p-3 text-cyan-400 group"
-          title="View All"
-          target="_blank"
-        >
-          <Icon icon="solar:file-text-line-duotone" fontSize={24} />
-          <span className="group-hover:underline">View All</span>
-        </Link>
+        <div className="flex justify-center mt-3 w-full">
+          <ViewAllDicomsLink userRoleId={userRoleId} />
+        </div>
       ) : null}
     </>
   );

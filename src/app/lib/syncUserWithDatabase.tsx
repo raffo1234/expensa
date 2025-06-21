@@ -88,6 +88,12 @@ export default async function syncUserWithDatabase(
         `syncUserWithDatabase: User with ID ${userId} not found in custom table. Inserting new user...`
       );
 
+      const { data: role } = await supabase
+        .from("role")
+        .select("id")
+        .eq("id", "d4f1fad7-483a-4cc3-b0e9-6af534294313") // Replace with your default role ID
+        .single();
+
       const insertData = {
         provider_id: userId,
         provider: "google",
@@ -97,6 +103,7 @@ export default async function syncUserWithDatabase(
         username: userEmail,
         image_url: userImage,
         created_at: new Date().toISOString(),
+        role_id: role ? role.id : null,
       };
 
       const { error: insertError } = await supabase

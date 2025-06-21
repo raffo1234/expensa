@@ -8,16 +8,22 @@ import useCheckPermission from "@/hooks/useCheckPermission";
 import { Permissions } from "@/types/propertyState";
 import deleteDicom from "@/lib/deleteDicom";
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 
-export default function DicomActionButtons({
+export default function TableActionButtons({
   dicom,
   userRoleId,
+  activeUserId,
   mutate,
 }: {
   dicom: DicomType;
   userRoleId: string;
+  activeUserId: string;
   mutate: () => void;
 }) {
+  const { data: session } = useSession();
+  const signedUserId = session?.user?.id || "";
+
   const [isDeleting, setIsDeleting] = useState(false);
   const { hasPermission: canDownload, isLoading: isLoadingCanDownload } =
     useCheckPermission(userRoleId, Permissions.DOWNLOAD_REPORT);
@@ -25,7 +31,17 @@ export default function DicomActionButtons({
   const { hasPermission: canDelete, isLoading: isLoadingCanDelete } =
     useCheckPermission(userRoleId, Permissions.DELETE_REPORT);
 
-  if (isLoadingCanDownload || isLoadingCanDelete) return null;
+  const {
+    hasPermission: canDeleteOtherDicoms,
+    isLoading: isLoadingCanDeleteOtherDicoms,
+  } = useCheckPermission(userRoleId, Permissions.DELETE_OTHER_DICOMS);
+
+  if (
+    isLoadingCanDownload ||
+    isLoadingCanDelete ||
+    isLoadingCanDeleteOtherDicoms
+  )
+    return null;
 
   return (
     <div className="flex gap-1 justify-end">
@@ -52,7 +68,8 @@ export default function DicomActionButtons({
           {dicom.state !== DicomStateEnum.COMPLETED ? "Inform" : "Amend"}
         </span>
       </Link>
-      {canDelete ? (
+      {(canDelete && activeUserId === signedUserId) ||
+      (canDeleteOtherDicoms && activeUserId !== signedUserId) ? (
         <button
           title="Delete Dicom"
           onClick={() =>

@@ -169,6 +169,12 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
     userRoleId,
     Permissions.STORE_BY_DEFAULT
   );
+
+  const { hasPermission: canSendEmailAfterUploading } = useCheckPermission(
+    userRoleId,
+    Permissions.SEND_EMAIL_AFTER_UPLOADING
+  );
+
   console.warn(userEmail);
   const [uploading, setUploading] = useState(false);
   const [isDropping, setSiDropping] = useState(false);
@@ -340,8 +346,10 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
             });
 
             if (process.env.NODE_ENV !== "development") {
-              await sendEmailToAdmin();
-              await sendEmailToUser({ to: userEmail });
+              if (canSendEmailAfterUploading) {
+                await sendEmailToAdmin();
+                await sendEmailToUser({ to: userEmail });
+              }
             }
           }
         }

@@ -34,7 +34,7 @@ export default function UploaderPage({
       });
 
       if (response.ok) {
-        toast.success("Email sent successfully!");
+        console.info("Email sent successfully!");
       } else {
         const errorData = await response.json();
         console.error(errorData.error || "Failed to send email.");
@@ -60,7 +60,7 @@ export default function UploaderPage({
       });
 
       if (response.ok) {
-        toast.success("Email sent successfully!");
+        console.info("Email sent successfully!");
       } else {
         const errorData = await response.json();
         console.error(errorData.error || "Failed to send email.");

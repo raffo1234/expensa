@@ -71,6 +71,7 @@ interface DicomMetadata {
 
 type UploaderR2Props = {
   userId: string;
+  userEmail: string;
   userRoleId: string;
   onUploadSuccess?: () => void;
 };
@@ -158,6 +159,7 @@ async function insertNewDataSet(
 
 const UploaderR2: React.FC<UploaderR2Props> = ({
   userId,
+  userEmail,
   onUploadSuccess,
   userRoleId,
 }) => {
@@ -165,7 +167,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
     userRoleId,
     Permissions.STORE_BY_DEFAULT
   );
-
+  console.warn(userEmail);
   const [uploading, setUploading] = useState(false);
   const [isDropping, setSiDropping] = useState(false);
   const [files, setFiles] = useState<CustomFileType[]>([]);

@@ -20,75 +20,14 @@ export default function UploaderPage({
     Permissions.UPLOAD_DICOM
   );
 
-  const sendEmailToUser = async () => {
-    try {
-      const response = await fetch("/api/send-email-user", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          to: userEmail,
-          link: `https://cadia.pe`,
-        }),
-      });
-
-      if (response.ok) {
-        console.info("Email sent successfully!");
-      } else {
-        const errorData = await response.json();
-        console.error(errorData.error || "Failed to send email.");
-      }
-    } catch (error) {
-      console.error("Error sending email:", error);
-    }
-  };
-
-  const sendEmailToAdmin = async () => {
-    try {
-      const response = await fetch("/api/send-email-user", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          to: "ivan.meza1@unmsm.edu.pe",
-          link: `https://cadia.pe`,
-        }),
-      });
-
-      if (response.ok) {
-        console.info("Email sent successfully!");
-      } else {
-        const errorData = await response.json();
-        console.error(errorData.error || "Failed to send email.");
-        toast.error("Failed to send email.");
-      }
-    } catch (error) {
-      console.error("Error sending email:", error);
-      toast.error("Failed to send email.");
-    }
-  };
-
   if (isLoading)
     return (
       <div className="animate-pulse w-full h-[266px] rounded-2xl border border-dashed border-gray-200"></div>
     );
 
-  const onUploadSuccess = () => {
-    toast.success("Upload successful!");
-
-    sendEmailToAdmin();
-    sendEmailToUser();
-  };
-
   if (!hasPermission) return <FallbackPermission />;
 
   return (
-    <UploaderR2
-      userId={userId}
-      userRoleId={userRoleId}
-      onUploadSuccess={onUploadSuccess}
-    />
+    <UploaderR2 userId={userId} userRoleId={userRoleId} userEmail={userEmail} />
   );
 }

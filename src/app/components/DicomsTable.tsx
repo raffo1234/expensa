@@ -5,16 +5,17 @@ import { adminUsersKey } from "@/constants";
 import useCheckPermission from "@/hooks/useCheckPermission";
 import { supabase } from "@/lib/supabase";
 import { Permissions } from "@/types/propertyState";
+import { UserType } from "@/types/userType";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { useState } from "react";
 import useSWR from "swr";
 
 const usersFetcher = async () => {
-  const { data, error } = await supabase
+  const { data } = (await supabase
     .from("user")
-    .select("id, first_name, last_name, email")
-    .order("first_name", { ascending: true });
-  if (error) throw error;
+    .select("id, first_name, role_id, last_name, email, role(name)")
+    .order("first_name", { ascending: true })) as { data: UserType[] | null };
+
   return data;
 };
 
@@ -76,10 +77,11 @@ export default function DicomsTable({
             className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500 bg-white"
           >
             <option value="">Select ...</option>
-            {users?.map(({ id, first_name, last_name, email }) => {
+            {users?.map(({ id, first_name, role, last_name, email }) => {
               return (
                 <option value={id} key={id}>
-                  {first_name} {last_name} ({email})
+                  ({role?.name ?? "No role"}) - {first_name} {last_name} (
+                  {email})
                 </option>
               );
             })}

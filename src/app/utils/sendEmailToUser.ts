@@ -1,4 +1,4 @@
-export const sendEmailToUser = async ({userEmail}: {userEmail: string}) => {
+export const sendEmailToUser = async ({to}: {to: string}) => {
     try {
       const response = await fetch("/api/send-email-user", {
         method: "POST",
@@ -6,7 +6,7 @@ export const sendEmailToUser = async ({userEmail}: {userEmail: string}) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          to: userEmail,
+          to: to,
           link: `https://cadia.pe`,
         }),
       });

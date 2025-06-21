@@ -24,6 +24,8 @@ import uploadSignedFile from "@/lib/uploadSignedFile";
 import useCheckPermission from "@/hooks/useCheckPermission";
 import editCustomFileById from "@/lib/editCustomFileById";
 import ViewAllDicomsLink from "./ViewAllDicomsLink";
+import { sendEmailToUser } from "@/utils/sendEmailToUser";
+import { sendEmailToAdmin } from "@/utils/sendEmailToAdmin";
 
 Archive.init({
   workerUrl: "/libarchive.js/dist/worker-bundle.js",
@@ -336,6 +338,11 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
               bgColor: "bg-green-50",
               studies,
             });
+
+            if (process.env.NODE_ENV !== "development") {
+              await sendEmailToAdmin();
+              await sendEmailToUser({ to: userEmail });
+            }
           }
         }
       } catch {

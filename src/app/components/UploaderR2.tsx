@@ -430,7 +430,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
     });
 
     setSiDropping(false);
-  }, []);
+  }, [storeByDefault]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,

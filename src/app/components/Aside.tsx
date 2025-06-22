@@ -23,24 +23,40 @@ export default function Aside({
     setIsOpen(false);
   };
 
+  const handleToggle = () => {
+    if (isOpen) {
+      closeMenu();
+      const documentElement = document.documentElement;
+      documentElement.style.overflow = "auto";
+    } else {
+      handleOpen();
+    }
+  };
+
+  const handleOpen = () => {
+    setIsOpen(true);
+    const documentElement = document.documentElement;
+    documentElement.style.overflow = "hidden";
+  };
+
   const roleName = role ? role[0]?.name : "...";
 
   return (
     <div className="flex-shrink-0">
       <button
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={handleToggle}
         className={`${
           isOpen ? "text-cyan-500" : ""
-        } lg:invisible z-20 visible absolute right-4 top-1 bg-white w-12 h-12 border border-gray-200 rounded-xl flex justify-center items-center`}
+        } cursor-pointer lg:invisible z-50 visible absolute right-4 top-4 bg-white w-12 h-12 flex justify-center items-center`}
       >
-        <Icon icon="solar:hamburger-menu-broken" fontSize={24} />
+        <Icon icon="solar:hamburger-menu-linear" fontSize={24} />
       </button>
       <section
         className={`${
           isOpen
             ? "opacity-100 visible translate-x-0"
             : "invisible opacity-0 lg:visible lg:opacity-100 lg:translate-x-0 -translate-x-2"
-        } transition-all lg:w-[286px] w-full absolute left-0 top-0 lg:static py-8 px-5 bg-white z-10`}
+        } transition-all lg:w-[286px] h-full w-full overflow-auto absolute left-0 top-0 lg:static py-8 px-5 bg-white z-30`}
       >
         <header className="mb-20">
           <div className="flex gap-4 items-center">

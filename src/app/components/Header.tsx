@@ -3,7 +3,7 @@ import ProfilePopover from "@/components/ProfilePopover";
 
 export default function Header() {
   return (
-    <header className="w-full">
+    <header className="w-full pr-16 lg:pr-0">
       <nav className="max-w-[1816px] w-full mx-auto p-4 justify-between flex items-center">
         <Link
           href="/"

@@ -74,7 +74,7 @@ export default async function ProfilePopover() {
                   href="/"
                   className="py-2 px-6 hover:bg-gray-50 flex items-center gap-3.5"
                 >
-                  <Icon icon="solar:home-smile-angle-broken" />
+                  <Icon icon="solar:home-smile-angle-broken" fontSize={21} />
                   <span>Home</span>
                 </Link>
               </li>
@@ -85,10 +85,11 @@ export default async function ProfilePopover() {
                     await signOut();
                   }}
                 >
-                  <button className="hover:text-red-500 cursor-pointer w-full px-6 py-4 flex items-center gap-3.5 text-left transition-colors">
+                  <button className="hover:text-red-500 cursor-pointer w-full px-6 py-4 flex items-center gap-3.5 text-left transition-colors duration-300">
                     <Icon
                       icon="solar:inbox-out-linear"
                       className="-rotate-90"
+                      fontSize={21}
                     />
                     <span>Sign Out</span>
                   </button>

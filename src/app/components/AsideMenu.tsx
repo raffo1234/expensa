@@ -8,6 +8,7 @@ import Link from "next/link";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { preload } from "swr";
 import { adminUsersKey } from "@/constants";
+import { signOut } from "next-auth/react";
 
 export default function AsideMenu({
   userRoleId,
@@ -154,26 +155,43 @@ export default function AsideMenu({
       </div>
     );
 
-  return pages.map(({ href, title, iconName, onMouseEnter }) => (
-    <li key={href}>
-      <Link
-        href={href}
-        title={title}
-        onMouseEnter={onMouseEnter}
-        className={`${
-          href === currentPath
-            ? "bg-gray-100 font-semibold"
-            : "hover:bg-gray-50"
-        }  rounded-xl py-3 px-4 gap-3.5 flex items-center transition-colors duration-300 `}
-        onClick={closeMenu}
-      >
-        <Icon
-          icon={iconName}
-          fontSize={21}
-          className={`${href === currentPath ? "text-rose-400" : ""}`}
-        />
-        <span>{title}</span>
-      </Link>
-    </li>
-  ));
+  return (
+    <>
+      {pages.map(({ href, title, iconName, onMouseEnter }) => (
+        <li key={href}>
+          <Link
+            href={href}
+            title={title}
+            onMouseEnter={onMouseEnter}
+            className={`${
+              href === currentPath
+                ? "bg-gray-100 font-semibold"
+                : "hover:bg-gray-50"
+            }  rounded-xl py-3 px-4 gap-3.5 flex items-center transition-colors duration-300 `}
+            onClick={closeMenu}
+          >
+            <Icon
+              icon={iconName}
+              fontSize={21}
+              className={`${href === currentPath ? "text-rose-400" : ""}`}
+            />
+            <span>{title}</span>
+          </Link>
+        </li>
+      ))}
+      <li>
+        <button
+          onClick={() => signOut()}
+          className="hover:text-rose-400 cursor-pointer rounded-xl py-3 px-4 gap-3.5 flex items-center transition-colors duration-300"
+        >
+          <Icon
+            icon="solar:inbox-out-linear"
+            fontSize={21}
+            className="-rotate-90"
+          />
+          <span>Sign Out</span>
+        </button>
+      </li>
+    </>
+  );
 }

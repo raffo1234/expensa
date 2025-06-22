@@ -9,7 +9,9 @@ export default async function ClientLayout({
 }>) {
   return (
     <>
-      <Header />
+      <header className="w-full">
+        <Header />
+      </header>
       <Main>{children}</Main>
     </>
   );

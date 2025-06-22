@@ -25,7 +25,9 @@ export default async function AdminLayout({
 
   return (
     <SessionProvider session={session}>
-      <Header />
+      <header className="w-full pr-16 lg:pr-0">
+        <Header />
+      </header>
       <div className="border-t border-gray-200">
         <main className="flex items-start w-full z-10">
           {user && data?.role_id && user.name ? (

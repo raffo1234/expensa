@@ -424,7 +424,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
           patientName: file.name,
           state: CustomFileStateType.selected,
           bgColor: "bg-gray-50",
-          isAvailableForR2Upload: false,
+          isAvailableForR2Upload: storeByDefault,
         },
       ]);
     });

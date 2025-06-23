@@ -650,7 +650,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                       <div className="truncate flex-1 flex items-center px-5 py-2 border-r border-gray-200">
                         <div className="truncate">{patientName}</div>
                       </div>
-                      <div className="w-40 whitespace-nowrap flex-shrink-0 text-center">
+                      <div className="w-40 whitespace-nowrap py-1 flex-shrink-0">
                         {state === CustomFileStateType.duplicated ||
                         state === CustomFileStateType.inserted ? (
                           studies.map(({ id, state }) => (
@@ -666,7 +666,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                             />
                           ))
                         ) : (
-                          <div className="px-5 py-2">
+                          <div className="px-5 py-1.5 text-center">
                             {state}{" "}
                             {state !== CustomFileStateType.selected &&
                             state !== CustomFileStateType.processing ? (

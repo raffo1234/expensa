@@ -29,17 +29,16 @@ export default function LinkInsertedOrDuplicated({
         key={id}
         target="_blank"
         href={`/admin/dicoms/${id}`}
-        className="flex gap-1 px-3 justify-center items-center py-1 underline hover:text-cyan-500 transition-colors duration-300 underline-offset-4 w-full h-full"
+        className="px-3 block py-1 text-center underline hover:text-cyan-500 transition-colors duration-300 underline-offset-4 w-full"
       >
         <Icon
           icon={`${
             isDuplicated ? "solar:check-read-bold" : "solar:verified-check-bold"
           }`}
           fontSize={24}
-          className="text-cyan-400"
+          className="text-cyan-400 inline-block mr-2"
         />
-        {state}
-        <span>{uploadPercentage}%</span>
+        <span>{state}</span> <span>{uploadPercentage}%</span>
       </Link>
     );
   }

@@ -228,6 +228,7 @@ export default function Report({
               </div>
             </div>
             <TextareaAutosize
+              autoFocus
               defaultValue={dicom.report}
               onChange={(event) => debouncedTextarea(event.target.value)}
               minRows={2}

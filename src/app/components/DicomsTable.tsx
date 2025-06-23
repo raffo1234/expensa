@@ -76,7 +76,6 @@ export default function DicomsTable({
             onChange={(event) => setActiveUserId(event.target.value)}
             className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500 bg-white"
           >
-            <option value="">Select ...</option>
             {users?.map(({ id, first_name, role, last_name, email }) => {
               return (
                 <option value={id} key={id}>

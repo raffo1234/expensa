@@ -13,6 +13,7 @@ const editCustomFileById = (
     bgColor?: string;
     isAvailableForR2Upload?: boolean;
     studies?: Study[];
+    uploadPercentage?: number;
   }
 ): void => {
   setFiles((prevFiles) => {
@@ -26,7 +27,9 @@ const editCustomFileById = (
           (updates.isAvailableForR2Upload !== undefined &&
             file.isAvailableForR2Upload !== updates.isAvailableForR2Upload) ||
           (updates.studies !== undefined &&
-            !isEqual(file.studies, updates.studies));
+            !isEqual(file.studies, updates.studies)) ||
+          (updates.uploadPercentage !== undefined &&
+            file.uploadPercentage !== updates.uploadPercentage);
 
         if (hasChanged || (Object.keys(updates).length > 0 && !hasChanged)) {
           fileFoundAndChanged = true;

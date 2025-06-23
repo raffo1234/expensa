@@ -23,6 +23,7 @@ export type CustomFileType = {
   state: CustomFileStateType;
   isAvailableForR2Upload: boolean;
   bgColor: string;
+  uploadPercentage: number;
 };
 
 export type Study = { id: string; state: CustomFileStateType };

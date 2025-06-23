@@ -199,6 +199,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
           state: CustomFileStateType.selected,
           isAvailableForR2Upload: storeByDefault,
           bgColor: "bg-gray-50",
+          uploadPercentage: 0,
         },
       ]);
     });
@@ -301,7 +302,18 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
               bgColor: "bg-cyan-50",
             });
 
-            const urlSigned = await uploadSignedFile(selectedFile, now);
+            const updateProgress = (progress: number) => {
+              editCustomFileById(setFiles, files[index].id, {
+                uploadPercentage: progress,
+              });
+            };
+
+            const urlSigned = await uploadSignedFile(
+              selectedFile,
+              now,
+              updateProgress
+            );
+
             if (!urlSigned) {
               editCustomFileById(setFiles, files[index].id, {
                 state: CustomFileStateType.errorUploading,
@@ -364,73 +376,80 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
     setUploading(false);
   };
 
-  const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    setSiDropping(true);
+  const onDrop = useCallback(
+    async (acceptedFiles: File[]) => {
+      setSiDropping(true);
 
-    const compressedMimeTypes = [
-      "application/zip",
-      "application/x-zip-compressed",
-      "application/x-compressed", //.rar
-      "application/x-rar-compressed", //.rar
-    ];
+      const compressedMimeTypes = [
+        "application/zip",
+        "application/x-zip-compressed",
+        "application/x-compressed", //.rar
+        "application/x-rar-compressed", //.rar
+      ];
 
-    const nonCompressedFiles: ExtractedFilesObject = {};
-    const compressedFiles: File[] = [];
+      const nonCompressedFiles: ExtractedFilesObject = {};
+      const compressedFiles: File[] = [];
 
-    for (const file of acceptedFiles) {
-      const fileBuffer = await file.arrayBuffer();
-      const extensionFromBuffer = await fileTypeFromBuffer(fileBuffer);
+      for (const file of acceptedFiles) {
+        const fileBuffer = await file.arrayBuffer();
+        const extensionFromBuffer = await fileTypeFromBuffer(fileBuffer);
 
-      const isCompressed = extensionFromBuffer
-        ? compressedMimeTypes.includes(extensionFromBuffer.mime)
-        : false;
+        const isCompressed = extensionFromBuffer
+          ? compressedMimeTypes.includes(extensionFromBuffer.mime)
+          : false;
 
-      if (isCompressed) {
-        compressedFiles.push(file);
-      } else {
-        nonCompressedFiles[file.name] = file;
+        if (isCompressed) {
+          compressedFiles.push(file);
+        } else {
+          nonCompressedFiles[file.name] = file;
+        }
       }
-    }
 
-    // Process non-compressed files
-    const differentStudyDescriptions =
-      await findAllDicomFilesWithDifferentStudyDescriptions(nonCompressedFiles);
+      // Process non-compressed files
+      const differentStudyDescriptions =
+        await findAllDicomFilesWithDifferentStudyDescriptions(
+          nonCompressedFiles
+        );
 
-    if (differentStudyDescriptions && differentStudyDescriptions.length > 0) {
-      differentStudyDescriptions.map(({ file, metadata }) => {
+      if (differentStudyDescriptions && differentStudyDescriptions.length > 0) {
+        differentStudyDescriptions.map(({ file, metadata }) => {
+          setFiles((prev) => [
+            ...prev,
+            {
+              id: uuidv4(),
+              studies: [],
+              file,
+              patientName: metadata.patientName ?? "",
+              state: CustomFileStateType.selected,
+              isAvailableForR2Upload: storeByDefault,
+              bgColor: "bg-gray-50",
+              uploadPercentage: 0,
+            },
+          ]);
+        });
+      }
+
+      // Process compressed files
+      compressedFiles.map((file) => {
         setFiles((prev) => [
           ...prev,
           {
             id: uuidv4(),
             studies: [],
             file,
-            patientName: metadata.patientName ?? "",
+            patientName: file.name,
             state: CustomFileStateType.selected,
             isAvailableForR2Upload: storeByDefault,
             bgColor: "bg-gray-50",
+            uploadPercentage: 0,
           },
         ]);
       });
-    }
 
-    // Process compressed files
-    compressedFiles.map((file) => {
-      setFiles((prev) => [
-        ...prev,
-        {
-          id: uuidv4(),
-          studies: [],
-          file,
-          patientName: file.name,
-          state: CustomFileStateType.selected,
-          bgColor: "bg-gray-50",
-          isAvailableForR2Upload: storeByDefault,
-        },
-      ]);
-    });
-
-    setSiDropping(false);
-  }, [storeByDefault]);
+      setSiDropping(false);
+    },
+    [storeByDefault]
+  );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -586,7 +605,17 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
             </div>
             <div className="border-t border-gray-200">
               {Array.from(sortFilesByName(files)).map(
-                ({ id, patientName, state, bgColor, studies }, index) => {
+                (
+                  {
+                    id,
+                    patientName,
+                    state,
+                    bgColor,
+                    studies,
+                    uploadPercentage,
+                  },
+                  index
+                ) => {
                   return (
                     <div
                       key={id}
@@ -629,7 +658,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                               key={id}
                               target="_blank"
                               href={`/admin/dicoms/${id}`}
-                              className="flex gap-2 first:border-t-0 border-t border-gray-200 px-5 py-1 text-left underline hover:text-cyan-500 transition-colors duration-300 underline-offset-4 w-full justify-center"
+                              className="flex gap-2 px-3 justify-center items-center py-1 underline hover:text-cyan-500 transition-colors duration-300 underline-offset-4 w-full h-full"
                             >
                               <span className="flex gap-2">
                                 <Icon
@@ -641,12 +670,19 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                                   fontSize={24}
                                   className="text-cyan-400"
                                 />
-                                <span className="flex-grow-1">{state}</span>
+                                <span className="flex-grow-1">{state}</span>{" "}
+                                <span>{uploadPercentage}%</span>
                               </span>
                             </Link>
                           ))
                         ) : (
-                          <div className="px-5 py-2">{state}</div>
+                          <div className="px-5 py-2">
+                            {state}{" "}
+                            {state !== CustomFileStateType.selected &&
+                            state !== CustomFileStateType.processing ? (
+                              <span>{uploadPercentage}%</span>
+                            ) : null}
+                          </div>
                         )}
                       </div>
                     </div>

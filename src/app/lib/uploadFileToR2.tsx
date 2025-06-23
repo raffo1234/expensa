@@ -1,4 +1,8 @@
-export default function uploadFileToR2(url: string, file: File) {
+export default function uploadFileToR2(
+  url: string,
+  file: File,
+  onProgress: (progress: number) => void
+) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("PUT", url, true);
@@ -7,6 +11,7 @@ export default function uploadFileToR2(url: string, file: File) {
       if (event.lengthComputable) {
         const progress = Math.round((event.loaded / event.total) * 100);
         console.warn(progress);
+        onProgress(progress);
       }
     };
 

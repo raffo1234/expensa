@@ -33,7 +33,6 @@ export default function ListOfTemplates({
 
   const handleTemplateActive = (dicomId: string, newTemplate: TemplateType) => {
     updateTemplate(newTemplate);
-    localStorage.setItem("dicomActiveTemplateId", newTemplate.id);
   };
   const sortedTemplates = putFirst(templates, activeTemplate);
 

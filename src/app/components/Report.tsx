@@ -83,21 +83,17 @@ export default function Report({
         updateDicom(dicomId, { state: DicomStateEnum.VIEWED });
       }
 
-      if (dicom.state !== DicomStateEnum.COMPLETED && !dicom.template) {
-        const storedTemplateId = localStorage.getItem("dicomActiveTemplateId");
+      if (dicom.state !== DicomStateEnum.COMPLETED && !dicom.template_id) {
+        const fuse = new Fuse(templates, {
+          useExtendedSearch: true,
+          threshold: 0.4,
+          keys: ["name", "description"],
+        });
 
-        if (!storedTemplateId) {
-          const fuse = new Fuse(templates, {
-            keys: ["name", "description"],
-          });
+        const result = fuse.search(dicom.institution.split(" ").join(" | "));
 
-          const result = fuse.search(dicom.institution);
-
-          if (result.length > 0) {
-            updateDicom(dicomId, { template_id: result[0].item.id });
-          }
-        } else {
-          updateDicom(dicomId, { template_id: storedTemplateId });
+        if (result.length > 0) {
+          updateDicom(dicomId, { template_id: result[0].item.id });
         }
       }
     }

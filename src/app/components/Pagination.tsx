@@ -394,9 +394,6 @@ export default function Pagination({
   const startItemNumber = (page - 1) * pageSize + 1;
 
   const clearLocalStorage = () => {
-    const savedTemplateId = localStorage.getItem("dicomActiveTemplateId");
-    if (savedTemplateId) localStorage.removeItem("dicomActiveTemplateId");
-
     handleSearchChange(null);
     if (searchInputRef.current) {
       searchInputRef.current.value = "";

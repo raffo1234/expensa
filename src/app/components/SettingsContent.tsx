@@ -10,6 +10,7 @@ import { supabase } from "@/lib/supabase";
 import useCheckPermission from "@/hooks/useCheckPermission";
 import { Permissions } from "@/types/propertyState";
 import FallbackPermission from "./FallbackPermission";
+import { useSettingValueBySlug } from "@/hooks/useSettingValueBySlug";
 
 export default function SettingsContent({
   roles,
@@ -20,6 +21,10 @@ export default function SettingsContent({
 }) {
   const [isSaving, setIsSaving] = useState(false);
 
+  const [defaultSignupRole, loading] = useSettingValueBySlug(
+    "default_signup_role"
+  );
+  
   const { hasPermission: canViewSettings, isLoading } = useCheckPermission(
     userRoleId,
     Permissions.HANDLE_SETTINGS
@@ -51,7 +56,7 @@ export default function SettingsContent({
     updateDefaultSignupRole(event.target.value);
   };
 
-  if(isLoading) return null;
+  if (!defaultSignupRole || isLoading || loading) return null;
   if (!canViewSettings) return <FallbackPermission />;
 
   return (
@@ -62,7 +67,7 @@ export default function SettingsContent({
         <div className="relative">
           <select
             disabled={isSaving}
-            id="template_id"
+            defaultValue={defaultSignupRole}
             onChange={onChange}
             className="w-full disable:opacity-50 transition-colors duration-300 px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500 bg-white"
           >

@@ -7,7 +7,6 @@ import { supabase } from "@/lib/supabase";
 import React, { useCallback, useState, type ChangeEvent } from "react";
 import { Icon } from "@iconify/react";
 import { useDropzone } from "react-dropzone";
-import Link from "next/link";
 import getAgeFromYYYYMMDD from "@/lib/getAgeFromYYYYMMDD";
 import { ExtractedFilesObject, processZipFile } from "@/lib/decompress";
 import { findAllDicomFilesWithDifferentStudyDescriptions } from "@/lib/dicoms";
@@ -26,6 +25,7 @@ import editCustomFileById from "@/lib/editCustomFileById";
 import ViewAllDicomsLink from "./ViewAllDicomsLink";
 import { sendEmailToUser } from "@/utils/sendEmailToUser";
 import { sendEmailToAdmin } from "@/utils/sendEmailToAdmin";
+import LinkInsertedOrDuplicated from "./LinkInsertedOrDuplicated";
 
 Archive.init({
   workerUrl: "/libarchive.js/dist/worker-bundle.js",
@@ -654,26 +654,16 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                         {state === CustomFileStateType.duplicated ||
                         state === CustomFileStateType.inserted ? (
                           studies.map(({ id, state }) => (
-                            <Link
+                            <LinkInsertedOrDuplicated
                               key={id}
-                              target="_blank"
-                              href={`/admin/dicoms/${id}`}
-                              className="flex gap-2 px-3 justify-center items-center py-1 underline hover:text-cyan-500 transition-colors duration-300 underline-offset-4 w-full h-full"
-                            >
-                              <span className="flex gap-2">
-                                <Icon
-                                  icon={`${
-                                    state === CustomFileStateType.duplicated
-                                      ? "solar:check-read-bold"
-                                      : "solar:verified-check-bold"
-                                  }`}
-                                  fontSize={24}
-                                  className="text-cyan-400"
-                                />
-                                <span className="flex-grow-1">{state}</span>{" "}
-                                <span>{uploadPercentage}%</span>
-                              </span>
-                            </Link>
+                              id={id}
+                              userRoleId={userRoleId}
+                              state={state}
+                              uploadPercentage={uploadPercentage}
+                              isDuplicated={
+                                state === CustomFileStateType.duplicated
+                              }
+                            />
                           ))
                         ) : (
                           <div className="px-5 py-2">

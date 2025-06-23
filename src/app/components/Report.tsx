@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Fuse from "fuse.js";
 import { useDebouncedCallback } from "use-debounce";
 import extractAgeWidthUnit from "@/lib/extractAgeWithUnit";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import TextareaAutosize from "react-textarea-autosize";
 import toast from "react-hot-toast";
 import Image from "next/image";
@@ -21,6 +21,7 @@ import PreviewPDFButton from "./PreviewPDFButton";
 import CompleteDicomButton from "./CompleteDicomButton";
 import ListOfTemplates from "./ListOfTemplates";
 import fetcherDicom from "@/fetchers/dicomFetcher";
+import useControlEnter from "@/hooks/useControlEnter";
 
 export default function Report({
   templates,
@@ -31,6 +32,8 @@ export default function Report({
   dicomId: string;
   userRoleId: string;
 }) {
+  const [isSaving, setIsSaving] = useState(false);
+
   const router = useRouter();
   const {
     data: dicom,
@@ -39,20 +42,40 @@ export default function Report({
     mutate,
   } = useSWR(`admin-${dicomId}`, () => fetcherDicom(dicomId));
 
-  const debouncedTextarea = useDebouncedCallback((value) => {
-    if (dicom?.id) updateDicom(dicom?.id, { report: value });
+  const debouncedTextarea = useDebouncedCallback(async (value) => {
+    if (dicom?.id) await updateDicom(dicom?.id, { report: value });
   }, 500);
 
   const updateDicom = async (id: string, newData: Partial<DicomType>) => {
+    setIsSaving(true);
+
     try {
       await supabase.from("dicom").update(newData).eq("id", id);
     } catch (error) {
       console.error(error);
     } finally {
       mutate();
+      setIsSaving(false);
       toast.success("Report updated successfully!");
     }
   };
+
+  const completeDicom = async () => {
+    if (!dicom?.id || isSaving) return;
+
+    if (dicom.state === DicomStateEnum.COMPLETED) {
+      router.push("/admin/dicoms");
+      return;
+    }
+
+    await updateDicom(dicom.id, {
+      state: DicomStateEnum.COMPLETED,
+      completed_at: new Date(),
+    });
+    router.push("/admin/dicoms");
+  };
+
+  useControlEnter(completeDicom);
 
   useEffect(() => {
     if (dicom) {
@@ -88,8 +111,8 @@ export default function Report({
 
   return (
     <>
-      <div className="flex items-center gap-2">
-        <h2 className="mb-6">
+      <div className="flex items-center gap-2 mb-6">
+        <h2>
           <span className="text-gray-600 text-sm">ID:</span>{" "}
           <span className="font-semibold">{dicom.patient_id}</span>
         </h2>
@@ -112,12 +135,15 @@ export default function Report({
                   ? "text-cyan-600 border-cyan-200 bg-cyan-100"
                   : ""
               }  
-              py-1 px-5 text-xs mb-6 uppercase w-fit rounded-xl border`}
+              py-1 px-5 text-xs uppercase w-fit rounded-xl border`}
             title={dicom.state}
           >
             {dicom.state}
           </div>
         ) : null}
+        <div className="text-gray-500 text-sm">
+          {isSaving ? "Saving ..." : ""}
+        </div>
       </div>
       <ListOfTemplates
         templates={templates}
@@ -159,11 +185,7 @@ export default function Report({
                 userRoleId={userRoleId}
                 dicomState={dicom.state}
                 onClick={async () => {
-                  await updateDicom(dicom.id, {
-                    state: DicomStateEnum.COMPLETED,
-                    completed_at: new Date(),
-                  });
-                  router.push("/admin/dicoms");
+                  await completeDicom();
                 }}
               />
             </div>

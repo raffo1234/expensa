@@ -143,6 +143,11 @@ export default function AsideMenu({
           },
         ]
       : []),
+    {
+      href: "/admin/my-studies",
+      title: "My studies",
+      iconName: "solar:hand-heart-linear",
+    },
   ];
 
   if (isLoading)

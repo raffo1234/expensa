@@ -20,7 +20,7 @@ export default function SettingsContent({
 }) {
   const [isSaving, setIsSaving] = useState(false);
 
-  const { hasPermission: canViewSettings } = useCheckPermission(
+  const { hasPermission: canViewSettings, isLoading } = useCheckPermission(
     userRoleId,
     Permissions.HANDLE_SETTINGS
   );
@@ -51,6 +51,7 @@ export default function SettingsContent({
     updateDefaultSignupRole(event.target.value);
   };
 
+  if(isLoading) return null;
   if (!canViewSettings) return <FallbackPermission />;
 
   return (

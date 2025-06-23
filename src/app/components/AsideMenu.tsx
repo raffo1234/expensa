@@ -53,6 +53,10 @@ export default function AsideMenu({
     userRoleId,
     Permissions.VIEW_RESIDENTS
   );
+  const { hasPermission: canHandleSettings } = useCheckPermission(
+    userRoleId,
+    Permissions.HANDLE_SETTINGS
+  );
 
   const pages = [
     {
@@ -148,6 +152,15 @@ export default function AsideMenu({
       title: "My studies",
       iconName: "solar:hand-heart-linear",
     },
+    ...(canHandleSettings
+      ? [
+          {
+            href: "/admin/settings",
+            title: "Settings",
+            iconName: "solar:settings-linear",
+          },
+        ]
+      : []),
   ];
 
   if (isLoading)

@@ -1,4 +1,5 @@
 // import { AdapterUser } from "next-auth/adapters";
+import { getSettingValueBySlug } from "@/utils/getSettingValueBySlug";
 import { supabase } from "./supabase";
 import { Profile, User } from "next-auth";
 
@@ -88,10 +89,14 @@ export default async function syncUserWithDatabase(
         `syncUserWithDatabase: User with ID ${userId} not found in custom table. Inserting new user...`
       );
 
+      const defaultSignupRole = await getSettingValueBySlug(
+        "default_signup_role"
+      );
+
       const { data: role } = await supabase
         .from("role")
         .select("id")
-        .eq("id", "d4f1fad7-483a-4cc3-b0e9-6af534294313") // Replace with your default role ID
+        .eq("id", defaultSignupRole)
         .single();
 
       const insertData = {

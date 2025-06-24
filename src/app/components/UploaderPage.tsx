@@ -4,6 +4,8 @@ import FallbackPermission from "@/components/FallbackPermission";
 import { Permissions } from "@/types/propertyState";
 import useCheckPermission from "@/hooks/useCheckPermission";
 import UploaderR2 from "./UploaderR2";
+import { useState } from "react";
+import { UPLOAD_OPTION } from "@/enums/uploadOption";
 
 export default function UploaderPage({
   userRoleId,
@@ -14,6 +16,8 @@ export default function UploaderPage({
   userId: string;
   userEmail: string;
 }) {
+  const [option, setOption] = useState(UPLOAD_OPTION.COMPRESSED);
+
   const { hasPermission, isLoading } = useCheckPermission(
     userRoleId,
     Permissions.UPLOAD_DICOM
@@ -27,6 +31,27 @@ export default function UploaderPage({
   if (!hasPermission) return <FallbackPermission />;
 
   return (
-    <UploaderR2 userId={userId} userRoleId={userRoleId} userEmail={userEmail} />
+    <>
+      <div className="mb-4 flex gap-2 items-center flex-wrap">
+        {Object.values(UPLOAD_OPTION).map((value) => {
+          return (
+            <button
+              key={value}
+              onClick={() => setOption(value)}
+              className={`${option === value ? "bg-cyan-50 border-cyan-200" : "hover:bg-gray-100 border-transparent"} border px-5 py-2 rounded-lg cursor-pointer transition-colors duration-300`}
+            >
+              {value}
+            </button>
+          );
+        })}
+      </div>
+      <UploaderR2
+        option={option}
+        setOption={setOption}
+        userId={userId}
+        userRoleId={userRoleId}
+        userEmail={userEmail}
+      />
+    </>
   );
 }

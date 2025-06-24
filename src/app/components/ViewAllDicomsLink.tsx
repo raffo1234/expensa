@@ -24,7 +24,7 @@ export default function ViewAllDicomsLink({
       target="_blank"
     >
       <Icon icon="solar:file-text-line-duotone" fontSize={24} />
-      <span className="group-hover:underline">View All</span>
+      <span className="whitespace-nowrap group-hover:underline">View All</span>
     </Link>
   );
 }

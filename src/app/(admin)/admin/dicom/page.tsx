@@ -26,7 +26,7 @@ export default async function Page() {
         <h1 className="mb-6 font-semibold text-lg block">
           Upload Files
           <span className="text-sm text-gray-500 font-normal block pt-1">
-            DCM, Compressed files
+            .dcm Compressed, Folder containing .dcm or a .dcm
           </span>
         </h1>
         <ViewAllDicomsLink userRoleId={user.role_id} />

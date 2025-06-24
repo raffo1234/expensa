@@ -26,10 +26,25 @@ import ViewAllDicomsLink from "./ViewAllDicomsLink";
 import { sendEmailToUser } from "@/utils/sendEmailToUser";
 import { sendEmailToAdmin } from "@/utils/sendEmailToAdmin";
 import LinkInsertedOrDuplicated from "./LinkInsertedOrDuplicated";
+import { UPLOAD_OPTION } from "@/enums/uploadOption";
+import { compressFiles } from "@/lib/compressFiles";
 
 Archive.init({
   workerUrl: "/libarchive.js/dist/worker-bundle.js",
 });
+
+declare module "react" {
+  interface InputHTMLAttributes<T> extends HTMLAttributes<T> {
+    webkitdirectory?: string;
+  }
+}
+
+const compressedMimeTypes = [
+  "application/zip",
+  "application/x-zip-compressed",
+  "application/x-compressed", //.rar
+  "application/x-rar-compressed", //.rar
+];
 
 interface DicomElement {
   tag: string; // Hexadecimal tag string (e.g., 'x00100010')
@@ -72,6 +87,8 @@ interface DicomMetadata {
 }
 
 type UploaderR2Props = {
+  option: UPLOAD_OPTION;
+  setOption: React.Dispatch<React.SetStateAction<UPLOAD_OPTION>>;
   userId: string;
   userEmail: string;
   userRoleId: string;
@@ -160,6 +177,8 @@ async function insertNewDataSet(
 }
 
 const UploaderR2: React.FC<UploaderR2Props> = ({
+  option,
+  setOption,
   userId,
   userEmail,
   onUploadSuccess,
@@ -176,6 +195,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
   );
 
   console.warn(userEmail);
+  const [isCompressing, setIsCompressing] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [isDropping, setSiDropping] = useState(false);
   const [files, setFiles] = useState<CustomFileType[]>([]);
@@ -185,8 +205,32 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
     Permissions.SWITCH_STORE_DICOM
   );
 
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = event.target.files || [];
+    const isFolder = option === UPLOAD_OPTION.FOLDER;
+
+    if (isFolder) {
+      setIsCompressing(true);
+      const compressedFiles = await compressFiles(Array.from(selectedFiles));
+
+      if (compressedFiles instanceof File) {
+        setFiles((prev) => [
+          ...prev,
+          {
+            id: uuidv4(),
+            studies: [],
+            file: compressedFiles,
+            patientName: compressedFiles.name,
+            state: CustomFileStateType.selected,
+            isAvailableForR2Upload: storeByDefault,
+            bgColor: "bg-gray-50",
+            uploadPercentage: 0,
+          },
+        ]);
+      }
+      setIsCompressing(false);
+      return;
+    }
 
     Array.from(selectedFiles).map((file) => {
       setFiles((prev) => [
@@ -380,13 +424,6 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
     async (acceptedFiles: File[]) => {
       setSiDropping(true);
 
-      const compressedMimeTypes = [
-        "application/zip",
-        "application/x-zip-compressed",
-        "application/x-compressed", //.rar
-        "application/x-rar-compressed", //.rar
-      ];
-
       const nonCompressedFiles: ExtractedFilesObject = {};
       const compressedFiles: File[] = [];
 
@@ -451,8 +488,38 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
     [storeByDefault]
   );
 
+  const acceptOptions = () => {
+    switch (option) {
+      case UPLOAD_OPTION.DCM:
+        return { "application/dicom": [".dcm"] };
+      case UPLOAD_OPTION.FOLDER:
+        return {};
+      case UPLOAD_OPTION.COMPRESSED:
+        return compressedMimeTypes.reduce(
+          (acc: Record<string, string[]>, mime) => {
+            acc[mime] = [];
+            return acc;
+          },
+          {}
+        );
+      default:
+        return {};
+    }
+  };
+
+  const onDragEnter = () => {
+    setOption(UPLOAD_OPTION.COMPRESSED);
+  };
+
+  const onDropAccepted = () => {
+    console.log("drop accepted");
+  };
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDragEnter,
     onDrop,
+    onDropAccepted,
+    accept: acceptOptions(),
   });
 
   const handleIsAvailableForR2 = (
@@ -506,27 +573,42 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
             ? "bg-cyan-50 border-cyan-100"
             : "bg-gray-50 border-gray-300"
         }
-        ${uploading || isDropping ? "cursor-no-drop" : "cursor-pointer"}
+        ${uploading || isDropping || isCompressing ? "cursor-no-drop" : "cursor-pointer"}
         transition-all  hover:outline-8 outline-cyan-50 duration-300 hover:border-cyan-200 hover:bg-white flex flex-col group items-center justify-center py-20 w-full border border-dashed rounded-2xl`}
       >
         <div className="w-11 h-11 relative mb-3">
           <Icon
             icon="solar:record-broken"
             className={`${
-              uploading || isDropping ? "opacity-100" : "opacity-0"
+              uploading || isDropping || isCompressing
+                ? "opacity-100"
+                : "opacity-0"
             } text-gray-500 animate-spin absolute left-0 top-0 group-hover:text-cyan-400 transition-all duration-300`}
             fontSize={42}
           />
           <Icon
             icon="solar:cloud-upload-broken"
             className={`${
-              uploading || isDropping ? "opacity-0" : "opacity-100"
+              uploading || isDropping || isCompressing
+                ? "opacity-0"
+                : "opacity-100"
             } text-gray-700 absolute left-0 top-0 group-hover:text-cyan-400 transition-colors duration-300`}
             fontSize={42}
           />
         </div>
-        <h2 className="text-gray-400 text-sm mb-1">.zip, .rar, .tar files</h2>
-        <h4 className="font-semibold mb-5">Drag and Drop your files here</h4>
+        {option === UPLOAD_OPTION.COMPRESSED ? (
+          <h3 className="mb-2 text-sm font-semibold px-2 rounded-md bg-cyan-50 border border-cyan-100">
+            Most Popular
+          </h3>
+        ) : null}
+        <h2 className="text-gray-400 mb-1">
+          {option} {option !== UPLOAD_OPTION.DCM ? "containing .dcm" : ""} files
+        </h2>
+        <h4 className="font-semibold text-lg mb-5">
+          {option !== UPLOAD_OPTION.FOLDER
+            ? "Drag and Drop your files here"
+            : "Click here to choose a folder"}
+        </h4>
         {files.length > 0 ? (
           <div className="border border-gray-200 rounded-xl">
             <div className="flex items-center border-b border-gray-200 bg-gray-100 rounded-t-xl">
@@ -564,9 +646,12 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
         <input
           {...getInputProps()}
           onChange={handleFileChange}
-          disabled={uploading}
+          disabled={uploading || isDropping || isCompressing}
           type="file"
           className="hidden"
+          {...(option === UPLOAD_OPTION.FOLDER
+            ? { webkitdirectory: "true" }
+            : {})}
           multiple
         />
       </div>

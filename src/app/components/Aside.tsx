@@ -21,13 +21,13 @@ export default function Aside({
 
   const closeMenu = () => {
     setIsOpen(false);
+    const documentElement = document.documentElement;
+    documentElement.style.overflow = "visible";
   };
 
   const handleToggle = () => {
     if (isOpen) {
       closeMenu();
-      const documentElement = document.documentElement;
-      documentElement.style.overflow = "auto";
     } else {
       handleOpen();
     }

@@ -22,6 +22,7 @@ import GenerateCompressedPDFs from "./GenerateCompressedPDFs";
 import GenerateCompressedDOCs from "./GenerateCompressedDOCs";
 import DicomActionButtons from "./TableActionButtons";
 import ShareReportButton from "./ShareReportButton";
+import useScrollRestorationLocalStorage from "@/hooks/useScrollRestorationLocalStorage";
 
 type SortDirection = "asc" | "desc" | null;
 
@@ -240,6 +241,8 @@ export default function Pagination({
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [search, setSearch] = useState<string | null>(null);
+
+  useScrollRestorationLocalStorage();
 
   interface FetchResult {
     data: DicomType[] | null;

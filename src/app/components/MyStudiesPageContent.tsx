@@ -79,7 +79,7 @@ export default function MyStudiesPageContent({ userId }: { userId: string }) {
                               py-1 px-5 text-xs mb-6 uppercase w-fit rounded-xl border`}
                   title={state}
                 >
-                  {state === "" ? "Received" : state}
+                  {state === "" ? "Send" : state}
                 </div>
               </div>
             </div>

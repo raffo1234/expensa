@@ -1,36 +1,55 @@
-import { useRouter } from 'next/router';
-import { useEffect } from 'react';
+"use client";
 
-function useScrollRestorationLocalStorage(keyPrefix = 'scrollPosition') {
-  const router = useRouter();
+import { usePathname } from 'next/navigation';
+import { useEffect, useRef } from 'react';
+
+function useSpecificPageScrollPositionSaver(targetPathname: string, keyPrefix: string = 'scrollPosition'): void {
+  const pathname = usePathname();
+  const scrollPositionRef = useRef<number | null>(null);
+  const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    if (!router.isReady) return;
+    if (pathname === targetPathname) {
+      const storageKey = `${keyPrefix}_${pathname}_onscroll`;
 
-    const storageKey = `${keyPrefix}_${router.pathname}`;
+      const saveScrollPosition = () => {
+        scrollPositionRef.current = window.scrollY;
+        localStorage.setItem(storageKey, window.scrollY.toString());
+        debounceTimeout.current = null;
+      };
 
-    const handleBeforeUnload = () => {
-      localStorage.setItem(storageKey, window.scrollY.toString());
-    };
+      const debouncedSaveScrollPosition = () => {
+        if (debounceTimeout.current) {
+          clearTimeout(debounceTimeout.current);
+        }
+        debounceTimeout.current = setTimeout(saveScrollPosition, 500);
+      };
 
-    window.addEventListener('beforeunload', handleBeforeUnload);
+      const handleScroll = () => {
+        debouncedSaveScrollPosition();
+      };
 
-    const restoreScrollPosition = () => {
+      window.addEventListener('scroll', handleScroll);
+
+      return () => {
+        window.removeEventListener('scroll', handleScroll);
+        if (debounceTimeout.current) {
+          clearTimeout(debounceTimeout.current);
+        }
+      };
+    }
+  }, [pathname, targetPathname, keyPrefix]);
+
+  useEffect(() => {
+    if (pathname === targetPathname) {
+      const storageKey = `${keyPrefix}_${pathname}_onscroll`;
       const storedPosition = localStorage.getItem(storageKey);
+
       if (storedPosition) {
         window.scrollTo(0, parseInt(storedPosition, 10));
-        localStorage.removeItem(storageKey); 
       }
-    };
-
-    restoreScrollPosition();
-    router.events.on('routeChangeComplete', restoreScrollPosition);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      router.events.off('routeChangeComplete', restoreScrollPosition);
-    };
-  }, [router.pathname, router.isReady, keyPrefix]);
+    }
+  }, [pathname, targetPathname, keyPrefix]);
 }
 
-export default useScrollRestorationLocalStorage;
+export default useSpecificPageScrollPositionSaver;

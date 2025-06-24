@@ -3,6 +3,7 @@
 import Pagination from "@/components/Pagination";
 import { adminUsersKey } from "@/constants";
 import useCheckPermission from "@/hooks/useCheckPermission";
+import useScrollRestorationLocalStorage from "@/hooks/useScrollRestorationLocalStorage";
 import { supabase } from "@/lib/supabase";
 import { Permissions } from "@/types/propertyState";
 import { UserType } from "@/types/userType";
@@ -26,6 +27,8 @@ export default function DicomsTable({
   userId: string;
   userRoleId: string;
 }) {
+  useScrollRestorationLocalStorage("/admin/dicoms");
+
   const [activeUserId, setActiveUserId] = useState(userId);
 
   const { data: users, isLoading: isLoadingUsers } = useSWR(

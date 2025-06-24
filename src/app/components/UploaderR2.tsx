@@ -601,6 +601,11 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
             Most Popular
           </h3>
         ) : null}
+        {option === UPLOAD_OPTION.DCM ? (
+          <h3 className="text mb-2 border border-orange-100 px-3 text-orange-400 bg-orange-50 rounded-lg">
+            Only access the patient&apos;s metadata, not to make a diagnosis.
+          </h3>
+        ) : null}
         <h2 className="text-gray-400 mb-1">
           {option} {option !== UPLOAD_OPTION.DCM ? "containing .dcm" : ""} files
         </h2>

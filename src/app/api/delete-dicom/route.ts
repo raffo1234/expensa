@@ -42,20 +42,20 @@ function getKeyFromUrl(url: string): string | null {
   }
 }
 
-async function deleteSupabaseRecord(id: string) {
-  const { error } = await supabase.from("dicom").delete().eq("id", id);
+async function deleteSupabaseRecord(id: string, table: string = "dicom") {
+  const { error } = await supabase.from(table).delete().eq("id", id);
   return error;
 }
 
 export async function DELETE(request: Request) {
-  const { id, dicomUrl } = await request.json();
+  const { id, dicomUrl, table } = await request.json();
 
   if (!id) {
     return NextResponse.json({ message: "Missing id" }, { status: 400 });
   }
 
   if (!dicomUrl) {
-    const error = await deleteSupabaseRecord(id);
+    const error = await deleteSupabaseRecord(id, table);
     if (error) {
       console.error("Supabase record deletion failed on server:", error);
       return NextResponse.json(
@@ -71,7 +71,7 @@ export async function DELETE(request: Request) {
 
   try {
     const fileKey = getKeyFromUrl(dicomUrl);
-
+    console.log({fileKey})
     if (!fileKey || fileKey === "") {
       return NextResponse.json(
         {
@@ -102,7 +102,7 @@ export async function DELETE(request: Request) {
       console.warn("Skipping R2 deletion due to missing configuration.");
     }
 
-    const error = await deleteSupabaseRecord(id);
+    const error = await deleteSupabaseRecord(id, table);
     if (error) {
       console.error("Supabase record deletion failed on server:", error);
       return NextResponse.json(

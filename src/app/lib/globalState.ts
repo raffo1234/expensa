@@ -21,6 +21,8 @@ type GlobalState = {
   setEditModalOpen: (isEditModalOpen: boolean) => void;
   editPropertyId: string;
   setEditPropertyId: (editPropertyId: string) => void;
+  onModalClose: (() => void) | undefined;
+  setOnModalClose:  (callback?: () => void) => void;
 };
 
 export const useGlobalState = create<GlobalState>((set) => ({
@@ -50,4 +52,8 @@ export const useGlobalState = create<GlobalState>((set) => ({
   editPropertyModalContent: null,
   setEditModalContent: (editModalContent: React.ReactNode) =>
     set(() => ({ editModalContent })),
+
+  onModalClose: undefined,
+  setOnModalClose: (callback) => set({ onModalClose: callback }),
+  
 }));

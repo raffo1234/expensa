@@ -5,10 +5,16 @@ import { useGlobalState } from "@/lib/globalState";
 import { useEffect } from "react";
 
 export default function GlobalModal() {
-  const { isModalOpen, modalContent, setModalContent, setModalOpen } =
-    useGlobalState();
+  const {
+    isModalOpen,
+    modalContent,
+    onModalClose,
+    setOnModalClose,
+    setModalContent,
+    setModalOpen,
+  } = useGlobalState();
 
-  const onClose = () => {
+  const handleOnClose = () => {
     if (!isModalOpen) return;
     setModalOpen(false);
   };
@@ -22,11 +28,27 @@ export default function GlobalModal() {
 
   useEffect(() => {
     const app = document.getElementById("admin");
+
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && isModalOpen) {
+        setModalOpen(false);
+      }
+    };
+
     if (isModalOpen) {
       app?.classList.add("overflow-hidden");
+      window.addEventListener("keydown", handleEsc);
     } else {
       app?.classList.remove("overflow-hidden");
+      if (onModalClose) {
+        onModalClose();
+        setOnModalClose(undefined);
+      }
     }
+
+    return () => {
+      window.removeEventListener("keydown", handleEsc); // ✅ cleanup
+    };
   }, [isModalOpen]);
 
   return (
@@ -54,7 +76,7 @@ export default function GlobalModal() {
         <button
           type="button"
           className="outline-0 cursor-pointer hover:text-cyan-400 transition-colors duration-300 absolute right-1 top-1 rounded-full p-4"
-          onClick={onClose}
+          onClick={handleOnClose}
         >
           <Icon icon="solar:close-circle-outline" fontSize="42" />
         </button>

@@ -1,16 +1,18 @@
 import toast from "react-hot-toast";
 
-const deleteDicom = async (
+const deleteEntity = async (
   id: string,
   dicomUrl: string | null,
   mutate: () => void,
   setIsDeleting: React.Dispatch<React.SetStateAction<boolean>>
 ) => {
+  
+  
   const confirmationMessage = confirm(
     "Are you sure you want to delete this item?"
   );
   if (!confirmationMessage) return;
-
+  
   setIsDeleting(true);
 
   try {
@@ -23,7 +25,7 @@ const deleteDicom = async (
         // you would include a user's session token here. Example:
         // 'Authorization': `Bearer ${(await supabaseClient.auth.getSession())?.data.session?.access_token || ''}`
       },
-      body: JSON.stringify({ id, dicomUrl, table: "dicom" }),
+      body: JSON.stringify({ id, dicomUrl, table: "file" }),
     });
 
     if (!response.ok) {
@@ -45,4 +47,4 @@ const deleteDicom = async (
   }
 };
 
-export default deleteDicom;
+export default deleteEntity;

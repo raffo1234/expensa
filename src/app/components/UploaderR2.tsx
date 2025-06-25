@@ -511,14 +511,9 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
     setOption(UPLOAD_OPTION.COMPRESSED);
   };
 
-  const onDropAccepted = () => {
-    console.log("drop accepted");
-  };
-
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDragEnter,
     onDrop,
-    onDropAccepted,
     accept: acceptOptions(),
   });
 

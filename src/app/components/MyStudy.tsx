@@ -52,7 +52,7 @@ export default function MyStudy({ dicom }: { dicom: Partial<DicomType> }) {
 
   return (
     <div className="bg-white rounded-lg shadow-xs p-6 mb-2" key={id}>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center">
         <div>
           <h2 className="text-sm mb-2 text-gray-400">ID: {patient_id}</h2>
           <div className="font-semibold mb-2 text-sm">{patient_name}</div>
@@ -86,46 +86,48 @@ export default function MyStudy({ dicom }: { dicom: Partial<DicomType> }) {
           {!state ? "Sent" : state}
         </div>
       </div>
-      <div
-        className="mb-4 gap-3 grid"
-        style={{
-          gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))",
-        }}
-      >
-        {files?.map((file, index) => {
-          const { id, path, name, extension } = file;
+      {files && files.length > 0 ? (
+        <div
+          className="mt-4 gap-3 grid"
+          style={{
+            gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))",
+          }}
+        >
+          {files?.map((file, index) => {
+            const { id, path, name, extension } = file;
 
-          return (
-            <article key={id} className="bg-gray-100 p-3 rounded-lg">
-              <button
-                onClick={() => openSlider(index)}
-                className="block cursor-pointer h-30 w-full overflow-hidden"
-              >
-                {extension === "application/pdf" ? (
-                  <PDFViewer fileUrl={path} />
-                ) : (
-                  <Image
-                    priority
-                    key={id}
-                    src={path}
-                    width={200}
-                    height={200}
-                    title={name}
-                    alt={name ?? ""}
-                  />
-                )}
-              </button>
-              <div>{name}</div>
-              <DeleteFile file={file} mutate={mutateFiles} />
-            </article>
-          );
-        })}
-      </div>
+            return (
+              <article key={id} className="bg-gray-100 p-3 rounded-lg">
+                <button
+                  onClick={() => openSlider(index)}
+                  className="block cursor-pointer h-30 w-full overflow-hidden"
+                >
+                  {extension === "application/pdf" ? (
+                    <PDFViewer fileUrl={path} />
+                  ) : (
+                    <Image
+                      priority
+                      key={id}
+                      src={path}
+                      width={200}
+                      height={200}
+                      title={name}
+                      alt={name ?? ""}
+                    />
+                  )}
+                </button>
+                <div>{name}</div>
+                <DeleteFile file={file} mutate={mutateFiles} />
+              </article>
+            );
+          })}
+        </div>
+      ) : null}
       <button
         onClick={onClick}
         type="button"
         title="Attach files"
-        className="flex gap-2 cursor-pointer text-white px-6 font-semibold py-2 rounded-full bg-cyan-400"
+        className="flex mt-4 gap-2 cursor-pointer text-white px-6 font-semibold py-2 rounded-full bg-cyan-400"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"

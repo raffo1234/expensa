@@ -22,6 +22,7 @@ import GenerateCompressedPDFs from "./GenerateCompressedPDFs";
 import GenerateCompressedDOCs from "./GenerateCompressedDOCs";
 import DicomActionButtons from "./TableActionButtons";
 import ShareReportButton from "./ShareReportButton";
+import Attachments from "./Attachments";
 
 type SortDirection = "asc" | "desc" | null;
 
@@ -825,8 +826,9 @@ export default function Pagination({
                   )}
                 </button>
               </th>
-              <th className="w-10"></th>
-              <th className="w-15"></th>
+              <th className="w-12"></th>
+              <th className="w-12"></th>
+              <th className="w-12"></th>
               <th className="w-98"></th>
             </tr>
           </thead>
@@ -999,17 +1001,43 @@ export default function Pagination({
                         {completedAtFormatted}
                       </td>
                       <td className="py-5 px-2 text-center">{modality}</td>
-                      <td className="py-2 px-2">
+                      <td>
                         <ShareReportButton id={id} userId={userId} />
                       </td>
-                      <td className="px-2 text-center">
+                      <td className="text-center">
+                        <Attachments
+                          dicomId={id}
+                          Button={
+                            <button
+                              title="Attachments"
+                              type="button"
+                              className="flex p-1.5 outline-0 cursor-pointer border hover:border-cyan-200 border-gray-200 rounded-lg bg-gray-100 hover:bg-cyan-50 hover:text-cyan-400 transition-colors"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  fill="currentColor"
+                                  fillRule="evenodd"
+                                  d="M8.886 3.363c2.942-2.817 7.7-2.817 10.643 0c2.961 2.834 2.961 7.444 0 10.279l-7.948 7.608c-2.09 2-5.466 2-7.556 0a5.03 5.03 0 0 1 0-7.324l7.834-7.498a3.253 3.253 0 0 1 4.468 0a3 3 0 0 1 0 4.367l-7.89 7.554a.75.75 0 1 1-1.038-1.084l7.89-7.553a1.503 1.503 0 0 0 0-2.2a1.753 1.753 0 0 0-2.393 0L5.062 15.01a3.53 3.53 0 0 0 0 5.156c1.51 1.445 3.972 1.445 5.482 0l7.948-7.608c2.344-2.244 2.344-5.868 0-8.112c-2.363-2.261-6.206-2.261-8.57 0l-6.403 6.13A.75.75 0 0 1 2.48 9.493z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                            </button>
+                          }
+                        />
+                      </td>
+                      <td className="text-center">
                         {dicom_url ? (
                           <Link
                             target="_blank"
                             href={dicom_url}
                             download
                             title="Download"
-                            className="w-11 h-11 text-center flex items-center justify-center border border-gray-200 bg-gray-50 rounded-full transition-colors duration-300 hover:bg-gray-100 cursor-pointer hover:text-cyan-400 hover:border-cyan-200"
+                            className="p-1.5 text-center flex items-center justify-center border border-gray-200 bg-gray-50 rounded-full transition-colors duration-300 hover:bg-gray-100 cursor-pointer hover:text-cyan-400 hover:border-cyan-200"
                           >
                             <Icon
                               icon="solar:cloud-download-outline"

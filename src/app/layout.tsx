@@ -8,6 +8,7 @@ import {
 } from "@/utils/serverPermissions";
 import { Toaster } from "react-hot-toast";
 import { ReactScan } from "@/components/ReactScan";
+import Slider from "@/components/Slider";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.cadia.pe/"),
@@ -44,6 +45,7 @@ export default async function Layout({ children }: Readonly<LayoutProps>) {
           {children}
         </SWRConfig>
         <GlobalModal />
+        <Slider />
       </body>
     </html>
   );

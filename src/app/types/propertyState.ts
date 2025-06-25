@@ -1,20 +1,3 @@
-export enum PropertyState {
-  DRAFT = "BORRADOR",
-  PENDING = "EN REVISIÓN",
-  ACTIVE = "PUBLICADO",
-}
-
-export enum PropertyType {
-  APARTMENT = "DEPARTAMENTOS",
-  HOUSE = "CASAS",
-}
-
-export enum PropertyPhase {
-  PLANOS = "PLANOS",
-  CONSTRUCCION = "EN CONSTRUCCIÓN",
-  READY = "ENTREGA INMEDIATA",
-}
-
 export enum Permissions {
   MANAGE_PERMISSIONS = "MANAGE_PERMISSIONS",
   MANAGE_ROLES = "MANAGE_ROLES",
@@ -44,7 +27,3 @@ export enum Permissions {
   HANDLE_SETTINGS = "HANDLE_SETTINGS",
 }
 
-export enum PropertyCurrency {
-  SOLES = "SOLES",
-  DOLARES = "DOLARES",
-}

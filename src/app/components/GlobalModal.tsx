@@ -47,7 +47,7 @@ export default function GlobalModal() {
     }
 
     return () => {
-      window.removeEventListener("keydown", handleEsc); // ✅ cleanup
+      window.removeEventListener("keydown", handleEsc);
     };
   }, [isModalOpen]);
 

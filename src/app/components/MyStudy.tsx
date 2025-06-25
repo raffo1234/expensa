@@ -9,6 +9,8 @@ import Image from "next/image";
 import { PDFViewer } from "./PDFViewer";
 import { FileType } from "@/types/fileType";
 import DeleteFile from "./DeleteFile";
+import { useSliderState } from "./Slider";
+import SliderFiles from "./SliderFiles";
 
 const filesFetcher = async (dicomId: string) => {
   const { data } = (await supabase
@@ -22,10 +24,12 @@ const filesFetcher = async (dicomId: string) => {
 export default function MyStudy({ dicom }: { dicom: Partial<DicomType> }) {
   const { id, state, patient_id, patient_name, study_description, study_date } =
     dicom;
-  const { setModalContent, setModalOpen, setOnModalClose } = useGlobalState();
+  const { setSliderContent, setSliderOpen } = useSliderState();
+
+  const { setModalContent, setOnModalClose, setModalOpen } = useGlobalState();
 
   const { data: files, mutate: mutateFiles } = useSWR(
-    `admin-${dicom.id}`,
+    `admin-files-${dicom.id}`,
     () => (dicom.id ? filesFetcher(dicom.id) : null)
   );
 
@@ -38,6 +42,12 @@ export default function MyStudy({ dicom }: { dicom: Partial<DicomType> }) {
       />
     );
     setModalOpen(true);
+  };
+
+  const openSlider = (index: number) => {
+    if (files)
+      setSliderContent(<SliderFiles firstIndex={index} files={files} />);
+    setSliderOpen(true);
   };
 
   return (
@@ -82,26 +92,29 @@ export default function MyStudy({ dicom }: { dicom: Partial<DicomType> }) {
           gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))",
         }}
       >
-        {files?.map((file) => {
+        {files?.map((file, index) => {
           const { id, path, name, extension } = file;
 
           return (
             <article key={id} className="bg-gray-100 p-3 rounded-lg">
-              {extension === "application/pdf" ? (
-                <div className="overflow-hidden">
-                  <PDFViewer fileUrl={path} width={200} />
-                </div>
-              ) : (
-                <Image
-                  priority
-                  key={id}
-                  src={path}
-                  width={200}
-                  height={200}
-                  title={name}
-                  alt={name ?? ""}
-                />
-              )}
+              <button
+                onClick={() => openSlider(index)}
+                className="block cursor-pointer h-30 w-full overflow-hidden"
+              >
+                {extension === "application/pdf" ? (
+                  <PDFViewer fileUrl={path} />
+                ) : (
+                  <Image
+                    priority
+                    key={id}
+                    src={path}
+                    width={200}
+                    height={200}
+                    title={name}
+                    alt={name ?? ""}
+                  />
+                )}
+              </button>
               <div>{name}</div>
               <DeleteFile file={file} mutate={mutateFiles} />
             </article>
@@ -111,6 +124,7 @@ export default function MyStudy({ dicom }: { dicom: Partial<DicomType> }) {
       <button
         onClick={onClick}
         type="button"
+        title="Attach files"
         className="flex gap-2 cursor-pointer text-white px-6 font-semibold py-2 rounded-full bg-cyan-400"
       >
         <svg

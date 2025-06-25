@@ -22,6 +22,7 @@ import CompleteDicomButton from "./CompleteDicomButton";
 import ListOfTemplates from "./ListOfTemplates";
 import fetcherDicom from "@/fetchers/dicomFetcher";
 import useControlEnter from "@/hooks/useControlEnter";
+import Attachments from "./Attachments";
 
 export default function Report({
   templates,
@@ -150,9 +151,10 @@ export default function Report({
         activeTemplate={dicom.template}
         userRoleId={userRoleId}
       />
+      <Attachments dicomId={dicom.id} />
       <div className="z-20 relative">
         <Sticky>
-          <div className="bg-gray-50/50 py-6">
+          <div className="bg-gray-50/50 py-4">
             <div className="flex justify-between mb-4">
               <PreviewPDFButton
                 userRoleId={userRoleId}

@@ -42,7 +42,7 @@ export default function Attachments({
 
   if (isLoading) return null;
 
-  if (Button && isValidElement(Button)) {
+  if (Button && isValidElement(Button) && files && files.length > 0) {
     return cloneElement(Button, {
       onClick: (e: MouseEvent<HTMLButtonElement>) => {
         Button.props.onClick?.(e);

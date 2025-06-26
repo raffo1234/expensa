@@ -730,17 +730,18 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                           </label>
                         ) : null}
                         <div className="flex-1 truncate pl-4">
-                          <div className="text-sm truncate font-semibold">
+                          <div className="text-sm truncate font-semibold mb-0.5">
                             {patientName}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {studies.length > 0 ? (
+                            {state === CustomFileStateType.selected ||
+                            studies.length === 0 ? (
+                              state
+                            ) : (
                               <>
                                 {studies.length} Stud
-                                {studies.length === 1 ? "y" : "ies"}{" "}
+                                {studies.length === 1 ? "y" : "ies"}
                               </>
-                            ) : (
-                              state
                             )}
                           </div>
                         </div>
@@ -751,6 +752,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                                 <LinkInsertedOrDuplicated
                                   key={id}
                                   id={id}
+                                  userId={userId}
                                   userRoleId={userRoleId}
                                   state={state}
                                   isDuplicated={

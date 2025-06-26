@@ -2,6 +2,7 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import Link from "next/link";
 import { Permissions } from "@/types/propertyState";
 import useCheckPermission from "@/hooks/useCheckPermission";
+import AssignDicomToTrigger from "./AssignDicomToTrigger";
 
 function LinkInsertedOrDuplicatedContent({
   state,
@@ -28,11 +29,13 @@ export default function LinkInsertedOrDuplicated({
   id,
   state,
   userRoleId,
+  userId,
 }: {
   isDuplicated: boolean;
   id: string;
   state: string;
   userRoleId: string;
+  userId: string;
 }) {
   const { hasPermission: canViewDicoms, isLoading } = useCheckPermission(
     userRoleId,
@@ -43,17 +46,20 @@ export default function LinkInsertedOrDuplicated({
 
   if (canViewDicoms) {
     return (
-      <Link
-        key={id}
-        target="_blank"
-        href={`/admin/dicoms/${id}`}
-        className="text-sm hover:underline text-cyan-500 mt-0.5 first:mt-0 block underline-offset-4"
-      >
-        <LinkInsertedOrDuplicatedContent
-          isDuplicated={isDuplicated}
-          state={state}
-        />
-      </Link>
+      <div className="flex gap-2">
+        <Link
+          key={id}
+          target="_blank"
+          href={`/admin/dicoms/${id}`}
+          className="text-sm hover:underline text-cyan-500 mt-0.5 first:mt-0 block underline-offset-4"
+        >
+          <LinkInsertedOrDuplicatedContent
+            isDuplicated={isDuplicated}
+            state={state}
+          />
+        </Link>
+        <AssignDicomToTrigger dicomId={id} userId={userId} />
+      </div>
     );
   }
 

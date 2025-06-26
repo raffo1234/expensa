@@ -10,7 +10,7 @@ const editCustomFileById = (
   id: CustomFileType["id"],
   updates: {
     state?: CustomFileStateType;
-    bgColor?: string;
+    color?: string;
     isAvailableForR2Upload?: boolean;
     studies?: Study[];
     uploadPercentage?: number;
@@ -23,7 +23,7 @@ const editCustomFileById = (
       if (file.id === id) {
         const hasChanged =
           (updates.state !== undefined && file.state !== updates.state) ||
-          (updates.bgColor !== undefined && file.bgColor !== updates.bgColor) ||
+          (updates.color !== undefined && file.color !== updates.color) ||
           (updates.isAvailableForR2Upload !== undefined &&
             file.isAvailableForR2Upload !== updates.isAvailableForR2Upload) ||
           (updates.studies !== undefined &&

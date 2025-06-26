@@ -223,7 +223,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
             patientName: compressedFiles.name,
             state: CustomFileStateType.selected,
             isAvailableForR2Upload: storeByDefault,
-            bgColor: "bg-gray-50",
+            color: "white",
             uploadPercentage: 0,
           },
         ]);
@@ -242,7 +242,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
           patientName: file.name,
           state: CustomFileStateType.selected,
           isAvailableForR2Upload: storeByDefault,
-          bgColor: "bg-gray-50",
+          color: "white",
           uploadPercentage: 0,
         },
       ]);
@@ -265,7 +265,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
 
       editCustomFileById(setFiles, files[index].id, {
         state: CustomFileStateType.processing,
-        bgColor: "bg-cyan-50",
+        color: "cyan-50",
       });
 
       const fileBuffer = await selectedFile.arrayBuffer();
@@ -294,7 +294,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
           default:
             editCustomFileById(setFiles, files[index].id, {
               state: CustomFileStateType.fileNotSupported,
-              bgColor: "bg-rose-50",
+              color: "rose-50",
             });
             continue;
         }
@@ -305,7 +305,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
         if (differentStudyDescriptions.length === 0) {
           editCustomFileById(setFiles, files[index].id, {
             state: CustomFileStateType.noDcimFile,
-            bgColor: "bg-rose-50",
+            color: "rose-50",
           });
           continue;
         }
@@ -314,7 +314,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
         for (const study of differentStudyDescriptions) {
           editCustomFileById(setFiles, files[index].id, {
             state: CustomFileStateType.verifying,
-            bgColor: "bg-cyan-50",
+            color: "cyan-50",
           });
 
           const { id } = await checkIfDataSetExists(
@@ -326,7 +326,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
           if (id) {
             editCustomFileById(setFiles, files[index].id, {
               state: CustomFileStateType.duplicated,
-              bgColor: "bg-yellow-50",
+              color: "yellow-50",
               studies,
             });
             studies.push({
@@ -343,7 +343,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
           if (files[index].isAvailableForR2Upload) {
             editCustomFileById(setFiles, files[index].id, {
               state: CustomFileStateType.uploading,
-              bgColor: "bg-cyan-50",
+              color: "cyan-50",
             });
 
             const updateProgress = (progress: number) => {
@@ -361,7 +361,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
             if (!urlSigned) {
               editCustomFileById(setFiles, files[index].id, {
                 state: CustomFileStateType.errorUploading,
-                bgColor: "bg-rose-50",
+                color: "rose-50",
               });
               continue;
             }
@@ -371,7 +371,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
 
           editCustomFileById(setFiles, files[index].id, {
             state: CustomFileStateType.inserting,
-            bgColor: "bg-cyan-50",
+            color: "bg-cyan-50",
           });
 
           const { id: insertedId } = await insertNewDataSet(
@@ -384,7 +384,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
           if (!insertedId) {
             editCustomFileById(setFiles, files[index].id, {
               state: CustomFileStateType.errorInserting,
-              bgColor: "bg-rose-50",
+              color: "rose-50",
             });
             continue;
           }
@@ -397,7 +397,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
 
             editCustomFileById(setFiles, files[index].id, {
               state: CustomFileStateType.inserted,
-              bgColor: "bg-green-50",
+              color: "green-50",
               studies,
             });
 
@@ -412,7 +412,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
       } catch {
         editCustomFileById(setFiles, files[index].id, {
           state: CustomFileStateType.errorLoading,
-          bgColor: "bg-rose-50",
+          color: "rose-50",
         });
       }
     }
@@ -459,7 +459,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
               patientName: metadata.patientName ?? "",
               state: CustomFileStateType.selected,
               isAvailableForR2Upload: storeByDefault,
-              bgColor: "bg-gray-50",
+              color: "white",
               uploadPercentage: 0,
             },
           ]);
@@ -477,7 +477,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
             patientName: file.name,
             state: CustomFileStateType.selected,
             isAvailableForR2Upload: storeByDefault,
-            bgColor: "bg-gray-50",
+            color: "gray-50",
             uploadPercentage: 0,
           },
         ]);
@@ -657,8 +657,11 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
       </div>
       {files.length > 0 ? (
         <div className="mt-6">
+          <div className="max-w-xl text-center text-lg mx-auto font-semibold mb-6">
+            {files.length} File{files.length !== 1 ? "s" : ""}
+          </div>
           {canSwitchStoreDicom ? (
-            <div className="mx-auto max-w-md mb-4 pl-3.5 flex items-center gap-2">
+            <div className="mx-auto max-w-xl mb-4 pl-4.5 flex items-center gap-2">
               <label
                 className={`${!hasSelectedItems ? "opacity-50 pointer-events-none" : ""} inline-flex items-center cursor-pointer`}
               >
@@ -672,49 +675,44 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                 <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-100 dark:peer-focus:ring-cyan-100 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-400 peer-checked:bg-cyan-400 dark:peer-checked:bg-cyan-400"></div>
               </label>
               <span className="text-xs font-semibold">
-                {selectedFileCount} File{selectedFileCount === 1 ? "" : "s"} to
-                Storage
+                {selectedFileCount} Selected file
+                {selectedFileCount === 1 ? "" : "s"} to Storage
               </span>
             </div>
           ) : null}
-          <div className="border w-full border-gray-200 rounded-xl mx-auto max-w-md">
-            <div className="flex bg-gray-100 rounded-t-xl">
-              {canSwitchStoreDicom ? (
-                <div className="w-18 border-gray-200 border-r text-center text-sm font-semibold py-2 first:rounded-tl-xl">
-                  Store
-                </div>
-              ) : null}
-              <div className="text-sm font-semibold px-5 py-2 first:rounded-tl-xl">
-                Selected File{files.length === 1 ? "" : "s"} ({files.length})
-              </div>
-            </div>
-            <div className="border-t border-gray-200">
+          <div className="w-full mx-auto max-w-xl">
+            <div className="flex flex-col gap-2">
               {Array.from(sortFilesByName(files)).map(
                 (
-                  {
-                    id,
-                    patientName,
-                    state,
-                    bgColor,
-                    studies,
-                    uploadPercentage,
-                  },
+                  { id, patientName, state, color, studies, uploadPercentage },
                   index
                 ) => {
+                  const showProgressBar =
+                    files[index].isAvailableForR2Upload &&
+                    uploadPercentage !== 100 &&
+                    [
+                      CustomFileStateType.verifying,
+                      CustomFileStateType.selected,
+                      CustomFileStateType.inserting,
+                      CustomFileStateType.processing,
+                      CustomFileStateType.processed,
+                      CustomFileStateType.uploading,
+                    ].includes(state);
+
                   return (
                     <div
                       key={id}
-                      className={`${bgColor} last:rounded-b-xl flex text-sm first:border-0 border-t border-gray-200`}
+                      className={`bg-${color} border-gray-300 border px-4 py-3 rounded-lg`}
                     >
-                      {canSwitchStoreDicom ? (
-                        <div
-                          className={`${
-                            state !== CustomFileStateType.selected
-                              ? "opacity-50 pointer-events-none"
-                              : ""
-                          } w-18 text-center border-r border-gray-200 flex items-center justify-center py-[6px]`}
-                        >
-                          <label className="inline-flex items-center cursor-pointer">
+                      <div className="flex">
+                        {canSwitchStoreDicom ? (
+                          <label
+                            className={`${
+                              state !== CustomFileStateType.selected
+                                ? "opacity-40 pointer-events-none"
+                                : ""
+                            } inline-flex pt-1 cursor-pointer`}
+                          >
                             <input
                               type="checkbox"
                               name={files[index].id}
@@ -730,36 +728,62 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                             />
                             <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-100 dark:peer-focus:ring-cyan-100 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-400 peer-checked:bg-cyan-400 dark:peer-checked:bg-cyan-400"></div>
                           </label>
+                        ) : null}
+                        <div className="flex-1 truncate pl-4">
+                          <div className="text-sm truncate font-semibold">
+                            {patientName}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {studies.length > 0 ? (
+                              <>
+                                {studies.length} Stud
+                                {studies.length === 1 ? "y" : "ies"}{" "}
+                              </>
+                            ) : (
+                              state
+                            )}
+                          </div>
+                        </div>
+                        <div className="whitespace-nowrap pl-10 flex flex-col gap-2 justify-center text-sm text-gray-400 flex-shrink-0">
+                          {state === CustomFileStateType.duplicated ||
+                          state === CustomFileStateType.inserted
+                            ? studies.map(({ id, state }) => (
+                                <LinkInsertedOrDuplicated
+                                  key={id}
+                                  id={id}
+                                  userRoleId={userRoleId}
+                                  state={state}
+                                  isDuplicated={
+                                    state === CustomFileStateType.duplicated
+                                  }
+                                />
+                              ))
+                            : null}
+                          {state === CustomFileStateType.errorInserting ||
+                          state === CustomFileStateType.fileNotSupported ||
+                          state === CustomFileStateType.noDcimFile ||
+                          state === CustomFileStateType.noTag ||
+                          state === CustomFileStateType.errorLoading ||
+                          state === CustomFileStateType.errorUploading ? (
+                            <Icon
+                              icon="solar:shield-warning-outline"
+                              className="text-rose-300"
+                              fontSize="24"
+                            />
+                          ) : null}
+                        </div>
+                      </div>
+                      {showProgressBar ? (
+                        <div className="mt-2 relative w-full bg-gray-200 h-1 rounded-full">
+                          <div
+                            style={{ width: `${uploadPercentage}%` }}
+                            className="absolute top-0 left-0 h-full bg-gradient-to-r from-cyan-100 animate-pulse to-cyan-400 rounded-full transition-all duration-300"
+                          ></div>
+                          <div className="absolute right-0 bottom-2.5 text-sm text-gray-400">
+                            {uploadPercentage}%
+                          </div>
                         </div>
                       ) : null}
-                      <div className="truncate flex-1 flex items-center px-5 py-2 border-r border-gray-200">
-                        <div className="truncate">{patientName}</div>
-                      </div>
-                      <div className="w-40 whitespace-nowrap py-1 flex-shrink-0">
-                        {state === CustomFileStateType.duplicated ||
-                        state === CustomFileStateType.inserted ? (
-                          studies.map(({ id, state }) => (
-                            <LinkInsertedOrDuplicated
-                              key={id}
-                              id={id}
-                              userRoleId={userRoleId}
-                              state={state}
-                              uploadPercentage={uploadPercentage}
-                              isDuplicated={
-                                state === CustomFileStateType.duplicated
-                              }
-                            />
-                          ))
-                        ) : (
-                          <div className="px-5 py-1.5 text-center">
-                            {state}{" "}
-                            {state !== CustomFileStateType.selected &&
-                            state !== CustomFileStateType.processing ? (
-                              <span>{uploadPercentage}%</span>
-                            ) : null}
-                          </div>
-                        )}
-                      </div>
                     </div>
                   );
                 }
@@ -768,7 +792,6 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
           </div>
         </div>
       ) : null}
-
       {files.filter((file) => file.state === CustomFileStateType.selected)
         .length ? (
         <button

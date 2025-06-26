@@ -22,7 +22,7 @@ export type CustomFileType = {
   patientName: string;
   state: CustomFileStateType;
   isAvailableForR2Upload: boolean;
-  bgColor: string;
+  color: string;
   uploadPercentage: number;
 };
 

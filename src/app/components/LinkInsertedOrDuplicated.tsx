@@ -6,22 +6,19 @@ import useCheckPermission from "@/hooks/useCheckPermission";
 function LinkInsertedOrDuplicatedContent({
   state,
   isDuplicated,
-  uploadPercentage,
 }: {
   state: string;
   isDuplicated: boolean;
-  uploadPercentage: number;
 }) {
   return (
-    <div className="px-3 block py-1 text-center w-full">
-      <Icon
-        icon={`${
-          isDuplicated ? "solar:check-read-bold" : "solar:verified-check-bold"
-        }`}
-        fontSize={24}
-        className="text-cyan-400 inline-block mr-2"
-      />
-      <span>{state}</span> - <span>{uploadPercentage}%</span>
+    <div className="w-full flex items-center gap-3">
+      <span>{state}</span>
+      <div className="rounded-sm w-5 h-5 flex items-center justify-center bg-cyan-400 text-white">
+        <Icon
+          icon={`${isDuplicated ? "akar-icons:double-check" : "akar-icons:check"}`}
+          fontSize={18}
+        />
+      </div>
     </div>
   );
 }
@@ -30,13 +27,11 @@ export default function LinkInsertedOrDuplicated({
   isDuplicated,
   id,
   state,
-  uploadPercentage,
   userRoleId,
 }: {
   isDuplicated: boolean;
   id: string;
   state: string;
-  uploadPercentage: number;
   userRoleId: string;
 }) {
   const { hasPermission: canViewDicoms, isLoading } = useCheckPermission(
@@ -52,11 +47,10 @@ export default function LinkInsertedOrDuplicated({
         key={id}
         target="_blank"
         href={`/admin/dicoms/${id}`}
-        className="text-center underline hover:text-cyan-500 transition-colors duration-300 underline-offset-4"
+        className="underline hover:text-cyan-500 mt-0.5 first:mt-0 block transition-colors duration-300 underline-offset-4"
       >
         <LinkInsertedOrDuplicatedContent
           isDuplicated={isDuplicated}
-          uploadPercentage={uploadPercentage}
           state={state}
         />
       </Link>
@@ -66,7 +60,6 @@ export default function LinkInsertedOrDuplicated({
   return (
     <LinkInsertedOrDuplicatedContent
       isDuplicated={isDuplicated}
-      uploadPercentage={uploadPercentage}
       state={state}
     />
   );

@@ -67,7 +67,7 @@ const fetcher = async (
   let dataQuery = supabase
     .from(tableName)
     .select(
-      "*, user(id, image_url, first_name, last_name), template(header_image_url, footer_image_url, sign_image_url)"
+      "*, user_dicom_user_id_fkey(id, image_url, first_name, last_name), template(header_image_url, footer_image_url, sign_image_url)"
     )
     .eq("template_id", userTemplateId)
     .eq("state", DicomStateEnum.COMPLETED)
@@ -87,7 +87,7 @@ const fetcher = async (
   } else {
     dataQuery = dataQuery.order("created_at", { ascending: false });
   }
-  
+
   if (searchWord && searchWord.length > 0) {
     dataQuery = dataQuery.or(
       `patient_id.ilike.%${searchWord}%,patient_name.ilike.%${searchWord}%,institution.ilike.%${searchWord}%,study_description.ilike.%${searchWord}%`

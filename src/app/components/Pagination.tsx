@@ -73,7 +73,7 @@ const fetcher = async (
   let dataQuery = supabase
     .from(tableName)
     .select(
-      "*, user(id, image_url, first_name, last_name), template(header_image_url, footer_image_url, sign_image_url)"
+      "*, user_dicom_user_id_fkey(id, image_url, first_name, last_name), template(header_image_url, footer_image_url, sign_image_url)"
     )
     .eq("user_id", userId)
     .range(start, end);

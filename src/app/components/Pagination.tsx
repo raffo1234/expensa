@@ -23,6 +23,7 @@ import GenerateCompressedDOCs from "./GenerateCompressedDOCs";
 import DicomActionButtons from "./TableActionButtons";
 import ShareReportButton from "./ShareReportButton";
 import Attachments from "./Attachments";
+import AssignDicomToTrigger from "./AssignDicomToTrigger";
 
 type SortDirection = "asc" | "desc" | null;
 
@@ -829,6 +830,7 @@ export default function Pagination({
               <th className="w-12"></th>
               <th className="w-12"></th>
               <th className="w-12"></th>
+              <th className="w-12"></th>
               <th className="w-98"></th>
             </tr>
           </thead>
@@ -1028,6 +1030,13 @@ export default function Pagination({
                               </svg>
                             </button>
                           }
+                        />
+                      </td>
+                      <td>
+                        <AssignDicomToTrigger
+                          dicomId={id}
+                          userId={userId}
+                          userRoleId={userRoleId}
                         />
                       </td>
                       <td className="text-center">

@@ -744,7 +744,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                             )}
                           </div>
                         </div>
-                        <div className="whitespace-nowrap pl-10 flex flex-col gap-2 justify-center text-sm text-gray-400 flex-shrink-0">
+                        <div className="whitespace-nowrap pl-10 flex flex-col gap-2 justify-center flex-shrink-0">
                           {state === CustomFileStateType.duplicated ||
                           state === CustomFileStateType.inserted
                             ? studies.map(({ id, state }) => (

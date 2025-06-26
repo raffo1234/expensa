@@ -47,7 +47,7 @@ export default function LinkInsertedOrDuplicated({
         key={id}
         target="_blank"
         href={`/admin/dicoms/${id}`}
-        className="underline hover:text-cyan-500 mt-0.5 first:mt-0 block transition-colors duration-300 underline-offset-4"
+        className="text-sm hover:underline text-cyan-500 mt-0.5 first:mt-0 block underline-offset-4"
       >
         <LinkInsertedOrDuplicatedContent
           isDuplicated={isDuplicated}

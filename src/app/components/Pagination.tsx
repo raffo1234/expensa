@@ -827,7 +827,7 @@ export default function Pagination({
                   )}
                 </button>
               </th>
-              <th className="w-12"></th>
+              <th className="w-16"></th>
               <th className="w-12"></th>
               <th className="w-12"></th>
               <th className="w-12"></th>
@@ -1004,6 +1004,13 @@ export default function Pagination({
                       </td>
                       <td className="py-5 px-2 text-center">{modality}</td>
                       <td>
+                        <AssignDicomToTrigger
+                          dicomId={id}
+                          userId={userId}
+                          userRoleId={userRoleId}
+                        />
+                      </td>
+                      <td>
                         <ShareReportButton id={id} userId={userId} />
                       </td>
                       <td className="text-center">
@@ -1032,13 +1039,6 @@ export default function Pagination({
                           }
                         />
                       </td>
-                      <td>
-                        <AssignDicomToTrigger
-                          dicomId={id}
-                          userId={userId}
-                          userRoleId={userRoleId}
-                        />
-                      </td>
                       <td className="text-center">
                         {dicom_url ? (
                           <Link
@@ -1046,7 +1046,7 @@ export default function Pagination({
                             href={dicom_url}
                             download
                             title="Download"
-                            className="p-1.5 text-center flex items-center justify-center border border-gray-200 bg-gray-50 rounded-full transition-colors duration-300 hover:bg-gray-100 cursor-pointer hover:text-cyan-400 hover:border-cyan-200"
+                            className="p-1.5 text-center flex items-center justify-center border border-gray-200 bg-gray-50 rounded-lg transition-colors duration-300 hover:bg-gray-100 cursor-pointer hover:text-cyan-400 hover:border-cyan-200"
                           >
                             <Icon
                               icon="solar:cloud-download-outline"

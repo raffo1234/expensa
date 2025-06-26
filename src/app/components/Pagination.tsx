@@ -1046,7 +1046,7 @@ export default function Pagination({
                             href={dicom_url}
                             download
                             title="Download"
-                            className="p-1.5 text-center flex items-center justify-center border border-gray-200 bg-gray-50 rounded-lg transition-colors duration-300 hover:bg-gray-100 cursor-pointer hover:text-cyan-400 hover:border-cyan-200"
+                            className="flex w-fit p-1.5 outline-0 cursor-pointer border hover:border-cyan-200 border-gray-200 rounded-lg bg-gray-100 hover:bg-cyan-50 hover:text-cyan-400 transition-colors"
                           >
                             <Icon
                               icon="solar:cloud-download-outline"

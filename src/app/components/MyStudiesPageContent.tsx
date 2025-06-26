@@ -29,7 +29,7 @@ export default function MyStudiesPageContent({ userId }: { userId: string }) {
         ({dicoms.length}) My Studies
       </h1>
       {dicoms.map((dicom) => {
-        return <MyStudy key={dicom.id} dicom={dicom} />;
+        return <MyStudy key={dicom.id} dicom={dicom} userId={userId} />;
       })}
     </>
   );

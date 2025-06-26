@@ -11,6 +11,7 @@ import { FileType } from "@/types/fileType";
 import DeleteFile from "./DeleteFile";
 import { useSliderState } from "./Slider";
 import SliderFiles from "./SliderFiles";
+import AssignDicomToTrigger from "./AssignDicomToTrigger";
 
 const filesFetcher = async (dicomId: string) => {
   const { data } = (await supabase
@@ -21,7 +22,13 @@ const filesFetcher = async (dicomId: string) => {
   return data;
 };
 
-export default function MyStudy({ dicom }: { dicom: Partial<DicomType> }) {
+export default function MyStudy({
+  dicom,
+  userId,
+}: {
+  dicom: Partial<DicomType>;
+  userId: string;
+}) {
   const { id, state, patient_id, patient_name, study_description, study_date } =
     dicom;
   const { setSliderContent, setSliderOpen } = useSliderState();
@@ -85,6 +92,11 @@ export default function MyStudy({ dicom }: { dicom: Partial<DicomType> }) {
         >
           {!state ? "Sent" : state}
         </div>
+      </div>
+      <div className="mt-1">
+        {dicom.id ? (
+          <AssignDicomToTrigger dicomId={dicom.id} userId={userId} />
+        ) : null}
       </div>
       {files && files.length > 0 ? (
         <div

@@ -16,7 +16,13 @@ async function fetcher(userId: string) {
   return data;
 }
 
-export default function MyStudiesPageContent({ userId }: { userId: string }) {
+export default function MyStudiesPageContent({
+  userId,
+  userRoleId,
+}: {
+  userId: string;
+  userRoleId: string;
+}) {
   const { data: dicoms, isLoading } = useSWR(`admin-my-stydies-${userId}`, () =>
     fetcher(userId)
   );
@@ -29,7 +35,14 @@ export default function MyStudiesPageContent({ userId }: { userId: string }) {
         ({dicoms.length}) My Studies
       </h1>
       {dicoms.map((dicom) => {
-        return <MyStudy key={dicom.id} dicom={dicom} userId={userId} />;
+        return (
+          <MyStudy
+            userRoleId={userRoleId}
+            key={dicom.id}
+            dicom={dicom}
+            userId={userId}
+          />
+        );
       })}
     </>
   );

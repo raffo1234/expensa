@@ -14,5 +14,5 @@ export default async function Page() {
 
   if (!data?.id || !data?.role_id) return null;
 
-  return <MyStudiesPageContent userId={data.id} />;
+  return <MyStudiesPageContent userId={data.id} userRoleId={data.role_id} />;
 }

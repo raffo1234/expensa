@@ -25,9 +25,11 @@ const filesFetcher = async (dicomId: string) => {
 export default function MyStudy({
   dicom,
   userId,
+  userRoleId,
 }: {
   dicom: Partial<DicomType>;
   userId: string;
+  userRoleId: string;
 }) {
   const { id, state, patient_id, patient_name, study_description, study_date } =
     dicom;
@@ -95,7 +97,11 @@ export default function MyStudy({
       </div>
       <div className="mt-1">
         {dicom.id ? (
-          <AssignDicomToTrigger dicomId={dicom.id} userId={userId} />
+          <AssignDicomToTrigger
+            dicomId={dicom.id}
+            userId={userId}
+            userRoleId={userRoleId}
+          />
         ) : null}
       </div>
       {files && files.length > 0 ? (

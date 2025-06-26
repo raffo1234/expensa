@@ -58,7 +58,11 @@ export default function LinkInsertedOrDuplicated({
             state={state}
           />
         </Link>
-        <AssignDicomToTrigger dicomId={id} userId={userId} />
+        <AssignDicomToTrigger
+          userRoleId={userRoleId}
+          dicomId={id}
+          userId={userId}
+        />
       </div>
     );
   }

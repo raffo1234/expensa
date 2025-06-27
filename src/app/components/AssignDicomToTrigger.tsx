@@ -19,7 +19,7 @@ export default function AssignDicomToTrigger({
   const { data: hasAssignments, isLoading } = useDicomHasAssignments(dicomId);
 
   const { hasPermission: canAssign, isLoading: isLoadingCanAssign } =
-    useCheckPermission(userRoleId, Permissions.ASSIGN_RESIDENT);
+    useCheckPermission(userRoleId, Permissions.ASSIGN_DICOM_TO_USERS);
 
   const onClick = () => {
     setModalContent(<AssignDicomTo dicomId={dicomId} userId={userId} />);

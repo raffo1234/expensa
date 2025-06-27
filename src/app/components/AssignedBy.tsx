@@ -17,7 +17,7 @@ export default function AssignedBy({ assignedBy }: { assignedBy: AssignedByType 
         content={
           <div className="w-50 py-5 px-4 rounded-lg bg-white shadow-sm">
             <div className="text-xs mb-4 text-center text-gray-500">
-              Assigned by
+              Assigned to me <br />by
             </div>
             <Image
               src={image_url}

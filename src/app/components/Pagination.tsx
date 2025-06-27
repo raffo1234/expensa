@@ -69,7 +69,7 @@ const fetcher = async (
     canViewCompleted,
   ] = key;
 
-  const EMPTY_UUID = "00000000-0000-0000-0000-000000000000";
+  // const EMPTY_UUID = "00000000-0000-0000-0000-000000000000";
   const start = (page - 1) * pageSize;
   const end = start + pageSize - 1;
 
@@ -94,31 +94,22 @@ const fetcher = async (
   const uniqueDicomIds = Array.from(new Set(dicomIds));
 
   // Slice *before* sending to Supabase
-  const paginatedDicomIds = uniqueDicomIds.slice(start, end + 1);
-  const safeDicomIds =
-    paginatedDicomIds.length > 0 ? paginatedDicomIds : [EMPTY_UUID];
+  // const paginatedDicomIds = uniqueDicomIds.slice(start, end + 1);
+  // const safeDicomIds =
+  //   paginatedDicomIds.length > 0 ? paginatedDicomIds : [EMPTY_UUID];
 
   let dataQuery = supabase
     .from(tableName)
     .select(
-      `
-    *,
-    dicom_user!left(
-      user_id,
-      assigned_by,
-      assigned_by:dicom_user_assigned_by_fkey!left(id, first_name, last_name, image_url, role(id, name))
-    ),
-    created_by:user_dicom_user_id_fkey!left(id, image_url, first_name, last_name),
-    template(header_image_url, footer_image_url, sign_image_url)
-    `
+      "*, user_dicom_user_id_fkey(id, image_url, first_name, last_name), template(header_image_url, footer_image_url, sign_image_url)"
     )
-    .eq("dicom_user.user_id", userId)
-    .in("id", safeDicomIds);
+    .eq("user_id", userId)
+    .range(start, end);
 
   let countQuery = supabase
     .from(tableName)
     .select("id", { count: "exact", head: true })
-    .in("id", safeDicomIds);
+    .eq("user_id", userId);
 
   const canViewByState: string[] = [];
   if (canViewNew) {
@@ -211,7 +202,7 @@ const fetcher = async (
     );
     throw countResult.error;
   }
-  console.log(countResult)
+  // console.log(countResult);
   return {
     data: dataResult.data as DicomType[] | null,
     total: uniqueDicomIds.length as number,

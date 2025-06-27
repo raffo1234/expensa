@@ -91,7 +91,12 @@ const fetcher = async (
     ...(createdDicoms?.map((d) => d.id) ?? []),
   ];
 
-  const safeDicomIds = dicomIds.length > 0 ? dicomIds : [EMPTY_UUID];
+  const uniqueDicomIds = Array.from(new Set(dicomIds));
+
+  // Slice *before* sending to Supabase
+  const paginatedDicomIds = uniqueDicomIds.slice(start, end + 1);
+  const safeDicomIds =
+    paginatedDicomIds.length > 0 ? paginatedDicomIds : [EMPTY_UUID];
 
   let dataQuery = supabase
     .from(tableName)
@@ -101,15 +106,14 @@ const fetcher = async (
     dicom_user!left(
       user_id,
       assigned_by,
-      assigned_by:dicom_user_assigned_by_fkey(id, first_name, last_name, image_url, role(id, name))
+      assigned_by:dicom_user_assigned_by_fkey!left(id, first_name, last_name, image_url, role(id, name))
     ),
-    created_by:user_dicom_user_id_fkey(id, image_url, first_name, last_name),
+    created_by:user_dicom_user_id_fkey!left(id, image_url, first_name, last_name),
     template(header_image_url, footer_image_url, sign_image_url)
     `
     )
     .eq("dicom_user.user_id", userId)
-    .in("id", safeDicomIds)
-    .range(start, end);
+    .in("id", safeDicomIds);
 
   let countQuery = supabase
     .from(tableName)

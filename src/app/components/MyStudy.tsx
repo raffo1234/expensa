@@ -26,15 +26,18 @@ export default function MyStudy({
   dicom,
   userId,
   userRoleId,
+  isItemSelected,
+  toggleItemSelected,
 }: {
   dicom: Partial<DicomType>;
   userId: string;
   userRoleId: string;
+  isItemSelected: (id: string) => void;
+  toggleItemSelected: (id: string) => void;
 }) {
   const { id, state, patient_id, patient_name, study_description, study_date } =
     dicom;
   const { setSliderContent, setSliderOpen } = useSliderState();
-
   const { setModalContent, setOnModalClose, setModalOpen } = useGlobalState();
 
   const { data: files, mutate: mutateFiles } = useSWR(
@@ -59,15 +62,59 @@ export default function MyStudy({
     setSliderOpen(true);
   };
 
+  if (!dicom.id) return null;
+
   return (
     <div className="bg-white rounded-lg shadow-xs p-6 mb-2" key={id}>
+      <div className="flex gap-2 items-center mb-3">
+        <div className="relative w-fit cursor-pointer -ml-2">
+          <input
+            id={id}
+            type="checkbox"
+            className="hidden peer"
+            checked={isItemSelected(dicom.id) ?? false}
+            onChange={() => toggleItemSelected(dicom.id as string)}
+          />
+          <label
+            htmlFor={id}
+            className="block cursor-pointer p-2 w-9 h-9 text-gray-400"
+          ></label>
+          <div className="pointer-events-none bg-white w-5 h-5 border-2 peer-checked:border-cyan-400 rounded-sm text-gray-400 peer-checked:text-cyan-400 absolute top-1/2 -translate-x-1/2 -translate-y-1/2 left-1/2"></div>
+          <svg
+            className="hidden peer-checked:text-cyan-400 pointer-events-none peer-checked:block absolute top-1/2 -translate-x-1/2 -translate-y-1/2 left-1/2"
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+          >
+            <g fill="none" fillRule="evenodd">
+              <path d="m12.593 23.258l-.011.002l-.071.035l-.02.004l-.014-.004l-.071-.035q-.016-.005-.024.005l-.004.01l-.017.428l.005.02l.01.013l.104.074l.015.004l.012-.004l.104-.074l.012-.016l.004-.017l-.017-.427q-.004-.016-.017-.018m.265-.113l-.013.002l-.185.093l-.01.01l-.003.011l.018.43l.005.012l.008.007l.201.093q.019.005.029-.008l.004-.014l-.034-.614q-.005-.018-.02-.022m-.715.002a.02.02 0 0 0-.027.006l-.006.014l-.034.614q.001.018.017.024l.015-.002l.201-.093l.01-.008l.004-.011l.017-.43l-.003-.012l-.01-.01z" />
+              <path
+                fill="currentColor"
+                d="M21.546 5.111a1.5 1.5 0 0 1 0 2.121L10.303 18.475a1.6 1.6 0 0 1-2.263 0L2.454 12.89a1.5 1.5 0 1 1 2.121-2.121l4.596 4.596L19.424 5.111a1.5 1.5 0 0 1 2.122 0"
+              />
+            </g>
+          </svg>
+        </div>
+        {dicom.id ? (
+          <AssignDicomToTrigger
+            dicomIds={[dicom.id]}
+            userId={userId}
+            userRoleId={userRoleId}
+          />
+        ) : null}
+      </div>
       <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-sm mb-2 text-gray-400">ID: {patient_id}</h2>
-          <div className="font-semibold mb-2 text-sm">{patient_name}</div>
-          <div className="text-xs text-gray-400 mb-2">{study_description}</div>
-          <div className="font-semibold text-sm">
-            Study Date: {study_date ? formatDate(study_date) : null}
+        <div className="flex gap-2">
+          <div>
+            <h2 className="text-sm mb-2 text-gray-400">ID: {patient_id}</h2>
+            <div className="font-semibold mb-2 text-sm">{patient_name}</div>
+            <div className="text-xs text-gray-400 mb-2">
+              {study_description}
+            </div>
+            <div className="font-semibold text-sm">
+              Study Date: {study_date ? formatDate(study_date) : null}
+            </div>
           </div>
         </div>
         <div
@@ -94,15 +141,6 @@ export default function MyStudy({
         >
           {!state ? "Sent" : state}
         </div>
-      </div>
-      <div className="mt-1">
-        {dicom.id ? (
-          <AssignDicomToTrigger
-            dicomId={dicom.id}
-            userId={userId}
-            userRoleId={userRoleId}
-          />
-        ) : null}
       </div>
       {files && files.length > 0 ? (
         <div

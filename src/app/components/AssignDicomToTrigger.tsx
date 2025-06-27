@@ -2,32 +2,33 @@
 
 import { useGlobalState } from "@/lib/globalState";
 import AssignDicomTo from "@/components/AssignDicomTo";
-import { useDicomHasAssignments } from "@/hooks/useDicomHasAssignments";
 import useCheckPermission from "@/hooks/useCheckPermission";
 import { Permissions } from "@/types/propertyState";
+import { useDicomHasAssignments } from "@/hooks/useDicomHasAssignments";
 
 export default function AssignDicomToTrigger({
-  dicomId,
+  dicomIds,
   userId,
   userRoleId,
 }: {
-  dicomId: string;
+  dicomIds: string[];
   userId: string;
   userRoleId: string;
 }) {
   const { setModalContent, setModalOpen } = useGlobalState();
-  const { data: hasAssignments, isLoading } = useDicomHasAssignments(dicomId);
-
   const { hasPermission: canAssign, isLoading: isLoadingCanAssign } =
     useCheckPermission(userRoleId, Permissions.ASSIGN_DICOM_TO_USERS);
 
   const onClick = () => {
-    setModalContent(<AssignDicomTo dicomId={dicomId} userId={userId} />);
+    setModalContent(<AssignDicomTo dicomIds={dicomIds} userId={userId} />);
     setModalOpen(true);
   };
 
-  if (isLoading || isLoadingCanAssign) return null;
+  const { data: hasAssignments, isLoading } = useDicomHasAssignments(
+    dicomIds[0] as string
+  );
 
+  if (isLoadingCanAssign || isLoading) return null;
   if (!canAssign) return null;
 
   return (
@@ -36,7 +37,11 @@ export default function AssignDicomToTrigger({
       onClick={onClick}
       className="cursor-pointer text-sm text-cyan-500 text-shadow-gray-900 underline underline-offset-3"
     >
-      {hasAssignments ? "Assigned" : "Assign to"}
+      {dicomIds.length === 1 ? (
+        <>{hasAssignments ? "Assigned" : "Assign to"}</>
+      ) : (
+        "Assignment"
+      )}
     </button>
   );
 }

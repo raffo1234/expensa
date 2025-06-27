@@ -60,7 +60,7 @@ export default function LinkInsertedOrDuplicated({
         </Link>
         <AssignDicomToTrigger
           userRoleId={userRoleId}
-          dicomId={id}
+          dicomIds={[id]}
           userId={userId}
         />
       </div>

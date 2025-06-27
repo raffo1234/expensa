@@ -51,29 +51,31 @@ export const fetchUsersWithAssignmentFlag = async (
   });
 };
 
-function useDicomUserAssignments(dicomId: string) {
-  return useSWR(dicomId ? `assigned-users-${dicomId}` : null, () =>
-    fetchUsersWithAssignmentFlag(dicomId)
-  );
-}
+const fetchUsersWithDicomAssignments = async () => {
+  const { data, error } = await supabase
+    .from("users_with_dicom_assignments")
+    .select("*");
+
+  if (error) throw error;
+  return data;
+};
 
 export default function AssignDicomTo({
-  dicomId,
+  dicomIds,
   userId,
 }: {
-  dicomId: string;
+  dicomIds: string[];
   userId: string;
 }) {
   const {
     data: users,
-    isLoading,
     error,
+    isLoading,
     mutate,
-  } = useDicomUserAssignments(dicomId);
+  } = useSWR("users_with_dicom_assignments", fetchUsersWithDicomAssignments);
 
-  if (error) return null;
-  if (isLoading) return null;
-
+  if (error || isLoading) return null;
+  
   return (
     <>
       <h1 className="font-semibold text-xl mb-1">Assign Studies to Users</h1>
@@ -94,7 +96,7 @@ export default function AssignDicomTo({
           return (
             <AssignDicomItem
               key={user.id}
-              dicomId={dicomId}
+              dicomIds={dicomIds}
               userId={userId}
               user={user}
               mutate={mutate}

@@ -270,7 +270,7 @@ export default function Pagination({
     isLoading,
     mutate,
   } = useSWR<FetchResult | null, number>(swrKey, fetcher);
-  
+
   const hasMore: boolean =
     result?.data !== undefined &&
     result?.data !== null &&
@@ -1011,7 +1011,7 @@ export default function Pagination({
                       </td>
                       <td>
                         <AssignDicomToTrigger
-                          dicomId={id}
+                          dicomIds={[id]}
                           userId={userId}
                           userRoleId={userRoleId}
                         />

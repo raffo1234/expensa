@@ -5,31 +5,49 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { mutate as globalMutate } from "swr";
 
-async function unassignDicomFromUser(dicomId: string, userId: string) {
+async function revalidateDicomAssignments(dicomIds: string[]) {
+  await Promise.all(
+    dicomIds.map((dicomId) => globalMutate(`dicom-has-assignments-${dicomId}`))
+  );
+}
+
+async function unassignDicomFromUser(dicomIds: string[], userId: string) {
+  if (dicomIds.length === 0) return;
+
   const { error } = await supabase
     .from("dicom_user")
     .delete()
-    .match({ dicom_id: dicomId, user_id: userId });
+    .in("dicom_id", dicomIds)
+    .eq("user_id", userId);
 
   if (error) {
-    console.error("Failed to unassign DICOM from user:", error);
-    toast.error("Failed to unassign DICOM from user");
+    console.error("Failed to unassign DICOMs from user:", error);
+    toast.error("Failed to unassign DICOMs from user");
     throw error;
   }
-  toast.success("Unassigned successfully");
+
+  toast.success(
+    dicomIds.length === 1
+      ? "DICOM unassigned successfully"
+      : `${dicomIds.length} DICOMs unassigned successfully`
+  );
 }
 
-async function assignDicomToUser(
-  dicomId: string,
+async function assignDicomsToUser(
+  dicomIds: string[],
   userId: string,
   currentUserId: string
 ) {
-  const { error } = await supabase.from("dicom_user").insert({
+  const now = new Date().toISOString();
+
+  const rows = dicomIds.map((dicomId) => ({
     dicom_id: dicomId,
     user_id: userId,
     assigned_by: currentUserId,
-    assigned_at: new Date().toISOString(),
-  });
+    assigned_at: now,
+  }));
+
+  const { error } = await supabase.from("dicom_user").insert(rows);
 
   if (error) {
     console.error("Assignment failed", error);
@@ -40,29 +58,41 @@ async function assignDicomToUser(
 }
 
 type UserWithAssignment = UserType & {
-  isAssigned: boolean;
+  user_id: string;
+  is_assigned: boolean;
+  assigned_dicom_ids: string[];
+  role_name: string;
 };
 
 export default function AssignDicomItem({
   userId,
-  dicomId,
+  dicomIds,
   user,
   mutate,
 }: {
   userId: string;
-  dicomId: string;
+  dicomIds: string[];
   user: UserWithAssignment;
   mutate: () => void;
 }) {
   const [isAssigning, setIsAssigning] = useState(false);
-  const { first_name, isAssigned, last_name, id, role, image_url } = user;
+  const {
+    user_id,
+    first_name,
+    is_assigned,
+    assigned_dicom_ids,
+    last_name,
+    image_url,
+    role_name,
+  } = user;
 
   const handleAssign = async () => {
     if (isAssigning) return;
 
     try {
       setIsAssigning(true);
-      await assignDicomToUser(dicomId, id, userId);
+      await assignDicomsToUser(dicomIds, user_id, userId);
+      await revalidateDicomAssignments(dicomIds);
       mutate();
     } catch (err) {
       console.error("Assign failed", err);
@@ -71,22 +101,31 @@ export default function AssignDicomItem({
     }
   };
 
+  const isAssignedToDicom = (dicomIds: string[]) =>
+    dicomIds.some(
+      (id) => assigned_dicom_ids && assigned_dicom_ids.includes(id)
+    );
+
   return (
     <button
       disabled={isAssigning}
       onClick={async () => {
         setIsAssigning(true);
-        if (isAssigned) {
-          await unassignDicomFromUser(dicomId, id);
+        if (isAssignedToDicom(dicomIds)) {
+          await unassignDicomFromUser(dicomIds, user_id);
+          await revalidateDicomAssignments(dicomIds);
           mutate();
         } else {
           await handleAssign();
         }
         setIsAssigning(false);
-        globalMutate(`dicom-has-assignments-${dicomId}`);
         globalMutate((key) => Array.isArray(key) && key[0] === "dicom");
       }}
-      className={`${isAssigned ? "disabled:pointer-events-none bg-cyan-50 hover:bg-cyan-100 border-cyan-200" : "bg-white hover:bg-gray-50 border-gray-200"} cursor-pointer border rounded-2xl p-4 transition-colors duration-300 relative`}
+      className={`${
+        isAssignedToDicom(dicomIds)
+          ? "disabled:pointer-events-none bg-cyan-50 hover:bg-cyan-100 border-cyan-200"
+          : "bg-white hover:bg-gray-50 border-gray-200"
+      } cursor-pointer border rounded-2xl p-4 transition-colors duration-300 relative`}
     >
       <div className="absolute top-2 right-2 text-cyan-400">
         {isAssigning ? (
@@ -108,7 +147,7 @@ export default function AssignDicomItem({
         ) : null}
       </div>
       <div className="absolute top-2 right-2 text-cyan-400">
-        {isAssigned ? (
+        {isAssignedToDicom(dicomIds) ? (
           <svg
             className={`${isAssigning ? "opacity-0" : "100"} transition-all duration-300`}
             xmlns="http://www.w3.org/2000/svg"
@@ -128,7 +167,7 @@ export default function AssignDicomItem({
       <Image
         src={image_url}
         className="rounded-full mb-3 mx-auto bg-gray-100"
-        alt={first_name || id}
+        alt={first_name || user_id}
         width={44}
         height={44}
         title={first_name}
@@ -139,8 +178,14 @@ export default function AssignDicomItem({
       >
         {first_name} {last_name}
       </div>
-      <div className="text-sm text-gray-500 w-full text-center mb-4">
-        {role?.name}
+      {is_assigned ? (
+        <div className="text-sm text-gray-500 w-full text-center mb-4">
+          Assign to {assigned_dicom_ids.length} stud
+          {assigned_dicom_ids.length === 1 ? "y" : "ies"}
+        </div>
+      ) : null}
+      <div className="text-sm text-gray-500 w-full text-center">
+        {role_name}
       </div>
     </button>
   );

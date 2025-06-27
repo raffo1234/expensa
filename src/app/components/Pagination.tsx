@@ -211,10 +211,10 @@ const fetcher = async (
     );
     throw countResult.error;
   }
-
+  console.log(countResult)
   return {
     data: dataResult.data as DicomType[] | null,
-    total: countResult.count as number,
+    total: uniqueDicomIds.length as number,
   };
 };
 

@@ -84,6 +84,7 @@ export default function AssignDicomItem({
         }
         setIsAssigning(false);
         globalMutate(`dicom-has-assignments-${dicomId}`);
+        globalMutate((key) => Array.isArray(key) && key[0] === "dicom");
       }}
       className={`${isAssigned ? "disabled:pointer-events-none bg-cyan-50 hover:bg-cyan-100 border-cyan-200" : "bg-white hover:bg-gray-50 border-gray-200"} cursor-pointer border rounded-2xl p-4 transition-colors duration-300 relative`}
     >

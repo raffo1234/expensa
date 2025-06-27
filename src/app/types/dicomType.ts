@@ -1,7 +1,17 @@
 import { DicomStateEnum } from "@/enums/dicomStateEnum";
 import { UserType } from "./userType";
 import { TemplateType } from "./templateType";
-import { DicomUserType } from "./DicomUserType";
+
+export type AssignedByType = {
+  first_name: string;
+  id: string;
+  last_name: string;
+  image_url: string;
+  role: {
+    id: string;
+    name: string;
+  }
+}
 
 export type DicomType = {
   id: string;
@@ -24,7 +34,7 @@ export type DicomType = {
   birthday: string;
   institution: string;
   template?: TemplateType | undefined;
-  dicom_user?: DicomUserType[]
+  assigned_by?: AssignedByType | null
 };
 
 export type PartialDicomWithTemplate = Partial<Omit<DicomType, "template">> & {

@@ -69,47 +69,19 @@ const fetcher = async (
     canViewCompleted,
   ] = key;
 
-  // const EMPTY_UUID = "00000000-0000-0000-0000-000000000000";
   const start = (page - 1) * pageSize;
   const end = start + pageSize - 1;
 
-  const { data: createdDicoms, error: createdError } = await supabase
-    .from(tableName)
-    .select("id")
-    .eq("user_id", userId);
-
-  const { data: assignedDicomIds, error: assignError } = await supabase
-    .from("dicom_user")
-    .select("dicom_id")
-    .eq("user_id", userId);
-
-  if (assignError) throw assignError;
-  if (createdError) throw createdError;
-
-  const dicomIds = [
-    ...(assignedDicomIds?.map((d) => d.dicom_id) ?? []),
-    ...(createdDicoms?.map((d) => d.id) ?? []),
-  ];
-
-  const uniqueDicomIds = Array.from(new Set(dicomIds));
-
-  // Slice *before* sending to Supabase
-  // const paginatedDicomIds = uniqueDicomIds.slice(start, end + 1);
-  // const safeDicomIds =
-  //   paginatedDicomIds.length > 0 ? paginatedDicomIds : [EMPTY_UUID];
-
   let dataQuery = supabase
-    .from(tableName)
-    .select(
-      "*, user_dicom_user_id_fkey(id, image_url, first_name, last_name), template(header_image_url, footer_image_url, sign_image_url)"
-    )
-    .eq("user_id", userId)
+    .from("dicom_visible_to_user")
+    .select("*")
+    .or(`user_id.eq.${userId},assigned_user_id.eq.${userId}`)
     .range(start, end);
 
   let countQuery = supabase
-    .from(tableName)
+    .from("dicom_visible_to_user")
     .select("id", { count: "exact", head: true })
-    .eq("user_id", userId);
+    .or(`user_id.eq.${userId},assigned_user_id.eq.${userId}`);
 
   const canViewByState: string[] = [];
   if (canViewNew) {
@@ -202,10 +174,10 @@ const fetcher = async (
     );
     throw countResult.error;
   }
-  // console.log(countResult);
+
   return {
     data: dataResult.data as DicomType[] | null,
-    total: uniqueDicomIds.length as number,
+    total: countResult.count as number,
   };
 };
 
@@ -910,12 +882,10 @@ export default function Pagination({
                     gender,
                     institution,
                     dicom_url,
-                    dicom_user,
+                    assigned_by,
                   },
                   index
                 ) => {
-                  const assignedBy = dicom_user?.[0]?.assigned_by;
-
                   const createdAt = new Date(created_at);
                   const completedAt = completed_at
                     ? new Date(completed_at)
@@ -1035,7 +1005,9 @@ export default function Pagination({
                       </td>
                       <td className="py-5 px-2 text-center">{modality}</td>
                       <td>
-                        {assignedBy ? <AssignedBy user={assignedBy} /> : null}
+                        {assigned_by ? (
+                          <AssignedBy assignedBy={assigned_by} />
+                        ) : null}
                       </td>
                       <td>
                         <AssignDicomToTrigger

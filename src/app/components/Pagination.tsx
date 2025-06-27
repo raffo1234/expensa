@@ -24,6 +24,7 @@ import DicomActionButtons from "./TableActionButtons";
 import ShareReportButton from "./ShareReportButton";
 import Attachments from "./Attachments";
 import AssignDicomToTrigger from "./AssignDicomToTrigger";
+import AssignedBy from "./AssignedBy";
 
 type SortDirection = "asc" | "desc" | null;
 
@@ -97,11 +98,16 @@ const fetcher = async (
     .select(
       `
     *,
-    dicom_user!left(user_id),
-    user:user_dicom_user_id_fkey(id, image_url, first_name, last_name),
+    dicom_user!left(
+      user_id,
+      assigned_by,
+      assigned_by:dicom_user_assigned_by_fkey(id, first_name, last_name, image_url, role(id, name))
+    ),
+    created_by:user_dicom_user_id_fkey(id, image_url, first_name, last_name),
     template(header_image_url, footer_image_url, sign_image_url)
     `
     )
+    .eq("dicom_user.user_id", userId)
     .in("id", safeDicomIds)
     .range(start, end);
 
@@ -853,6 +859,7 @@ export default function Pagination({
                   )}
                 </button>
               </th>
+              <th className="w-26"></th>
               <th className="w-16"></th>
               <th className="w-12"></th>
               <th className="w-12"></th>
@@ -908,9 +915,12 @@ export default function Pagination({
                     gender,
                     institution,
                     dicom_url,
+                    dicom_user,
                   },
                   index
                 ) => {
+                  const assignedBy = dicom_user?.[0]?.assigned_by;
+
                   const createdAt = new Date(created_at);
                   const completedAt = completed_at
                     ? new Date(completed_at)
@@ -1029,6 +1039,9 @@ export default function Pagination({
                         {completedAtFormatted}
                       </td>
                       <td className="py-5 px-2 text-center">{modality}</td>
+                      <td>
+                        {assignedBy ? <AssignedBy user={assignedBy} /> : null}
+                      </td>
                       <td>
                         <AssignDicomToTrigger
                           dicomId={id}

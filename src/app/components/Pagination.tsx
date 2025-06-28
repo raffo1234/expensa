@@ -395,7 +395,7 @@ export default function Pagination({
 
   const noData =
     !isLoading && !error && result?.data && result?.data.length === 0;
-  const startItemNumber = (page - 1) * pageSize + 1;
+  const startItemNumber = page * pageSize + 1;
 
   const clearLocalStorage = () => {
     handleSearchChange(null);

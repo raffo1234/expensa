@@ -3,9 +3,34 @@ import { supabase } from "@/lib/supabase";
 import { UserType } from "@/types/userType";
 import toast from "react-hot-toast";
 import AssignDicomItem from "./AssignDicomItem";
+import { useEffect, useState } from "react";
+import { useDebouncedCallback } from "use-debounce";
+import { Icon } from "@iconify/react/dist/iconify.js";
 
 type UserWithAssignment = UserType & {
   isAssigned: boolean;
+};
+
+export type UserWithDicomAssignments = {
+  user_id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  image_url: string | null;
+  role_name: string;
+  is_assigned: boolean;
+  assigned_dicom_ids: string[];
+};
+
+type FetchArgs = {
+  page: number;
+  pageSize: number;
+  search?: string;
+};
+
+type FetchResult = {
+  data: UserWithDicomAssignments[];
+  count: number;
 };
 
 export const fetchUsersWithAssignmentFlag = async (
@@ -51,14 +76,35 @@ export const fetchUsersWithAssignmentFlag = async (
   });
 };
 
-const fetchUsersWithDicomAssignments = async () => {
-  const { data, error } = await supabase
+export async function fetchUsersWithDicomAssignments({
+  page,
+  pageSize,
+  search,
+}: FetchArgs): Promise<FetchResult> {
+  const from = page * pageSize;
+  const to = from + pageSize - 1;
+
+  let query = supabase
     .from("users_with_dicom_assignments")
-    .select("*");
+    .select("*", { count: "exact" })
+    .range(from, to);
+
+  if (search && search.trim() !== "") {
+    const searchTerm = `%${search.trim()}%`;
+    query = query.or(
+      `first_name.ilike.${searchTerm},last_name.ilike.${searchTerm},email.ilike.${searchTerm},role_name.ilike.${searchTerm}`
+    );
+  }
+
+  const { data, count, error } = await query;
 
   if (error) throw error;
-  return data;
-};
+
+  return {
+    data: (data as UserWithDicomAssignments[]) ?? [],
+    count: count ?? 0,
+  };
+}
 
 export default function AssignDicomTo({
   dicomIds,
@@ -67,15 +113,39 @@ export default function AssignDicomTo({
   dicomIds: string[];
   userId: string;
 }) {
-  const {
-    data: users,
-    error,
-    isLoading,
-    mutate,
-  } = useSWR("users_with_dicom_assignments", fetchUsersWithDicomAssignments);
+  const PAGE_SIZE = 9;
+  const [page, setPage] = useState(0);
+  const [search, setSearch] = useState("");
 
-  if (error || isLoading) return null;
-  
+  const { data, error, isLoading, mutate } = useSWR(
+    ["users_with_dicom_assignments", page, search],
+    () => fetchUsersWithDicomAssignments({ page, pageSize: PAGE_SIZE, search })
+  );
+
+  const debouncedSearchInput = useDebouncedCallback((event) => {
+    setPage(0);
+    setSearch(event.target.value);
+  }, 350);
+
+  const users = data?.data ?? [];
+  const total = data?.count ?? 0;
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.shiftKey && e.key === "ArrowRight") {
+        setPage((p) => (p + 1 < totalPages ? p + 1 : p));
+      } else if (e.shiftKey && e.key === "ArrowLeft") {
+        setPage((p) => (p > 0 ? p - 1 : 0));
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [totalPages]);
+
+  if (error) return null;
+
   return (
     <>
       <h1 className="font-semibold text-xl mb-1">Assign Studies to Users</h1>
@@ -83,26 +153,66 @@ export default function AssignDicomTo({
         They will be granted access to the files as part of this study.
       </p>
       <input
+        onChange={debouncedSearchInput}
         placeholder="Search users"
         className="bg-white mb-6 w-full rounded-lg border border-gray-200 outline-0 px-5 py-2 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
       />
+      <div className="mt-1 italic text-xs text-gray-500">
+        Press <kbd className="px-1 py-0.5 bg-gray-100 border rounded">Shitf</kbd>{" "}
+        + <kbd className="px-1 py-0.5 bg-gray-100 border rounded">←</kbd> /{" "}
+        <kbd className="px-1 py-0.5 bg-gray-100 border rounded">→</kbd> to
+        navigate
+      </div>
+      <div className="my-3 flex justify-end items-center">
+        <button
+          disabled={page === 0}
+          onClick={() => setPage((p) => p - 1)}
+          className="px-4 py-1 bg-cyan-400 disabled:pointer-events-none text-white rounded-full disabled:opacity-50 cursor-pointer text-sm"
+        >
+          <Icon icon="solar:arrow-left-linear" fontSize={20}></Icon>
+        </button>
+        <div className="text-xs uppercase font-semibold px-3">
+          Page {page + 1} of {Math.ceil(total / PAGE_SIZE)}
+        </div>
+        <button
+          disabled={(page + 1) * PAGE_SIZE >= total}
+          onClick={() => setPage((p) => p + 1)}
+          className="px-4 py-1 bg-cyan-400 disabled:pointer-events-none text-white rounded-full disabled:opacity-50 cursor-pointer text-sm"
+        >
+          <Icon icon="solar:arrow-right-linear" fontSize={20}></Icon>
+        </button>
+      </div>
       <div
         className="grid gap-3"
         style={{
           gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))",
         }}
       >
-        {users?.map((user) => {
-          return (
-            <AssignDicomItem
-              key={user.id}
-              dicomIds={dicomIds}
-              userId={userId}
-              user={user}
-              mutate={mutate}
+        {isLoading ? (
+          <>
+            <div
+              className={`bg-gray-100 h-[174px] rounded-2xl animate-pulse`}
             />
-          );
-        })}
+            <div
+              className={`bg-gray-100 h-[174px] rounded-2xl animate-pulse`}
+            />
+            <div
+              className={`bg-gray-100 h-[174px] rounded-2xl animate-pulse`}
+            />
+          </>
+        ) : (
+          users?.map((user: UserWithDicomAssignments) => {
+            return (
+              <AssignDicomItem
+                key={user.user_id}
+                dicomIds={dicomIds}
+                userId={userId}
+                user={user}
+                mutate={mutate}
+              />
+            );
+          })
+        )}
       </div>
     </>
   );

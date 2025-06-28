@@ -1,9 +1,9 @@
 import { supabase } from "@/lib/supabase";
-import { UserType } from "@/types/userType";
 import Image from "next/image";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { mutate as globalMutate } from "swr";
+import { UserWithDicomAssignments } from "./AssignDicomTo";
 
 async function revalidateDicomAssignments(dicomIds: string[]) {
   await Promise.all(
@@ -57,13 +57,6 @@ async function assignDicomsToUser(
   toast.success("Assigned successfully");
 }
 
-type UserWithAssignment = UserType & {
-  user_id: string;
-  is_assigned: boolean;
-  assigned_dicom_ids: string[];
-  role_name: string;
-};
-
 export default function AssignDicomItem({
   userId,
   dicomIds,
@@ -72,7 +65,7 @@ export default function AssignDicomItem({
 }: {
   userId: string;
   dicomIds: string[];
-  user: UserWithAssignment;
+  user: UserWithDicomAssignments;
   mutate: () => void;
 }) {
   const [isAssigning, setIsAssigning] = useState(false);
@@ -164,14 +157,18 @@ export default function AssignDicomItem({
           </svg>
         ) : null}
       </div>
-      <Image
-        src={image_url}
-        className="rounded-full mb-3 mx-auto bg-gray-100"
-        alt={first_name || user_id}
-        width={44}
-        height={44}
-        title={first_name}
-      />
+      {image_url ? (
+        <Image
+          src={image_url}
+          className="rounded-full mb-3 mx-auto bg-gray-100"
+          alt={first_name || user_id}
+          width={44}
+          height={44}
+          title={first_name}
+        />
+      ) : (
+        <div className="w-11 h-11 rounded-full mb-3 mx-auto bg-gray-200"></div>
+      )}
       <div
         className="font-semibold w-full mb-1 text-center truncate"
         title={first_name}

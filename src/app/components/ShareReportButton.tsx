@@ -2,6 +2,7 @@
 
 import { useGlobalState } from "@/lib/globalState";
 import ShareReport from "./ShareReport";
+import { ICON_SIZE } from "@/constants";
 
 export default function ShareReportButton({
   id,
@@ -26,8 +27,8 @@ export default function ShareReportButton({
       {
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="22"
-          height="22"
+          width={ICON_SIZE}
+          height={ICON_SIZE}
           viewBox="0 0 24 24"
         >
           <g

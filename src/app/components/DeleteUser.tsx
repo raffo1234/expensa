@@ -4,6 +4,7 @@ import { message } from "antd";
 import { supabase } from "@/lib/supabase";
 import { mutate } from "swr";
 import { Icon } from "@iconify/react";
+import { ICON_SIZE } from "@/constants";
 
 export default function DeleteUser({ userId }: { userId: string }) {
   const [messageApi] = message.useMessage();
@@ -46,7 +47,7 @@ export default function DeleteUser({ userId }: { userId: string }) {
         type="button"
         className="w-11 h-11 rounded-full border-gray-100 border text-red-500 flex items-center justify-center"
       >
-        <Icon icon="solar:trash-bin-minimalistic-broken" fontSize={24} />
+        <Icon icon="solar:trash-bin-minimalistic-broken" fontSize={ICON_SIZE} />
       </button>
     </div>
   );

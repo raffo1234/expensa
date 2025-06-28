@@ -12,6 +12,7 @@ import DeleteFile from "./DeleteFile";
 import { useSliderState } from "./Slider";
 import SliderFiles from "./SliderFiles";
 import AssignDicomToTrigger from "./AssignDicomToTrigger";
+import { ICON_SIZE } from "@/constants";
 
 const filesFetcher = async (dicomId: string) => {
   const { data } = (await supabase
@@ -187,8 +188,8 @@ export default function MyStudy({
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
+          width={ICON_SIZE}
+          height={ICON_SIZE}
           viewBox="0 0 24 24"
         >
           <path

@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { mutate } from "swr";
 import PrimaryButton from "./PrimaryButton";
+import { ICON_SIZE } from "@/constants";
 
 type Inputs = {
   name: string;
@@ -87,7 +88,7 @@ export default function AddTemplate({ userId }: { userId: string }) {
           onClick={() => setDisplayForm((prev) => !prev)}
           className="w-full flex rounded-b-xl rounded-t-xl gap-3.5 items-center text-left hover:bg-gray-50 transition-colors duration-300 px-6 py-4"
         >
-          <Icon icon="solar:add-square-broken" fontSize={22} />
+          <Icon icon="solar:add-square-broken" fontSize={ICON_SIZE} />
           <span className="pb-1">Add</span>
         </button>
       )}

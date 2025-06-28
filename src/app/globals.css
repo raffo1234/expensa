@@ -2,6 +2,11 @@
 @import "@fontsource-variable/ibm-plex-sans";
 @import "@fontsource/poppins";
 
+:root {
+  --font-sans: "IBM Plex Sans Variable", sans-serif;
+  --font-serif: "IBM Plex Serif Variable", serif;
+}
+
 /* group-hover does not work on mobile devices PopoverProfile component */
 .dropdown-parent:hover .dropdown-child {
   opacity: 100;

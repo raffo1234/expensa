@@ -7,13 +7,14 @@ import createDocxDocument from "@/lib/createDocxDocument";
 import { saveAs } from "file-saver";
 import toast from "react-hot-toast";
 import { sanitize } from "@/lib/sanitize";
+import { ICON_SIZE } from "@/constants";
 
 const IconLoading = () => {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
+      width={ICON_SIZE}
+      height={ICON_SIZE}
       viewBox="0 0 24 24"
     >
       <path
@@ -57,8 +58,8 @@ export default function DOCXPreview({ dicom }: { dicom: DicomType }) {
       ) : (
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
+          width={ICON_SIZE}
+          height={ICON_SIZE}
           viewBox="0 0 24 24"
         >
           <path

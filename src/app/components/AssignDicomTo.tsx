@@ -6,6 +6,7 @@ import AssignDicomItem from "./AssignDicomItem";
 import { useEffect, useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
 import { Icon } from "@iconify/react/dist/iconify.js";
+import { ICON_SIZE } from "@/constants";
 
 type UserWithAssignment = UserType & {
   isAssigned: boolean;
@@ -158,8 +159,9 @@ export default function AssignDicomTo({
         className="bg-white mb-6 w-full rounded-lg border border-gray-200 outline-0 px-5 py-2 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
       />
       <div className="mt-1 italic text-xs text-gray-500">
-        Press <kbd className="px-1 py-0.5 bg-gray-100 border rounded">Shitf</kbd>{" "}
-        + <kbd className="px-1 py-0.5 bg-gray-100 border rounded">←</kbd> /{" "}
+        Press{" "}
+        <kbd className="px-1 py-0.5 bg-gray-100 border rounded">Shitf</kbd> +{" "}
+        <kbd className="px-1 py-0.5 bg-gray-100 border rounded">←</kbd> /{" "}
         <kbd className="px-1 py-0.5 bg-gray-100 border rounded">→</kbd> to
         navigate
       </div>
@@ -169,7 +171,7 @@ export default function AssignDicomTo({
           onClick={() => setPage((p) => p - 1)}
           className="px-4 py-1 bg-cyan-400 disabled:pointer-events-none text-white rounded-full disabled:opacity-50 cursor-pointer text-sm"
         >
-          <Icon icon="solar:arrow-left-linear" fontSize={20}></Icon>
+          <Icon icon="solar:arrow-left-linear" fontSize={ICON_SIZE}></Icon>
         </button>
         <div className="text-xs uppercase font-semibold px-3">
           Page {page + 1} of {Math.ceil(total / PAGE_SIZE)}
@@ -179,7 +181,7 @@ export default function AssignDicomTo({
           onClick={() => setPage((p) => p + 1)}
           className="px-4 py-1 bg-cyan-400 disabled:pointer-events-none text-white rounded-full disabled:opacity-50 cursor-pointer text-sm"
         >
-          <Icon icon="solar:arrow-right-linear" fontSize={20}></Icon>
+          <Icon icon="solar:arrow-right-linear" fontSize={ICON_SIZE}></Icon>
         </button>
       </div>
       <div

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { ICON_SIZE } from "./constants";
 
 export default function Page() {
   return (
@@ -15,8 +16,8 @@ export default function Page() {
           <svg
             className="rotate-180"
             xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
+            width={ICON_SIZE}
+            height={ICON_SIZE}
             viewBox="0 0 24 24"
           >
             <path

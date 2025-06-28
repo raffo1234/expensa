@@ -34,7 +34,7 @@ export default async function Layout({ children }: Readonly<LayoutProps>) {
 
   return (
     <html lang="es">
-      <body id="admin">
+      <body id="admin" className="text-sm">
         <Toaster
           toastOptions={{
             className: "text-xs",

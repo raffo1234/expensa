@@ -4,6 +4,7 @@ import { useUploadTimer } from "@/hooks/useUploadTimer";
 import deleteEntity from "@/lib/deleteEntity";
 import { useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
+import { ICON_SIZE } from "@/constants";
 
 export default function FileUploadItem({
   file,
@@ -40,8 +41,8 @@ export default function FileUploadItem({
         {file.file.type.startsWith("image/") ? (
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
+            width={ICON_SIZE}
+            height={ICON_SIZE}
             viewBox="0 0 24 24"
           >
             <g fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -57,8 +58,8 @@ export default function FileUploadItem({
         {file.file.type === "application/pdf" ? (
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
+            width={ICON_SIZE}
+            height={ICON_SIZE}
             viewBox="0 0 16 16"
           >
             <path
@@ -110,8 +111,8 @@ export default function FileUploadItem({
           ) : (
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
+              width={ICON_SIZE}
+              height={ICON_SIZE}
               viewBox="0 0 24 24"
             >
               <path
@@ -136,8 +137,8 @@ export default function FileUploadItem({
           ) : (
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
+              width={ICON_SIZE}
+              height={ICON_SIZE}
               viewBox="0 0 24 24"
             >
               <path

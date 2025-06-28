@@ -1,3 +1,4 @@
+import { ICON_SIZE } from "@/constants";
 import Link from "next/link";
 
 export default function UploadButton() {
@@ -10,8 +11,8 @@ export default function UploadButton() {
       <span>Upload</span>
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
+        width={ICON_SIZE}
+        height={ICON_SIZE}
         viewBox="0 0 24 24"
       >
         <g fill="none" stroke="currentColor" strokeWidth="1.5">

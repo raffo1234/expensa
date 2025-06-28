@@ -9,6 +9,7 @@ import { Permissions } from "@/types/propertyState";
 import deleteDicom from "@/lib/deleteDicom";
 import { useState } from "react";
 import { useSession } from "next-auth/react";
+import { ICON_SIZE } from "@/constants";
 
 export default function TableActionButtons({
   dicom,
@@ -87,8 +88,8 @@ export default function TableActionButtons({
           ) : (
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
+              width={ICON_SIZE}
+              height={ICON_SIZE}
               viewBox="0 0 24 24"
             >
               <path

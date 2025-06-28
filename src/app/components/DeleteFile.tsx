@@ -4,6 +4,7 @@ import { Icon } from "@iconify/react";
 import deleteEntity from "@/lib/deleteEntity";
 import { FileType } from "@/types/fileType";
 import { useState } from "react";
+import { ICON_SIZE } from "@/constants";
 
 export default function DeleteFile({
   file,
@@ -31,10 +32,10 @@ export default function DeleteFile({
         <Icon
           icon="solar:record-broken"
           className="animate-spin"
-          fontSize={24}
+          fontSize={ICON_SIZE}
         />
       ) : (
-        <Icon icon="solar:trash-bin-minimalistic-broken" fontSize={24} />
+        <Icon icon="solar:trash-bin-minimalistic-broken" fontSize={ICON_SIZE} />
       )}
     </button>
   );

@@ -25,6 +25,7 @@ import ShareReportButton from "./ShareReportButton";
 import Attachments from "./Attachments";
 import AssignDicomToTrigger from "./AssignDicomToTrigger";
 import AssignedBy from "./AssignedBy";
+import { ICON_SIZE } from "@/constants";
 
 type SortDirection = "asc" | "desc" | null;
 
@@ -69,7 +70,7 @@ const fetcher = async (
     canViewCompleted,
   ] = key;
 
-  const start = (page - 1) * pageSize;
+  const start = page * pageSize;
   const end = start + pageSize - 1;
 
   let dataQuery = supabase
@@ -234,7 +235,7 @@ export default function Pagination({
   const defaultPageSize = savedPageSize ? parseInt(savedPageSize, 10) : 20;
 
   const savedPage = localStorage.getItem("page");
-  const defaultPage = savedPage ? parseInt(savedPage, 10) : 1;
+  const defaultPage = savedPage ? parseInt(savedPage, 10) : 0;
 
   const [page, setPage] = useState<number>(defaultPage);
   const [pageSize, setPageSize] = useState<number>(defaultPageSize);
@@ -282,7 +283,7 @@ export default function Pagination({
 
       if (!isNaN(newPageSize) && newPageSize > 0) {
         setPageSize(newPageSize);
-        setPage(1);
+        setPage(0);
 
         if (newPageSize) {
           localStorage.setItem("pageSize", String(newPageSize));
@@ -300,13 +301,15 @@ export default function Pagination({
   };
 
   const handlePreviousPage = () => {
-    if (page > 1) {
+    if (page > 0) {
       setPage((prevPage) => {
         localStorage.setItem("page", String(prevPage - 1));
         return prevPage - 1;
       });
     }
   };
+
+  const total = result?.total ?? 0;
 
   const handleNextPage = () => {
     if (hasMore) {
@@ -341,7 +344,7 @@ export default function Pagination({
       localStorage.removeItem("sortDirection");
     }
 
-    setPage(1);
+    setPage(0);
   };
 
   const handleSearchChange = (newSearchWord: string | null) => {
@@ -400,7 +403,7 @@ export default function Pagination({
       searchInputRef.current.value = "";
     }
 
-    setPage(1);
+    setPage(0);
     localStorage.removeItem("page");
 
     setPageSize(20);
@@ -472,6 +475,21 @@ export default function Pagination({
       })
     : [];
 
+  const totalPages = Math.ceil(total / pageSize);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.shiftKey && e.key === "ArrowRight") {
+        setPage((p) => (p + 1 < totalPages ? p + 1 : p));
+      } else if (e.shiftKey && e.key === "ArrowLeft") {
+        setPage((p) => (p > 0 ? p - 1 : 0));
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [totalPages]);
+
   return (
     <>
       <div className="w-full mb-4">
@@ -490,9 +508,9 @@ export default function Pagination({
           <button
             title="Clear All Filters"
             onClick={clearLocalStorage}
-            className="cursor-pointer text-cyan-400 hover:text-cyan-600 transition-colors duration-300"
+            className="cursor-pointer text-cyan-400 hover:text-cyan-600 transition-colors duration-300 p-2 border border-cyan-100 rounded-lg"
           >
-            <Icon icon="solar:restart-circle-linear" fontSize={32}></Icon>
+            <Icon icon="pajamas:clear-all" fontSize={ICON_SIZE}></Icon>
           </button>
         </div>
       </div>
@@ -560,53 +578,77 @@ export default function Pagination({
           Error fetching data
         </p>
       )}
-
-      <div className="w-fit pl-2 flex item-center mb-4 gap-2">
-        <div className="relative w-9 h-9">
-          <input
-            id="all"
-            type="checkbox"
-            checked={isAllItemsSelected(items)}
-            onChange={() => handleSelectAllClick(items)}
-            className="hidden peer"
-          />
-          <label
-            htmlFor="all"
-            className="cursor-pointer block w-full h-full border absolute top-1/2 -translate-x-1/2 -translate-y-1/2 left-1/2 border-gray-200 rounded-lg text-gray-400"
-          ></label>
-          <div className="bg-white cursor-pointer block w-5 h-5 border-2 pointer-events-none absolute top-1/2 -translate-x-1/2 -translate-y-1/2 left-1/2 peer-checked:border-cyan-400 rounded-sm text-gray-400 peer-checked:text-cyan-400"></div>
-          <svg
-            className="hidden peer-checked:text-cyan-400 pointer-events-none peer-checked:block absolute top-1/2 -translate-x-1/2 -translate-y-1/2 left-1/2"
-            xmlns="http://www.w3.org/2000/svg"
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-          >
-            <g fill="none" fillRule="evenodd">
-              <path d="m12.593 23.258l-.011.002l-.071.035l-.02.004l-.014-.004l-.071-.035q-.016-.005-.024.005l-.004.01l-.017.428l.005.02l.01.013l.104.074l.015.004l.012-.004l.104-.074l.012-.016l.004-.017l-.017-.427q-.004-.016-.017-.018m.265-.113l-.013.002l-.185.093l-.01.01l-.003.011l.018.43l.005.012l.008.007l.201.093q.019.005.029-.008l.004-.014l-.034-.614q-.005-.018-.02-.022m-.715.002a.02.02 0 0 0-.027.006l-.006.014l-.034.614q.001.018.017.024l.015-.002l.201-.093l.01-.008l.004-.011l.017-.43l-.003-.012l-.01-.01z" />
-              <path
-                fill="currentColor"
-                d="M21.546 5.111a1.5 1.5 0 0 1 0 2.121L10.303 18.475a1.6 1.6 0 0 1-2.263 0L2.454 12.89a1.5 1.5 0 1 1 2.121-2.121l4.596 4.596L19.424 5.111a1.5 1.5 0 0 1 2.122 0"
+      <div className="flex item-center mb-2 gap-2">
+        <div className="p-1 rounded-lg bg-gray-100 flex justify-between w-full">
+          <div className="flex gap-4 items-center">
+            <div className="ml-1 relative w-9 h-9">
+              <input
+                id="all"
+                type="checkbox"
+                checked={isAllItemsSelected(items)}
+                onChange={() => handleSelectAllClick(items)}
+                className="hidden peer"
               />
-            </g>
-          </svg>
-        </div>
-        {selectedIds.size > 0 ? (
-          <div className="flex items-center gap-2">
-            {result?.data?.[0] ? (
-              <>
-                <GenerateCompressedPDFs selectedIds={selectedIds} />
-                <GenerateCompressedDOCs selectedIds={selectedIds} />
-              </>
+              <label
+                htmlFor="all"
+                className="cursor-pointer block w-full h-full absolute top-1/2 -translate-x-1/2 -translate-y-1/2 left-1/2 rounded-lg text-gray-400"
+              ></label>
+              <div className="bg-white cursor-pointer block w-5 h-5 border-2 pointer-events-none absolute top-1/2 -translate-x-1/2 -translate-y-1/2 left-1/2 peer-checked:border-cyan-400 rounded-sm text-gray-400 peer-checked:text-cyan-400"></div>
+              <svg
+                className="hidden peer-checked:text-cyan-400 pointer-events-none peer-checked:block absolute top-1/2 -translate-x-1/2 -translate-y-1/2 left-1/2"
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+              >
+                <g fill="none" fillRule="evenodd">
+                  <path d="m12.593 23.258l-.011.002l-.071.035l-.02.004l-.014-.004l-.071-.035q-.016-.005-.024.005l-.004.01l-.017.428l.005.02l.01.013l.104.074l.015.004l.012-.004l.104-.074l.012-.016l.004-.017l-.017-.427q-.004-.016-.017-.018m.265-.113l-.013.002l-.185.093l-.01.01l-.003.011l.018.43l.005.012l.008.007l.201.093q.019.005.029-.008l.004-.014l-.034-.614q-.005-.018-.02-.022m-.715.002a.02.02 0 0 0-.027.006l-.006.014l-.034.614q.001.018.017.024l.015-.002l.201-.093l.01-.008l.004-.011l.017-.43l-.003-.012l-.01-.01z" />
+                  <path
+                    fill="currentColor"
+                    d="M21.546 5.111a1.5 1.5 0 0 1 0 2.121L10.303 18.475a1.6 1.6 0 0 1-2.263 0L2.454 12.89a1.5 1.5 0 1 1 2.121-2.121l4.596 4.596L19.424 5.111a1.5 1.5 0 0 1 2.122 0"
+                  />
+                </g>
+              </svg>
+            </div>
+            <div>{selectedIds.size > 0 ? selectedIds.size : null}</div>
+            {selectedIds.size > 0 ? (
+              <div className="flex items-center gap-2">
+                {result?.data?.[0] ? (
+                  <>
+                    <GenerateCompressedPDFs selectedIds={selectedIds} />
+                    <GenerateCompressedDOCs selectedIds={selectedIds} />
+                  </>
+                ) : null}
+              </div>
             ) : null}
-            <span className="text-sm text-gray-600">
-              {selectedIds.size} item{selectedIds.size !== 1 ? "s" : ""}{" "}
-              selected
-            </span>
           </div>
-        ) : null}
+          {!noData ? (
+            <div className="flex justify-end items-center">
+              <button
+                onClick={handlePreviousPage}
+                disabled={page === 0 || isLoading}
+                className="px-4 py-1 bg-cyan-400 disabled:pointer-events-none text-white rounded-full disabled:opacity-50 cursor-pointer text-sm"
+              >
+                <Icon
+                  icon="solar:arrow-left-linear"
+                  fontSize={ICON_SIZE}
+                ></Icon>
+              </button>
+              <div className="text-xs uppercase font-semibold px-3">
+                {page + 1} /{" "}
+                {result?.total ? Math.ceil(result?.total / pageSize) : null}
+              </div>
+              <button
+                onClick={handleNextPage}
+                disabled={(page + 1) * pageSize >= total || isLoading}
+                className="px-4 py-1 bg-cyan-400 disabled:pointer-events-none text-white rounded-full disabled:opacity-50 cursor-pointer text-sm"
+              >
+                <Icon icon="solar:arrow-right-linear" fontSize={20}></Icon>
+              </button>
+            </div>
+          ) : null}
+        </div>
       </div>
-
       <div className="bg-white shadow rounded-xl overflow-auto">
         <table className="text-sm w-full table-fixed">
           <thead>
@@ -1030,8 +1072,8 @@ export default function Pagination({
                             >
                               <svg
                                 xmlns="http://www.w3.org/2000/svg"
-                                width="24"
-                                height="24"
+                                width={ICON_SIZE}
+                                height={ICON_SIZE}
                                 viewBox="0 0 24 24"
                               >
                                 <path
@@ -1056,7 +1098,7 @@ export default function Pagination({
                           >
                             <Icon
                               icon="solar:cloud-download-outline"
-                              fontSize={24}
+                              fontSize={ICON_SIZE}
                             />
                           </Link>
                         ) : null}
@@ -1079,29 +1121,6 @@ export default function Pagination({
           )}
         </table>
       </div>
-      {!noData ? (
-        <div className="flex justify-between items-center mt-4">
-          <button
-            onClick={handlePreviousPage}
-            disabled={page === 1 || isLoading}
-            className="flex cursor-pointer items-center gap-1 px-4 py-2 border border-transparent text-sm rounded-full  text-white bg-cyan-500 hover:bg-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-300"
-          >
-            <Icon icon="solar:arrow-left-outline" fontSize={16} />
-            Previous
-          </button>
-          <span className="text-xs uppercase font-semibold text-gray-700">
-            Page {page}
-          </span>
-          <button
-            onClick={handleNextPage}
-            disabled={!hasMore || isLoading}
-            className="flex cursor-pointer items-center gap-1 px-4 py-2 border border-transparent text-sm rounded-full  text-white bg-cyan-500 hover:bg-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-300"
-          >
-            Next
-            <Icon icon="solar:arrow-right-outline" fontSize={16} />
-          </button>
-        </div>
-      ) : null}
     </>
   );
 }

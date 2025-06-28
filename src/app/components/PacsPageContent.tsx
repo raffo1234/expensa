@@ -17,6 +17,7 @@ import upsertStudy from "@/lib/upsertStudy";
 import { toZonedTime } from "date-fns-tz";
 import formatDate from "@/lib/formatDate";
 import { Modalities } from "@/enums/modalities";
+import { ICON_SIZE } from "@/constants";
 
 interface TableRowType {
   id: string;
@@ -326,10 +327,10 @@ export default function PacsPageContent({
             <Icon
               icon="solar:record-broken"
               className="animate-spin"
-              fontSize={24}
+              fontSize={ICON_SIZE}
             />
           ) : (
-            <Icon icon="solar:database-outline" fontSize={24} />
+            <Icon icon="solar:database-outline" fontSize={ICON_SIZE} />
           )}
         </button>
       </div>

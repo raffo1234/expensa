@@ -9,6 +9,7 @@ import { Permissions } from "@/types/propertyState";
 import FallbackPermission from "./FallbackPermission";
 import Link from "next/link";
 import { Icon } from "@iconify/react/dist/iconify.js";
+import { ICON_SIZE } from "@/constants";
 
 const fetcher = async (userId: string) => {
   const { data } = (await supabase
@@ -103,7 +104,7 @@ export default function ResidentsPageContent({
                       >
                         <Icon
                           icon="solar:clapperboard-edit-broken"
-                          fontSize={24}
+                          fontSize={ICON_SIZE}
                         />
                       </Link>
                     ) : null}

@@ -1,9 +1,14 @@
+import { ICON_SIZE } from "@/constants";
 import { AssignedByType } from "@/types/dicomType";
 import Image from "next/image";
 import { useState } from "react";
 import { Popover } from "react-tiny-popover";
 
-export default function AssignedBy({ assignedBy }: { assignedBy: AssignedByType }) {
+export default function AssignedBy({
+  assignedBy,
+}: {
+  assignedBy: AssignedByType;
+}) {
   const { image_url, first_name, last_name, id, role } = assignedBy;
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
@@ -17,7 +22,8 @@ export default function AssignedBy({ assignedBy }: { assignedBy: AssignedByType 
         content={
           <div className="w-50 py-5 px-4 rounded-lg bg-white shadow-sm">
             <div className="text-xs mb-4 text-center text-gray-500">
-              Assigned to me <br />by
+              Assigned to me <br />
+              by
             </div>
             <Image
               src={image_url}
@@ -46,8 +52,8 @@ export default function AssignedBy({ assignedBy }: { assignedBy: AssignedByType 
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="22"
-            height="22"
+            width={ICON_SIZE}
+            height={ICON_SIZE}
             viewBox="0 0 24 24"
           >
             <path

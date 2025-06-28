@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { signOut, auth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
+import { ICON_SIZE } from "@/constants";
 
 export default async function ProfilePopover() {
   const session = await auth();
@@ -106,8 +107,8 @@ export default async function ProfilePopover() {
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
+            width={ICON_SIZE}
+            height={ICON_SIZE}
             viewBox="0 0 24 24"
           >
             <g

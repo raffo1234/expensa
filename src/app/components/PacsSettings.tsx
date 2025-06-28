@@ -1,6 +1,7 @@
 import { useGlobalState } from "@/lib/globalState";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import PacsSettingsPageContent from "./PacsSettingsPageContent";
+import { ICON_SIZE } from "@/constants";
 
 export default function PacsSettings({
   userId,
@@ -24,7 +25,7 @@ export default function PacsSettings({
       onClick={handleOnClick}
       className="cursor-pointer p-3 border border-gray-200 rounded-xl w-fit hover:border-cyan-200 hover:text-cyan-400 transition-colors duration-300"
     >
-      <Icon icon="solar:settings-linear" fontSize={24} />
+      <Icon icon="solar:settings-linear" fontSize={ICON_SIZE} />
     </button>
   );
 }

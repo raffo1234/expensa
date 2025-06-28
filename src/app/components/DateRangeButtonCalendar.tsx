@@ -6,6 +6,7 @@ import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 import "../styles/react-date-range-custom.css";
 import { toZonedTime } from "date-fns-tz";
+import { ICON_SIZE } from "@/constants";
 
 interface DateRangeType {
   startDate: Date;
@@ -66,7 +67,7 @@ export default function DateRangeButtonCalendar({
   return (
     <>
       <div
-        className={`${dateRange ? "bg-gray-100 pr-9" : "bg-cyan-400 text-white"} w-fit font-semibold rounded-full flex items-center relative`}
+        className={`${dateRange ? "bg-gray-100 pr-9" : "bg-cyan-400 text-white"} w-fit rounded-full flex items-center relative`}
       >
         <button
           onClick={toggle}
@@ -75,8 +76,8 @@ export default function DateRangeButtonCalendar({
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
+            width={ICON_SIZE}
+            height={ICON_SIZE}
             viewBox="0 0 24 24"
           >
             <g fill="none">
@@ -134,11 +135,11 @@ export default function DateRangeButtonCalendar({
               ]);
               handleDateRangeChange(null);
             }}
-            className="cursor-pointer bg-cyan-400 p-1 rounded-full text-white right-0 absolute top-1/2 -translate-y-1/2"
+            className="cursor-pointer bg-cyan-400 p-2 rounded-full text-white right-0 absolute top-1/2 -translate-y-1/2"
           >
             <Icon
               icon="material-symbols-light:close-rounded"
-              fontSize={28}
+              fontSize={ICON_SIZE}
             ></Icon>
           </button>
         ) : null}

@@ -1,4 +1,5 @@
 import DeleteUser from "@/components/DeleteUser";
+import { ICON_SIZE } from "@/constants";
 import { UserType } from "@/types/userType";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import Image from "next/image";
@@ -43,7 +44,10 @@ export default function UsersTable({ users }: { users: UserType[] | null }) {
                   href={`/admin/users/edit/${id}`}
                   className="rounded-full w-11 h-11 border-gray-100 hover:border-gray-200 transition-colors duration-500 border flex items-center justify-center"
                 >
-                  <Icon icon="solar:clapperboard-edit-broken" fontSize={24} />
+                  <Icon
+                    icon="solar:clapperboard-edit-broken"
+                    fontSize={ICON_SIZE}
+                  />
                 </Link>
                 <DeleteUser userId={id} />
               </div>

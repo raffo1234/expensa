@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabase";
 import { mutate } from "swr";
 import toast from "react-hot-toast";
 import { useEffect, useState } from "react";
+import { ICON_SIZE } from "@/constants";
 
 export default function Pac({ pac }: { pac: PacType }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -125,8 +126,8 @@ export default function Pac({ pac }: { pac: PacType }) {
               <svg
                 className="text-green-400"
                 xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
+                width={ICON_SIZE}
+                height={ICON_SIZE}
                 viewBox="0 0 24 24"
               >
                 <g fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -143,8 +144,8 @@ export default function Pac({ pac }: { pac: PacType }) {
               <svg
                 className="text-rose-400"
                 xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
+                width={ICON_SIZE}
+                height={ICON_SIZE}
                 viewBox="0 0 24 24"
               >
                 <g fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -176,8 +177,8 @@ export default function Pac({ pac }: { pac: PacType }) {
                   <svg
                     className="animate-spin"
                     xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
+                    width={ICON_SIZE}
+                    height={ICON_SIZE}
                     viewBox="0 0 24 24"
                   >
                     <path
@@ -191,8 +192,8 @@ export default function Pac({ pac }: { pac: PacType }) {
                 ) : (
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
+                    width={ICON_SIZE}
+                    height={ICON_SIZE}
                     viewBox="0 0 24 24"
                   >
                     <g fill="none" stroke="currentColor" strokeWidth="1.5">

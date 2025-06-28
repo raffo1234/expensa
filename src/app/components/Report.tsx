@@ -23,6 +23,7 @@ import ListOfTemplates from "./ListOfTemplates";
 import fetcherDicom from "@/fetchers/dicomFetcher";
 import useControlEnter from "@/hooks/useControlEnter";
 import Attachments from "./Attachments";
+import { ICON_SIZE } from "@/constants";
 
 export default function Report({
   templates,
@@ -161,8 +162,8 @@ export default function Report({
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
+              width={ICON_SIZE}
+              height={ICON_SIZE}
               viewBox="0 0 24 24"
             >
               <path

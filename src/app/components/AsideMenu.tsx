@@ -7,7 +7,7 @@ import { Permissions } from "@/types/propertyState";
 import Link from "next/link";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { preload } from "swr";
-import { adminUsersKey } from "@/constants";
+import { adminUsersKey, ICON_SIZE } from "@/constants";
 import { signOut } from "next-auth/react";
 
 export default function AsideMenu({
@@ -190,7 +190,7 @@ export default function AsideMenu({
           >
             <Icon
               icon={iconName}
-              fontSize={21}
+              fontSize={ICON_SIZE}
               className={`${href === currentPath ? "text-rose-400" : ""}`}
             />
             <span>{title}</span>
@@ -204,7 +204,7 @@ export default function AsideMenu({
         >
           <Icon
             icon="solar:inbox-out-linear"
-            fontSize={21}
+            fontSize={ICON_SIZE}
             className="-rotate-90"
           />
           <span>Sign Out</span>

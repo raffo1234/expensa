@@ -4,6 +4,7 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import Link from "next/link";
 import { Permissions } from "@/types/propertyState";
 import useCheckPermission from "@/hooks/useCheckPermission";
+import { ICON_SIZE } from "@/constants";
 
 export default function ViewAllDicomsLink({
   userRoleId,
@@ -23,7 +24,7 @@ export default function ViewAllDicomsLink({
       title="View All"
       target="_blank"
     >
-      <Icon icon="solar:file-text-line-duotone" fontSize={24} />
+      <Icon icon="solar:file-text-line-duotone" fontSize={ICON_SIZE} />
       <span className="whitespace-nowrap group-hover:underline">View All</span>
     </Link>
   );

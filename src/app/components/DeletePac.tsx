@@ -1,6 +1,6 @@
 "use client";
 
-import { adminPacsKey } from "@/constants";
+import { adminPacsKey, ICON_SIZE } from "@/constants";
 import { supabase } from "@/lib/supabase";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { useState } from "react";
@@ -39,10 +39,10 @@ export default function DeletePac({ pacId }: { pacId: string }) {
         <Icon
           icon="solar:record-broken"
           className="animate-spin"
-          fontSize={24}
+          fontSize={ICON_SIZE}
         />
       ) : (
-        <Icon icon="solar:trash-bin-minimalistic-broken" fontSize={24} />
+        <Icon icon="solar:trash-bin-minimalistic-broken" fontSize={ICON_SIZE} />
       )}
     </button>
   );

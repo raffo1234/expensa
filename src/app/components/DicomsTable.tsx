@@ -77,7 +77,7 @@ export default function DicomsTable({
           <select
             defaultValue={activeUserId}
             onChange={(event) => setActiveUserId(event.target.value)}
-            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500 bg-white"
+            className="w-full pl-4 pr-7 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500 bg-white"
           >
             {users?.map(({ id, first_name, role, last_name, email }) => {
               return (

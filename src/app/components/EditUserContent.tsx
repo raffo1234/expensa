@@ -76,7 +76,7 @@ export default function EditUserContent({
   const { data: user, mutate: mutateUser } = useSWR(`admin-${userId}`, () =>
     fetcher(userId)
   );
-  
+
   const { data: users, isLoading: isLoadingUsers } = useSWR(
     adminUsersKey,
     usersFetcher
@@ -156,7 +156,7 @@ export default function EditUserContent({
                   onChange={(event) =>
                     updateUser("role_id", event.target.value)
                   }
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500 bg-white"
+                  className="w-full pl-4 pr-7 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500 bg-white"
                 >
                   <option value="">Select ...</option>
                   {roles?.map(({ id, name }) => {
@@ -186,7 +186,7 @@ export default function EditUserContent({
                     updateUser("template_id", event.target.value)
                   }
                   defaultValue={user.template_id as string}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500 bg-white"
+                  className="w-full pl-4 pr-7 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500 bg-white"
                 >
                   <option value="">Select ...</option>
                   {templates?.map(({ id, name }) => {

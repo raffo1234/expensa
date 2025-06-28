@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { mutate } from "swr";
 import PrimaryButton from "./PrimaryButton";
-import { adminRolesKey } from "@/constants";
+import { adminRolesKey, ICON_SIZE } from "@/constants";
 
 type Inputs = {
   name: string;
@@ -81,7 +81,7 @@ export default function AddRole() {
           onClick={() => setDisplayForm((prev) => !prev)}
           className="w-full flex rounded-b-xl gap-3.5 items-center text-left hover:bg-gray-50 transition-colors duration-300 px-6 py-4 border-t border-gray-200"
         >
-          <Icon icon="solar:add-square-broken" fontSize={22} />
+          <Icon icon="solar:add-square-broken" fontSize={ICON_SIZE} />
           <span className="pb-1">Add</span>
         </button>
       )}

@@ -3,6 +3,7 @@ import { TemplateType } from "@/types/templateType";
 import Link from "next/link";
 import { Permissions } from "@/types/propertyState";
 import useCheckPermission from "@/hooks/useCheckPermission";
+import { ICON_SIZE } from "@/constants";
 
 function putFirst(array: TemplateType[], element: TemplateType | undefined) {
   if (element)
@@ -76,8 +77,8 @@ export default function ListOfTemplates({
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
+            width={ICON_SIZE}
+            height={ICON_SIZE}
             viewBox="0 0 24 24"
           >
             <g fill="none">

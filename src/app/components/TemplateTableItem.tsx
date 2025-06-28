@@ -1,4 +1,4 @@
-import { bucketName } from "@/constants";
+import { bucketName, ICON_SIZE } from "@/constants";
 import { supabase } from "@/lib/supabase";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import Link from "next/link";
@@ -65,7 +65,7 @@ export default function TemplatesTableItem({
         href={`/admin/templates/${id}`}
         className={`${isDeleting ? "pointer-events-none:" : "cursor-pointer"} px-6 hover:bg-gray-50 first:rounded-t-xl transition-colors duration-300 py-4 gap-3.5 flex items-center`}
       >
-        <Icon icon="solar:file-favourite-line-duotone" fontSize={20} />
+        <Icon icon="solar:file-favourite-line-duotone" fontSize={ICON_SIZE} />
         <span>{name}</span>
       </Link>
       <button
@@ -79,10 +79,13 @@ export default function TemplatesTableItem({
           <Icon
             icon="solar:record-broken"
             className="animate-spin"
-            fontSize={24}
+            fontSize={ICON_SIZE}
           />
         ) : (
-          <Icon icon="solar:trash-bin-minimalistic-broken" fontSize={24} />
+          <Icon
+            icon="solar:trash-bin-minimalistic-broken"
+            fontSize={ICON_SIZE}
+          />
         )}
       </button>
     </div>

@@ -177,7 +177,7 @@ export default function AssignDicomItem({
       </div>
       {is_assigned ? (
         <div className="text-sm text-gray-500 w-full text-center mb-4">
-          Assign to {assigned_dicom_ids.length} stud
+          Assigned to {assigned_dicom_ids.length} stud
           {assigned_dicom_ids.length === 1 ? "y" : "ies"}
         </div>
       ) : null}

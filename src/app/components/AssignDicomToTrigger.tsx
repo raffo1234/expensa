@@ -40,7 +40,7 @@ export default function AssignDicomToTrigger({
       {dicomIds.length === 1 ? (
         <>{hasAssignments ? "Assigned" : "Assign to"}</>
       ) : (
-        "Assignment"
+        "Assignments"
       )}
     </button>
   );

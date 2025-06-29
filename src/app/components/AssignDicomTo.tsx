@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { ICON_SIZE } from "@/constants";
+import NavigationInstructions from "./NavigationInstructions";
 
 type UserWithAssignment = UserType & {
   isAssigned: boolean;
@@ -158,13 +159,7 @@ export default function AssignDicomTo({
         placeholder="Search users"
         className="bg-white mb-6 w-full rounded-lg border border-gray-200 outline-0 px-5 py-2 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
       />
-      <div className="mt-1 italic text-xs text-gray-500">
-        Press{" "}
-        <kbd className="px-1 py-0.5 bg-gray-100 border rounded">Shitf</kbd> +{" "}
-        <kbd className="px-1 py-0.5 bg-gray-100 border rounded">←</kbd> /{" "}
-        <kbd className="px-1 py-0.5 bg-gray-100 border rounded">→</kbd> to
-        navigate
-      </div>
+      <NavigationInstructions />
       <div className="my-3 flex justify-end items-center">
         <button
           disabled={page === 0}

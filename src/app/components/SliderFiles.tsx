@@ -2,7 +2,7 @@ import useSwipe from "@/hooks/useSwipe";
 import { FileType } from "@/types/fileType";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSliderState } from "./Slider";
 import { PDFViewer } from "./PDFViewer";
 
@@ -13,85 +13,64 @@ export default function SliderFiles({
   files: FileType[];
   firstIndex?: number;
 }) {
-  const [currentFile, setCurrentFile] = useState(files[firstIndex]);
+  const [currentFile, setCurrentFile] = useState<FileType | null>(null);
   const { setSliderOpen } = useSliderState();
-  const currentIndex = files.indexOf(currentFile);
+  const currentIndex = currentFile ? files.indexOf(currentFile) : -1;
 
-  const useEscape = (onEscape: () => void) => {
+  const useKeyboardNavigation = (
+    onEscape: () => void,
+    onPrev: () => void,
+    onNext: () => void
+  ) => {
     useEffect(() => {
-      const handleEsc = (event: KeyboardEvent) => {
+      const handleKey = (event: KeyboardEvent) => {
         if (event.key === "Escape") onEscape();
-      };
-      window.addEventListener("keyup", handleEsc);
-
-      return () => {
-        window.removeEventListener("keyup", handleEsc);
-      };
-    }, [onEscape]);
-  };
-
-  const usePrev = (onPrev: () => void) => {
-    useEffect(() => {
-      const handlePrev = (event: KeyboardEvent) => {
         if (event.key === "ArrowLeft") onPrev();
-      };
-      window.addEventListener("keyup", handlePrev);
-
-      return () => {
-        window.removeEventListener("keyup", handlePrev);
-      };
-    }, [onPrev]);
-  };
-
-  const useNext = (onNext: () => void) => {
-    useEffect(() => {
-      const handleNext = (event: KeyboardEvent) => {
         if (event.key === "ArrowRight") onNext();
       };
-      window.addEventListener("keyup", handleNext, false);
+      window.addEventListener("keyup", handleKey);
 
       return () => {
-        window.removeEventListener("keyup", handleNext, false);
+        window.removeEventListener("keyup", handleKey);
       };
-    }, [onNext]);
+    }, [onEscape, onPrev, onNext]);
   };
 
-  const showPrev = () => {
-    if (currentIndex <= 0) {
+  const showPrev = useCallback(() => {
+    if (currentIndex > 0) {
+      setCurrentFile(files[currentIndex - 1]);
+    } else {
       setCurrentFile(files[files.length - 1]);
-    } else {
-      const prevImage = files[currentIndex - 1];
-      setCurrentFile(prevImage);
     }
-  };
+  }, [currentIndex, files]);
 
-  const showNext = () => {
-    if (currentIndex >= files.length - 1) {
+  const showNext = useCallback(() => {
+    if (currentIndex < files.length - 1) {
+      setCurrentFile(files[currentIndex + 1]);
+    } else {
       setCurrentFile(files[0]);
-    } else {
-      const nextImage = files[currentIndex + 1];
-      setCurrentFile(nextImage);
     }
-  };
+  }, [currentIndex, files]);
 
-  useEscape(() => {
-    setSliderOpen(false);
-  });
-  usePrev(() => showPrev());
-  useNext(() => showNext());
+  useKeyboardNavigation(() => setSliderOpen(false), showPrev, showNext);
 
-  const handleSwipe = (direction: "left" | "right" | "up" | "down") => {
-    if (direction === "left") showNext();
-    if (direction === "right") showPrev();
-  };
+  const handleSwipe = useCallback(
+    (direction: "left" | "right" | "up" | "down") => {
+      if (direction === "left") showNext();
+      if (direction === "right") showPrev();
+    },
+    [showPrev, showNext]
+  );
 
   useSwipe(handleSwipe, 50);
 
   useEffect(() => {
-    if (firstIndex >= 0 && firstIndex < files.length) {
+    if (files.length > 0 && firstIndex >= 0 && firstIndex < files.length) {
       setCurrentFile(files[firstIndex]);
     }
-  }, [firstIndex, files]);
+  }, [files, firstIndex]);
+
+  if (!currentFile) return null;
 
   return (
     <>
@@ -109,21 +88,18 @@ export default function SliderFiles({
         />
       )}
       <div className="absolute z-20 flex space-x-3 -translate-x-1/2 left-1/2 bottom-6">
-        {files.map((file, index) => {
-          const { id } = file;
-          return (
-            <button
-              aria-label="Show image"
-              onClick={() => setCurrentFile(file)}
-              key={id}
-              className={`flex items-center transition hover:bg-opacity-100 duration-500 ease-in-out justify-center w-6 h-6 rounded-full ${
-                index === currentIndex
-                  ? "bg-rose-400"
-                  : "bg-white bg-opacity-40"
-              } `}
-            ></button>
-          );
-        })}
+        {files.map((file, index) => (
+          <button
+            key={file.id}
+            aria-label={`Show ${file.name}`}
+            onClick={() => setCurrentFile(file)}
+            className={`flex items-center justify-center w-6 h-6 rounded-full transition duration-300 ease-in-out ${
+              index === currentIndex
+                ? "bg-rose-400"
+                : "bg-white bg-opacity-40 hover:bg-opacity-100"
+            }`}
+          ></button>
+        ))}
       </div>
       <div className="absolute z-20 flex items-center top-5 right-5 bg-rose-400 p-2 rounded-[50px]">
         <div className="flex items-center text-xl h-16 px-4 mr-2 bg-white/20 rounded-full text-white">
@@ -145,43 +121,44 @@ export default function SliderFiles({
               stroke="currentColor"
               strokeLinecap="round"
               strokeLinejoin="round"
-              strokeMiterlimit="10"
               strokeWidth="2"
               d="m17.5 17.5l37 37m0-37l-37 37"
             />
           </svg>
         </button>
       </div>
-      {files.length > 1 ? (
+      {files.length > 1 && (
         <>
           <button
-            className="hidden cursor-pointer sm:block absolute top-0 text-white left-0 z-10 h-full p-4 focus:outline-none group"
+            className="hidden sm:block absolute top-0 left-0 z-10 h-full p-4 focus:outline-none group"
             onClick={showPrev}
-            aria-label="Imagen Anterior"
+            aria-label="Previous Image"
           >
-            <span className="flex items-center justify-center w-16 h-16 rounded-full group-focus:ring bg-rose-400">
+            <span className="flex items-center justify-center w-16 h-16 rounded-full bg-rose-400 group-focus:ring">
               <Icon
                 icon="material-symbols-light:arrow-back-rounded"
                 width={40}
                 height={40}
+                className="text-white"
               />
             </span>
           </button>
           <button
-            className="hidden cursor-pointer sm:block absolute text-white top-0 right-0 z-10 h-full p-4 focus:outline-none group"
+            className="hidden sm:block absolute top-0 right-0 z-10 h-full p-4 focus:outline-none group"
             onClick={showNext}
-            aria-label="Imagen Siguiente"
+            aria-label="Next Image"
           >
-            <span className="flex items-center justify-center w-16 h-16 rounded-full group-focus:ring bg-rose-400">
+            <span className="flex items-center justify-center w-16 h-16 rounded-full bg-rose-400 group-focus:ring">
               <Icon
                 icon="material-symbols-light:arrow-forward-rounded"
                 width={40}
                 height={40}
+                className="text-white"
               />
             </span>
           </button>
         </>
-      ) : null}
+      )}
     </>
   );
 }

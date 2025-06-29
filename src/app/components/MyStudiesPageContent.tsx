@@ -110,7 +110,7 @@ export default function MyStudiesPageContent({
         defaultValue={search ?? ""}
         onChange={(event) => debouncedSearch(event.target.value)}
       />
-      <div className="my-4 flex w-full justify-end">
+      <div className="mb-4 flex w-full justify-end">
         <NavigationInstructions />
       </div>
       <div className="p-1 rounded-lg bg-gray-100 flex justify-between w-full mb-2">

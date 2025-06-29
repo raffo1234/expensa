@@ -67,7 +67,7 @@ export default function DateRangeButtonCalendar({
   return (
     <>
       <div
-        className={`${dateRange ? "bg-gray-100 pr-9" : "bg-cyan-400 text-white"} w-fit rounded-full flex items-center relative`}
+        className={`${dateRange ? "bg-gray-100 pr-9" : "bg-cyan-400 text-white"} flex-shrink-0 rounded-full flex items-center relative`}
       >
         <button
           onClick={toggle}
@@ -102,10 +102,10 @@ export default function DateRangeButtonCalendar({
         <button
           onClick={toggle}
           type="button"
-          className={`${dateRange ? "" : "pr-6"} py-1 text-sm cursor-pointer h-full`}
+          className={`${dateRange ? "" : "pr-6"} py-1 cursor-pointer h-full`}
         >
           {dateRange ? (
-            <div className="flex items-center gap-1 px-1">
+            <div className="flex items-center gap-1 px-1 text-xs">
               <div className="py-1 px-2 rounded-full bg-gray-200">
                 {formattedStart}
               </div>

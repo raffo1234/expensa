@@ -26,6 +26,8 @@ import Attachments from "./Attachments";
 import AssignDicomToTrigger from "./AssignDicomToTrigger";
 import AssignedBy from "./AssignedBy";
 import { ICON_SIZE } from "@/constants";
+import FilterByState from "./FilterByState";
+import ClearButton from "./ClearButton";
 
 type SortDirection = "asc" | "desc" | null;
 
@@ -383,16 +385,6 @@ export default function Pagination({
     }
   };
 
-  const filterByState = (state: DicomStateEnum) => {
-    if (filteredByState === state) {
-      setFilteredByState(null);
-      localStorage.removeItem("dicomStateFilter");
-    } else {
-      setFilteredByState(state);
-      localStorage.setItem("dicomStateFilter", state);
-    }
-  };
-
   const noData =
     !isLoading && !error && result?.data && result?.data.length === 0;
   const startItemNumber = page * pageSize + 1;
@@ -492,78 +484,59 @@ export default function Pagination({
 
   return (
     <>
-      <div className="w-full mb-4">
-        <div className="flex w-full justify-between items-center gap-2">
-          <div className="flex max-w-xl items-center gap-2 mx-auto sm:mx-0">
-            <UploadButton />
-            <input
-              ref={searchInputRef}
-              type="text"
-              className="bg-white w-full rounded-full border border-gray-200 outline-0 px-5 py-2 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
-              placeholder="Search ..."
-              defaultValue={search ?? ""}
-              onChange={(event) => debouncedSearch(event.target.value)}
+      <div className="w-full flex flex-col xl:flex-row gap-2 mb-4">
+        <div className="flex gap-2 flex-grow-1">
+          <UploadButton />
+          <input
+            ref={searchInputRef}
+            type="text"
+            className="bg-white w-full rounded-full border border-gray-200 outline-0 px-5 py-2 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
+            placeholder="Search ..."
+            defaultValue={search ?? ""}
+            onChange={(event) => debouncedSearch(event.target.value)}
+          />
+          <div className="xl:hidden block">
+            <ClearButton clearLocalStorage={clearLocalStorage} />
+          </div>
+        </div>
+        <div className="flex-col min-[770px]:flex-row flex gap-2">
+          <div className="flex flex-col min-[770px]:flex-row gap-2">
+            <DateRangeButtonCalendar
+              dateRange={studyDateRange}
+              handleDateRangeChange={handleStudyDateRangeChange}
+              label="Study Date"
+            />
+            <DateRangeButtonCalendar
+              dateRange={receiptDateRange}
+              handleDateRangeChange={handleReceiptDateRangeChange}
+              label="Receipt Date"
             />
           </div>
-          <button
-            title="Clear All Filters"
-            onClick={clearLocalStorage}
-            className="cursor-pointer text-cyan-400 hover:text-cyan-600 transition-colors duration-300 p-2 border border-cyan-100 rounded-lg"
-          >
-            <Icon icon="pajamas:clear-all" fontSize={ICON_SIZE}></Icon>
-          </button>
+          <div className="flex gap-2">
+            <FilterByState
+              filteredByState={filteredByState ?? ""}
+              setFilteredByState={setFilteredByState}
+            />
+            <div className="hidden xl:block">
+              <ClearButton clearLocalStorage={clearLocalStorage} />
+            </div>
+          </div>
         </div>
       </div>
-      <div className="flex flex-col lg:flex-row gap-2 items-center mb-4 justify-between">
-        <div className="flex items-center flex-col lg:flex-row gap-2">
-          <DateRangeButtonCalendar
-            dateRange={studyDateRange}
-            handleDateRangeChange={handleStudyDateRangeChange}
-            label="Study Date"
-          />
-          <DateRangeButtonCalendar
-            dateRange={receiptDateRange}
-            handleDateRangeChange={handleReceiptDateRangeChange}
-            label="Receipt Date"
-          />
-        </div>
-        <div className="flex rounded-full items-center">
-          {Object.values(DicomStateEnum).map((state, index) => (
-            <button
-              key={state}
-              title={state}
-              onClick={() => filterByState(state)}
-              className={`
-                ${state === filteredByState ? "border-3 border-slate-50" : ""}
-                ${index === 0 ? "rounded-l-full" : ""}
-                ${
-                  index === Object.values(DicomStateEnum).length - 1
-                    ? "rounded-r-full"
-                    : ""
-                }
-                cursor-pointer h-[36px] w-10 
-                ${state === DicomStateEnum.NEW ? "bg-white" : ""}
-                ${state === DicomStateEnum.VIEWED ? "bg-yellow-300" : ""}
-                ${state === DicomStateEnum.DRAFT ? "bg-orange-300" : ""}
-                ${state === DicomStateEnum.COMPLETED ? "bg-cyan-300" : ""}`}
-            ></button>
-          ))}
-        </div>
-        <div className="text-xs flex items-center gap-1">
-          <span>
-            Total:{" "}
-            <span className="text-base font-semibold">{result?.total}</span>
-          </span>
-          <input
-            ref={pageSizeRef}
-            onChange={(event) => debouncedPerPage(event.target.value)}
-            type="text"
-            name="pageSize"
-            className="bg-white py-1 px-3 rounded-full text-center text-base transition-colors duration-300 hover:border-gray-300 focus:border-cyan-400 outline-0 border border-gray-200 w-16"
-            defaultValue={pageSize}
-          />
-          <span>per page</span>
-        </div>
+      <div className="text-xs flex w-full items-center justify-end mb-4 gap-1">
+        <span>
+          Total:{" "}
+          <span className="text-base font-semibold">{result?.total}</span>
+        </span>
+        <input
+          ref={pageSizeRef}
+          onChange={(event) => debouncedPerPage(event.target.value)}
+          type="text"
+          name="pageSize"
+          className="bg-white py-1 px-3 rounded-full text-center text-base transition-colors duration-300 hover:border-gray-300 focus:border-cyan-400 outline-0 border border-gray-200 w-16"
+          defaultValue={pageSize}
+        />
+        <span>per page</span>
       </div>
 
       {isLoading ? <TableSkeleton rows={pageSize} cols={7} /> : null}

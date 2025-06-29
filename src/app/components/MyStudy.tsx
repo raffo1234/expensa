@@ -147,7 +147,7 @@ export default function MyStudy({
         <div
           className="mt-4 gap-3 grid"
           style={{
-            gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
           }}
         >
           {files?.map((file, index) => {
@@ -166,10 +166,11 @@ export default function MyStudy({
                       priority
                       key={id}
                       src={path}
-                      width={200}
+                      width={140}
                       height={200}
                       title={name}
                       alt={name ?? ""}
+                      className="object-cover h-full rounded-sm w-full "
                     />
                   )}
                 </button>

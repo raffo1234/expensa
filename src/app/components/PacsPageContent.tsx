@@ -225,64 +225,66 @@ export default function PacsPageContent({
           userRoleId={userRoleId}
         />
       ) : null}
-      <div className="flex-col mb-4 sm:flex-row flex gap-3 items-center">
-        {activePac ? (
-          <>
-            <DateRangeButtonCalendar
-              dateRange={studyDateRange}
-              handleDateRangeChange={handleStudyDateRangeChange}
-              label="Study Date"
-            />
-            <div className="relative">
-              <select
-                onChange={handleModality}
-                className="w-36 truncate text-sm px-4 py-2 rounded-full border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500 bg-white"
-              >
-                <option value="">All Modalities</option>
-                {modalityKeys.map((modality, index) => (
-                  <option title={modality} key={index}>
-                    {modality}
-                  </option>
-                ))}
-              </select>
-              <div className="absolute top-1/2 -translate-y-1/2 right-1 pr-3 pointer-events-none bg-white">
-                <Icon icon="solar:alt-arrow-down-linear" fontSize={16} />
-              </div>
-            </div>
-          </>
-        ) : null}
-        {activePac && studyDateRange ? (
-          <button
-            disabled={loading}
-            onClick={() => handleFetch(activePac)}
-            title="Fetch Pacs"
-            className="disabled:opacity-50 border border-transparent disabled:pointer-events-none cursor-pointer px-6 w-fit text-white justify-center py-2 rounded-full bg-black flex gap-2 items-center"
-          >
-            <span className="block w-5">
-              {loading ? (
-                <Icon
-                  icon="solar:record-broken"
-                  className="animate-spin"
-                  fontSize={ICON_SIZE}
+      {activePac ? (
+        <div className="flex-col mb-4 sm:flex-row flex gap-3 items-center">
+          {activePac ? (
+            <>
+              <>
+                <DateRangeButtonCalendar
+                  dateRange={studyDateRange}
+                  handleDateRangeChange={handleStudyDateRangeChange}
+                  label="Study Date"
                 />
-              ) : (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width={ICON_SIZE}
-                  height={ICON_SIZE}
-                  viewBox="0 0 16 16"
-                >
-                  <g fill="currentColor">
-                    <path d="M9 2H8v1h1zm-.854 12l-5-5l.708-.707L8 12.439V11h1v1.44l4.146-4.147l.707.707l-5 5zM8 5h1v1H8z" />
-                    <path d="M9 8H8v1h1z" />
-                  </g>
-                </svg>
-              )}
-            </span>
-            <span>Fetch</span>
-          </button>
-        ) : null}
-      </div>
+                <div className="relative">
+                  <select
+                    onChange={handleModality}
+                    className="w-36 truncate text-sm px-4 py-2 rounded-full border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500 bg-white"
+                  >
+                    <option value="">All Modalities</option>
+                    {modalityKeys.map((modality, index) => (
+                      <option title={modality} key={index}>
+                        {modality}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute top-1/2 -translate-y-1/2 right-1 pr-3 pointer-events-none bg-white">
+                    <Icon icon="solar:alt-arrow-down-linear" fontSize={16} />
+                  </div>
+                </div>
+              </>
+              <button
+                disabled={loading || !studyDateRange}
+                onClick={() => handleFetch(activePac)}
+                title="Fetch Pacs"
+                className="disabled:opacity-50 border border-transparent disabled:pointer-events-none cursor-pointer px-6 w-fit text-white justify-center py-2 rounded-full bg-black flex gap-2 items-center"
+              >
+                <span className="block w-5">
+                  {loading ? (
+                    <Icon
+                      icon="solar:record-broken"
+                      className="animate-spin"
+                      fontSize={ICON_SIZE}
+                    />
+                  ) : (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width={ICON_SIZE}
+                      height={ICON_SIZE}
+                      viewBox="0 0 16 16"
+                    >
+                      <g fill="currentColor">
+                        <path d="M9 2H8v1h1zm-.854 12l-5-5l.708-.707L8 12.439V11h1v1.44l4.146-4.147l.707.707l-5 5zM8 5h1v1H8z" />
+                        <path d="M9 8H8v1h1z" />
+                      </g>
+                    </svg>
+                  )}
+                </span>
+                <span>Fetch</span>
+              </button>
+            </>
+          ) : null}
+        </div>
+      ) : null}
       <div className="pl-2 flex item-center mb-4 gap-2">
         <button
           disabled={selectedIds.size === 0 || !areStudiesSelected}

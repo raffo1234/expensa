@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Permissions } from "@/types/propertyState";
 import useCheckPermission from "@/hooks/useCheckPermission";
 import { ICON_SIZE } from "@/constants";
+import OptionButton from "./OptionButton";
 
 function putFirst(array: TemplateType[], element: TemplateType | undefined) {
   if (element)
@@ -50,21 +51,15 @@ export default function ListOfTemplates({
         ? sortedTemplates.map((template) => {
             const { id, name } = template;
             return (
-              <button
+              <OptionButton
                 key={id}
                 type="button"
                 title={name}
+                isActive={id === dicom.template_id}
                 onClick={() => handleTemplateActive(dicom.id, template)}
-                className={`
-                          ${
-                            id === dicom.template_id
-                              ? "bg-rose-50 border-rose-200"
-                              : "bg-gray-50 border-gray-200"
-                          } 
-                        cursor-pointer truncate text-center p-3 rounded-xl border`}
               >
                 {name}
-              </button>
+              </OptionButton>
             );
           })
         : null}

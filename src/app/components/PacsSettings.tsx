@@ -23,7 +23,7 @@ export default function PacsSettings({
     <button
       title="Pacs Settings"
       onClick={handleOnClick}
-      className="cursor-pointer p-3 border border-gray-200 rounded-xl w-fit hover:border-cyan-200 hover:text-cyan-400 transition-colors duration-300"
+      className="cursor-pointer p-2 border border-gray-200 rounded-lg w-fit hover:border-cyan-200 hover:text-cyan-400 transition-colors duration-300"
     >
       <Icon icon="solar:settings-linear" fontSize={ICON_SIZE} />
     </button>

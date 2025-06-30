@@ -6,6 +6,7 @@ import { PacType } from "@/types/PacType";
 import { supabase } from "@/lib/supabase";
 import useSWR from "swr";
 import PacsSettings from "./PacsSettings";
+import OptionButton from "./OptionButton";
 
 const pacsFetcher = async (userId: string) => {
   const { data, error } = await supabase
@@ -51,7 +52,7 @@ export default function PacsList({
 
   return (
     <div
-      className="grid gap-2 mb-6 flex-grow-1"
+      className="grid gap-2 mb-4 flex-grow-1"
       style={{
         gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))",
       }}
@@ -60,22 +61,17 @@ export default function PacsList({
         <>
           {pacs.map((pac) => {
             const { id, aet_server } = pac;
+            const isActive = id === activePac?.id;
+
             return (
-              <button
+              <OptionButton
                 key={id}
-                type="button"
-                title={aet_server}
                 onClick={() => handlePacActive(pac)}
-                className={`
-                          ${
-                            id === activePac?.id
-                              ? "bg-rose-50 border-rose-200"
-                              : "bg-gray-50 border-gray-200"
-                          } 
-                        cursor-pointer truncate text-center p-3 rounded-xl border`}
+                isActive={isActive}
+                title={aet_server}
               >
                 {aet_server}
-              </button>
+              </OptionButton>
             );
           })}
           <PacsSettings userId={userId} userRoleId={userRoleId} />

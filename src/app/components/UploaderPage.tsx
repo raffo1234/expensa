@@ -7,26 +7,7 @@ import UploaderR2 from "./UploaderR2";
 import { useState } from "react";
 import { UPLOAD_OPTION } from "@/enums/uploadOption";
 import { supportsWebkitDirectory } from "@/lib/supportsWebkitDirectory";
-
-function OptionButton({
-  option,
-  value,
-  setOption,
-}: {
-  option: UPLOAD_OPTION;
-  value: UPLOAD_OPTION;
-  setOption: React.Dispatch<React.SetStateAction<UPLOAD_OPTION>>;
-}) {
-  return (
-    <button
-      key={value}
-      onClick={() => setOption(value)}
-      className={`${option === value ? "bg-cyan-50 border-cyan-200" : "hover:bg-gray-100 border-transparent"} border px-5 py-2 rounded-lg cursor-pointer transition-colors duration-300`}
-    >
-      {value}
-    </button>
-  );
-}
+import OptionButton from "./OptionButton";
 
 export default function UploaderPage({
   userRoleId,
@@ -55,28 +36,19 @@ export default function UploaderPage({
     <>
       <div className="mb-4 flex gap-2 items-center flex-wrap">
         {Object.values(UPLOAD_OPTION).map((value) => {
-          if (value === UPLOAD_OPTION.FOLDER) {
-            if (supportsWebkitDirectory()) {
-              return (
-                <OptionButton
-                  key={value}
-                  option={option}
-                  value={value}
-                  setOption={setOption}
-                />
-              );
-            }
-            return null;
-          } else {
-            return (
-              <OptionButton
-                key={value}
-                option={option}
-                value={value}
-                setOption={setOption}
-              />
-            );
-          }
+          const isFolder = value === UPLOAD_OPTION.FOLDER;
+
+          if (isFolder && !supportsWebkitDirectory()) return null;
+
+          return (
+            <OptionButton
+              key={value}
+              onClick={() => setOption(value)}
+              isActive={option === value}
+            >
+              {value}
+            </OptionButton>
+          );
         })}
       </div>
       <UploaderR2

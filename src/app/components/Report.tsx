@@ -109,7 +109,16 @@ export default function Report({
 
   return (
     <>
-      <div className="flex items-center gap-2 mb-6">
+      <ListOfTemplates
+        templates={templates}
+        updateTemplate={async (newTemplate) =>
+          await updateDicom(dicomId, { template_id: newTemplate.id })
+        }
+        dicom={dicom}
+        activeTemplate={dicom.template}
+        userRoleId={userRoleId}
+      />
+      <div className="flex items-center gap-2 mt-4">
         <h2>
           <span className="text-gray-600 text-sm">ID:</span>{" "}
           <span className="font-semibold">{dicom.patient_id}</span>
@@ -143,15 +152,6 @@ export default function Report({
           {isSaving ? "Saving ..." : ""}
         </div>
       </div>
-      <ListOfTemplates
-        templates={templates}
-        updateTemplate={async (newTemplate) =>
-          await updateDicom(dicomId, { template_id: newTemplate.id })
-        }
-        dicom={dicom}
-        activeTemplate={dicom.template}
-        userRoleId={userRoleId}
-      />
       <Attachments
         dicomId={dicom.id}
         Button={

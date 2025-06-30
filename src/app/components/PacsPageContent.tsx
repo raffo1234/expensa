@@ -285,7 +285,7 @@ export default function PacsPageContent({
           ) : null}
         </div>
       ) : null}
-      <div className="pl-2 flex item-center mb-4 gap-2">
+      <div className="pl-2 flex items-center mb-4 gap-2">
         <button
           disabled={selectedIds.size === 0 || !areStudiesSelected}
           type="button"
@@ -303,6 +303,9 @@ export default function PacsPageContent({
             <Icon icon="solar:database-outline" fontSize={ICON_SIZE} />
           )}
         </button>
+        <div>
+          {selectedIds.size > 0 ? selectedIds.size : null}
+        </div>
       </div>
       <div className="bg-white shadow rounded-xl overflow-auto">
         <table className="text-sm w-full table-fixed">

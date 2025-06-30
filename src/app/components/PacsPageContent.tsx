@@ -196,8 +196,6 @@ export default function PacsPageContent({
       Array.from(selectedIds).includes(study.dicom.id)
   );
 
-  if (!canManagePacs) return null;
-
   if (isLoadingPermission)
     return (
       <div className="flex flex-col gap-3">
@@ -215,6 +213,8 @@ export default function PacsPageContent({
       </div>
     );
 
+  if (!canManagePacs) return null;
+
   return (
     <>
       {userId ? (
@@ -225,97 +225,65 @@ export default function PacsPageContent({
           userRoleId={userRoleId}
         />
       ) : null}
-      <div className="flex gap-3 items-center">
-        <DateRangeButtonCalendar
-          dateRange={studyDateRange}
-          handleDateRangeChange={handleStudyDateRangeChange}
-          label="Study Date"
-        />
-        <div className="relative">
-          <select
-            onChange={handleModality}
-            className="w-36 truncate text-sm px-4 py-2 rounded-full border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500 bg-white"
-          >
-            <option value="">All Modalities</option>
-            {modalityKeys.map((modality, index) => (
-              <option title={modality} key={index}>
-                {modality}
-              </option>
-            ))}
-          </select>
-          <div className="absolute top-1/2 -translate-y-1/2 right-1 pr-3 pointer-events-none bg-white">
-            <Icon icon="solar:alt-arrow-down-linear" fontSize={16} />
-          </div>
-        </div>
-      </div>
-      <button
-        disabled={!activePac || !studyDateRange || loading}
-        onClick={() => handleFetch(activePac)}
-        title="Fetch Pacs"
-        className="my-6 disabled:opacity-50 border border-transparent disabled:pointer-events-none cursor-pointer px-6 w-fit text-white justify-center py-2 rounded-full bg-black flex gap-3 items-center"
-      >
-        <span>Fetch</span>
-        <span className="block w-6">
-          {loading ? (
-            <Icon
-              icon="solar:record-broken"
-              className="animate-spin"
-              fontSize={20}
+      <div className="flex-col mb-4 sm:flex-row flex gap-3 items-center">
+        {activePac ? (
+          <>
+            <DateRangeButtonCalendar
+              dateRange={studyDateRange}
+              handleDateRangeChange={handleStudyDateRangeChange}
+              label="Study Date"
             />
-          ) : (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-            >
-              <g
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeWidth="1.5"
+            <div className="relative">
+              <select
+                onChange={handleModality}
+                className="w-36 truncate text-sm px-4 py-2 rounded-full border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500 bg-white"
               >
-                <path d="M17 9.002c2.175.012 3.353.109 4.121.877C22 10.758 22 12.172 22 15v1c0 2.829 0 4.243-.879 5.122C20.243 22 18.828 22 16 22H8c-2.828 0-4.243 0-5.121-.878C2 20.242 2 18.829 2 16v-1c0-2.828 0-4.242.879-5.121c.768-.768 1.946-.865 4.121-.877" />
-                <path
-                  strokeLinejoin="round"
-                  d="M12 2v13m0 0l-3-3.5m3 3.5l3-3.5"
-                />
-              </g>
-            </svg>
-          )}
-        </span>
-      </button>
-      <div className="w-fit pl-2 flex item-center mb-4 gap-2">
-        {/* <div className="relative w-9 h-9">
-          <input
-            id="all"
-            type="checkbox"
-            checked={isAllItemsSelected(items)}
-            onChange={() => handleSelectAllClick(items)}
-            className="hidden peer"
-          />
-          <label
-            htmlFor="all"
-            className="cursor-pointer block w-full h-full border absolute top-1/2 -translate-x-1/2 -translate-y-1/2 left-1/2 border-gray-200 rounded-lg text-gray-400"
-          ></label>
-          <div className="bg-white cursor-pointer block w-5 h-5 border-2 pointer-events-none absolute top-1/2 -translate-x-1/2 -translate-y-1/2 left-1/2 peer-checked:border-cyan-400 rounded-sm text-gray-400 peer-checked:text-cyan-400"></div>
-          <svg
-            className="hidden peer-checked:text-cyan-400 pointer-events-none peer-checked:block absolute top-1/2 -translate-x-1/2 -translate-y-1/2 left-1/2"
-            xmlns="http://www.w3.org/2000/svg"
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
+                <option value="">All Modalities</option>
+                {modalityKeys.map((modality, index) => (
+                  <option title={modality} key={index}>
+                    {modality}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute top-1/2 -translate-y-1/2 right-1 pr-3 pointer-events-none bg-white">
+                <Icon icon="solar:alt-arrow-down-linear" fontSize={16} />
+              </div>
+            </div>
+          </>
+        ) : null}
+        {activePac && studyDateRange ? (
+          <button
+            disabled={loading}
+            onClick={() => handleFetch(activePac)}
+            title="Fetch Pacs"
+            className="disabled:opacity-50 border border-transparent disabled:pointer-events-none cursor-pointer px-6 w-fit text-white justify-center py-2 rounded-full bg-black flex gap-2 items-center"
           >
-            <g fill="none" fillRule="evenodd">
-              <path d="m12.593 23.258l-.011.002l-.071.035l-.02.004l-.014-.004l-.071-.035q-.016-.005-.024.005l-.004.01l-.017.428l.005.02l.01.013l.104.074l.015.004l.012-.004l.104-.074l.012-.016l.004-.017l-.017-.427q-.004-.016-.017-.018m.265-.113l-.013.002l-.185.093l-.01.01l-.003.011l.018.43l.005.012l.008.007l.201.093q.019.005.029-.008l.004-.014l-.034-.614q-.005-.018-.02-.022m-.715.002a.02.02 0 0 0-.027.006l-.006.014l-.034.614q.001.018.017.024l.015-.002l.201-.093l.01-.008l.004-.011l.017-.43l-.003-.012l-.01-.01z" />
-              <path
-                fill="currentColor"
-                d="M21.546 5.111a1.5 1.5 0 0 1 0 2.121L10.303 18.475a1.6 1.6 0 0 1-2.263 0L2.454 12.89a1.5 1.5 0 1 1 2.121-2.121l4.596 4.596L19.424 5.111a1.5 1.5 0 0 1 2.122 0"
-              />
-            </g>
-          </svg>
-        </div> */}
-
+            <span className="block w-5">
+              {loading ? (
+                <Icon
+                  icon="solar:record-broken"
+                  className="animate-spin"
+                  fontSize={ICON_SIZE}
+                />
+              ) : (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width={ICON_SIZE}
+                  height={ICON_SIZE}
+                  viewBox="0 0 16 16"
+                >
+                  <g fill="currentColor">
+                    <path d="M9 2H8v1h1zm-.854 12l-5-5l.708-.707L8 12.439V11h1v1.44l4.146-4.147l.707.707l-5 5zM8 5h1v1H8z" />
+                    <path d="M9 8H8v1h1z" />
+                  </g>
+                </svg>
+              )}
+            </span>
+            <span>Fetch</span>
+          </button>
+        ) : null}
+      </div>
+      <div className="pl-2 flex item-center mb-4 gap-2">
         <button
           disabled={selectedIds.size === 0 || !areStudiesSelected}
           type="button"

@@ -143,14 +143,17 @@ export default function ShareReport({
               Anyone with the link can access
             </div>
             <div className="relative w-full">
-              <div className="truncate text-gray-500 pr-40 w-full px-4 bg-white py-2.5 rounded-xl border border-gray-200">
+              <div
+                className="truncate text-gray-800 pr-40 w-full px-4 bg-white py-2.5 rounded-xl border border-gray-200"
+                style={{ fontFamily: "monospace" }}
+              >
                 {`${process.env.NEXT_PUBLIC_URL}/view/pdf/${dicomId}`}
               </div>
               <button
                 type="button"
                 disabled={isCopying}
                 onClick={() => copyLink(userId, dicomId, time)}
-                className={`${isCopying ? "opacity-50" : ""}  hover:bg-cyan-50 hover:border-cyan-200 cursor-pointer transition-colors duration-300 absolute right-1 top-1/2 -translate-y-1/2 text-sm bg-gray-50 border px-5 py-2 border-gray-200 rounded-lg`}
+                className={`${isCopying ? "opacity-50" : ""}  hover:bg-cyan-50 hover:border-cyan-200 cursor-pointer transition-colors duration-300 absolute right-0.5 top-1/2 -translate-y-1/2 text-sm bg-gray-50 border px-5 py-2 border-gray-200 rounded-[10px]`}
               >
                 <span className={isCopying ? "opacity-0" : "opacity-100"}>
                   Copy link

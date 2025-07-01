@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabase";
 import getExpirationTime from "@/lib/getExpirationTime";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import "../styles/react-multi-email.css";
+import OptionButton from "./OptionButton";
 
 type TimeType = "24 hours" | "48 hours" | "84 months";
 
@@ -120,18 +121,18 @@ export default function ShareReport({
   return (
     <>
       <h1 className="font-semibold text-xl mb-6">Share</h1>
-      <div className="mb-4">
+      <div className="mb-4 flex gap-2">
         {Object.entries(Time).map((t) => {
           const [key, value] = t;
 
           return (
-            <button
+            <OptionButton
               key={key}
               onClick={() => setTime(Time[key as keyof typeof Time])}
-              className={`${value === time ? "bg-cyan-50 border-cyan-200" : "border-transparent"} border px-5 py-2 rounded-lg cursor-pointer transition-colors duration-300`}
+              isActive={value === time}
             >
               {value}
-            </button>
+            </OptionButton>
           );
         })}
       </div>

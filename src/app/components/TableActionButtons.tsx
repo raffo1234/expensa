@@ -48,14 +48,14 @@ export default function TableActionButtons({
     <div className="flex gap-1 justify-end">
       {dicom.state === DicomStateEnum.COMPLETED && canDownload ? (
         <>
-          <GeneratePDFButton dicom={dicom} label="PDF" />
-          <DOCXPreview dicom={dicom} />
+          <GeneratePDFButton dicomId={dicom.id} />
+          <DOCXPreview dicomId={dicom.id} />
         </>
       ) : null}
       <Link
         href={`/admin/dicoms/${dicom.id}`}
         title="Inform"
-        className="py-2 px-6 flex gap-3 items-center font-semibold bg-cyan-500 text-white rounded-full cursor-pointer"
+        className="py-2 px-6 flex gap-2 items-center bg-cyan-400 text-white rounded-full cursor-pointer"
       >
         <Icon
           icon={`${
@@ -63,7 +63,7 @@ export default function TableActionButtons({
               ? "solar:file-check-linear"
               : "solar:document-add-linear"
           }`}
-          fontSize={24}
+          fontSize={ICON_SIZE}
         />
         <span>
           {dicom.state !== DicomStateEnum.COMPLETED ? "Inform" : "Amend"}
@@ -77,7 +77,7 @@ export default function TableActionButtons({
             deleteDicom(dicom.id, dicom.dicom_url, mutate, setIsDeleting)
           }
           type="button"
-          className=" hover:bg-white flex-shrink-0 transition-colors duration-300 cursor-pointer bg-gray-100 w-11 h-11 rounded-full border-gray-200 border-dashed border text-rose-400 flex items-center justify-center"
+          className="aspect-square p-2 hover:bg-white flex-shrink-0 transition-colors duration-300 cursor-pointer bg-gray-100 rounded-full border-gray-200 border-dashed border text-rose-400 flex items-center justify-center"
         >
           {isDeleting ? (
             <Icon

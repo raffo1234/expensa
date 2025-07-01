@@ -4,12 +4,12 @@ import { Permissions } from "@/types/propertyState";
 import useCheckPermission from "@/hooks/useCheckPermission";
 
 export default function PreviewPDFButton({
-  dicom,
+  dicomId,
   isDownloadable,
   userRoleId,
 }: {
+  dicomId: DicomType["id"];
   userRoleId: string;
-  dicom: DicomType;
   isDownloadable: boolean;
 }) {
   const { hasPermission: canDownload, isLoading: isLoadingCanDownload } =
@@ -18,6 +18,6 @@ export default function PreviewPDFButton({
   if (isLoadingCanDownload) return null;
 
   return canDownload ? (
-    <GeneratePDFButton isDownloadable={isDownloadable} dicom={dicom} />
+    <GeneratePDFButton isDownloadable={isDownloadable} dicomId={dicomId} />
   ) : null;
 }

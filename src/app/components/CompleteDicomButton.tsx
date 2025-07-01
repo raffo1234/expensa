@@ -21,7 +21,7 @@ export default function CompleteDicomButton({
       onClick={onClick}
       title={DicomStateEnum.COMPLETED}
       type="button"
-      className="px-6 py-2 font-semibold text-cyan-600 border-cyan-200 cursor-pointer border bg-cyan-50 rounded-full"
+      className="px-6 py-2 text-cyan-500 border-cyan-200 cursor-pointer border bg-cyan-50 rounded-full"
     >
       {DicomStateEnum.COMPLETED}
     </button>

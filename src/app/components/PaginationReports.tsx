@@ -701,11 +701,8 @@ export default function PaginationReports({
                           {state === DicomStateEnum.COMPLETED &&
                           hasPermission ? (
                             <>
-                              <GeneratePDFButton
-                                label="PDF"
-                                dicom={data[index]}
-                              />
-                              <DOCXPreview dicom={data[index]} />
+                              <GeneratePDFButton dicomId={data[index].id} />
+                              <DOCXPreview dicomId={data[index].id} />
                             </>
                           ) : null}
                         </div>

@@ -1,6 +1,5 @@
 "use client";
 
-import { Icon } from "@iconify/react";
 import { useGlobalState } from "@/lib/globalState";
 import { useEffect } from "react";
 
@@ -78,7 +77,22 @@ export default function GlobalModal() {
           className="outline-0 cursor-pointer hover:text-cyan-400 transition-colors duration-300 absolute right-1 top-1 rounded-full p-4"
           onClick={handleOnClose}
         >
-          <Icon icon="solar:close-circle-outline" fontSize="42" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="36"
+            height="36"
+            viewBox="0 0 72 72"
+          >
+            <path
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeMiterlimit="10"
+              strokeWidth="2"
+              d="m17.5 17.5l37 37m0-37l-37 37"
+            />
+          </svg>
         </button>
       </div>
     </div>

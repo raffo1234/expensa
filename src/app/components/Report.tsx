@@ -158,7 +158,7 @@ export default function Report({
           <button
             title="Attachments"
             type="button"
-            className="flex gap-2 outline-0 mt-4 cursor-pointer text-white px-6 font-semibold py-2 rounded-full bg-cyan-400"
+            className="flex gap-2 outline-0 mt-4 cursor-pointer text-white px-6 py-2 rounded-full bg-cyan-400"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -184,9 +184,9 @@ export default function Report({
               <PreviewPDFButton
                 userRoleId={userRoleId}
                 isDownloadable={false}
-                dicom={dicom}
+                dicomId={dicomId}
               />
-              <DownloadButtons dicom={dicom} userRoleId={userRoleId} />
+              <DownloadButtons dicomId={dicomId} userRoleId={userRoleId} />
             </div>
             <div className="flex justify-end gap-2">
               {!dicom.state || dicom.state === DicomStateEnum.VIEWED ? (
@@ -199,7 +199,7 @@ export default function Report({
                   }}
                   title={DicomStateEnum.DRAFT}
                   type="button"
-                  className="px-6 py-2 font-semibold text-orange-600 border-orange-200 cursor-pointer border bg-orange-50 rounded-full"
+                  className="px-6 py-2 text-orange-600 border-orange-200 cursor-pointer border bg-orange-50 rounded-full"
                 >
                   {DicomStateEnum.DRAFT}
                 </button>

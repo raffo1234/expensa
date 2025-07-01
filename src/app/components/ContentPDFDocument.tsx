@@ -84,7 +84,9 @@ export default function ContentPDFDocument({
 }: {
   dicom: PartialDicomWithTemplate;
 }) {
-  const lines: string[] = dicom.report ? dicom.report.split("\n") : [];
+  const getLines = (report: string) => (report ? report.split("\n") : []);
+
+  if (!dicom.report) return null;
 
   return (
     <Document
@@ -135,7 +137,7 @@ export default function ContentPDFDocument({
               </View>
             </View>
           </View>
-          {lines.map((line, index) => {
+          {getLines(dicom.report).map((line, index) => {
             return (
               <Text key={index} style={styles.text}>
                 {line ?? ""}

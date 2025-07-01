@@ -8,6 +8,8 @@ import { saveAs } from "file-saver";
 import toast from "react-hot-toast";
 import { sanitize } from "@/lib/sanitize";
 import { ICON_SIZE } from "@/constants";
+import fetcherDicom from "@/fetchers/dicomFetcher";
+import useSWR from "swr";
 
 const IconLoading = () => {
   return (
@@ -28,9 +30,16 @@ const IconLoading = () => {
   );
 };
 
-export default function DOCXPreview({ dicom }: { dicom: DicomType }) {
+export default function DOCXPreview({ dicomId }: { dicomId: DicomType["id"] }) {
   const [isLoading, setIsLoading] = useState(false);
-  const generateDocx = async () => {
+
+  const {
+    data: dicom,
+    error,
+    isLoading: isLoadingDicom,
+  } = useSWR(`admin-${dicomId}`, () => fetcherDicom(dicomId));
+
+  const generateDocx = async (dicom: DicomType) => {
     setIsLoading(true);
 
     try {
@@ -47,13 +56,15 @@ export default function DOCXPreview({ dicom }: { dicom: DicomType }) {
     }
   };
 
+  if (!dicom || error) return null;
+
   return (
     <button
-      onClick={generateDocx}
+      onClick={() => generateDocx(dicom)}
       title="DOCX Preview"
-      className="py-2 text-xs px-6 flex gap-2 items-center font-semibold   bg-blue-400 text-white rounded-full cursor-pointer"
+      className="py-2 px-6 flex gap-2 items-center bg-blue-400 text-white rounded-full cursor-pointer"
     >
-      {isLoading ? (
+      {isLoading || isLoadingDicom ? (
         <IconLoading />
       ) : (
         <svg

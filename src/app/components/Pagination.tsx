@@ -20,7 +20,7 @@ import UploadButton from "./UploadButton";
 import useCheckboxSelection from "@/hooks/useCheckboxSelection";
 import GenerateCompressedPDFs from "./GenerateCompressedPDFs";
 import GenerateCompressedDOCs from "./GenerateCompressedDOCs";
-import DicomActionButtons from "./TableActionButtons";
+import TableActionButtons from "./TableActionButtons";
 import ShareReportButton from "./ShareReportButton";
 import Attachments from "./Attachments";
 import AssignDicomToTrigger from "./AssignDicomToTrigger";
@@ -1078,7 +1078,7 @@ export default function Pagination({
                       </td>
                       <td className="py-2 px-2">
                         {result.data ? (
-                          <DicomActionButtons
+                          <TableActionButtons
                             activeUserId={userId}
                             userRoleId={userRoleId}
                             dicom={result.data[index]}

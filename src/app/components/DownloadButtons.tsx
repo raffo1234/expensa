@@ -5,10 +5,10 @@ import { DicomType } from "@/types/dicomType";
 import { Permissions } from "@/types/propertyState";
 
 export default function DownloadButtons({
-  dicom,
+  dicomId,
   userRoleId,
 }: {
-  dicom: DicomType;
+  dicomId: DicomType["id"];
   userRoleId: string;
 }) {
   const { hasPermission: canDownload, isLoading: isLoadingCanDownload } =
@@ -18,8 +18,8 @@ export default function DownloadButtons({
 
   return canDownload ? (
     <div className="flex items-center gap-2">
-      <GeneratePDFButton dicom={dicom} label="PDF" />
-      <DOCXPreview dicom={dicom} />
+      <GeneratePDFButton dicomId={dicomId} />
+      <DOCXPreview dicomId={dicomId} />
     </div>
   ) : null;
 }

@@ -28,6 +28,7 @@ import { UPLOAD_OPTION } from "@/enums/uploadOption";
 import { compressFiles } from "@/lib/compressFiles";
 import { checkIfStudyExists, insertNewDataSet } from "@/lib/dicomDB";
 import { UploaderR2Props } from "@/types/Dicom";
+import { colorClassMap } from "@/constants";
 
 Archive.init({
   workerUrl: "/libarchive.js/dist/worker-bundle.js",
@@ -579,7 +580,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                   return (
                     <div
                       key={id}
-                      className={`bg-${color} border-gray-300 border px-4 py-3 rounded-lg`}
+                      className={`${colorClassMap[color]} border-gray-300 border px-4 py-3 rounded-lg`}
                     >
                       <div className="flex">
                         {canSwitchStoreDicom ? (

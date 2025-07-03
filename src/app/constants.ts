@@ -22,3 +22,11 @@ export const FIELD_TAGS: Record<string, string[]> = {
   patientBirthDate: ["x00100030"],
   institutionName: ["x00080080"],
 };
+
+export const colorClassMap: Record<string, string> = {
+  "rose-50": "bg-rose-50 border-rose-200",
+  "white": "bg-white",
+  "green-50": "bg-green-50 border-green-200",
+  "yellow-50": "bg-yellow-50 border-yellow-300",
+  "cyan-50": "bg-cyan-50 border-cyan-200"
+};

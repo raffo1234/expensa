@@ -7,9 +7,8 @@ import { supabase } from "@/lib/supabase";
 import React, { useCallback, useState, type ChangeEvent } from "react";
 import { Icon } from "@iconify/react";
 import { useDropzone } from "react-dropzone";
-import getAgeFromYYYYMMDD from "@/lib/getAgeFromYYYYMMDD";
 import { ExtractedFilesObject, processZipFile } from "@/lib/decompress";
-import { findAllDicomFilesWithDifferentStudyDescriptions } from "@/lib/dicoms";
+import { findAllDicomFilesWithDifferentStudyUID } from "@/lib/dicoms";
 import sortFilesByName from "@/utils/sortFilesByName";
 import {
   CustomFileStateType,
@@ -17,7 +16,6 @@ import {
   Study,
 } from "@/types/customFileType";
 import { v4 as uuidv4 } from "uuid";
-import { SupabaseClient } from "@supabase/supabase-js";
 import { sanitize } from "@/lib/sanitize";
 import uploadSignedFile from "@/lib/uploadSignedFile";
 import useCheckPermission from "@/hooks/useCheckPermission";
@@ -28,6 +26,8 @@ import { sendEmailToAdmin } from "@/utils/sendEmailToAdmin";
 import LinkInsertedOrDuplicated from "./LinkInsertedOrDuplicated";
 import { UPLOAD_OPTION } from "@/enums/uploadOption";
 import { compressFiles } from "@/lib/compressFiles";
+import { checkIfStudyExists, insertNewDataSet } from "@/lib/dicomDB";
+import { UploaderR2Props } from "@/types/Dicom";
 
 Archive.init({
   workerUrl: "/libarchive.js/dist/worker-bundle.js",
@@ -45,136 +45,6 @@ const compressedMimeTypes = [
   "application/x-compressed", //.rar
   "application/x-rar-compressed", //.rar
 ];
-
-interface DicomElement {
-  tag: string; // Hexadecimal tag string (e.g., 'x00100010')
-  vr?: string; // Value Representation (e.g., 'PN', 'UI', 'DA') - Optional
-  length: number; // Length of the value field
-  dataOffset: number; // Offset in the byte stream where the value starts
-
-  // If this element is a Sequence (SQ), it has an 'items' array.
-  // The items in the array are also DicomElement objects.
-  items?: DicomElement[]; // Items within a sequence are also DicomElements
-
-  // If this element is an item within a Sequence (SQ), it has a 'dataSet' property
-  // which is a nested DicomDataSet. This is optional because not all elements are sequence items.
-  dataSet?: DicomDataSet; // Nested DataSet for sequence items - Optional
-
-  // Add other properties if you use them (e.g., fragments for pixel data)
-}
-
-interface DicomDataSet {
-  // elements is a map where keys are tag strings and values are DicomElement objects
-  elements: { [tag: string]: DicomElement };
-  // byteArray is the underlying byte array the dataset was parsed from
-  byteArray: Uint8Array;
-
-  // Methods for accessing element values - only including 'string' as used in the code
-  string(tag: string): string | undefined;
-  // Add other methods like int16, float, bytes etc. if you use them and need strict typing
-}
-
-interface DicomMetadata {
-  patientId?: string;
-  patientName?: string;
-  patientAge?: string;
-  studyDescription?: string;
-  modality?: string;
-  studyDate?: string;
-  patientSex?: string;
-  patientBirthDate?: string;
-  institutionName?: string;
-}
-
-type UploaderR2Props = {
-  option: UPLOAD_OPTION;
-  setOption: React.Dispatch<React.SetStateAction<UPLOAD_OPTION>>;
-  userId: string;
-  userEmail: string;
-  userRoleId: string;
-  onUploadSuccess?: () => void;
-};
-
-interface CheckResult {
-  id: string | null; // Null if not found
-  error: Error | null;
-}
-
-interface InsertOperationResult {
-  id: string | null; // Null if insertion failed
-  error: Error | null;
-}
-
-async function checkIfDataSetExists(
-  supabase: SupabaseClient,
-  userId: string,
-  dataSet: DicomMetadata
-): Promise<CheckResult> {
-  const table = "dicom"; // Define table name once
-
-  const { data, error } = await supabase
-    .from(table)
-    .select("id")
-    .eq("patient_name", dataSet.patientName)
-    .eq("study_date", dataSet.studyDate)
-    .eq("study_description", dataSet.studyDescription)
-    .eq("user_id", userId)
-    .limit(1);
-
-  if (error) {
-    console.error("Error checking for existing record:", error.message);
-    return { id: null, error: new Error(error.message) };
-  }
-
-  if (data && data.length > 0) {
-    return { id: data[0].id, error: null };
-  } else {
-    return { id: null, error: null }; // No existing record found
-  }
-}
-
-async function insertNewDataSet(
-  supabase: SupabaseClient,
-  userId: string,
-  dataSet: DicomMetadata,
-  publicUrl: string | undefined
-): Promise<InsertOperationResult> {
-  const table = "dicom"; // Define table name once
-
-  const { data, error } = await supabase
-    .from(table)
-    .insert([
-      {
-        user_id: userId,
-        patient_name: dataSet.patientName,
-        patient_id: dataSet.patientId,
-        patient_age:
-          dataSet.patientAge ||
-          getAgeFromYYYYMMDD(dataSet.patientBirthDate ?? ""),
-        study_description: dataSet.studyDescription,
-        modality: dataSet.modality,
-        study_date: dataSet.studyDate,
-        gender: dataSet.patientSex,
-        birthday: dataSet.patientBirthDate,
-        institution: dataSet.institutionName,
-        dicom_url: publicUrl,
-      },
-    ])
-    .select("id")
-    .single();
-
-  if (error) {
-    console.error("Error inserting record:", error.message);
-    return { id: null, error: new Error(error.message) };
-  }
-
-  if (data) {
-    return { id: data.id, error: null };
-  } else {
-    console.error("Insert operation returned no data despite no error.");
-    return { id: null, error: new Error("Insert operation returned no data.") };
-  }
-}
 
 const UploaderR2: React.FC<UploaderR2Props> = ({
   option,
@@ -299,10 +169,10 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
             continue;
         }
 
-        const differentStudyDescriptions =
-          await findAllDicomFilesWithDifferentStudyDescriptions(extractedFiles);
+        const studiesByInstanceUID =
+          await findAllDicomFilesWithDifferentStudyUID(extractedFiles);
 
-        if (differentStudyDescriptions.length === 0) {
+        if (studiesByInstanceUID.length === 0) {
           editCustomFileById(setFiles, files[index].id, {
             state: CustomFileStateType.noDcimFile,
             color: "rose-50",
@@ -311,13 +181,13 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
         }
 
         const studies: Study[] = [];
-        for (const study of differentStudyDescriptions) {
+        for (const study of studiesByInstanceUID) {
           editCustomFileById(setFiles, files[index].id, {
             state: CustomFileStateType.verifying,
             color: "cyan-50",
           });
 
-          const { id } = await checkIfDataSetExists(
+          const { id } = await checkIfStudyExists(
             supabase,
             userId,
             study.metadata
@@ -443,13 +313,11 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
       }
 
       // Process non-compressed files
-      const differentStudyDescriptions =
-        await findAllDicomFilesWithDifferentStudyDescriptions(
-          nonCompressedFiles
-        );
+      const studiesByInstanceUID =
+        await findAllDicomFilesWithDifferentStudyUID(nonCompressedFiles);
 
-      if (differentStudyDescriptions && differentStudyDescriptions.length > 0) {
-        differentStudyDescriptions.map(({ file, metadata }) => {
+      if (studiesByInstanceUID && studiesByInstanceUID.length > 0) {
+        studiesByInstanceUID.map(({ file, metadata }) => {
           setFiles((prev) => [
             ...prev,
             {
@@ -699,6 +567,15 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                       CustomFileStateType.uploading,
                     ].includes(state);
 
+                  const displayWarningIcon = [
+                    CustomFileStateType.errorInserting,
+                    CustomFileStateType.fileNotSupported,
+                    CustomFileStateType.noDcimFile,
+                    CustomFileStateType.noTag,
+                    CustomFileStateType.errorLoading,
+                    CustomFileStateType.errorUploading,
+                  ].includes(state);
+
                   return (
                     <div
                       key={id}
@@ -761,18 +638,13 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                                 />
                               ))
                             : null}
-                          {state === CustomFileStateType.errorInserting ||
-                          state === CustomFileStateType.fileNotSupported ||
-                          state === CustomFileStateType.noDcimFile ||
-                          state === CustomFileStateType.noTag ||
-                          state === CustomFileStateType.errorLoading ||
-                          state === CustomFileStateType.errorUploading ? (
+                          {displayWarningIcon && (
                             <Icon
                               icon="solar:shield-warning-outline"
                               className="text-rose-300"
                               fontSize="24"
                             />
-                          ) : null}
+                          )}
                         </div>
                       </div>
                       {showProgressBar ? (

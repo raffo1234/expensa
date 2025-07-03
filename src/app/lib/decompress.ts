@@ -47,15 +47,3 @@ export async function processZipFile(
   return extractedFiles;
 }
 
-export async function readZipFile(file: File): Promise<string[]> {
-  try {
-    const zip = new JSZip();
-    const contents = await zip.loadAsync(file);
-    return Object.keys(contents.files)
-      .filter((filename) => !contents.files[filename].dir)
-      .map((filename) => filename);
-  } catch (error) {
-    console.error("Error reading ZIP file:", error);
-    return [];
-  }
-}

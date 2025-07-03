@@ -1,4 +1,5 @@
 export interface DicomMetadata {
+  studyInstanceUID?: string;
   patientName?: string;
   patientId?: string;
   patientAge?: string;
@@ -9,3 +10,4 @@ export interface DicomMetadata {
   patientBirthDate?: string;
   institutionName?: string;
 }
+

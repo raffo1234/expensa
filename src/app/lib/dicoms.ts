@@ -2,33 +2,27 @@ import { DicomMetadata } from "@/types/dicomMetadata";
 import { ExtractedFilesObject } from "./decompress";
 import dicomParser from "dicom-parser"; // Or dcmjs, etc.
 import { FIELD_TAGS } from "@/constants";
+import { isDicomFile } from "./isDicomFile";
 
 interface DicomFileWithMetadata {
   file: File;
   metadata: DicomMetadata;
 }
 
-export async function getStudyInstanceUID(file: File): Promise<string | undefined> {
+export async function getStudyInstanceUID(
+  file: File
+): Promise<string | undefined> {
   try {
-    const arrayBuffer = await file.arrayBuffer();
-    const byteArray = new Uint8Array(arrayBuffer);
-
-    const isDicom =
-      byteArray.length >= 132 &&
-      byteArray[128] === 0x44 &&
-      byteArray[129] === 0x49 &&
-      byteArray[130] === 0x43 &&
-      byteArray[131] === 0x4d;
-
+    const isDicom = await isDicomFile(file);
     if (!isDicom) return undefined;
 
+    const arrayBuffer = await file.arrayBuffer();
+    const byteArray = new Uint8Array(arrayBuffer);
     const dataSet = dicomParser.parseDicom(byteArray);
 
-    const uid = dataSet.string("x0020000d"); // StudyInstanceUID
-
-    return uid?.trim();
+    return dataSet.string("x0020000d")?.trim();
   } catch (error) {
-    console.error("Error extracting Study UID:", error);
+    console.error("Error extracting StudyInstanceUID:", error);
     return undefined;
   }
 }

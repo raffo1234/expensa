@@ -1,8 +1,10 @@
 import JSZip from "jszip";
+import { getFirstDicomPatientNameFromFiles } from "./getFirstDicomPatientNameFromFiles";
+import { sanitize } from "./sanitize";
 
 export const compressFiles = async (files: File[]): Promise<File | null> => {
   if (!files || files.length === 0) {
-    console.warn('No files provided for compression.');
+    console.warn("No files provided for compression.");
     return null;
   }
 
@@ -13,6 +15,10 @@ export const compressFiles = async (files: File[]): Promise<File | null> => {
   }
 
   try {
+    const firstDicomPatientName = await getFirstDicomPatientNameFromFiles(
+      files
+    );
+    const sanitizedFileName = sanitize(`${firstDicomPatientName}.zip`)
     const compressedBlob = await zip.generateAsync({
       type: 'blob',
       compression: 'DEFLATE',
@@ -20,7 +26,7 @@ export const compressFiles = async (files: File[]): Promise<File | null> => {
         level: 9, 
       },
     });
-    const compressedFile = new File([compressedBlob], 'Folder_to_zip.zip', { type: 'application/zip' });
+    const compressedFile = new File([compressedBlob], sanitizedFileName, { type: 'application/zip' });
     return compressedFile;
   } catch (error) {
     console.error('Error during ZIP file generation:', error);

@@ -77,7 +77,7 @@ export default function Report({
     router.push("/admin/dicoms");
   };
 
-  useControlEnter(completeDicom);
+  useControlEnter(completeDicom, document, false, isSaving);
 
   useEffect(() => {
     if (dicom) {

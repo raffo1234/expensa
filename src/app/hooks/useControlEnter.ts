@@ -5,19 +5,20 @@ type KeyboardEventHandler = (event: KeyboardEvent) => void;
 function useControlEnter(
   callback: KeyboardEventHandler,
   targetElement: HTMLElement | Document = document,
-  preventDefault: boolean = false
+  preventDefault: boolean = false,
+  isActionDisabled: boolean = false
 ): void {
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    const isModifierPressed = event.ctrlKey || event.metaKey; // event.metaKey is for Command key on Mac
+    const isModifierPressed = event.ctrlKey || event.metaKey;
     const isEnterPressed = event.key === 'Enter';
 
-    if (isModifierPressed && isEnterPressed) {
+    if (isModifierPressed && isEnterPressed && !isActionDisabled) {
       if (preventDefault) {
         event.preventDefault();
       }
       callback(event);
     }
-  }, [callback, preventDefault]);
+  }, [callback, preventDefault, isActionDisabled]);
 
   useEffect(() => {
     if (targetElement) {

@@ -43,9 +43,16 @@ declare module "react" {
 const compressedMimeTypes = [
   "application/zip",
   "application/x-zip-compressed",
-  "application/x-compressed", //.rar
-  "application/x-rar-compressed", //.rar
+  "application/x-compressed", // .rar
+  "application/x-rar-compressed", // .rar
 ];
+
+const compressedExtensions: Record<string, string[]> = {
+  "application/zip": [".zip"],
+  "application/x-zip-compressed": [".zip"],
+  "application/x-compressed": [".rar"],
+  "application/x-rar-compressed": [".rar"],
+};
 
 const UploaderR2: React.FC<UploaderR2Props> = ({
   option,
@@ -366,7 +373,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
       case UPLOAD_OPTION.COMPRESSED:
         return compressedMimeTypes.reduce(
           (acc: Record<string, string[]>, mime) => {
-            acc[mime] = [];
+            acc[mime] = compressedExtensions[mime] || [];
             return acc;
           },
           {}

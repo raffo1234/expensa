@@ -656,7 +656,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                         </div>
                       </div>
                       {showProgressBar ? (
-                        <div className="mt-2 relative w-full bg-gray-200 h-1 rounded-full">
+                        <div className="mt-2 relative w-full bg-gray-300 h-1 rounded-full">
                           <div
                             style={{ width: `${uploadPercentage}%` }}
                             className="absolute top-0 left-0 h-full bg-gradient-to-r from-cyan-100 animate-pulse to-cyan-400 rounded-full transition-all duration-300"

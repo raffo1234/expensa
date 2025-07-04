@@ -24,6 +24,7 @@ export type CustomFileType = {
   isAvailableForR2Upload: boolean;
   color: string;
   uploadPercentage: number;
+  imageUploadProgress?: number;
 };
 
 export type Study = { id: string; state: CustomFileStateType };

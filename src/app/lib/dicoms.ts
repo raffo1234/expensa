@@ -9,9 +9,7 @@ interface DicomFileWithMetadata {
   metadata: DicomMetadata;
 }
 
-export async function getStudyInstanceUID(
-  file: File
-): Promise<string | undefined> {
+export async function getStudyInstanceUID(file: File): Promise<string | undefined> {
   try {
     const isDicom = await isDicomFile(file);
     if (!isDicom) return undefined;
@@ -27,18 +25,17 @@ export async function getStudyInstanceUID(
   }
 }
 
-export async function extractDicomMetadata(
-  dicomFile: File
-): Promise<DicomMetadata | undefined> {
+export async function extractDicomMetadata(dicomFile: File): Promise<DicomMetadata | undefined> {
   try {
     const arrayBuffer = await dicomFile.arrayBuffer();
     const byteArray = new Uint8Array(arrayBuffer);
     const dataSet = dicomParser.parseDicom(byteArray);
 
-    for (const tag in dataSet.elements) {
-      const val = dataSet.string(tag);
-      console.log(`${tag}: ${val}`);
-    }
+    // just for debug
+    // for (const tag in dataSet.elements) {
+    //   const val = dataSet.string(tag);
+    //   console.log(`${tag}: ${val}`);
+    // }
 
     const result: Record<string, string | undefined> = {};
 
@@ -60,7 +57,7 @@ export async function extractDicomMetadata(
 }
 
 export async function findAllDicomFilesWithDifferentStudyUID(
-  extractedFilesObject: ExtractedFilesObject
+  extractedFilesObject: ExtractedFilesObject,
 ): Promise<DicomFileWithMetadata[]> {
   const allDicomFilesWithDescriptions: {
     file: File;
@@ -83,21 +80,15 @@ export async function findAllDicomFilesWithDifferentStudyUID(
   await traverse(extractedFilesObject);
 
   const validDicomFiles = allDicomFilesWithDescriptions.filter(
-    (item) => item.studyUID !== undefined
+    (item) => item.studyUID !== undefined,
   );
-  const uniqueStudies = new Set(
-    validDicomFiles.map((item) => item.studyUID)
-  );
+  const uniqueStudies = new Set(validDicomFiles.map((item) => item.studyUID));
 
   const result: DicomFileWithMetadata[] = [];
   for (const studyUID of uniqueStudies) {
-    const firstFileWithDescription = validDicomFiles.find(
-      (item) => item.studyUID === studyUID
-    );
+    const firstFileWithDescription = validDicomFiles.find((item) => item.studyUID === studyUID);
     if (firstFileWithDescription) {
-      const metadata = await extractDicomMetadata(
-        firstFileWithDescription.file
-      );
+      const metadata = await extractDicomMetadata(firstFileWithDescription.file);
       if (metadata) {
         result.push({ file: firstFileWithDescription.file, metadata });
       }

@@ -22,7 +22,7 @@ import { sendEmailToAdmin } from "@/utils/sendEmailToAdmin";
 import LinkInsertedOrDuplicated from "./LinkInsertedOrDuplicated";
 import { UPLOAD_OPTION } from "@/enums/uploadOption";
 import { compressFiles } from "@/lib/compressFiles";
-import { checkIfStudyExists, insertNewDataSet } from "@/lib/dicomDB";
+import { checkIfStudyExists, insertToDicom } from "@/lib/dicomDB";
 import { UploaderR2Props } from "@/types/Dicom";
 import { colorClassMap } from "@/constants";
 
@@ -83,6 +83,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
       setSiDropping(true);
       const isFolder = option === UPLOAD_OPTION.FOLDER;
 
+      // option === Folder
       if (isFolder) {
         const compressedFiles = await compressFiles(Array.from(acceptedFiles));
         if (compressedFiles instanceof File) {
@@ -122,9 +123,8 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
         }
       }
 
-      // Process non-compressed files
+      // Process non-compressed files (.dcm) -> option === .dcm
       const studiesByInstanceUID = await findAllDicomFilesWithDifferentStudyUID(nonCompressedFiles);
-
       if (studiesByInstanceUID && studiesByInstanceUID.length > 0) {
         studiesByInstanceUID.map(({ file, metadata }) => {
           setFiles((prev) => [
@@ -138,12 +138,13 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
               isAvailableForR2Upload: storeByDefault,
               color: "white",
               uploadPercentage: 0,
+              imageUploadProgress: 0,
             },
           ]);
         });
       }
 
-      // Process compressed files
+      // Process compressed files, option === compressed
       compressedFiles.map((file) => {
         setFiles((prev) => [
           ...prev,
@@ -156,6 +157,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
             isAvailableForR2Upload: storeByDefault,
             color: "gray-50",
             uploadPercentage: 0,
+            imageUploadProgress: 0,
           },
         ]);
       });
@@ -170,14 +172,16 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
     setUploading(true);
 
     for (let index = 0; index < sortedFiles.length; index++) {
-      if (files[index].state !== CustomFileStateType.selected) {
+      const fileEntity = files[index];
+
+      if (fileEntity.state !== CustomFileStateType.selected) {
         console.info(`Skipping file at index ${index} because it is not in the selected state.`);
         continue;
       }
 
-      const selectedFile = files[index].file;
+      const selectedFile = fileEntity.file;
 
-      editCustomFileById(setFiles, files[index].id, {
+      editCustomFileById(setFiles, fileEntity.id, {
         state: CustomFileStateType.processing,
         color: "cyan-50",
       });
@@ -204,7 +208,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
             extractedFiles = { [selectedFile.name]: selectedFile };
             break;
           default:
-            editCustomFileById(setFiles, files[index].id, {
+            editCustomFileById(setFiles, fileEntity.id, {
               state: CustomFileStateType.fileNotSupported,
               color: "rose-50",
             });
@@ -214,7 +218,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
         const studiesByInstanceUID = await findAllDicomFilesWithDifferentStudyUID(extractedFiles);
 
         if (studiesByInstanceUID.length === 0) {
-          editCustomFileById(setFiles, files[index].id, {
+          editCustomFileById(setFiles, fileEntity.id, {
             state: CustomFileStateType.noDcimFile,
             color: "rose-50",
           });
@@ -223,7 +227,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
 
         const studies: Study[] = [];
         for (const study of studiesByInstanceUID) {
-          editCustomFileById(setFiles, files[index].id, {
+          editCustomFileById(setFiles, fileEntity.id, {
             state: CustomFileStateType.verifying,
             color: "cyan-50",
           });
@@ -231,7 +235,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
           const { id } = await checkIfStudyExists(supabase, userId, study.metadata);
 
           if (id) {
-            editCustomFileById(setFiles, files[index].id, {
+            editCustomFileById(setFiles, fileEntity.id, {
               state: CustomFileStateType.duplicated,
               color: "yellow-50",
               studies,
@@ -247,14 +251,14 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
           const now = Date.now().toString();
           const filename = sanitize(`${now}_${selectedFile.name}`);
 
-          if (files[index].isAvailableForR2Upload) {
-            editCustomFileById(setFiles, files[index].id, {
+          if (fileEntity.isAvailableForR2Upload) {
+            editCustomFileById(setFiles, fileEntity.id, {
               state: CustomFileStateType.uploading,
               color: "cyan-50",
             });
 
             const updateProgress = (progress: number) => {
-              editCustomFileById(setFiles, files[index].id, {
+              editCustomFileById(setFiles, fileEntity.id, {
                 uploadPercentage: progress,
               });
             };
@@ -262,7 +266,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
             const urlSigned = await uploadSignedFile(selectedFile, now, updateProgress);
 
             if (!urlSigned) {
-              editCustomFileById(setFiles, files[index].id, {
+              editCustomFileById(setFiles, fileEntity.id, {
                 state: CustomFileStateType.errorUploading,
                 color: "rose-50",
               });
@@ -272,33 +276,33 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
             publicUrl = `${process.env.NEXT_PUBLIC_STORAGE_DOMAIN}/dicom/${filename}`;
           }
 
-          editCustomFileById(setFiles, files[index].id, {
+          editCustomFileById(setFiles, fileEntity.id, {
             state: CustomFileStateType.inserting,
             color: "bg-cyan-50",
           });
 
-          const { id: insertedId } = await insertNewDataSet(
+          const { id: insertedDicomId } = await insertToDicom(
             supabase,
             userId,
             study.metadata,
             publicUrl,
           );
 
-          if (!insertedId) {
-            editCustomFileById(setFiles, files[index].id, {
+          if (!insertedDicomId) {
+            editCustomFileById(setFiles, fileEntity.id, {
               state: CustomFileStateType.errorInserting,
               color: "rose-50",
             });
             continue;
           }
 
-          if (insertedId) {
+          if (insertedDicomId) {
             studies.push({
-              id: insertedId.toString(),
+              id: insertedDicomId.toString(),
               state: CustomFileStateType.inserted,
             });
 
-            editCustomFileById(setFiles, files[index].id, {
+            editCustomFileById(setFiles, fileEntity.id, {
               state: CustomFileStateType.inserted,
               color: "green-50",
               studies,
@@ -313,7 +317,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
           }
         }
       } catch {
-        editCustomFileById(setFiles, files[index].id, {
+        editCustomFileById(setFiles, fileEntity.id, {
           state: CustomFileStateType.errorLoading,
           color: "rose-50",
         });
@@ -511,7 +515,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                   return (
                     <div
                       key={id}
-                      className={`${colorClassMap[color] ? colorClassMap[color] : "border border-gray-200"} px-4 py-3 rounded-lg`}
+                      className={`${colorClassMap[color] ? colorClassMap[color] : "border bg-white border-gray-200"} px-4 py-3 rounded-lg`}
                     >
                       <div className="flex">
                         {canSwitchStoreDicom ? (

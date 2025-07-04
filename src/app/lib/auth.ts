@@ -25,36 +25,34 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials) {
         const email = credentials?.email;
         const password = credentials?.password;
-        
+
         if (!email || !password) {
-          return null; 
+          return null;
         }
 
         try {
           const { data: user, error } = await supabase
-            .from("user") 
-            .select("id, email, first_name, last_name, password") 
+            .from("user")
+            .select("id, email, first_name, last_name, password")
             .eq("email", email)
             .single();
 
           if (error) {
             console.error("Error fetching user:", error);
-            return null; 
+            return null;
           }
 
           if (!user) {
-            return null; 
+            return null;
           }
 
           const isPasswordValid = await bcrypt.compare(password as string, user.password);
-            
+
           if (isPasswordValid) {
-            
             return {
               id: user.id,
-              name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email, 
+              name: `${user.first_name || ""} ${user.last_name || ""}`.trim() || user.email,
               email: user.email,
-              
             };
           } else {
             return null;
@@ -72,9 +70,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
     async signIn({ user, account, profile }) {
-      if (user && account?.provider === 'google' && profile) {
+      if (user && account?.provider === "google" && profile) {
         await syncUserWithDatabase(user, profile);
-      }  else if (user && account?.provider === 'credentials') {
+      } else if (user && account?.provider === "credentials") {
         console.log("Credentials sign-in successful for user:", user);
       }
 

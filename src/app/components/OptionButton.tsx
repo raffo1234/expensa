@@ -23,7 +23,7 @@ const OptionButton: React.FC<OptionButtonProps> = ({
           ? "bg-cyan-50 border-cyan-200"
           : "hover:bg-gray-100 border-transparent hover:border-gray-300 bg-gray-100",
         disabled && "opacity-50 cursor-not-allowed",
-        className
+        className,
       )}
       {...rest}
     >

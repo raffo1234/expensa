@@ -6,7 +6,9 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "format": "prettier --write .",
+    "check-format": "prettier --check ."
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.828.0",
@@ -74,6 +76,7 @@
     "date-fns": "^4.1.0",
     "eslint": "^9",
     "eslint-config-next": "15.3.1",
+    "prettier": "^3.6.2",
     "react-dropzone": "^14.3.8",
     "tailwindcss": "^4",
     "typescript": "^5"

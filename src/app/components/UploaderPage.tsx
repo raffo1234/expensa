@@ -20,10 +20,7 @@ export default function UploaderPage({
 }) {
   const [option, setOption] = useState(UPLOAD_OPTION.COMPRESSED);
 
-  const { hasPermission, isLoading } = useCheckPermission(
-    userRoleId,
-    Permissions.UPLOAD_DICOM
-  );
+  const { hasPermission, isLoading } = useCheckPermission(userRoleId, Permissions.UPLOAD_DICOM);
 
   if (isLoading)
     return (
@@ -41,11 +38,7 @@ export default function UploaderPage({
           if (isFolder && !supportsWebkitDirectory()) return null;
 
           return (
-            <OptionButton
-              key={value}
-              onClick={() => setOption(value)}
-              isActive={option === value}
-            >
+            <OptionButton key={value} onClick={() => setOption(value)} isActive={option === value}>
               {value}
             </OptionButton>
           );

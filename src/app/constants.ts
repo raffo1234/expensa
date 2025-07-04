@@ -24,9 +24,9 @@ export const FIELD_TAGS: Record<string, string[]> = {
 };
 
 export const colorClassMap: Record<string, string> = {
-  "rose-50": "bg-rose-50 border-rose-200",
-  "white": "bg-white",
-  "green-50": "bg-green-50 border-green-200",
-  "yellow-50": "bg-yellow-50 border-yellow-300",
-  "cyan-50": "bg-cyan-50 border-cyan-200"
+  "rose-50": "bg-rose-50 border border-rose-200",
+  "white": "bg-white border border-gray-300",
+  "green-50": "bg-green-50 border border-green-200",
+  "yellow-50": "bg-yellow-50 border border-yellow-300",
+  "cyan-50": "bg-cyan-50 border border-cyan-200"
 };

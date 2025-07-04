@@ -587,7 +587,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                   return (
                     <div
                       key={id}
-                      className={`${colorClassMap[color]} border-gray-300 border px-4 py-3 rounded-lg`}
+                      className={`${colorClassMap[color] ? colorClassMap[color] : "border border-gray-200"} px-4 py-3 rounded-lg`}
                     >
                       <div className="flex">
                         {canSwitchStoreDicom ? (

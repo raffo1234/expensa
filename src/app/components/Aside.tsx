@@ -1,11 +1,11 @@
 "use client";
 
-import { Icon } from "@iconify/react";
 import { useState } from "react";
 import Image from "next/image";
 import AsideMenu from "./AsideMenu";
 import useSWR from "swr";
 import roleFetcher from "@/fetchers/roleFetcher";
+import AnimatedHamburgerButton from "./AnimatedHamburgerButton";
 
 export default function Aside({
   userRoleId,
@@ -43,14 +43,7 @@ export default function Aside({
 
   return (
     <div className="flex-shrink-0">
-      <button
-        onClick={handleToggle}
-        className={`${
-          isOpen ? "text-cyan-500" : ""
-        } cursor-pointer lg:invisible z-50 visible absolute right-4 top-4 bg-white w-12 h-12 flex justify-center items-center`}
-      >
-        <Icon icon="solar:hamburger-menu-linear" fontSize={24} />
-      </button>
+      <AnimatedHamburgerButton isOpen={isOpen} toggleMenu={handleToggle} />
       <section
         className={`${
           isOpen
@@ -73,9 +66,7 @@ export default function Aside({
             )}
             <div>
               <p className="text-sm leading-3 mb-1 text-gray-500">Welcome</p>
-              <h3 className="font-semibold text-gray-700 text-lg">
-                {userName}
-              </h3>
+              <h3 className="font-semibold text-gray-700 text-lg">{userName}</h3>
               <p className="text-xs text-gray-500">{roleName}</p>
             </div>
           </div>

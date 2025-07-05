@@ -128,7 +128,7 @@ export default function MyStudy({
           >
             {!state ? "Sent" : state}
           </div>
-          <GeneratePDFButton dicomId={dicom.id} />
+          {state === DicomStateEnum.COMPLETED ? <GeneratePDFButton dicomId={dicom.id} /> : null}
         </div>
       </div>
       {files && files.length > 0 ? (

@@ -174,7 +174,7 @@ export default function MyStudy({
           onClick={onClick}
           type="button"
           title="Attach files"
-          className="flex mt-4 gap-2 cursor-pointer text-white px-6 font-semibold py-2 rounded-full bg-cyan-400"
+          className="flex mt-4 gap-2 cursor-pointer text-white px-6 py-2 rounded-full bg-cyan-400"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"

@@ -232,7 +232,7 @@ export default function AttachFiles({
             onClick={() => attachFiles(files)}
             type="button"
             title="Attach files"
-            className="flex gap-2 self-end cursor-pointer text-white px-6 font-semibold py-2 rounded-full bg-cyan-400"
+            className="flex gap-2 self-end cursor-pointer text-white px-6 py-2 rounded-full bg-cyan-400"
           >
             <span>Attach files</span>
           </button>

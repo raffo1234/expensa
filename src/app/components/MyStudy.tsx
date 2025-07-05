@@ -13,6 +13,7 @@ import { useSliderState } from "./Slider";
 import SliderFiles from "./SliderFiles";
 import AssignDicomToTrigger from "./AssignDicomToTrigger";
 import { ICON_SIZE } from "@/constants";
+import GeneratePDFButton from "./GeneratePDFButton";
 
 const filesFetcher = async (dicomId: string) => {
   const { data } = (await supabase
@@ -36,30 +37,23 @@ export default function MyStudy({
   isItemSelected: (id: string) => void;
   toggleItemSelected: (id: string) => void;
 }) {
-  const { id, state, patient_id, patient_name, study_description, study_date } =
-    dicom;
+  const { id, state, patient_id, patient_name, study_description, study_date } = dicom;
   const { setSliderContent, setSliderOpen } = useSliderState();
   const { setModalContent, setOnModalClose, setModalOpen } = useGlobalState();
 
-  const { data: files, mutate: mutateFiles } = useSWR(
-    `admin-files-${dicom.id}`,
-    () => (dicom.id ? filesFetcher(dicom.id) : null)
+  const { data: files, mutate: mutateFiles } = useSWR(`admin-files-${dicom.id}`, () =>
+    dicom.id ? filesFetcher(dicom.id) : null,
   );
 
   const onClick = () => {
     setModalContent(
-      <AttachFiles
-        dicom={dicom}
-        setOnModalClose={setOnModalClose}
-        mutateFiles={mutateFiles}
-      />
+      <AttachFiles dicom={dicom} setOnModalClose={setOnModalClose} mutateFiles={mutateFiles} />,
     );
     setModalOpen(true);
   };
 
   const openSlider = (index: number) => {
-    if (files)
-      setSliderContent(<SliderFiles firstIndex={index} files={files} />);
+    if (files) setSliderContent(<SliderFiles firstIndex={index} files={files} />);
     setSliderOpen(true);
   };
 
@@ -76,10 +70,7 @@ export default function MyStudy({
             checked={isItemSelected(dicom.id) ?? false}
             onChange={() => toggleItemSelected(dicom.id as string)}
           />
-          <label
-            htmlFor={id}
-            className="block cursor-pointer p-2 w-9 h-9 text-gray-400"
-          ></label>
+          <label htmlFor={id} className="block cursor-pointer p-2 w-9 h-9 text-gray-400"></label>
           <div className="pointer-events-none bg-white w-5 h-5 border-2 peer-checked:border-cyan-400 rounded-sm text-gray-400 peer-checked:text-cyan-400 absolute top-1/2 -translate-x-1/2 -translate-y-1/2 left-1/2"></div>
           <svg
             className="hidden peer-checked:text-cyan-400 pointer-events-none peer-checked:block absolute top-1/2 -translate-x-1/2 -translate-y-1/2 left-1/2"
@@ -98,28 +89,23 @@ export default function MyStudy({
           </svg>
         </div>
         {dicom.id ? (
-          <AssignDicomToTrigger
-            dicomIds={[dicom.id]}
-            userId={userId}
-            userRoleId={userRoleId}
-          />
+          <AssignDicomToTrigger dicomIds={[dicom.id]} userId={userId} userRoleId={userRoleId} />
         ) : null}
       </div>
-      <div className="flex justify-between items-center">
+      <div className="sm:flex justify-between items-center">
         <div className="flex gap-2">
           <div>
             <h2 className="text-sm mb-2 text-gray-400">ID: {patient_id}</h2>
             <div className="font-semibold mb-2 text-sm">{patient_name}</div>
-            <div className="text-xs text-gray-400 mb-2">
-              {study_description}
-            </div>
+            <div className="text-xs text-gray-400 mb-2">{study_description}</div>
             <div className="font-semibold text-sm">
               Study Date: {study_date ? formatDate(study_date) : null}
             </div>
           </div>
         </div>
-        <div
-          className={`
+        <div className="mt-4 sm:mt-0 flex mb-4 items-center gap-2">
+          <div
+            className={`
                               font-semibold uppercase
                               ${!state ? " border-gray-100 bg-gray-50" : ""} 
                               ${
@@ -137,10 +123,12 @@ export default function MyStudy({
                                   ? "text-cyan-600 border-cyan-200 bg-cyan-100"
                                   : ""
                               }  
-                              py-1 px-5 text-xs mb-6 uppercase w-fit rounded-xl border`}
-          title={state}
-        >
-          {!state ? "Sent" : state}
+                              py-2 px-5 text-xs uppercase w-fit rounded-full border`}
+            title={state}
+          >
+            {!state ? "Sent" : state}
+          </div>
+          <GeneratePDFButton dicomId={dicom.id} />
         </div>
       </div>
       {files && files.length > 0 ? (
@@ -181,27 +169,29 @@ export default function MyStudy({
           })}
         </div>
       ) : null}
-      <button
-        onClick={onClick}
-        type="button"
-        title="Attach files"
-        className="flex mt-4 gap-2 cursor-pointer text-white px-6 font-semibold py-2 rounded-full bg-cyan-400"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width={ICON_SIZE}
-          height={ICON_SIZE}
-          viewBox="0 0 24 24"
+      {state !== DicomStateEnum.COMPLETED ? (
+        <button
+          onClick={onClick}
+          type="button"
+          title="Attach files"
+          className="flex mt-4 gap-2 cursor-pointer text-white px-6 font-semibold py-2 rounded-full bg-cyan-400"
         >
-          <path
-            fill="currentColor"
-            fillRule="evenodd"
-            d="M8.886 3.363c2.942-2.817 7.7-2.817 10.643 0c2.961 2.834 2.961 7.444 0 10.279l-7.948 7.608c-2.09 2-5.466 2-7.556 0a5.03 5.03 0 0 1 0-7.324l7.834-7.498a3.253 3.253 0 0 1 4.468 0a3 3 0 0 1 0 4.367l-7.89 7.554a.75.75 0 1 1-1.038-1.084l7.89-7.553a1.503 1.503 0 0 0 0-2.2a1.753 1.753 0 0 0-2.393 0L5.062 15.01a3.53 3.53 0 0 0 0 5.156c1.51 1.445 3.972 1.445 5.482 0l7.948-7.608c2.344-2.244 2.344-5.868 0-8.112c-2.363-2.261-6.206-2.261-8.57 0l-6.403 6.13A.75.75 0 0 1 2.48 9.493z"
-            clipRule="evenodd"
-          />
-        </svg>
-        <span>Attach files</span>
-      </button>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width={ICON_SIZE}
+            height={ICON_SIZE}
+            viewBox="0 0 24 24"
+          >
+            <path
+              fill="currentColor"
+              fillRule="evenodd"
+              d="M8.886 3.363c2.942-2.817 7.7-2.817 10.643 0c2.961 2.834 2.961 7.444 0 10.279l-7.948 7.608c-2.09 2-5.466 2-7.556 0a5.03 5.03 0 0 1 0-7.324l7.834-7.498a3.253 3.253 0 0 1 4.468 0a3 3 0 0 1 0 4.367l-7.89 7.554a.75.75 0 1 1-1.038-1.084l7.89-7.553a1.503 1.503 0 0 0 0-2.2a1.753 1.753 0 0 0-2.393 0L5.062 15.01a3.53 3.53 0 0 0 0 5.156c1.51 1.445 3.972 1.445 5.482 0l7.948-7.608c2.344-2.244 2.344-5.868 0-8.112c-2.363-2.261-6.206-2.261-8.57 0l-6.403 6.13A.75.75 0 0 1 2.48 9.493z"
+              clipRule="evenodd"
+            />
+          </svg>
+          <span>Attach files</span>
+        </button>
+      ) : null}
     </div>
   );
 }

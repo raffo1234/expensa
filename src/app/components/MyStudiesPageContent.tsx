@@ -11,21 +11,15 @@ import { useEffect, useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
 import NavigationInstructions from "./NavigationInstructions";
 
-async function fetcher(
-  userId: string,
-  page: number,
-  pageSize: number,
-  search: string
-) {
+async function fetcher(userId: string, page: number, pageSize: number, search: string) {
   const from = page * pageSize;
   const to = from + pageSize - 1;
 
   let query = supabase
     .from("dicom")
-    .select(
-      "id, state, patient_id, created_at, patient_name, study_date, study_description",
-      { count: "exact" }
-    )
+    .select("id, state, patient_id, created_at, patient_name, study_date, study_description", {
+      count: "exact",
+    })
     .eq("user_id", userId)
     .range(from, to)
     .order("created_at", { ascending: false });
@@ -33,7 +27,7 @@ async function fetcher(
   if (search && search.trim() !== "") {
     const searchTerm = `%${search.trim()}%`;
     query = query.or(
-      `patient_id.ilike.${searchTerm},patient_name.ilike.${searchTerm},study_description.ilike.${searchTerm}`
+      `patient_id.ilike.${searchTerm},patient_name.ilike.${searchTerm},study_description.ilike.${searchTerm}`,
     );
   }
 
@@ -58,9 +52,8 @@ export default function MyStudiesPageContent({
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
 
-  const { data, isLoading } = useSWR(
-    [`admin-my-studies`, userId, page, search],
-    () => fetcher(userId, page, PAGE_SIZE, search)
+  const { data, isLoading } = useSWR([`admin-my-studies`, userId, page, search], () =>
+    fetcher(userId, page, PAGE_SIZE, search),
   );
 
   const dicoms = data?.data ?? [];

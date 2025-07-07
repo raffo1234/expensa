@@ -395,7 +395,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
         {...getRootProps()}
         className={`${isDragActive ? "bg-cyan-50 border-cyan-100" : "bg-gray-50 border-gray-300"}
         ${uploading || isDropping ? "cursor-no-drop" : "cursor-pointer"}
-        transition-all  hover:outline-8 outline-cyan-50 duration-300 hover:border-cyan-200 bg-white flex flex-col group items-center justify-center py-20 w-full border border-dashed rounded-2xl`}
+        transition-all  hover:outline-8 outline-cyan-50 duration-300 hover:border-cyan-200 bg-white flex flex-col group items-center justify-center py-20 w-full border border-dashed rounded-2xl px-4`}
       >
         <div className="w-11 h-11 relative mb-3">
           <Icon

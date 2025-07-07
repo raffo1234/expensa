@@ -2,70 +2,51 @@
 
 import userFetcher from "@/fetchers/userFetcher";
 import { usePathname } from "next/navigation";
-import useCheckPermission from "@/hooks/useCheckPermission";
 import { Permissions } from "@/types/propertyState";
 import Link from "next/link";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { preload } from "swr";
 import { adminUsersKey, ICON_SIZE } from "@/constants";
 import { signOut } from "next-auth/react";
+import React from "react";
+import useUserPermissionsMap from "@/hooks/useUserPermissionsMap";
+
+interface MenuItem {
+  href: string;
+  title: string;
+  iconName: string;
+  permissionSlug?: Permissions | Permissions[];
+  onMouseEnter?: () => void;
+}
 
 export default function AsideMenu({
   userRoleId,
   closeMenu,
 }: {
-  userRoleId: string;
+  userRoleId: string | null | undefined;
   closeMenu: () => void;
 }) {
   const currentPath = usePathname();
 
-  const { hasPermission: hasManagePacsPermission } = useCheckPermission(
-    userRoleId,
-    Permissions.MANAGE_PACS
-  );
-  const { hasPermission: hasRolesPermission } = useCheckPermission(
-    userRoleId,
-    Permissions.MANAGE_ROLES
-  );
-  const { hasPermission: hasUsersPermission } = useCheckPermission(
-    userRoleId,
-    Permissions.MANAGE_USERS
-  );
-  const { hasPermission: hasPermissionsPermission } = useCheckPermission(
-    userRoleId,
-    Permissions.MANAGE_PERMISSIONS
-  );
-  const { hasPermission: hasDownloadReportPermission } = useCheckPermission(
-    userRoleId,
-    Permissions.DOWNLOAD_REPORT
-  );
-  const { hasPermission: hasViewTemplatesPermission } = useCheckPermission(
-    userRoleId,
-    Permissions.VIEW_TEMPLATES
-  );
-  const { hasPermission: hasViewDicomsPermission } = useCheckPermission(
-    userRoleId,
-    Permissions.VIEW_DICOMS
-  );
-  const { hasPermission: hasUploadDicomPermission, isLoading } =
-    useCheckPermission(userRoleId, Permissions.UPLOAD_DICOM);
-  const { hasPermission: canViewResidents } = useCheckPermission(
-    userRoleId,
-    Permissions.VIEW_RESIDENTS
-  );
-  const { hasPermission: canHandleSettings } = useCheckPermission(
-    userRoleId,
-    Permissions.HANDLE_SETTINGS
+  const { permissionsMap, isLoading } = useUserPermissionsMap(userRoleId);
+
+  const checkPermission = React.useCallback(
+    (slug: Permissions | Permissions[]) => {
+      if (userRoleId == null) return false;
+      const slugsToCheck = Array.isArray(slug) ? slug : [slug];
+      return slugsToCheck.some((s) => permissionsMap.get(s) === true);
+    },
+    [userRoleId, permissionsMap],
   );
 
-  const pages = [
+  const pages: MenuItem[] = [
     {
       href: "/",
       title: "Home",
       iconName: "solar:home-smile-angle-broken",
     },
 
-    ...(hasUploadDicomPermission
+    ...(checkPermission(Permissions.UPLOAD_DICOM)
       ? [
           {
             href: "/admin/dicom",
@@ -74,7 +55,7 @@ export default function AsideMenu({
           },
         ]
       : []),
-    ...(hasManagePacsPermission
+    ...(checkPermission(Permissions.MANAGE_PACS)
       ? [
           {
             href: "/admin/pacs",
@@ -83,7 +64,7 @@ export default function AsideMenu({
           },
         ]
       : []),
-    ...(hasViewDicomsPermission
+    ...(checkPermission(Permissions.VIEW_DICOMS)
       ? [
           {
             href: "/admin/dicoms",
@@ -92,7 +73,7 @@ export default function AsideMenu({
           },
         ]
       : []),
-    ...(hasViewTemplatesPermission
+    ...(checkPermission(Permissions.VIEW_TEMPLATES)
       ? [
           {
             href: "/admin/templates",
@@ -101,7 +82,7 @@ export default function AsideMenu({
           },
         ]
       : []),
-    ...(hasUsersPermission
+    ...(checkPermission(Permissions.MANAGE_USERS)
       ? [
           {
             href: "/admin/users",
@@ -111,7 +92,7 @@ export default function AsideMenu({
           },
         ]
       : []),
-    ...(hasRolesPermission
+    ...(checkPermission(Permissions.MANAGE_ROLES)
       ? [
           {
             href: "/admin/roles",
@@ -120,7 +101,7 @@ export default function AsideMenu({
           },
         ]
       : []),
-    ...(hasPermissionsPermission
+    ...(checkPermission(Permissions.MANAGE_PERMISSIONS)
       ? [
           {
             href: "/admin/permisos",
@@ -129,7 +110,7 @@ export default function AsideMenu({
           },
         ]
       : []),
-    ...(hasDownloadReportPermission
+    ...(checkPermission(Permissions.DOWNLOAD_REPORT)
       ? [
           {
             href: "/admin/reports",
@@ -138,7 +119,7 @@ export default function AsideMenu({
           },
         ]
       : []),
-    ...(canViewResidents
+    ...(checkPermission(Permissions.VIEW_RESIDENTS)
       ? [
           {
             href: "/admin/residents",
@@ -152,7 +133,7 @@ export default function AsideMenu({
       title: "My studies",
       iconName: "solar:hand-heart-linear",
     },
-    ...(canHandleSettings
+    ...(checkPermission(Permissions.HANDLE_SETTINGS)
       ? [
           {
             href: "/admin/settings",
@@ -182,10 +163,8 @@ export default function AsideMenu({
             title={title}
             onMouseEnter={onMouseEnter}
             className={`${
-              href === currentPath
-                ? "bg-gray-100 font-semibold"
-                : "hover:bg-gray-50"
-            }  rounded-xl py-3 px-4 gap-3.5 flex items-center transition-colors duration-300 `}
+              href === currentPath ? "bg-gray-100 font-semibold" : "hover:bg-gray-50"
+            } rounded-xl py-3 px-4 gap-3.5 flex items-center transition-colors duration-300 `}
             onClick={closeMenu}
           >
             <Icon
@@ -202,11 +181,7 @@ export default function AsideMenu({
           onClick={() => signOut()}
           className="hover:text-rose-400 cursor-pointer rounded-xl py-3 px-4 gap-3.5 flex items-center transition-colors duration-300"
         >
-          <Icon
-            icon="solar:inbox-out-linear"
-            fontSize={ICON_SIZE}
-            className="-rotate-90"
-          />
+          <Icon icon="solar:inbox-out-linear" fontSize={ICON_SIZE} className="-rotate-90" />
           <span>Sign Out</span>
         </button>
       </li>

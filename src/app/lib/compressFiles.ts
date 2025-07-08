@@ -1,4 +1,4 @@
-import JSZip from "jszip";
+import { zip, AsyncZipOptions } from "fflate";
 import { getFirstDicomPatientNameFromFiles } from "./getFirstDicomPatientNameFromFiles";
 import { sanitize } from "./sanitize";
 
@@ -13,8 +13,6 @@ export const compressFiles = async (
     return null;
   }
 
-  const zip = new JSZip();
-
   let firstDicomPatientNamePromise: Promise<string | undefined>;
   try {
     firstDicomPatientNamePromise = getFirstDicomPatientNameFromFiles(files);
@@ -23,38 +21,49 @@ export const compressFiles = async (
     firstDicomPatientNamePromise = Promise.resolve("compressed_files");
   }
 
+  const fileMap: { [key: string]: Uint8Array | [Uint8Array, AsyncZipOptions] } = {};
+  const fileArrayBuffersPromises: Promise<void>[] = [];
+
+  const compressionLevel: AsyncZipOptions["level"] = 6;
+
   for (const file of files) {
-    zip.file(file.name, file);
+    fileArrayBuffersPromises.push(
+      (async () => {
+        const arrayBuffer = await file.arrayBuffer();
+        fileMap[file.name] = [new Uint8Array(arrayBuffer), { level: compressionLevel }];
+      })(),
+    );
   }
+
+  await Promise.all(fileArrayBuffersPromises);
 
   try {
     const rawPatientName = await firstDicomPatientNamePromise;
     const firstDicomPatientName = rawPatientName || "dicom_archive";
     const sanitizedFileName = sanitize(`${firstDicomPatientName}.zip`);
 
-    const compressionLevel = 6;
-
-    const compressedBlob = await zip.generateAsync(
-      {
-        type: "blob",
-        compression: "DEFLATE",
-        compressionOptions: {
-          level: compressionLevel,
-        },
-      },
-      (metadata) => {
-        if (onProgress && metadata.currentFile) {
-          onProgress(metadata.percent, metadata.currentFile);
+    return new Promise((resolve, reject) => {
+      zip(fileMap, {}, (err, data) => {
+        if (err) {
+          console.error("Error during fflate ZIP file generation:", err);
+          return reject(err);
         }
-      },
-    );
 
-    const compressedFile = new File([compressedBlob], sanitizedFileName, {
-      type: "application/zip",
+        const compressedBlob = new Blob([data], { type: "application/zip" });
+
+        const compressedFile = new File([compressedBlob], sanitizedFileName, {
+          type: "application/zip",
+        });
+
+        if (onProgress) {
+          onProgress(100, sanitizedFileName);
+        }
+
+        resolve(compressedFile);
+      });
     });
-    return compressedFile;
   } catch (error) {
-    console.error("Error during ZIP file generation:", error);
+    console.error("Error during fflate ZIP file preparation or generation:", error);
     return null;
   }
 };

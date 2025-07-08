@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Fuse from "fuse.js";
 import { useDebouncedCallback } from "use-debounce";
 import extractAgeWidthUnit from "@/lib/extractAgeWithUnit";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import TextareaAutosize from "react-textarea-autosize";
 import toast from "react-hot-toast";
 import Image from "next/image";
@@ -35,6 +35,7 @@ export default function Report({
   userRoleId: string;
 }) {
   const [isSaving, setIsSaving] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const router = useRouter();
   const {
@@ -44,9 +45,32 @@ export default function Report({
     mutate,
   } = useSWR(`admin-${dicomId}`, () => fetcherDicom(dicomId));
 
+  const updateDicomImmediately = useCallback(
+    async (value: string) => {
+      if (!dicom?.id) return;
+
+      setIsSaving(true);
+      try {
+        await supabase.from("dicom").update({ report: value }).eq("id", dicom.id);
+        toast.success("Report updated immediately!");
+      } catch (error) {
+        console.error("Error updating report immediately:", error);
+        toast.error("Failed to save report immediately.");
+      } finally {
+        mutate();
+        setIsSaving(false);
+      }
+    },
+    [dicom?.id, mutate],
+  );
+
   const debouncedTextarea = useDebouncedCallback(async (value) => {
-    if (dicom?.id) await updateDicom(dicom?.id, { report: value });
-  }, 500);
+    if (dicom?.id) {
+      if (textareaRef.current && textareaRef.current.value === value) {
+        await updateDicom(dicom.id, { report: value });
+      }
+    }
+  }, 650);
 
   const updateDicom = async (id: string, newData: Partial<DicomType>) => {
     setIsSaving(true);
@@ -63,17 +87,28 @@ export default function Report({
   };
 
   const completeDicom = async () => {
-    if (!dicom?.id || isSaving) return;
-
-    if (dicom.state === DicomStateEnum.COMPLETED) {
-      router.push("/admin/dicoms");
+    if (!dicom?.id || isSaving) {
+      console.log("Cannot complete: dicom ID missing or already saving.");
       return;
     }
 
-    await updateDicom(dicom.id, {
-      state: DicomStateEnum.COMPLETED,
-      completed_at: new Date(),
-    });
+    if (textareaRef.current && dicom?.report !== textareaRef.current.value) {
+      console.log("Unsaved changes detected. Saving immediately...");
+      await updateDicomImmediately(textareaRef.current.value);
+      debouncedTextarea.cancel();
+    }
+
+    if (dicom.state !== DicomStateEnum.COMPLETED) {
+      console.warn("Updating DICOM state to COMPLETED");
+      await updateDicom(dicom.id, {
+        state: DicomStateEnum.COMPLETED,
+        completed_at: new Date(),
+      });
+    } else {
+      console.warn("DICOM is already COMPLETED. Just redirecting.");
+      toast.success("Report is already completed.");
+    }
+
     router.push("/admin/dicoms");
   };
 
@@ -148,9 +183,7 @@ export default function Report({
             {dicom.state}
           </div>
         ) : null}
-        <div className="text-gray-500 text-sm">
-          {isSaving ? "Saving ..." : ""}
-        </div>
+        <div className="text-gray-500 text-sm">{isSaving ? "Saving ..." : ""}</div>
       </div>
       <Attachments
         dicomId={dicom.id}
@@ -181,11 +214,7 @@ export default function Report({
         <Sticky>
           <div className="bg-gray-50/50 py-4">
             <div className="flex justify-between mb-4">
-              <PreviewPDFButton
-                userRoleId={userRoleId}
-                isDownloadable={false}
-                dicomId={dicomId}
-              />
+              <PreviewPDFButton userRoleId={userRoleId} isDownloadable={false} dicomId={dicomId} />
               <DownloadButtons dicomId={dicomId} userRoleId={userRoleId} />
             </div>
             <div className="flex justify-end gap-2">
@@ -238,36 +267,26 @@ export default function Report({
             >
               <div>
                 <div>
-                  <span className="text-gray-400 w-[65pt] inline-block">
-                    Paciente:
-                  </span>{" "}
+                  <span className="text-gray-400 w-[65pt] inline-block">Paciente:</span>{" "}
                   {dicom?.patient_name}{" "}
                 </div>
                 <div>
-                  <span className="text-gray-400 w-[65pt] inline-block">
-                    Fecha:
-                  </span>{" "}
+                  <span className="text-gray-400 w-[65pt] inline-block">Fecha:</span>{" "}
                   {formatDateYYYYMMDD(dicom?.study_date)}
                 </div>
                 <div>
-                  <span className="text-gray-400 w-[65pt] inline-block">
-                    Descripción:
-                  </span>{" "}
+                  <span className="text-gray-400 w-[65pt] inline-block">Descripción:</span>{" "}
                   {dicom?.study_description}
                 </div>
               </div>
               <div className="flex-shrink-0">
                 <div>
-                  <span className="text-gray-400 w-[65pt] inline-block">
-                    Edad:
-                  </span>
+                  <span className="text-gray-400 w-[65pt] inline-block">Edad:</span>
                   {extractAgeWidthUnit(dicom?.patient_age).value}{" "}
                   {extractAgeWidthUnit(dicom?.patient_age).unit}
                 </div>
                 <div>
-                  <span className="text-gray-400 w-[65pt] inline-block">
-                    ID:
-                  </span>
+                  <span className="text-gray-400 w-[65pt] inline-block">ID:</span>
                   {dicom?.patient_id}
                 </div>
               </div>
@@ -276,6 +295,7 @@ export default function Report({
               autoFocus
               defaultValue={dicom.report}
               onChange={(event) => debouncedTextarea(event.target.value)}
+              ref={textareaRef}
               minRows={2}
               placeholder="Radiologist's report"
               aria-label="Radiologist's report"

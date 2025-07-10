@@ -36,10 +36,9 @@ type FetchResult = {
 };
 
 export const fetchUsersWithAssignmentFlag = async (
-  dicomId: string
+  dicomId: string,
 ): Promise<UserWithAssignment[]> => {
-  const { data: allUsers, error: allUsersError } = await supabase.from("user")
-    .select(`
+  const { data: allUsers, error: allUsersError } = await supabase.from("user").select(`
     id,
     email,
     first_name,
@@ -94,7 +93,7 @@ export async function fetchUsersWithDicomAssignments({
   if (search && search.trim() !== "") {
     const searchTerm = `%${search.trim()}%`;
     query = query.or(
-      `first_name.ilike.${searchTerm},last_name.ilike.${searchTerm},email.ilike.${searchTerm},role_name.ilike.${searchTerm}`
+      `first_name.ilike.${searchTerm},last_name.ilike.${searchTerm},email.ilike.${searchTerm},role_name.ilike.${searchTerm}`,
     );
   }
 
@@ -121,7 +120,7 @@ export default function AssignDicomTo({
 
   const { data, error, isLoading, mutate } = useSWR(
     ["users_with_dicom_assignments", page, search],
-    () => fetchUsersWithDicomAssignments({ page, pageSize: PAGE_SIZE, search })
+    () => fetchUsersWithDicomAssignments({ page, pageSize: PAGE_SIZE, search }),
   );
 
   const debouncedSearchInput = useDebouncedCallback((event) => {
@@ -187,15 +186,9 @@ export default function AssignDicomTo({
       >
         {isLoading ? (
           <>
-            <div
-              className={`bg-gray-100 h-[174px] rounded-2xl animate-pulse`}
-            />
-            <div
-              className={`bg-gray-100 h-[174px] rounded-2xl animate-pulse`}
-            />
-            <div
-              className={`bg-gray-100 h-[174px] rounded-2xl animate-pulse`}
-            />
+            <div className={`bg-gray-100 h-[174px] rounded-2xl animate-pulse`} />
+            <div className={`bg-gray-100 h-[174px] rounded-2xl animate-pulse`} />
+            <div className={`bg-gray-100 h-[174px] rounded-2xl animate-pulse`} />
           </>
         ) : (
           users?.map((user: UserWithDicomAssignments) => {

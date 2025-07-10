@@ -1,17 +1,10 @@
 "use client";
 
 import UsersTable from "@/components/UsersTable";
-import userFetcher from "@/fetchers/userFetcher";
-import useSWR from "swr";
 
 const UsersPageContent = () => {
-  const { data: users, error, isLoading } = useSWR("users", userFetcher);
 
-  if (isLoading) return <div>Loading users...</div>;
-  if (error) return <div>Error loading users</div>;
-  if (!users || users.length === 0) return null;
-
-  return <UsersTable users={users} />;
+  return <UsersTable />;
 };
 
 export default UsersPageContent;

@@ -20,4 +20,5 @@ export type UserType = {
   supervisor_user_id?: string | null;
   residents?: UserType[] | null;
   user?: UserType;
+  archived_at?: Date | null;
 };

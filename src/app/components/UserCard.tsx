@@ -42,7 +42,7 @@ export default function UserCard({ user, mutate }: { user: UserType; mutate: () 
         </Link>
         <button
           className="rounded-full w-11 h-11 border-gray-100 hover:border-gray-200 transition-colors duration-500 border flex items-center justify-center"
-          title="Archive"
+          title={archived_at ? "Unarchive" : "Archive"}
           type="button"
           onClick={archived_at ? unarchive : archive}
         >

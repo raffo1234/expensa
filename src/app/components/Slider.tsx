@@ -14,8 +14,7 @@ type SliderState = {
 
 export const useSliderState = create<SliderState>((set) => ({
   sliderContent: null,
-  setSliderContent: (sliderContent: React.ReactNode) =>
-    set(() => ({ sliderContent })),
+  setSliderContent: (sliderContent: React.ReactNode) => set(() => ({ sliderContent })),
   isSliderOpen: false,
   setSliderOpen: (isOpen: boolean) => set(() => ({ isSliderOpen: isOpen })),
   onSliderClose: undefined,
@@ -43,9 +42,7 @@ export default function Slider() {
         }
       }}
       className={`${
-        isSliderOpen
-          ? "bg-opacity-30 visible"
-          : "opacity-0 bg-opacity-0 invisible"
+        isSliderOpen ? "bg-opacity-30 visible" : "opacity-0 bg-opacity-0 invisible"
       } fixed top-0 transition-all duration-300 left-0 z-60 w-full h-full bg-black p-1`}
     >
       {sliderContent}

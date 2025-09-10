@@ -7,11 +7,7 @@ export default async function Page() {
   const session = await auth();
   const user = session?.user;
 
-  const { data } = await supabase
-    .from("user")
-    .select("role_id")
-    .eq("id", user?.id)
-    .single();
+  const { data } = await supabase.from("user").select("role_id").eq("id", user?.id).single();
 
   const { data: roles } = (await supabase
     .from("role")
@@ -22,7 +18,7 @@ export default async function Page() {
 
   return (
     <div>
-      <h1 className="mb-6 font-semibold text-lg block">Settings</h1>
+      <h1 className="mb-6 font-semibold text-lg block">Global Settings</h1>
       <SettingsContent userRoleId={data.role_id} roles={roles} />
     </div>
   );

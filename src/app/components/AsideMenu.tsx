@@ -144,6 +144,11 @@ export default function AsideMenu({
           },
         ]
       : []),
+    {
+      href: "/admin/my-settings",
+      title: "My Settings",
+      iconName: "solar:settings-minimalistic-linear",
+    },
   ];
 
   if (isLoading)

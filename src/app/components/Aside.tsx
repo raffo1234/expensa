@@ -6,19 +6,24 @@ import AsideMenu from "./AsideMenu";
 import useSWR from "swr";
 import roleFetcher from "@/fetchers/roleFetcher";
 import AnimatedHamburgerButton from "./AnimatedHamburgerButton";
-import { useContractStore } from "@/store/contract";
+import { useUpsertUserSetting } from "@/hooks/useUpsertUserSetting";
 
 export default function Aside({
+  userId,
   userRoleId,
   userName,
   userImage,
 }: {
+  userId: string;
   userRoleId: string;
   userName: string;
   userImage: string | undefined | null;
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const { isContracted, setIsContracted } = useContractStore();
+  const { settingValue: isMenuContracted, upsertSetting } = useUpsertUserSetting(
+    userId,
+    "is_menu_contrated",
+  );
   const { data: role } = useSWR("user-role", () => roleFetcher(userRoleId));
 
   const closeMenu = () => {
@@ -42,13 +47,13 @@ export default function Aside({
   };
 
   const toggleContracted = () => {
-    setIsContracted(!isContracted);
+    upsertSetting(!isMenuContracted);
   };
 
   const roleName = role ? role[0]?.name : "...";
 
   return (
-    <div className={`${isContracted ? "w-auto" : "lg:w-[286px]"} flex-shrink-0`}>
+    <div className={`${isMenuContracted ? "w-auto" : "lg:w-[286px]"} transition-all duration-300 flex-shrink-0`}>
       <div className="flex justify-end p-2">
         <button
           onClick={toggleContracted}
@@ -56,7 +61,7 @@ export default function Aside({
           type="button"
         >
           <svg
-            className={isContracted ? "rotate-180" : ""}
+            className={isMenuContracted ? "rotate-180" : ""}
             xmlns="http://www.w3.org/2000/svg"
             width="24"
             height="24"
@@ -90,7 +95,7 @@ export default function Aside({
             ) : (
               <div className="w-12 h-12 rounded-full bg-gray-100" />
             )}
-            <div className={`${isContracted ? "lg:hidden" : ""}`}>
+            <div className={`${isMenuContracted ? "lg:hidden" : ""}`}>
               <p className="text-sm leading-3 mb-1 text-gray-500">Welcome</p>
               <h3 className="font-semibold text-gray-700 text-lg">{userName}</h3>
               <p className="text-xs text-gray-500">{roleName}</p>
@@ -99,7 +104,11 @@ export default function Aside({
         </header>
         <nav>
           <ul className="flex flex-col">
-            <AsideMenu isContracted={isContracted} closeMenu={closeMenu} userRoleId={userRoleId} />
+            <AsideMenu
+              isContracted={isMenuContracted}
+              closeMenu={closeMenu}
+              userRoleId={userRoleId}
+            />
           </ul>
         </nav>
       </section>

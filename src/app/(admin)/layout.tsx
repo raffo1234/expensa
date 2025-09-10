@@ -26,7 +26,12 @@ export default async function AdminLayout({ children }: Readonly<AdminLayoutProp
       <div className="border-t border-gray-200">
         <main className="flex items-start w-full z-10">
           {user && data?.role_id && user.name ? (
-            <Aside userRoleId={data.role_id} userImage={user.image} userName={user.name} />
+            <Aside
+              userId={user?.id}
+              userRoleId={data.role_id}
+              userImage={user.image}
+              userName={user.name}
+            />
           ) : null}
           <AdminLayoutContent>{children}</AdminLayoutContent>
         </main>

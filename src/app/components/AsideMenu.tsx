@@ -22,9 +22,11 @@ interface MenuItem {
 export default function AsideMenu({
   userRoleId,
   closeMenu,
+  isContracted,
 }: {
   userRoleId: string | null | undefined;
   closeMenu: () => void;
+  isContracted: boolean;
 }) {
   const currentPath = usePathname();
 
@@ -172,7 +174,7 @@ export default function AsideMenu({
               fontSize={ICON_SIZE}
               className={`${href === currentPath ? "text-rose-400" : ""}`}
             />
-            <span>{title}</span>
+            <span className={isContracted ? "lg:hidden" : ""}>{title}</span>
           </Link>
         </li>
       ))}
@@ -182,7 +184,7 @@ export default function AsideMenu({
           className="hover:text-rose-400 cursor-pointer rounded-xl py-3 px-4 gap-3.5 flex items-center transition-colors duration-300"
         >
           <Icon icon="solar:inbox-out-linear" fontSize={ICON_SIZE} className="-rotate-90" />
-          <span>Sign Out</span>
+          <span className={isContracted ? "lg:hidden" : ""}>Sign Out</span>
         </button>
       </li>
     </>

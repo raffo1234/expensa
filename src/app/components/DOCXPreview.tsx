@@ -78,9 +78,9 @@ export default function DOCXPreview({ dicomId }: { dicomId: DicomType["id"] }) {
               gradientTransform="translate(0 1720)"
               gradientUnits="userSpaceOnUse"
             >
-              <stop offset="0" stop-color="#2368c4" />
-              <stop offset=".5" stop-color="#1a5dbe" />
-              <stop offset="1" stop-color="#1146ac" />
+              <stop offset="0" stopColor="#2368c4" />
+              <stop offset=".5" stopColor="#1a5dbe" />
+              <stop offset="1" stopColor="#1146ac" />
             </linearGradient>
           </defs>
           <path

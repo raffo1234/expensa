@@ -53,7 +53,7 @@ const fetcher = async (
     boolean,
     boolean,
     boolean,
-  ]
+  ],
 ): Promise<{ data: DicomType[] | null; total: number } | null> => {
   const [
     tableName,
@@ -123,19 +123,17 @@ const fetcher = async (
 
   if (searchWord && searchWord.length > 0) {
     dataQuery = dataQuery.or(
-      `patient_id.ilike.%${searchWord}%,patient_name.ilike.%${searchWord}%,institution.ilike.%${searchWord}%,study_description.ilike.%${searchWord}%`
+      `patient_id.ilike.%${searchWord}%,patient_name.ilike.%${searchWord}%,institution.ilike.%${searchWord}%,study_description.ilike.%${searchWord}%`,
     );
     countQuery = countQuery.or(
-      `patient_id.ilike.%${searchWord}%,patient_name.ilike.%${searchWord}%,institution.ilike.%${searchWord}%,study_description.ilike.%${searchWord}%`
+      `patient_id.ilike.%${searchWord}%,patient_name.ilike.%${searchWord}%,institution.ilike.%${searchWord}%,study_description.ilike.%${searchWord}%`,
     );
   }
 
   if (studyDateRange?.startDate && studyDateRange?.endDate) {
     const formattedStartDate = format(studyDateRange.startDate, "yyyyMMdd");
     const formattedEndDate = format(studyDateRange.endDate, "yyyyMMdd");
-    dataQuery = dataQuery
-      .gte("study_date", formattedStartDate)
-      .lte("study_date", formattedEndDate);
+    dataQuery = dataQuery.gte("study_date", formattedStartDate).lte("study_date", formattedEndDate);
     countQuery = countQuery
       .gte("study_date", formattedStartDate)
       .lte("study_date", formattedEndDate);
@@ -163,18 +161,12 @@ const fetcher = async (
   const [dataResult, countResult] = await Promise.all([dataQuery, countQuery]);
 
   if (dataResult.error) {
-    console.error(
-      `SWR Error fetching data from "${tableName}":`,
-      dataResult.error
-    );
+    console.error(`SWR Error fetching data from "${tableName}":`, dataResult.error);
     throw dataResult.error;
   }
 
   if (countResult.error) {
-    console.error(
-      `SWR Error fetching total count from "${tableName}":`,
-      countResult.error
-    );
+    console.error(`SWR Error fetching total count from "${tableName}":`, countResult.error);
     throw countResult.error;
   }
 
@@ -215,15 +207,10 @@ export default function Pagination({
     isAllItemsSelected,
   } = useCheckboxSelection<TableRowType>();
 
-  const [filteredByState, setFilteredByState] = useState<DicomStateEnum | null>(
-    null
-  );
+  const [filteredByState, setFilteredByState] = useState<DicomStateEnum | null>(null);
 
-  const [studyDateRange, setStudyDateRange] = useState<DateRangeType | null>(
-    null
-  );
-  const [receiptDateRange, setReceiptDateRange] =
-    useState<DateRangeType | null>(null);
+  const [studyDateRange, setStudyDateRange] = useState<DateRangeType | null>(null);
+  const [receiptDateRange, setReceiptDateRange] = useState<DateRangeType | null>(null);
 
   const debouncedSearch = useDebouncedCallback((value) => {
     handleSearchChange(value);
@@ -275,9 +262,7 @@ export default function Pagination({
   } = useSWR<FetchResult | null, number>(swrKey, fetcher);
 
   const hasMore: boolean =
-    result?.data !== undefined &&
-    result?.data !== null &&
-    result?.data.length === pageSize;
+    result?.data !== undefined && result?.data !== null && result?.data.length === pageSize;
 
   const handlePageSize = (pageSizeValue: string) => {
     if (typeof pageSizeValue === "string") {
@@ -296,9 +281,7 @@ export default function Pagination({
         console.warn("Invalid page size value received:", pageSizeValue);
       }
     } else {
-      console.warn(
-        "Page size value not found in form data or is not a string."
-      );
+      console.warn("Page size value not found in form data or is not a string.");
     }
   };
 
@@ -378,15 +361,14 @@ export default function Pagination({
           startDate: newRange.startDate,
           endDate: endOfSelectedDay,
           key: "selection",
-        })
+        }),
       );
     } else {
       localStorage.removeItem("dicomReceiptDateRange");
     }
   };
 
-  const noData =
-    !isLoading && !error && result?.data && result?.data.length === 0;
+  const noData = !isLoading && !error && result?.data && result?.data.length === 0;
   const startItemNumber = page * pageSize + 1;
 
   const clearLocalStorage = () => {
@@ -451,10 +433,7 @@ export default function Pagination({
     if (storedSortColumn) {
       setSortColumn(storedSortColumn);
     }
-    if (
-      storedSortDirection &&
-      (storedSortDirection === "asc" || storedSortDirection === "desc")
-    ) {
+    if (storedSortDirection && (storedSortDirection === "asc" || storedSortDirection === "desc")) {
       setSortDirection(storedSortDirection as SortDirection);
     }
   }, []);
@@ -525,8 +504,7 @@ export default function Pagination({
       </div>
       <div className="text-xs flex w-full items-center justify-end mb-4 gap-1">
         <span>
-          Total:{" "}
-          <span className="text-base font-semibold">{result?.total}</span>
+          Total: <span className="text-base font-semibold">{result?.total}</span>
         </span>
         <input
           ref={pageSizeRef}
@@ -543,11 +521,7 @@ export default function Pagination({
 
       {error && (
         <p className="text-sm px-4 py-2 border border-rose-200 flex items-center gap-3 bg-rose-50 rounded-xl text-rose-700">
-          <Icon
-            icon="solar:close-circle-broken"
-            className="flex-shrink-0"
-            fontSize={20}
-          ></Icon>
+          <Icon icon="solar:close-circle-broken" className="flex-shrink-0" fontSize={20}></Icon>
           Error fetching data
         </p>
       )}
@@ -602,14 +576,10 @@ export default function Pagination({
                 disabled={page === 0 || isLoading}
                 className="px-4 py-1 bg-cyan-400 disabled:pointer-events-none text-white rounded-full disabled:opacity-50 cursor-pointer text-sm"
               >
-                <Icon
-                  icon="solar:arrow-left-linear"
-                  fontSize={ICON_SIZE}
-                ></Icon>
+                <Icon icon="solar:arrow-left-linear" fontSize={ICON_SIZE}></Icon>
               </button>
               <div className="text-xs uppercase font-semibold px-3">
-                {page + 1} /{" "}
-                {result?.total ? Math.ceil(result?.total / pageSize) : null}
+                {page + 1} / {result?.total ? Math.ceil(result?.total / pageSize) : null}
               </div>
               <button
                 onClick={handleNextPage}
@@ -627,9 +597,7 @@ export default function Pagination({
           <thead>
             <tr className="border-b border-gray-200">
               <th className="w-13 py-4 text-center"></th>
-              <th className="w-6 text-center uppercase text-xs font-semibold py-4">
-                #
-              </th>
+              <th className="w-6 text-center uppercase text-xs font-semibold py-4">#</th>
               <th className="w-25 px-[1px]">
                 <button
                   type="button"
@@ -841,12 +809,12 @@ export default function Pagination({
                   )}
                 </button>
               </th>
-              <th className="w-26"></th>
+              <th className="w-9"></th>
               <th className="w-16"></th>
-              <th className="w-12"></th>
-              <th className="w-12"></th>
-              <th className="w-12"></th>
-              <th className="w-98"></th>
+              <th className="w-9"></th>
+              <th className="w-10"></th>
+              <th className="w-10"></th>
+              <th className="w-64"></th>
             </tr>
           </thead>
           {noData ? (
@@ -863,15 +831,11 @@ export default function Pagination({
                         fontSize={60}
                         className="mb-6 mx-auto"
                       ></Icon>
-                      <div className="font-semibold text-lg px-4 mb-2">
-                        No data found
-                      </div>
+                      <div className="font-semibold text-lg px-4 mb-2">No data found</div>
                       <div className="text-gray-500 mb-6">
                         Your search{" "}
-                        <div className="line-clamp-2 font-semibold text-black">
-                          {search}
-                        </div>{" "}
-                        did not match any items. Please try again.
+                        <div className="line-clamp-2 font-semibold text-black">{search}</div> did
+                        not match any items. Please try again.
                       </div>
                       <UploadButton />
                     </div>
@@ -899,22 +863,15 @@ export default function Pagination({
                     dicom_url,
                     assigned_by,
                   },
-                  index
+                  index,
                 ) => {
                   const createdAt = new Date(created_at);
-                  const completedAt = completed_at
-                    ? new Date(completed_at)
-                    : null;
+                  const completedAt = completed_at ? new Date(completed_at) : null;
 
                   const completedAtFormatted = completedAt
-                    ? formatInTimeZone(
-                        completedAt,
-                        "America/Lima",
-                        "dd MMMM yyyy, hh:mm a",
-                        {
-                          locale: es,
-                        }
-                      )
+                    ? formatInTimeZone(completedAt, "America/Lima", "dd MMMM yyyy, hh:mm a", {
+                        locale: es,
+                      })
                     : "";
 
                   const createdAtFormatted = formatInTimeZone(
@@ -923,7 +880,7 @@ export default function Pagination({
                     "dd MMMM yyyy, hh:mm a",
                     {
                       locale: es,
-                    }
+                    },
                   );
 
                   return (
@@ -972,24 +929,14 @@ export default function Pagination({
                         {startItemNumber + index}
                       </td>
                       <td className="py-5 px-2 truncate whitespace-nowrap ">
-                        <Link
-                          title={patient_id}
-                          href={`/admin/dicoms/${id}`}
-                          className="text-sm"
-                        >
+                        <Link title={patient_id} href={`/admin/dicoms/${id}`} className="text-sm">
                           {patient_id}
                         </Link>
                       </td>
-                      <td
-                        title={institution}
-                        className="truncate whitespace-nowrap py-5 px-2"
-                      >
+                      <td title={institution} className="truncate whitespace-nowrap py-5 px-2">
                         {institution}
                       </td>
-                      <td
-                        title={patient_name}
-                        className="truncate whitespace-nowrap py-5 px-2"
-                      >
+                      <td title={patient_name} className="truncate whitespace-nowrap py-5 px-2">
                         {patient_name}
                       </td>
                       <td className="py-5 px-2 text-center">{gender}</td>
@@ -1019,11 +966,7 @@ export default function Pagination({
                         {completedAtFormatted}
                       </td>
                       <td className="py-5 px-2 text-center">{modality}</td>
-                      <td>
-                        {assigned_by ? (
-                          <AssignedBy assignedBy={assigned_by} />
-                        ) : null}
-                      </td>
+                      <td>{assigned_by ? <AssignedBy assignedBy={assigned_by} /> : null}</td>
                       <td>
                         <AssignDicomToTrigger
                           dicomIds={[id]}
@@ -1069,10 +1012,7 @@ export default function Pagination({
                             title="Download"
                             className="flex w-fit p-1.5 outline-0 cursor-pointer border hover:border-cyan-200 border-gray-200 rounded-lg bg-gray-100 hover:bg-cyan-50 hover:text-cyan-400 transition-colors"
                           >
-                            <Icon
-                              icon="solar:cloud-download-outline"
-                              fontSize={ICON_SIZE}
-                            />
+                            <Icon icon="solar:cloud-download-outline" fontSize={ICON_SIZE} />
                           </Link>
                         ) : null}
                       </td>
@@ -1088,7 +1028,7 @@ export default function Pagination({
                       </td>
                     </tr>
                   );
-                }
+                },
               )}
             </tbody>
           )}

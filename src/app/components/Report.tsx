@@ -249,7 +249,7 @@ export default function Report({
           style={{ width: "595pt", fontFamily: "Arial" }}
           className="p-[60pt] pb-[120pt] relative mx-auto bg-white overflow-hidden"
         >
-          <div className="left-0 top-[842pt] px-[60pt] pb-[60pt] absolute w-full border-b border-rose-400"></div>
+          <div className="left-0 top-[842pt] px-[60pt] pb-[60pt] pointer-events-none absolute w-full border-b border-rose-400"></div>
           <div className="left-0 top-[1684pt] px-[60pt] pb-[60pt] absolute w-full border-b border-rose-400"></div>
           {dicom.template?.header_image_url ? (
             <Image

@@ -46,7 +46,7 @@ export default function DOCXPreview({ dicomId }: { dicomId: DicomType["id"] }) {
       const doc = await createDocxDocument(dicom);
       const blob = await Packer.toBlob(doc);
       const filename = sanitize(
-        `${dicom.patient_name}-${dicom.study_description}-${dicom.study_date}.docx`
+        `${dicom.patient_name}-${dicom.study_description}-${dicom.study_date}.docx`,
       );
       setIsLoading(false);
       toast.success("Download completed successfully!");
@@ -62,28 +62,63 @@ export default function DOCXPreview({ dicomId }: { dicomId: DicomType["id"] }) {
     <button
       onClick={() => generateDocx(dicom)}
       title="DOCX Preview"
-      className="py-2 px-6 flex gap-2 items-center bg-blue-400 text-white rounded-full cursor-pointer"
+      className="bg-white px-1 rounded-lg cursor-pointer"
     >
       {isLoading || isLoadingDicom ? (
         <IconLoading />
       ) : (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width={ICON_SIZE}
-          height={ICON_SIZE}
-          viewBox="0 0 24 24"
-        >
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 32 32">
+          <defs>
+            <linearGradient
+              id="SVGCSIZcbiK"
+              x1="4.494"
+              x2="13.832"
+              y1="-1712.086"
+              y2="-1695.914"
+              gradientTransform="translate(0 1720)"
+              gradientUnits="userSpaceOnUse"
+            >
+              <stop offset="0" stop-color="#2368c4" />
+              <stop offset=".5" stop-color="#1a5dbe" />
+              <stop offset="1" stop-color="#1146ac" />
+            </linearGradient>
+          </defs>
           <path
-            fill="currentColor"
-            d="M12.554 16.506a.75.75 0 0 1-1.107 0l-4-4.375a.75.75 0 0 1 1.107-1.012l2.696 2.95V3a.75.75 0 0 1 1.5 0v11.068l2.697-2.95a.75.75 0 1 1 1.107 1.013z"
+            fill="#41a5ee"
+            d="M28.806 3H9.705a1.19 1.19 0 0 0-1.193 1.191V9.5l11.069 3.25L30 9.5V4.191A1.19 1.19 0 0 0 28.806 3"
+          />
+          <path fill="#2b7cd3" d="M30 9.5H8.512V16l11.069 1.95L30 16Z" />
+          <path fill="#185abd" d="M8.512 16v6.5l10.418 1.3L30 22.5V16Z" />
+          <path
+            fill="#103f91"
+            d="M9.705 29h19.1A1.19 1.19 0 0 0 30 27.809V22.5H8.512v5.309A1.19 1.19 0 0 0 9.705 29"
           />
           <path
-            fill="currentColor"
-            d="M3.75 15a.75.75 0 0 0-1.5 0v.055c0 1.367 0 2.47.117 3.337c.12.9.38 1.658.981 2.26c.602.602 1.36.86 2.26.982c.867.116 1.97.116 3.337.116h6.11c1.367 0 2.47 0 3.337-.116c.9-.122 1.658-.38 2.26-.982s.86-1.36.982-2.26c.116-.867.116-1.97.116-3.337V15a.75.75 0 0 0-1.5 0c0 1.435-.002 2.436-.103 3.192c-.099.734-.28 1.122-.556 1.399c-.277.277-.665.457-1.4.556c-.755.101-1.756.103-3.191.103H9c-1.435 0-2.437-.002-3.192-.103c-.734-.099-1.122-.28-1.399-.556c-.277-.277-.457-.665-.556-1.4c-.101-.755-.103-1.756-.103-3.191"
+            d="M16.434 8.2H8.512v16.25h7.922a1.2 1.2 0 0 0 1.194-1.191V9.391A1.2 1.2 0 0 0 16.434 8.2"
+            opacity="0.1"
+          />
+          <path
+            d="M15.783 8.85H8.512V25.1h7.271a1.2 1.2 0 0 0 1.194-1.191V10.041a1.2 1.2 0 0 0-1.194-1.191"
+            opacity="0.2"
+          />
+          <path
+            d="M15.783 8.85H8.512V23.8h7.271a1.2 1.2 0 0 0 1.194-1.191V10.041a1.2 1.2 0 0 0-1.194-1.191"
+            opacity="0.2"
+          />
+          <path
+            d="M15.132 8.85h-6.62V23.8h6.62a1.2 1.2 0 0 0 1.194-1.191V10.041a1.2 1.2 0 0 0-1.194-1.191"
+            opacity="0.2"
+          />
+          <path
+            fill="url(#SVGCSIZcbiK)"
+            d="M3.194 8.85h11.938a1.193 1.193 0 0 1 1.194 1.191v11.918a1.193 1.193 0 0 1-1.194 1.191H3.194A1.19 1.19 0 0 1 2 21.959V10.041A1.19 1.19 0 0 1 3.194 8.85"
+          />
+          <path
+            fill="#fff"
+            d="M6.9 17.988q.035.276.046.481h.028q.015-.195.065-.47c.05-.275.062-.338.089-.465l1.255-5.407h1.624l1.3 5.326a8 8 0 0 1 .162 1h.022a8 8 0 0 1 .135-.975l1.039-5.358h1.477l-1.824 7.748h-1.727l-1.237-5.126q-.054-.222-.122-.578t-.084-.52h-.021q-.021.189-.084.561t-.1.552L7.78 19.871H6.024L4.19 12.127h1.5l1.131 5.418a5 5 0 0 1 .079.443"
           />
         </svg>
       )}
-      <span>DOC</span>
     </button>
   );
 }

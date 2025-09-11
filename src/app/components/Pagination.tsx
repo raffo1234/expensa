@@ -122,11 +122,12 @@ const fetcher = async (
   }
 
   if (searchWord && searchWord.length > 0) {
+    const trimmedSearchWord = searchWord.trim();
     dataQuery = dataQuery.or(
-      `patient_id.ilike.%${searchWord}%,patient_name.ilike.%${searchWord}%,institution.ilike.%${searchWord}%,study_description.ilike.%${searchWord}%`,
+      `patient_id.ilike.%${trimmedSearchWord}%,patient_name.ilike.%${trimmedSearchWord}%,institution.ilike.%${trimmedSearchWord}%,study_description.ilike.%${trimmedSearchWord}%`,
     );
     countQuery = countQuery.or(
-      `patient_id.ilike.%${searchWord}%,patient_name.ilike.%${searchWord}%,institution.ilike.%${searchWord}%,study_description.ilike.%${searchWord}%`,
+      `patient_id.ilike.%${trimmedSearchWord}%,patient_name.ilike.%${trimmedSearchWord}%,institution.ilike.%${trimmedSearchWord}%,study_description.ilike.%${trimmedSearchWord}%`,
     );
   }
 

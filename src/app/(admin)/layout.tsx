@@ -24,7 +24,7 @@ export default async function AdminLayout({ children }: Readonly<AdminLayoutProp
         <Header />
       </header>
       <div className="border-t border-gray-200">
-        <main className="flex items-start w-full z-10">
+        <main className="flex items-start w-full z-10 bg-slate-50">
           {user && data?.role_id && user.name ? (
             <Aside
               userId={user?.id}

@@ -53,7 +53,7 @@ export default function Aside({
   const roleName = role ? role[0]?.name : "...";
 
   return (
-    <div className={`${isMenuContracted ? "w-auto" : "lg:w-[286px]"} transition-all duration-300 flex-shrink-0`}>
+    <div className={`${isMenuContracted ? "w-auto" : "lg:w-[286px]"} transition-all duration-300 flex-shrink-0 border-r border-r-gray-200`}>
       <div className="flex justify-end p-2">
         <button
           onClick={toggleContracted}

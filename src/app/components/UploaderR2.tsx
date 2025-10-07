@@ -310,7 +310,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
 
             if (process.env.NODE_ENV !== "development") {
               if (canSendEmailAfterUploading) {
-                await sendEmailToAdmin();
+                await sendEmailToAdmin({ idDicom: insertedDicomId.toString() });
                 await sendEmailToUser({ to: userEmail });
               }
             }

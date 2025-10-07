@@ -127,7 +127,9 @@ export default function Report({
           keys: ["name", "description"],
         });
 
-        const result = fuse.search(dicom.institution.split(" ").join(" | "));
+        const result = fuse.search(
+          dicom.institution ? dicom.institution.split(" ").join(" | ") : "",
+        );
 
         if (result.length > 0) {
           updateDicom(dicomId, { template_id: result[0].item.id });

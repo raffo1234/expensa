@@ -47,7 +47,11 @@ export default function MyStudy({
 
   const onClick = () => {
     setModalContent(
-      <AttachFiles dicom={dicom} setOnModalClose={setOnModalClose} mutateFiles={mutateFiles} />,
+      <AttachFiles
+        dicomId={dicom.id as string}
+        setOnModalClose={setOnModalClose}
+        mutateFiles={mutateFiles}
+      />,
     );
     setModalOpen(true);
   };

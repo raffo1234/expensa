@@ -1,7 +1,6 @@
 "use client";
 
 import { v4 as uuidv4 } from "uuid";
-import { DicomType } from "@/types/dicomType";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { useDropzone } from "react-dropzone";
 import FileUploadItem from "./FileUploadItem";
@@ -20,7 +19,7 @@ export enum CustomFileState {
 }
 
 interface InsertOperationResult {
-  id: string | null; // Null if insertion failed
+  id: string | null;
   error: Error | null;
 }
 
@@ -37,7 +36,7 @@ async function insertNewFile(
   supabase: SupabaseClient,
   dicomId: string | undefined,
   customFile: CustomFile,
-  publicUrl: string | undefined
+  publicUrl: string | undefined,
 ): Promise<InsertOperationResult> {
   const table = "file";
 
@@ -68,11 +67,11 @@ async function insertNewFile(
 }
 
 export default function AttachFiles({
-  dicom,
+  dicomId,
   setOnModalClose,
   mutateFiles,
 }: {
-  dicom: Partial<DicomType>;
+  dicomId: string;
   setOnModalClose: (cb: () => void) => void;
   mutateFiles: () => void;
 }) {
@@ -108,9 +107,7 @@ export default function AttachFiles({
       const customFile = files[index];
 
       if (customFile.state !== CustomFileState.selected) {
-        console.info(
-          `Skipping file at index ${index} because it is not in the selected state.`
-        );
+        console.info(`Skipping file at index ${index} because it is not in the selected state.`);
         continue;
       }
 
@@ -124,11 +121,7 @@ export default function AttachFiles({
         state: CustomFileState.uploading,
       });
 
-      const urlSigned = await uploadSignedFile(
-        customFile.file,
-        now,
-        updateProgress
-      );
+      const urlSigned = await uploadSignedFile(customFile.file, now, updateProgress);
 
       if (!urlSigned) {
         editFileById(setFiles, customFile.id, {
@@ -140,12 +133,7 @@ export default function AttachFiles({
       const filename = sanitize(`${now}_${customFile.file.name}`);
       const publicUrl = `${process.env.NEXT_PUBLIC_STORAGE_DOMAIN}/dicom/${filename}`;
 
-      const { id: insertedId } = await insertNewFile(
-        supabase,
-        dicom.id,
-        customFile,
-        publicUrl
-      );
+      const { id: insertedId } = await insertNewFile(supabase, dicomId, customFile, publicUrl);
 
       if (insertedId) {
         editFileById(setFiles, customFile.id, {
@@ -166,16 +154,10 @@ export default function AttachFiles({
   return (
     <>
       <h1 className="font-semibold text-xl mb-1">Upload and attach files</h1>
-      <p className="mb-6 text-gray-400 text-sm">
-        Attachments will be part of this Study
-      </p>
+      <p className="mb-6 text-gray-400 text-sm">Attachments will be part of this Study</p>
       <div
         {...getRootProps()}
-        className={`${
-          isDragActive
-            ? "bg-cyan-50 border-cyan-100"
-            : "bg-gray-50 border-gray-300"
-        }
+        className={`${isDragActive ? "bg-cyan-50 border-cyan-100" : "bg-gray-50 border-gray-300"}
             ${isAttaching ? "cursor-no-drop" : "cursor-pointer"}
             mb-5 transition-all  hover:outline-8 outline-cyan-50 duration-300 hover:border-cyan-200 bg-white flex flex-col group items-center justify-center py-20 w-full border border-dashed rounded-2xl`}
       >
@@ -196,8 +178,7 @@ export default function AttachFiles({
           />
         </div>
         <p className="mb-0.5 font-semibold">
-          <span className="text-cyan-500">Click to Upload</span> or drag and
-          drop
+          <span className="text-cyan-500">Click to Upload</span> or drag and drop
         </p>
         <span className="text-sm text-gray-400">(Max. File size: 25 MB)</span>
         <input
@@ -225,8 +206,7 @@ export default function AttachFiles({
           );
         })}
       </div>
-      {files.filter((file) => file.state === CustomFileState.selected).length >
-      0 ? (
+      {files.filter((file) => file.state === CustomFileState.selected).length > 0 ? (
         <div className="flex justify-center mt-6">
           <button
             onClick={() => attachFiles(files)}

@@ -5,10 +5,16 @@ import AssignDicomTo from "@/components/AssignDicomTo";
 import useCheckPermission from "@/hooks/useCheckPermission";
 import { Permissions } from "@/types/propertyState";
 import { useDicomHasAssignments } from "@/hooks/useDicomHasAssignments";
+import { ICON_SIZE } from "@/constants";
 
 function AssignmentIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={ICON_SIZE}
+      height={ICON_SIZE}
+      viewBox="0 0 24 24"
+    >
       <g fill="none" stroke="currentColor" strokeLinejoin="round" strokeWidth="1.5">
         <path d="M4 3H3a1 1 0 0 0-1 1v14l1.5 3L5 18V4a1 1 0 0 0-1-1Z" />
         <path
@@ -50,10 +56,10 @@ export default function AssignDicomToTrigger({
     <button
       type="button"
       onClick={onClick}
-      className="cursor-pointer block text-sm text-cyan-500 text-shadow-gray-900 underline underline-offset-3"
+      className="cursor-pointer block text-sm underline underline-offset-3"
     >
       {dicomIds.length === 1 ? (
-        <div className={`p-1 ${hasAssignments ? "bg-cyan-400 text-white" : "bg-white"} rounded-lg`}>
+        <div className={`p-1 ${hasAssignments ? "bg-cyan-400 text-white" : "text-cyan-400 border border-cyan-400 bg-white"} rounded-lg`}>
           <AssignmentIcon />
         </div>
       ) : (

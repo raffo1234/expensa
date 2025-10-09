@@ -34,7 +34,8 @@ export type DicomType = {
   birthday: string;
   institution: string;
   template?: TemplateType | undefined;
-  assigned_by?: AssignedByType | null
+  assigned_by?: AssignedByType | null;
+  comment?: string | null;
 };
 
 export type PartialDicomWithTemplate = Partial<Omit<DicomType, "template">> & {

@@ -25,6 +25,7 @@
     "dcmjs-dimse": "^0.2.7",
     "dicom-parser": "^1.8.21",
     "docx": "^9.5.0",
+    "dompurify": "^3.2.7",
     "fflate": "^0.8.2",
     "file-saver": "^2.0.5",
     "file-type": "^21.0.0",

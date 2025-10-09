@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Permissions } from "@/types/propertyState";
 import useCheckPermission from "@/hooks/useCheckPermission";
 import AssignDicomToTrigger from "./AssignDicomToTrigger";
+import { ICON_SIZE } from "@/constants";
 
 function LinkInsertedOrDuplicatedContent({
   state,
@@ -17,7 +18,7 @@ function LinkInsertedOrDuplicatedContent({
       <div className="rounded-sm w-5 h-5 flex items-center justify-center bg-cyan-400 text-white">
         <Icon
           icon={`${isDuplicated ? "akar-icons:double-check" : "akar-icons:check"}`}
-          fontSize={18}
+          fontSize={ICON_SIZE}
         />
       </div>
     </div>

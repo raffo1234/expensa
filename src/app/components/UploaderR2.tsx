@@ -25,6 +25,8 @@ import { compressFiles } from "@/lib/compressFiles";
 import { checkIfStudyExists, insertToDicom } from "@/lib/dicomDB";
 import { UploaderR2Props } from "@/types/Dicom";
 import { colorClassMap } from "@/constants";
+import ModalToAttachFilesToDicom from "./ModalToAttachFilesToDicom";
+import ModalToCommentDicom from "./ModalToCommentDicom";
 
 Archive.init({
   workerUrl: "/libarchive.js/dist/worker-bundle.js",
@@ -559,14 +561,17 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                           {state === CustomFileStateType.duplicated ||
                           state === CustomFileStateType.inserted
                             ? studies.map(({ id, state }) => (
-                                <LinkInsertedOrDuplicated
-                                  key={id}
-                                  id={id}
-                                  userId={userId}
-                                  userRoleId={userRoleId}
-                                  state={state}
-                                  isDuplicated={state === CustomFileStateType.duplicated}
-                                />
+                                <div key={id} className="flex gap-2 items-center">
+                                  <LinkInsertedOrDuplicated
+                                    id={id}
+                                    userId={userId}
+                                    userRoleId={userRoleId}
+                                    state={state}
+                                    isDuplicated={state === CustomFileStateType.duplicated}
+                                  />
+                                  <ModalToAttachFilesToDicom dicomId={id} />
+                                  <ModalToCommentDicom dicomId={id} />
+                                </div>
                               ))
                             : null}
                           {displayWarningIcon && (

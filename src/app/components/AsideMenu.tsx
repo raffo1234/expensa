@@ -10,6 +10,7 @@ import { adminUsersKey, ICON_SIZE } from "@/constants";
 import { signOut } from "next-auth/react";
 import React from "react";
 import useUserPermissionsMap from "@/hooks/useUserPermissionsMap";
+import AsideMenuItem from "./AsideMenuItem";
 
 interface MenuItem {
   href: string;
@@ -163,24 +164,9 @@ export default function AsideMenu({
 
   return (
     <>
-      {pages.map(({ href, title, iconName, onMouseEnter }) => (
-        <li key={href}>
-          <Link
-            href={href}
-            title={title}
-            onMouseEnter={onMouseEnter}
-            className={`${
-              href === currentPath ? "bg-gray-100 font-semibold" : "hover:bg-gray-50"
-            } rounded-xl py-3 px-4 gap-3.5 flex items-center transition-colors duration-300 `}
-            onClick={closeMenu}
-          >
-            <Icon
-              icon={iconName}
-              fontSize={ICON_SIZE}
-              className={`${href === currentPath ? "text-rose-400" : ""}`}
-            />
-            <span className={isContracted ? "lg:hidden" : ""}>{title}</span>
-          </Link>
+      {pages.map((page) => (
+        <li key={page.href}>
+          <AsideMenuItem page={page} closeMenu={closeMenu} isContracted={isContracted} />
         </li>
       ))}
       <li>

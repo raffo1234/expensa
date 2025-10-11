@@ -4,11 +4,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { Popover } from "react-tiny-popover";
 
-export default function AssignedBy({
-  assignedBy,
-}: {
-  assignedBy: AssignedByType;
-}) {
+export default function AssignedBy({ assignedBy }: { assignedBy: AssignedByType }) {
   const { image_url, first_name, last_name, id, role } = assignedBy;
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
@@ -33,15 +29,10 @@ export default function AssignedBy({
               height={44}
               title={first_name}
             />
-            <div
-              className="font-semibold w-full text-center truncate"
-              title={first_name}
-            >
+            <div className="font-semibold w-full text-center truncate" title={first_name}>
               {first_name} {last_name}
             </div>
-            <div className="text-sm text-center text-gray-500">
-              {role?.name}
-            </div>
+            <div className="text-sm text-center text-gray-500">{role?.name}</div>
           </div>
         }
       >

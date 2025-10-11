@@ -17,4 +17,5 @@
 /* fix popover z-index */
 .react-tiny-popover-container {
   z-index: 100;
+  pointer-events: none;
 }

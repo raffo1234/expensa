@@ -7,10 +7,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React, { useState } from "react";
 
+type PageLink = {
+  href: string;
+  title: string;
+  iconName: string;
+  onMouseEnter?: () => void | undefined;
+};
+
 const MenuItemLink = React.forwardRef<
   HTMLAnchorElement,
   {
-    page: any;
+    page: PageLink;
     closeMenu: () => void;
     isContracted: boolean;
     openPopover: () => void;
@@ -55,7 +62,7 @@ export default function AsideMenuItem({
   closeMenu,
 }: {
   isContracted: boolean;
-  page: any;
+  page: PageLink;
   closeMenu: () => void;
 }) {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);

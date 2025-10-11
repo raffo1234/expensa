@@ -1,9 +1,7 @@
 "use client";
 
 import userFetcher from "@/fetchers/userFetcher";
-import { usePathname } from "next/navigation";
 import { Permissions } from "@/types/propertyState";
-import Link from "next/link";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { preload } from "swr";
 import { adminUsersKey, ICON_SIZE } from "@/constants";
@@ -29,8 +27,6 @@ export default function AsideMenu({
   closeMenu: () => void;
   isContracted: boolean;
 }) {
-  const currentPath = usePathname();
-
   const { permissionsMap, isLoading } = useUserPermissionsMap(userRoleId);
 
   const checkPermission = React.useCallback(

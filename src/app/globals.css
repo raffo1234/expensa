@@ -12,3 +12,9 @@
   opacity: 100;
   visibility: visible;
 }
+
+
+/* fix popover z-index */
+.react-tiny-popover-container {
+  z-index: 100;
+}

@@ -79,14 +79,8 @@ const styles = StyleSheet.create({
   },
 });
 
-export default function ContentPDFDocument({
-  dicom,
-}: {
-  dicom: PartialDicomWithTemplate;
-}) {
-  const getLines = (report: string) => (report ? report.split("\n") : []);
-
-  if (!dicom.report) return null;
+export default function ContentPDFDocument({ dicom }: { dicom: PartialDicomWithTemplate }) {
+  const getLines = (report?: string | null): string[] => (report ? report.split("\n") : []);
 
   return (
     <Document
@@ -97,11 +91,7 @@ export default function ContentPDFDocument({
     >
       <Page size="A4" style={styles.page}>
         <View style={styles.section}>
-          <ImagePdf
-            fixed
-            style={{ marginBottom: 24 }}
-            src={dicom.template?.header_image_url}
-          />
+          <ImagePdf fixed style={{ marginBottom: 24 }} src={dicom.template?.header_image_url} />
           <View style={{ marginBottom: 24, display: "flex" }}>
             <View style={styles.table}>
               <View style={[styles.row]}>
@@ -119,9 +109,7 @@ export default function ContentPDFDocument({
               <View style={[styles.row]}>
                 <Text style={[styles.cell, { width: 300 }]}>
                   <Text style={styles.textSmall}>Fecha: </Text>{" "}
-                  {dicom?.study_date
-                    ? formatDateYYYYMMDD(dicom?.study_date)
-                    : null}
+                  {dicom?.study_date ? formatDateYYYYMMDD(dicom?.study_date) : null}
                 </Text>
                 <Text style={[styles.cell]}>
                   <Text style={styles.textSmall}>ID: </Text>
@@ -152,10 +140,7 @@ export default function ContentPDFDocument({
               justifyContent: "flex-end",
             }}
           >
-            <ImagePdf
-              style={{ width: 75, height: "auto" }}
-              src={dicom.template?.sign_image_url}
-            />
+            <ImagePdf style={{ width: 75, height: "auto" }} src={dicom.template?.sign_image_url} />
           </View>
         </View>
         <View style={styles.footer} fixed>

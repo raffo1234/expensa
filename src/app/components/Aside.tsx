@@ -53,7 +53,7 @@ export default function Aside({
   const roleName = role ? role[0]?.name : "...";
 
   return (
-    <div className={`${isMenuContracted ? "w-auto" : "lg:w-[286px]"} transition-all duration-300 flex-shrink-0 border-r border-r-gray-200`}>
+    <div className={`${isMenuContracted ? "w-auto" : "lg:w-[286px]"} bg-white transition-all duration-300 flex-shrink-0 border-r border-r-gray-200`}>
       <div className="flex justify-end p-2">
         <button
           onClick={toggleContracted}
@@ -80,7 +80,7 @@ export default function Aside({
           isOpen
             ? "opacity-100 visible translate-x-0"
             : "invisible opacity-0 lg:visible lg:opacity-100 lg:translate-x-0 -translate-x-2"
-        } transition-all w-full h-full overflow-auto absolute left-0 top-0 lg:static pb-8 pt-8 lg:pt-0 px-5 bg-white z-30`}
+        } transition-all w-full h-full overflow-auto absolute left-0 top-0 lg:static pb-8 pt-8 lg:pt-0 px-5 z-30`}
       >
         <header className="mb-20">
           <div className="flex gap-4 items-center">

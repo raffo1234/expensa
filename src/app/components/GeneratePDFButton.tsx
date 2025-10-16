@@ -16,9 +16,13 @@ export default function GeneratePDFButton({
   label?: string;
   isDownloadable?: boolean;
 }) {
-  const { data: dicom, error, isLoading } = useSWR(`admin-${dicomId}`, () => fetcherDicom(dicomId));
+  const {
+    data: dicom,
+    error,
+    isLoading,
+  } = useSWR(`admin-${dicomId}-download`, () => fetcherDicom(dicomId));
   const [showPDFButton, setShowPDFButton] = useState(false);
-  
+
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const openPopover = () => setIsPopoverOpen(true);
   const closePopover = () => setIsPopoverOpen(false);

@@ -17,9 +17,12 @@ async function fetcher(userId: string, page: number, pageSize: number, search: s
 
   let query = supabase
     .from("dicom")
-    .select("id, state, patient_id, created_at, patient_name, study_date, study_description", {
-      count: "exact",
-    })
+    .select(
+      "id, state, patient_id, created_at, patient_name, study_date, study_description, comment",
+      {
+        count: "exact",
+      },
+    )
     .eq("user_id", userId)
     .range(from, to)
     .order("created_at", { ascending: false });

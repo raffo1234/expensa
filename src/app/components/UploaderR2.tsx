@@ -27,6 +27,7 @@ import { UploaderR2Props } from "@/types/Dicom";
 import { colorClassMap } from "@/constants";
 import ModalToAttachFilesToDicom from "./ModalToAttachFilesToDicom";
 import ModalToCommentDicom from "./ModalToCommentDicom";
+import { useTranslations } from "next-intl";
 
 Archive.init({
   workerUrl: "/libarchive.js/dist/worker-bundle.js",
@@ -60,6 +61,11 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
   onUploadSuccess,
   userRoleId,
 }) => {
+  const t = useTranslations("Uploader");
+  const tZip = useTranslations("UploaderZip");
+  const tFolder = useTranslations("UploaderFolder");
+  const tDcm = useTranslations("UploaderDcm");
+
   const { hasPermission: storeByDefault } = useCheckPermission(
     userRoleId,
     Permissions.STORE_BY_DEFAULT,
@@ -422,16 +428,14 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
         ) : null}
         {option === UPLOAD_OPTION.DCM ? (
           <h3 className="text mb-2 border border-orange-100 px-3 text-orange-400 bg-orange-50 rounded-lg">
-            Only access the patient&apos;s metadata, not to make a diagnosis.
+            {tDcm("title")}
           </h3>
         ) : null}
         <h2 className="text-gray-400 mb-1">
-          {option} {option !== UPLOAD_OPTION.DCM ? "containing .dcm" : ""} files
+          {option} {option !== UPLOAD_OPTION.DCM ? `${t("containing")} .dcm` : ""} {t("files")}
         </h2>
         <h4 className="font-semibold text-lg mb-5">
-          {option !== UPLOAD_OPTION.FOLDER
-            ? "Drag and Drop your files here"
-            : "Click here to choose a folder"}
+          {option !== UPLOAD_OPTION.FOLDER ? t("drag") : t("folder")}
         </h4>
         {files.length > 0 ? (
           <div className="border border-gray-200 rounded-xl">

@@ -12,5 +12,17 @@
   "Popover": {
     "home": "Home",
     "sign-out": "Sign Out"
+  },
+  "Uploader": {
+    "containing": "containing",
+    "files": "files",
+    "drag": "Drag and Drop your files here",
+    "folder": "Click here to choose a folder"
+  },
+  "UploaderZip": {
+    "title": "Most Popular"
+  },
+  "UploaderDcm": {
+    "title": "Only access the patient's metadata, not to make a diagnosis."
   }
 }

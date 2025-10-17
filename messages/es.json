@@ -12,5 +12,17 @@
   "Popover": {
     "home": "Inicio",
     "sign-out": "Salir"
+  },
+  "Uploader": {
+    "containing": "conteniendo",
+    "files": "archivos",
+    "drag": "Arrastra y suelta tus archivos aquí",
+    "folder": "Haz clic aquí para elegir una carpeta"
+  },
+  "UploaderZip": {
+    "title": "Más popular"
+  },
+  "UploaderDcm": {
+    "title": "Acceder solo a los metadatos del paciente, no para realizar un diagnóstico."
   }
 }

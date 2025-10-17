@@ -62,6 +62,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
   userRoleId,
 }) => {
   const t = useTranslations("Uploader");
+  const tZip = useTranslations("UploaderZip");
   const tDcm = useTranslations("UploaderDcm");
 
   const { hasPermission: storeByDefault } = useCheckPermission(
@@ -421,7 +422,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
         </div>
         {option === UPLOAD_OPTION.COMPRESSED ? (
           <h3 className="mb-2 text-sm font-semibold px-2 rounded-md bg-cyan-50 border border-cyan-100">
-            Most Popular
+            {tZip("title")}
           </h3>
         ) : null}
         {option === UPLOAD_OPTION.DCM ? (

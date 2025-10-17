@@ -10,6 +10,7 @@ import { ICON_SIZE } from "@/constants";
 import { useEffect, useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
 import NavigationInstructions from "./NavigationInstructions";
+import { useTranslations } from "next-intl";
 
 async function fetcher(userId: string, page: number, pageSize: number, search: string) {
   const from = page * pageSize;
@@ -51,6 +52,7 @@ export default function MyStudiesPageContent({
   userId: string;
   userRoleId: string;
 }) {
+  const t = useTranslations("My-Studies");
   const PAGE_SIZE = 9;
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
@@ -98,11 +100,12 @@ export default function MyStudiesPageContent({
 
   return (
     <>
-      <h1 className="mb-6 font-semibold text-lg block">({total}) My Studies</h1>
+      <h1 className="mb-1 font-semibold text-lg block"> {t("title")}</h1>
+      <p className="mb-6 text-slate-500">Total: {total}</p>
       <input
         type="text"
         className="bg-white mb-6 w-full rounded-lg border border-gray-200 outline-0 px-5 py-2 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
-        placeholder="Search ..."
+        placeholder={`${t("search")} ...`}
         defaultValue={search ?? ""}
         onChange={(event) => debouncedSearch(event.target.value)}
       />
@@ -159,8 +162,15 @@ export default function MyStudiesPageContent({
           >
             <Icon icon="solar:arrow-left-linear" fontSize={ICON_SIZE}></Icon>
           </button>
+
           <div className="text-xs uppercase font-semibold px-3">
-            {page + 1} / {total ? Math.ceil(total / PAGE_SIZE) : null}
+            {total > 0 ? (
+              <>
+                {page + 1} / {total ? Math.ceil(total / PAGE_SIZE) : null}
+              </>
+            ) : (
+              "-"
+            )}
           </div>
           <button
             disabled={(page + 1) * PAGE_SIZE >= total}

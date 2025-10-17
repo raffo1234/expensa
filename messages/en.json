@@ -43,5 +43,9 @@
     "settings": "Settings",
     "my-settings": "My Settings",
     "sign-out": "Sign Out"
+  },
+  "My-Studies": {
+    "title": "My Studies",
+    "search": "Search"
   }
 }

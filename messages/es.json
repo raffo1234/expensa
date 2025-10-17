@@ -24,5 +24,24 @@
   },
   "UploaderDcm": {
     "title": "Acceder solo a los metadatos del paciente, no para realizar un diagnóstico."
+  },
+  "Aside": {
+    "welcome": "Bienvenido"
+  },
+  "Menu": {
+    "home": "Inicio",
+    "upload": "Subir Archivos",
+    "pacs": "Pacs",
+    "dicoms": "Dicoms",
+    "templates": "Plantillas",
+    "users": "Usuarios",
+    "roles": "Roles",
+    "permissions": "Permisos",
+    "reports": "Reportes",
+    "residents": "Residentes",
+    "my-studies": "Mis Estudios",
+    "settings": "Configuración",
+    "my-settings": "Mis Configuraciones",
+    "sign-out": "Salir"
   }
 }

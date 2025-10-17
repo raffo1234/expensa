@@ -24,5 +24,24 @@
   },
   "UploaderDcm": {
     "title": "Only access the patient's metadata, not to make a diagnosis."
+  },
+  "Aside": {
+    "welcome": "Welcome"
+  },
+  "Menu": {
+    "home": "Home",
+    "upload": "Upload Files",
+    "pacs": "Pacs",
+    "dicoms": "Dicoms",
+    "templates": "Templates",
+    "users": "Users",
+    "roles": "Roles",
+    "permissions": "Permissions",
+    "reports": "Reports",
+    "residents": "Residents",
+    "my-studies": "My Studies",
+    "settings": "Settings",
+    "my-settings": "My Settings",
+    "sign-out": "Sign Out"
   }
 }

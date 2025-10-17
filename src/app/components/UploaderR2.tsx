@@ -62,8 +62,6 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
   userRoleId,
 }) => {
   const t = useTranslations("Uploader");
-  const tZip = useTranslations("UploaderZip");
-  const tFolder = useTranslations("UploaderFolder");
   const tDcm = useTranslations("UploaderDcm");
 
   const { hasPermission: storeByDefault } = useCheckPermission(

@@ -9,6 +9,7 @@ import { signOut } from "next-auth/react";
 import React from "react";
 import useUserPermissionsMap from "@/hooks/useUserPermissionsMap";
 import AsideMenuItem from "./AsideMenuItem";
+import { useTranslations } from "next-intl";
 
 interface MenuItem {
   href: string;
@@ -28,6 +29,7 @@ export default function AsideMenu({
   isContracted: boolean;
 }) {
   const { permissionsMap, isLoading } = useUserPermissionsMap(userRoleId);
+  const t = useTranslations("Menu");
 
   const checkPermission = React.useCallback(
     (slug: Permissions | Permissions[]) => {
@@ -41,7 +43,7 @@ export default function AsideMenu({
   const pages: MenuItem[] = [
     {
       href: "/",
-      title: "Home",
+      title: t("home"),
       iconName: "solar:home-smile-angle-broken",
     },
 
@@ -49,7 +51,7 @@ export default function AsideMenu({
       ? [
           {
             href: "/admin/dicom",
-            title: "Upload Files",
+            title: t("upload"),
             iconName: "solar:cloud-upload-broken",
           },
         ]
@@ -58,7 +60,7 @@ export default function AsideMenu({
       ? [
           {
             href: "/admin/pacs",
-            title: "Pacs",
+            title: t("pacs"),
             iconName: "solar:archive-down-minimlistic-linear",
           },
         ]
@@ -67,7 +69,7 @@ export default function AsideMenu({
       ? [
           {
             href: "/admin/dicoms",
-            title: "Dicoms",
+            title: t("dicoms"),
             iconName: "solar:bones-broken",
           },
         ]
@@ -76,7 +78,7 @@ export default function AsideMenu({
       ? [
           {
             href: "/admin/templates",
-            title: "Templates",
+            title: t("templates"),
             iconName: "solar:file-favourite-line-duotone",
           },
         ]
@@ -85,7 +87,7 @@ export default function AsideMenu({
       ? [
           {
             href: "/admin/users",
-            title: "Users",
+            title: t("users"),
             iconName: "solar:user-linear",
             onMouseEnter: () => preload(adminUsersKey, userFetcher),
           },
@@ -95,7 +97,7 @@ export default function AsideMenu({
       ? [
           {
             href: "/admin/roles",
-            title: "Roles",
+            title: t("roles"),
             iconName: "solar:user-check-broken",
           },
         ]
@@ -104,7 +106,7 @@ export default function AsideMenu({
       ? [
           {
             href: "/admin/permisos",
-            title: "Permissions",
+            title: t("permissions"),
             iconName: "solar:lock-keyhole-broken",
           },
         ]
@@ -113,7 +115,7 @@ export default function AsideMenu({
       ? [
           {
             href: "/admin/reports",
-            title: "Reports",
+            title: t("reports"),
             iconName: "solar:file-text-linear",
           },
         ]
@@ -122,28 +124,28 @@ export default function AsideMenu({
       ? [
           {
             href: "/admin/residents",
-            title: "Residents",
+            title: t("residents"),
             iconName: "solar:shield-user-outline",
           },
         ]
       : []),
     {
       href: "/admin/my-studies",
-      title: "My studies",
+      title: t("my-studies"),
       iconName: "solar:hand-heart-linear",
     },
     ...(checkPermission(Permissions.HANDLE_SETTINGS)
       ? [
           {
             href: "/admin/settings",
-            title: "Settings",
+            title: t("settings"),
             iconName: "solar:settings-linear",
           },
         ]
       : []),
     {
       href: "/admin/my-settings",
-      title: "My Settings",
+      title: t("my-settings"),
       iconName: "solar:settings-minimalistic-linear",
     },
   ];
@@ -171,7 +173,7 @@ export default function AsideMenu({
           className="hover:text-rose-400 cursor-pointer rounded-xl py-3 px-4 gap-3.5 flex items-center transition-colors duration-300"
         >
           <Icon icon="solar:inbox-out-linear" fontSize={ICON_SIZE} className="-rotate-90" />
-          <span className={isContracted ? "lg:hidden" : ""}>Sign Out</span>
+          <span className={isContracted ? "lg:hidden" : ""}>{t("sign-out")}</span>
         </button>
       </li>
     </>

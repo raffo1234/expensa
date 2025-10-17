@@ -7,6 +7,7 @@ import useSWR from "swr";
 import roleFetcher from "@/fetchers/roleFetcher";
 import AnimatedHamburgerButton from "./AnimatedHamburgerButton";
 import { useUpsertUserSetting } from "@/hooks/useUpsertUserSetting";
+import { useTranslations } from "next-intl";
 
 export default function Aside({
   userId,
@@ -19,6 +20,7 @@ export default function Aside({
   userName: string;
   userImage: string | undefined | null;
 }) {
+  const t = useTranslations("Aside");
   const [isOpen, setIsOpen] = useState(false);
   const { settingValue: isMenuContracted, upsertSetting } = useUpsertUserSetting(
     userId,
@@ -53,7 +55,9 @@ export default function Aside({
   const roleName = role ? role[0]?.name : "...";
 
   return (
-    <div className={`${isMenuContracted ? "w-auto" : "lg:w-[286px]"} bg-white transition-all duration-300 flex-shrink-0 border-r border-r-gray-200`}>
+    <div
+      className={`${isMenuContracted ? "w-auto" : "lg:w-[286px]"} bg-white transition-all duration-300 flex-shrink-0 border-r border-r-gray-200`}
+    >
       <div className="flex justify-end lg:p-2">
         <button
           onClick={toggleContracted}
@@ -96,7 +100,7 @@ export default function Aside({
               <div className="w-12 h-12 rounded-full bg-gray-100" />
             )}
             <div className={`${isMenuContracted ? "lg:hidden" : ""}`}>
-              <p className="text-sm leading-3 mb-1 text-gray-500">Welcome</p>
+              <p className="text-sm leading-3 mb-1 text-gray-500">{t("welcome")}</p>
               <h3 className="font-semibold text-gray-700 text-lg">{userName}</h3>
               <p className="text-xs text-gray-500">{roleName}</p>
             </div>

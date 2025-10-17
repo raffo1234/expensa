@@ -440,10 +440,10 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
           <div className="border border-gray-200 rounded-xl">
             <div className="flex items-center border-b border-gray-200 bg-gray-100 rounded-t-xl">
               <div className="border-r w-30 text-center text-sm text-gray-600 py-1 px-5 border-gray-200">
-                Selected
+                {t("selected")}
               </div>
               <div className="border-r border-gray-200 w-30 text-center text-sm text-gray-600 py-1 px-5 ">
-                Processed
+                {t("processed")}
               </div>
               <div className="w-30 text-center text-sm text-gray-600 py-1 px-5 ">Total</div>
             </div>
@@ -487,8 +487,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                 <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-100 dark:peer-focus:ring-cyan-100 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-400 peer-checked:bg-cyan-400 dark:peer-checked:bg-cyan-400"></div>
               </label>
               <span className="text-xs font-semibold">
-                {selectedFileCount} Selected file
-                {selectedFileCount === 1 ? "" : "s"} to Storage
+                {selectedFileCount} {t("to-storage", { count: selectedFileCount })}
               </span>
             </div>
           ) : null}
@@ -608,7 +607,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
       {files.filter((file) => file.state === CustomFileStateType.selected).length ? (
         <button
           type="button"
-          className="flex mx-auto mt-4 gap-4 items-center text-white disabled:opacity-60 disabled:cursor-no-drop cursor-pointer font-semibold disabled:border-cyan-400 disabled:bg-cyan-400 py-3 px-10 bg-cyan-500 hover:bg-cyan-400 transition-colors duration-500 rounded-lg"
+          className="flex text-lg mx-auto mt-4 gap-4 items-center text-white disabled:opacity-60 disabled:cursor-no-drop cursor-pointer font-semibold disabled:border-cyan-400 disabled:bg-cyan-400 py-3 px-10 bg-cyan-500 hover:bg-cyan-400 transition-colors duration-500 rounded-lg"
           disabled={
             uploading ||
             files.length === 0 ||
@@ -623,12 +622,9 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
           )}
           <span>
             {uploading
-              ? "Processing..."
-              : `Process File${
-                  files.filter((file) => file.state === CustomFileStateType.selected).length === 1
-                    ? ""
-                    : "s"
-                }`}
+              ? `${t("processing")}...`
+              : `${t("read-dicom-files", { count: files.filter((file) => file.state === CustomFileStateType.selected).length })}
+            `}
           </span>
         </button>
       ) : null}

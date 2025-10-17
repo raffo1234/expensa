@@ -77,6 +77,15 @@ export default async function ProfilePopover() {
                   <span>{t("home")}</span>
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="/admin/dicom"
+                  className="py-2 px-6 hover:bg-gray-50 flex items-center gap-3.5"
+                >
+                  <Icon icon="solar:cloud-upload-broken" fontSize={21} />
+                  <span>{t("upload")}</span>
+                </Link>
+              </li>
               <li className="border-t border-gray-100">
                 <form
                   action={async () => {
@@ -95,9 +104,9 @@ export default async function ProfilePopover() {
         </div>
       ) : (
         <Link
-          title="Sign In"
+          title={t("sign-in")}
           href="/session/new"
-          className="cursor-pointer flex gap-4 hover:bg-rose-400 px-6 py-2 bg-black text-white rounded-full transition-colors duration-700 active:bg-gray-900"
+          className="cursor-pointer flex gap-4 bg-cyan-400 hover:bg-cyan-500 font-semibold px-6 py-2 text-white rounded-full transition-colors duration-700 active:bg-gray-900"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -110,7 +119,7 @@ export default async function ProfilePopover() {
               <path strokeLinejoin="round" d="M6 12h9m0 0l-2.5 2.5M15 12l-2.5-2.5" />
             </g>
           </svg>
-          <span>Sign in</span>
+          <span>{t("sign-in")}</span>
         </Link>
       )}
     </>

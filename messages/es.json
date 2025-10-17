@@ -1,6 +1,9 @@
 {
+  "Logo": {
+    "logotipo": "MRI Segunda Opinión"
+  },
   "HomePage": {
-    "title": "Accede a sus escaneos al instante",
+    "title": "Accede a tus escaneos al instante",
     "description": "Simplifica el procesamiento DICOM y la creación de informes",
     "button": "Explorar Ahora"
   },
@@ -11,13 +14,20 @@
   },
   "Popover": {
     "home": "Inicio",
-    "sign-out": "Salir"
+    "sign-in": "Login",
+    "sign-out": "Salir",
+    "upload": "Subir Archivos"
   },
   "Uploader": {
     "containing": "conteniendo",
     "files": "archivos",
     "drag": "Arrastra y suelta tus archivos aquí",
-    "folder": "Haz clic aquí para elegir una carpeta"
+    "folder": "Haz clic aquí para elegir una carpeta",
+    "read-dicom-files": "{count, plural, one {Subir archivo DICOM} other {Subir archivos DICOM}}",
+    "processing": "Procesando",
+    "to-storage": "{count, plural, one {Seleccionado archivo para Almacenamiento} other {Seleccionados archivos para Almacenamiento}}",
+    "selected": "Seleccionado",
+    "processed": "Procesado"
   },
   "UploaderZip": {
     "title": "Más popular"

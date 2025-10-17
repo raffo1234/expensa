@@ -1,4 +1,7 @@
 {
+  "Logo": {
+    "logotipo": "MRI Second Opinions"
+  },
   "HomePage": {
     "title": "Your Scans, Instantly Accessible",
     "description": "Process DICOM & Create Reports with Ease",
@@ -11,13 +14,20 @@
   },
   "Popover": {
     "home": "Home",
-    "sign-out": "Sign Out"
+    "sign-in": "Sign In",
+    "sign-out": "Sign Out",
+    "upload": "Upload Files"
   },
   "Uploader": {
     "containing": "containing",
     "files": "files",
     "drag": "Drag and Drop your files here",
-    "folder": "Click here to choose a folder"
+    "folder": "Click here to choose a folder",
+    "read-dicom-files": "{count, plural, one {Upload DICOM file} other {Upload DICOM files}}",
+    "processing": "Processing",
+    "to-storage": "{count, plural, one {Selected file to Storage} other {Selected files to Storage}}",
+    "selected": "Selected",
+    "processed": "Processed"
   },
   "UploaderZip": {
     "title": "Most Popular"

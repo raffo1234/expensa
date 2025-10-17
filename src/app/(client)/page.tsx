@@ -3,35 +3,35 @@ import { auth } from "@/lib/auth";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import Image from "next/image";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 export default async function Index() {
   const session = await auth();
   const userRoleId = session?.user?.role_id || "";
+  const t = await getTranslations("HomePage");
 
   return (
     <div className="flex flex-col justify-center items-center gap-5 sm:gap-7">
       <h1
-        className="leading-13 sm:leading-20 tracking-tighter"
+        className="text-center leading-13 sm:leading-20 tracking-tighter"
         style={{
           fontSize: "clamp(14px, 10vw + .3rem, 70px)",
           fontFamily: "poppins",
         }}
       >
-        Your Scans, Instantly Accessible
+        {t("title")}
       </h1>
-      <p className="sm:text-xl text-gray-500">
-        Process DICOM & Create Reports with Ease
-      </p>
+      <p className="sm:text-xl text-gray-500">{t("description")}</p>
       {session ? (
         <ExploreNowButton userRoleId={userRoleId} />
       ) : (
         <Link
           href="/session/new"
-          title="Sing In to Explore"
+          title={t("button")}
           type="submit"
           className="cursor-pointer text-lg flex items-center gap-4 px-8 py-3 bg-black text-white rounded-full transition-colors duration-700 hover:bg-gray-800 active:bg-gray-900"
         >
-          <span>Sing In to Explore</span>
+          <span>{t("button")}</span>
           <Icon icon="solar:arrow-right-linear" fontSize={24}></Icon>
         </Link>
       )}

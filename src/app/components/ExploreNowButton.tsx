@@ -4,26 +4,22 @@ import { ICON_SIZE } from "@/constants";
 import roleFetcher from "@/fetchers/roleFetcher";
 import Link from "next/link";
 import { preload } from "swr";
+import { useTranslations } from "next-intl";
 
-export default function ExploreNowButton({
-  userRoleId,
-}: {
-  userRoleId?: string;
-}) {
+export default function ExploreNowButton({ userRoleId }: { userRoleId?: string }) {
+  const t = useTranslations("HomePage");
   const onMouseEnter = () =>
-    preload("currentUserRole", () =>
-      userRoleId ? roleFetcher(userRoleId) : null
-    );
+    preload("currentUserRole", () => (userRoleId ? roleFetcher(userRoleId) : null));
 
   return (
     <Link
       onMouseEnter={onMouseEnter}
       href="/admin/dicom"
-      title="Explore Now"
+      title={t("button")}
       style={{ fontFamily: "poppins" }}
       className="text-lg flex items-center gap-4 px-8 py-3 bg-black text-white rounded-full transition-colors duration-700 hover:bg-gray-800 active:bg-gray-900"
     >
-      <span>Explore Now</span>
+      <span>{t("button")}</span>
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width={ICON_SIZE}

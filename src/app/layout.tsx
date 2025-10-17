@@ -2,13 +2,12 @@ import type { Metadata } from "next";
 import "./globals.css";
 import GlobalModal from "@/components/GlobalModal";
 import { SWRConfig } from "swr";
-import {
-  fetchAllPermissionsServer,
-  prefetchPermissionServer,
-} from "@/utils/serverPermissions";
+import { fetchAllPermissionsServer, prefetchPermissionServer } from "@/utils/serverPermissions";
 import { Toaster } from "react-hot-toast";
 import { ReactScan } from "@/components/ReactScan";
 import Slider from "@/components/Slider";
+import { NextIntlClientProvider } from "next-intl";
+import { getMessages } from "next-intl/server";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.cadia.pe/"),
@@ -24,6 +23,7 @@ interface LayoutProps {
 }
 
 export default async function Layout({ children }: Readonly<LayoutProps>) {
+  const messages = await getMessages();
   const initialPermissions = {};
   const permissionSlugs = await fetchAllPermissionsServer();
 
@@ -42,7 +42,7 @@ export default async function Layout({ children }: Readonly<LayoutProps>) {
         />
         <ReactScan />
         <SWRConfig value={{ fallback: initialPermissions }}>
-          {children}
+          <NextIntlClientProvider messages={messages}>{children}</NextIntlClientProvider>
         </SWRConfig>
         <GlobalModal />
         <Slider />

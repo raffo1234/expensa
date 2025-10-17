@@ -54,7 +54,7 @@ export default function Aside({
 
   return (
     <div className={`${isMenuContracted ? "w-auto" : "lg:w-[286px]"} bg-white transition-all duration-300 flex-shrink-0 border-r border-r-gray-200`}>
-      <div className="flex justify-end p-2">
+      <div className="flex justify-end lg:p-2">
         <button
           onClick={toggleContracted}
           className="p-3 hidden lg:block bg-slate-100 rounded-lg"
@@ -75,12 +75,12 @@ export default function Aside({
         </button>
       </div>
       <AnimatedHamburgerButton isOpen={isOpen} toggleMenu={handleToggle} />
-      <section
+      <aside
         className={`${
           isOpen
             ? "opacity-100 visible translate-x-0"
             : "invisible opacity-0 lg:visible lg:opacity-100 lg:translate-x-0 -translate-x-2"
-        } transition-all w-full h-full overflow-auto absolute left-0 top-0 lg:static pb-8 pt-8 lg:pt-0 px-5 z-30`}
+        } transition-all bg-white w-full h-full overflow-auto absolute left-0 top-0 lg:static pb-8 pt-8 lg:pt-0 px-5 z-30`}
       >
         <header className="mb-20">
           <div className="flex gap-4 items-center">
@@ -111,7 +111,7 @@ export default function Aside({
             />
           </ul>
         </nav>
-      </section>
+      </aside>
     </div>
   );
 }

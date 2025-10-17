@@ -3,5 +3,14 @@
     "title": "Your Scans, Instantly Accessible",
     "description": "Process DICOM & Create Reports with Ease",
     "button": "Explore Now"
+  },
+  "DicomPage": {
+    "title": "Upload Files",
+    "description": ".dcm Compressed, Folder containing .dcm or a .dcm",
+    "button": "View all"
+  },
+  "Popover": {
+    "home": "Home",
+    "sign-out": "Sign Out"
   }
 }

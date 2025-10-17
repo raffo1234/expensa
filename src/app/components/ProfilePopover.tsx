@@ -4,11 +4,13 @@ import Image from "next/image";
 import { signOut, auth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { ICON_SIZE } from "@/constants";
+import { getTranslations } from "next-intl/server";
 
 export default async function ProfilePopover() {
   const session = await auth();
   const user = session?.user;
   let roleName = undefined;
+  const t = await getTranslations("Popover");
 
   if (user?.id) {
     const { data } = await supabase
@@ -72,7 +74,7 @@ export default async function ProfilePopover() {
               <li>
                 <Link href="/" className="py-2 px-6 hover:bg-gray-50 flex items-center gap-3.5">
                   <Icon icon="solar:home-smile-angle-broken" fontSize={21} />
-                  <span>Home</span>
+                  <span>{t("home")}</span>
                 </Link>
               </li>
               <li className="border-t border-gray-100">
@@ -84,7 +86,7 @@ export default async function ProfilePopover() {
                 >
                   <button className="hover:text-red-500 cursor-pointer w-full px-6 py-4 flex items-center gap-3.5 text-left transition-colors duration-300">
                     <Icon icon="solar:inbox-out-linear" className="-rotate-90" fontSize={21} />
-                    <span>Sign Out</span>
+                    <span>{t("sign-out")}</span>
                   </button>
                 </form>
               </li>

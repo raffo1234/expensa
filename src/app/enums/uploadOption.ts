@@ -1,5 +1,5 @@
 export enum UPLOAD_OPTION {
-  COMPRESSED = "Compressed (.zip, .rar)",
+  COMPRESSED = "ZIP, RAR",
   FOLDER = "Folder",
   DCM = ".dcm",
 }

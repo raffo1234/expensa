@@ -5,16 +5,14 @@ import Link from "next/link";
 import { Permissions } from "@/types/propertyState";
 import useCheckPermission from "@/hooks/useCheckPermission";
 import { ICON_SIZE } from "@/constants";
+import { useTranslations } from "next-intl";
 
-export default function ViewAllDicomsLink({
-  userRoleId,
-}: {
-  userRoleId: string;
-}) {
+export default function ViewAllDicomsLink({ userRoleId }: { userRoleId: string }) {
   const { hasPermission: canViewAllDicoms } = useCheckPermission(
     userRoleId,
-    Permissions.VIEW_DICOMS
+    Permissions.VIEW_DICOMS,
   );
+  const t = useTranslations("DicomPage");
 
   if (!canViewAllDicoms) return null;
   return (
@@ -25,7 +23,7 @@ export default function ViewAllDicomsLink({
       target="_blank"
     >
       <Icon icon="solar:file-text-line-duotone" fontSize={ICON_SIZE} />
-      <span className="whitespace-nowrap group-hover:underline">View All</span>
+      <span className="whitespace-nowrap group-hover:underline"> {t("button")}</span>
     </Link>
   );
 }

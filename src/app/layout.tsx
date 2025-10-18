@@ -9,12 +9,30 @@ import Slider from "@/components/Slider";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 
+const title = "Cadia - MRI Segunda Opinión";
+const description = "Acceda a sus escaneos al instante";
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.cadia.pe/"),
-  title: "Cadia - Your Scans, Instantly Accessible",
-  description: "Process DICOM & Create Reports with Ease",
+  title,
+  description,
   icons: {
     icon: "/favicon.png",
+  },
+  openGraph: {
+    title,
+    description,
+    url: "https://www.quidyrafael.com/",
+    siteName: "CADIA.PE",
+    images: [
+      {
+        url: "/opengraph-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: `${title} - ${description}`,
+      },
+    ],
+    type: "website",
   },
 };
 

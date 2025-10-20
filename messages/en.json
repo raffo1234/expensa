@@ -29,7 +29,7 @@
     "folder": "Click here to choose a folder",
     "read-dicom-files": "{count, plural, one {Upload DICOM file} other {Upload DICOM files}}",
     "processing": "Processing",
-    "to-storage": "{count, plural, one {Selected file to Storage} other {Selected files to Storage}}",
+    "to-storage": "{count, plural, one {Selected file to storage} other {Selected files to storage}}",
     "selected": "Selected",
     "processed": "Processed"
   },
@@ -61,5 +61,19 @@
   "My-Studies": {
     "title": "My Studies",
     "search": "Search"
+  },
+  "Rights": {
+    "label": "I have read and accept the",
+    "link": "Clause for the Treatment and Safeguarding of Personal Data",
+    "title": "Clause for the Treatment and Safeguarding of Personal Data",
+    "introduccion": "In strict compliance with Law N° 29733, Personal Data Protection Law (LDPD), you are hereby informed of the conditions inherent to the processing of your information:",
+    "FINALIDAD": "The personal data provided to CADIA will be processed with the sole purpose of providing the medical order service, obtaining analytical results, and fulfilling technical purposes inherent to the diagnosis. The results will be sent through the www.cadia.pe platform or via the specified email address.",
+    "TRANSFERENCIAS Y DESTINATARIOS": "The personal data and analytical results generated may be subject to processing for their proper issuance, administrative procedure, and particular case follow-up. The data will be safeguarded in national territory, with the express exception of security backup copies, which will be stored under protection on servers located in the United States of America. The PERSONAL DATA RETENTION PERIOD is permanent for a period of 5 days.",
+    "EJERCICIO DE LOS DERECHOS ARCO": "In your capacity as the holder of the personal data, you maintain the full right to exercise the Rights of Access, Rectification, Cancellation, and Opposition before CADIA. This includes the right to know the characteristics of their processing, rectify inaccurate or incomplete data, request their suppression, or oppose their processing for specific purposes.",
+    "revocacion_uso": "The holder may revoke their consent at any time, as well as establish limitations on the use or disclosure of their data. Requests relating to the exercise of these rights must be sent to the following electronic address: cadia.second.opinions@gmail.com.",
+    "ejercicio_de_derechos": "For the effective execution of the aforementioned rights, the user must submit the corresponding request via email, including their full name, address, documents proving their identity and legal representation, and a clear description of the personal data over which the prerogative is sought to be exercised.",
+    "reclamo_autoridad": "In the event that the exercise of your rights is not addressed, you are authorized to file a claim before the National Authority for the Protection of Personal Data, by directing it to the Official Submission Desk of the Ministry of Justice and Human Rights, located at Calle Scipión Llona 350, Miraflores, Lima - Peru.",
+    "responsabilidad_cadia": "CADIA holds the responsibility for the Personal Data Bank called PATIENTS and the integrity of the information contained therein. To prevent the loss, misuse, alteration, unauthorized access, and theft of the information, CADIA has implemented the security and protection measures required by current legal regulations, utilizing all available technical resources.",
+    "declaracion_informado": "I declare to have been duly informed, in accordance with the provisions stipulated in Article 18 of Law 29733, Personal Data Protection Law."
   }
 }

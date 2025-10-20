@@ -16,7 +16,7 @@ import TableSkeleton from "@/components/FormSkeleton";
 import { useDebouncedCallback } from "use-debounce";
 import { startOfDay, formatISO, endOfDay, format } from "date-fns";
 import DateRangeButtonCalendar from "./DateRangeButtonCalendar";
-import UploadButton from "./UploadButton";
+import UploadLink from "./UploadLink";
 import useCheckboxSelection from "@/hooks/useCheckboxSelection";
 import GenerateCompressedPDFs from "./GenerateCompressedPDFs";
 import GenerateCompressedDOCs from "./GenerateCompressedDOCs";
@@ -466,7 +466,7 @@ export default function Pagination({
     <>
       <div className="w-full flex flex-col xl:flex-row gap-2 mb-4">
         <div className="flex gap-2 flex-grow-1">
-          <UploadButton />
+          <UploadLink />
           <input
             ref={searchInputRef}
             type="text"
@@ -838,7 +838,7 @@ export default function Pagination({
                         <div className="line-clamp-2 font-semibold text-black">{search}</div> did
                         not match any items. Please try again.
                       </div>
-                      <UploadButton />
+                      <UploadLink />
                     </div>
                   </div>
                 </td>

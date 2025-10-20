@@ -28,6 +28,7 @@ import { colorClassMap } from "@/constants";
 import ModalToAttachFilesToDicom from "./ModalToAttachFilesToDicom";
 import ModalToCommentDicom from "./ModalToCommentDicom";
 import { useTranslations } from "next-intl";
+import UploadInputs from "./UploadInputs";
 
 Archive.init({
   workerUrl: "/libarchive.js/dist/worker-bundle.js",
@@ -426,7 +427,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
           </h3>
         ) : null}
         {option === UPLOAD_OPTION.DCM ? (
-          <h3 className="text mb-2 border border-orange-100 px-3 text-orange-400 bg-orange-50 rounded-lg">
+          <h3 className="text-center mb-2 border border-orange-100 px-3 text-orange-400 bg-orange-50 rounded-lg">
             {tDcm("title")}
           </h3>
         ) : null}
@@ -605,28 +606,16 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
         </div>
       ) : null}
       {files.filter((file) => file.state === CustomFileStateType.selected).length ? (
-        <button
-          type="button"
-          className="flex text-lg mx-auto mt-4 gap-4 items-center text-white disabled:opacity-60 disabled:cursor-no-drop cursor-pointer font-semibold disabled:border-cyan-400 disabled:bg-cyan-400 py-3 px-10 bg-cyan-500 hover:bg-cyan-400 transition-colors duration-500 rounded-lg"
-          disabled={
+        <UploadInputs
+          handleUpload={handleUpload}
+          isUploading={uploading}
+          isDisabled={
             uploading ||
             files.length === 0 ||
             files.filter((file) => file.state === CustomFileStateType.selected).length === 0
           }
-          onClick={handleUpload}
-        >
-          {uploading ? (
-            <Icon icon="solar:record-broken" fontSize={26} className="animate-spin" />
-          ) : (
-            <Icon icon="solar:upload-minimalistic-linear" fontSize={26} />
-          )}
-          <span>
-            {uploading
-              ? `${t("processing")}...`
-              : `${t("read-dicom-files", { count: files.filter((file) => file.state === CustomFileStateType.selected).length })}
-            `}
-          </span>
-        </button>
+          count={files.filter((file) => file.state === CustomFileStateType.selected).length}
+        />
       ) : null}
       {files.length ? (
         <div className="flex justify-center mt-3 w-full">

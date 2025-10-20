@@ -18,7 +18,7 @@ export default function RightsModal({ isRightsChecked, setIsRightsChecked }: Rig
 
   const onClick = () => {
     setModalContent(
-      <div className="leading-relaxed text-base text-slate-500">
+      <div className="leading-relaxed text-base text-slate-900">
         <h1 className="text-center mb-6 font-semibold text-lg">{t("title")}</h1>
         {t("introduccion")}
         <br />

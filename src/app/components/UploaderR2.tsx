@@ -471,7 +471,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
       {files.length > 0 ? (
         <div className="mt-6">
           <div className="max-w-xl text-center text-lg mx-auto font-semibold mb-6">
-            {files.length} File{files.length !== 1 ? "s" : ""}
+            {files.length} {t("file-label", { count: files.length })}
           </div>
           {canSwitchStoreDicom ? (
             <div className="mx-auto max-w-xl mb-4 pl-4.5 flex items-center gap-2">

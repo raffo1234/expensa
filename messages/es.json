@@ -31,7 +31,8 @@
     "processing": "Procesando",
     "to-storage": "{count, plural, one {Seleccionado archivo para almacenamiento} other {Seleccionados archivos para almacenamiento}}",
     "selected": "Seleccionado",
-    "processed": "Procesado"
+    "processed": "Procesado",
+    "file-label": "{count, plural, one {Archivo} other {Archivos}}"
   },
   "UploaderZip": {
     "title": "Más popular"

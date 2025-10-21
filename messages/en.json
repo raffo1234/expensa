@@ -76,5 +76,19 @@
     "reclamo_autoridad": "In the event that the exercise of your rights is not addressed, you are authorized to file a claim before the National Authority for the Protection of Personal Data, by directing it to the Official Submission Desk of the Ministry of Justice and Human Rights, located at Calle Scipión Llona 350, Miraflores, Lima - Peru.",
     "responsabilidad_cadia": "CADIA holds the responsibility for the Personal Data Bank called PATIENTS and the integrity of the information contained therein. To prevent the loss, misuse, alteration, unauthorized access, and theft of the information, CADIA has implemented the security and protection measures required by current legal regulations, utilizing all available technical resources.",
     "declaracion_informado": "I declare to have been duly informed, in accordance with the provisions stipulated in Article 18 of Law 29733, Personal Data Protection Law."
+  },
+  "EmailToUserWhenUPloadingDicom": {
+    "preview": "Instant access to your Cadia study report - download or view online.",
+    "title": "Your scan was Uploaded",
+    "description": "We are happy to let you know that your latest report has been successfully uploaded and is now instantly accessible.",
+    "view-report-link": "View Report",
+    "instructions": "For more detailed information about our services, including the types of studies we offer and how we can help you, please visit our website at"
+  },
+  "EmailToAdminWhenUPloadingDicom": {
+    "preview": "Instant access to your Cadia study report - download or view online.",
+    "title": "A scan was Uploaded",
+    "description": "Dear Doctor, we confirm that a imaging study (scan) has been successfully uploaded to the platform www.cadia.pe. It is now available for your immediate review and diagnosis.",
+    "view-report-link": "View Report",
+    "instructions": "For more detailed information about our services, including the types of studies we offer and how we can help you, please visit our website at"
   }
 }

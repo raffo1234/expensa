@@ -11,17 +11,17 @@ import {
   Container,
   Preview,
 } from "@react-email/components";
+import { useTranslations } from "next-intl";
 
 export default function UploadEmailAdmin({ link }: { link: string }) {
+  const t = useTranslations("EmailToAdminWhenUserUploadingDicom");
+
   return (
     <Html>
       <Tailwind>
         <Body>
           <Container>
-            <Preview>
-              Instant access to your Cadia study report - download or view
-              online.
-            </Preview>
+            <Preview>{t("preview")}</Preview>
             <Section className="my-[16px]">
               <Section className="text-center">
                 <Button
@@ -55,22 +55,17 @@ export default function UploadEmailAdmin({ link }: { link: string }) {
                   as="h1"
                   className="m-0 mt-[8px] font-semibold text-[36px] text-gray-900 leading-[36px]"
                 >
-                  A Report was Uploaded
+                  {t("title")}
                 </Heading>
-                <Text className="text-[16px] text-gray-500 leading-[24px]">
-                  We are happy to let you know that your latest report has been
-                  successfully uploaded and is now instantly accessible.
-                </Text>
+                <Text className="text-[16px] text-gray-500 leading-[24px]">{t("description")}</Text>
                 <Button
                   className="text-[16px] cursor-pointer text-white font-semibold mb-8 gap-4 px-8 py-4 bg-cyan-500 rounded-full"
                   href={link}
                 >
-                  View The Report
+                  {t("view-report-link")}
                 </Button>
                 <Text className="text-[14px] text-gray-500 leading-[24px]">
-                  For more detailed information about our services, including
-                  the types of studies we offer and how we can help you, please
-                  visit our website at{" "}
+                  {t("instructions")}{" "}
                   <Link
                     href="https://www.cadia.pe/"
                     target="_blank"

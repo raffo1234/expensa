@@ -76,5 +76,19 @@
     "reclamo_autoridad": "En el evento de que el ejercicio de sus derechos no sea atendido, usted está facultado para presentar un reclamo ante la Autoridad Nacional de Protección de Datos Personales, dirigiéndose a la Mesa de Partes del Ministerio de Justicia y Derechos Humanos, ubicada en Calle Scipión Llona 350, Miraflores, Lima - Perú.",
     "responsabilidad_cadia": "CADIA ostenta la responsabilidad del Banco de Datos Personales denominado PACIENTES y de la integridad de la información contenida. Para prevenir la pérdida, el uso indebido, la alteración, el acceso no autorizado y el hurto de la información, CADIA ha implementado las medidas de seguridad y protección requeridas por la normativa legal vigente, utilizando todos los recursos técnicos disponibles.",
     "declaracion_informado": "Declaro haber sido debidamente informado, conforme a lo estipulado en el Artículo 18 de la Ley 29733, Ley de Protección de Datos Personales."
+  },
+  "EmailToUserWhenUPloadingDicom": {
+    "preview": "Su estudio fue subido. Accede a tus escaneos al instante. Simplifica el procesamiento DICOM y la creación de informes",
+    "title": "Su estudio fue subido",
+    "description": "Nos complace informarle que su informe más reciente ha sido cargado exitosamente y ya se encuentra disponible para acceso instantáneo.",
+    "view-report-link": "Ver Reporte",
+    "instructions": "Para información más detallada sobre nuestros servicios, incluyendo los tipos de estudios que ofrecemos y cómo podemos ayudarle, por favor visite nuestro sitio web en"
+  },
+  "EmailToAdminWhenUPloadingDicom": {
+    "preview": "Un estudio fue subido. Accede a tus escaneos al instante. Simplifica el procesamiento DICOM y la creación de informes",
+    "title": "Un estudio fue subido",
+    "description": "Estimado Doctor: Le confirmamos que un estudio de imagen (scan) ha sido cargado exitosamente a la plataforma www.cadia.pe. Ya se encuentra disponible para su revisión y diagnóstico inmediatos.",
+    "view-report-link": "Ver Reporte",
+    "instructions": "Para información más detallada sobre nuestros servicios, incluyendo los tipos de estudios que ofrecemos y cómo podemos ayudarle, por favor visite nuestro sitio web en"
   }
 }

@@ -9,7 +9,7 @@ export default async function Header() {
 
   return (
     <nav className="max-w-[1816px] w-full mx-auto p-4 justify-between flex items-center">
-      <Link href="/" title="Cadia" className="flex  items-center gap-2">
+      <Link href="/" title="Cadia" className="flex items-center gap-2">
         <Image
           src="/images/logo.png"
           alt="Cadia"

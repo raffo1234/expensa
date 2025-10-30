@@ -13,6 +13,7 @@ const nextConfig: NextConfig = {
       new URL("https://lh3.googleusercontent.com/**"),
       new URL("https://s.yimg.com/ag/**"),
       new URL("https://storage.cadia.pe/dicom/**"),
+      new URL("https://storage.cadia.cc/dicom/**"),
     ],
   },
   experimental: {

@@ -17,10 +17,11 @@ export default function ExploreNowButton({ userRoleId }: { userRoleId?: string }
       href="/admin/dicom"
       title={t("button")}
       style={{ fontFamily: "poppins" }}
-      className="text-lg flex items-center gap-4 px-8 py-3 bg-black text-white rounded-full transition-colors duration-700 hover:bg-gray-800 active:bg-gray-900"
+      className="text-lg flex group items-center gap-4 px-8 py-3 bg-black text-white rounded-full transition-colors duration-700 hover:bg-gray-800 active:bg-gray-900"
     >
       <span>{t("button")}</span>
       <svg
+        className="group-hover:translate-x-2 transition-transform duration-500"
         xmlns="http://www.w3.org/2000/svg"
         width={ICON_SIZE}
         height={ICON_SIZE}

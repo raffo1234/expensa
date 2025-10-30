@@ -1,4 +1,5 @@
 import CredentialsProviderForm from "@/components/CredentialsProviderForm";
+import LogoLink from "@/components/LogoLink";
 import { ICON_SIZE } from "@/constants";
 import { signIn } from "@/lib/auth";
 
@@ -7,25 +8,8 @@ export default function Page() {
     <div className="min-h-lvh flex gap-4">
       <div className="flex flex-[60%] items-center justify-center pb-20 w-full">
         <div className="max-w-[340px] px-3 w-full mx-auto flex flex-col items-center gap-6">
-          <span className="text-white p-2 rounded-xl bg-rose-400 block w-[46px] h-[46px]">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="30"
-              height="30"
-              viewBox="0 0 24 24"
-            >
-              <g
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeWidth="1.5"
-              >
-                <path strokeLinejoin="round" d="m12 18l2-2.5h-4l2-2.5" />
-                <path d="M7 9h10M3 13v-2c0-3.75 0-5.625.955-6.939A5 5 0 0 1 5.06 2.955C6.375 2 8.251 2 12 2s5.625 0 6.939.955a5 5 0 0 1 1.106 1.106C21 5.375 21 7.251 21 11v2c0 3.75 0 5.625-.955 6.939a5 5 0 0 1-1.106 1.106C17.625 22 15.749 22 12 22s-5.625 0-6.939-.955a5 5 0 0 1-1.106-1.106c-.531-.731-.767-1.635-.871-2.939" />
-              </g>
-            </svg>
-          </span>
-          <h1 className="font-semibold text-2xl">Welcome back</h1>
+          <LogoLink />
+          <h1 className="font-semibold text-2xl">Welcome</h1>
           <form
             action={async () => {
               "use server";
@@ -62,7 +46,7 @@ export default function Page() {
                   d="M43.611,20.083L43.595,20L42,20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571	c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"
                 ></path>
               </svg>
-              <span>Continue con Google</span>
+              <span>Continue with Google</span>
             </button>
           </form>
           <div className="text-sm text-gray-500">or</div>
@@ -71,7 +55,7 @@ export default function Page() {
       </div>
       <div className="hidden flex-[40%] lg:flex items-center">
         <video
-          src="/video.mp4"
+          src="/videos/video.webm"
           className="w-full h-auto"
           muted
           playsInline

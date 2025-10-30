@@ -1,15 +1,17 @@
 {
   "Metadata": {
-    "title": "Cadia - MRI Segunda Opinión",
+    "title": "Cadia - MRI Segunda Opinión - Encuentra la Claridad para tu Diagnóstico",
     "description": "Acceda a sus escaneos al instante"
   },
   "Logo": {
     "logotipo": "MRI Segunda Opinión"
   },
   "HomePage": {
-    "title": "Accede a tus escaneos al instante",
-    "description": "Simplifica el procesamiento DICOM y la creación de informes",
-    "button": "Explorar Ahora"
+    "title": "Encuentra la Claridad para tu Diagnóstico",
+    "description": "Segunda Opinión Experta para Tomografía, Resonancia y Rayos X. Obtén la certeza que necesitas en menos de 24 horas",
+    "button": "Empieza Ahora",
+    "title2": "¡Tu Informe en Menos de 24 Horas!",
+    "description2": "No esperes más si ya te realizaste tu estudio. Recibe la Segunda Opinión Experta que necesitas para tu Tomografía, Resonancia o Rayos X con total rapidez y precisión."
   },
   "DicomPage": {
     "title": "Subir archivos",

@@ -7,9 +7,11 @@
     "logotipo": "MRI Second Opinion"
   },
   "HomePage": {
-    "title": "Your Scans, Instantly Accessible",
-    "description": "Process DICOM & Create Reports with Ease",
-    "button": "Explore Now"
+    "title": "Find Clarity in Your Diagnosis",
+    "description": "Expert Second Opinion for Tomography, Resonance (MRI), and X-Rays. Get the certainty you need in less than 24 hours.",
+    "button": "Start Now",
+    "title2": "Report Delivered in Under 24 Hours!",
+    "description2": "Stop waiting after your procedure. Get the Expert Second Opinion you need for your CT Scan, MRI, or X-Ray, with unmatched speed and accuracy."
   },
   "DicomPage": {
     "title": "Upload Files",

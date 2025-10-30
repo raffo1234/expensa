@@ -35,14 +35,28 @@ export default async function Index() {
           <Icon icon="solar:arrow-right-linear" fontSize={24}></Icon>
         </Link>
       )}
-      <div className="relative w-full max-w-[1000px] mx-auto sm:aspect-[5/3] aspect-[4/3]">
+      <div className="relative w-full max-w-[1000px] mx-auto sm:aspect-[5/3] aspect-[4/3] mb-8">
         <Image
           src="/radiologist.png"
           priority
           fill
           alt="Radiologist"
-          className=" h-auto object-cover rounded-2xl "
+          className="h-auto object-cover rounded-2xl "
         />
+      </div>
+      <div className="bg-slate-50 rounded-lg p-4">
+        <div className="max-w-3/4 text-center p-20 rounded-2xl bg-white mx-auto">
+          <h2
+            style={{
+              fontSize: "clamp(12px, 10vw + .3rem, 60px)",
+              fontFamily: "poppins",
+            }}
+            className="text-center leading-11 sm:leading-16 tracking-tighter mb-8"
+          >
+            {t("title2")}
+          </h2>
+          <p className="sm:text-xl text-gray-600">{t("description2")}</p>
+        </div>
       </div>
     </div>
   );

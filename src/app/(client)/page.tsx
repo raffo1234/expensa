@@ -52,10 +52,10 @@ export default async function Index() {
         <div className="md:max-w-3/4 text-center flex-1/2 p-5 md:p-20 rounded-2xl">
           <h2
             style={{
-              fontSize: "clamp(12px, 10vw + .2rem, 60px)",
+              fontSize: "clamp(14px, 10vw + .3rem, 70px)",
               fontFamily: "poppins",
             }}
-            className="font-semibold text-center leading-11 sm:leading-14 md:leading-16 tracking-tight mb-8"
+            className="text-center leading-12 sm:leading-20 tracking-tighter mb-8"
           >
             {t("title2")}
           </h2>

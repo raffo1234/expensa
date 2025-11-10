@@ -50,6 +50,7 @@
     "react-number-format": "^5.4.4",
     "react-pdf": "^9.2.1",
     "react-scan": "^0.3.4",
+    "react-select": "^5.10.2",
     "react-sticky-el": "^2.1.1",
     "react-textarea-autosize": "^8.5.9",
     "react-tiny-popover": "^8.1.6",

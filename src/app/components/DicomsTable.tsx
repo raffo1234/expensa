@@ -7,9 +7,9 @@ import useScrollRestorationLocalStorage from "@/hooks/useScrollRestorationLocalS
 import { supabase } from "@/lib/supabase";
 import { Permissions } from "@/types/propertyState";
 import { UserType } from "@/types/userType";
-import { Icon } from "@iconify/react/dist/iconify.js";
 import { useState } from "react";
 import useSWR from "swr";
+import UsersSelector from "./UsersSelector";
 
 const usersFetcher = async () => {
   const { data } = (await supabase
@@ -75,24 +75,12 @@ export default function DicomsTable({
   return (
     <>
       {canOtherViewDicoms ? (
-        <div className="relative max-w-120 mb-6 w-full">
-          <select
-            defaultValue={activeUserId}
-            onChange={(event) => setActiveUserId(event.target.value)}
-            className="w-full pl-4 pr-7 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500 bg-white"
-          >
-            {users?.map(({ id, first_name, role, last_name, email }) => {
-              return (
-                <option value={id} key={id}>
-                  ({role?.name ?? "No role"}) - {first_name} {last_name} ({email})
-                </option>
-              );
-            })}
-          </select>
-          <div className="absolute top-1/2 -translate-y-1/2 right-1 pr-3 pointer-events-none bg-white">
-            <Icon icon="solar:alt-arrow-down-linear" fontSize={16} />
-          </div>
-        </div>
+        <UsersSelector
+          users={users}
+          activeUserId={activeUserId}
+          onChange={setActiveUserId}
+          localStorageKey="activeUserIdSelected"
+        />
       ) : null}
       <Pagination
         tableName="dicom"

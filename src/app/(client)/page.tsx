@@ -44,7 +44,7 @@ export default async function Index() {
           src="/radiologist.png"
           priority
           fill
-          alt="Radiologist"
+          alt="Radiologo"
           className="h-auto object-cover rounded-2xl "
         />
       </div>

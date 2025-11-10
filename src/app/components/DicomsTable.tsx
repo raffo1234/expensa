@@ -1,7 +1,7 @@
 "use client";
 
 import Pagination from "@/components/Pagination";
-import { adminUsersKey } from "@/constants";
+import { adminActiveUsersKey } from "@/constants";
 import useCheckPermission from "@/hooks/useCheckPermission";
 import useScrollRestorationLocalStorage from "@/hooks/useScrollRestorationLocalStorage";
 import { supabase } from "@/lib/supabase";
@@ -15,6 +15,7 @@ const usersFetcher = async () => {
   const { data } = (await supabase
     .from("user")
     .select("id, first_name, role_id, last_name, email, role(name)")
+    .is("archived_at", null)
     .order("first_name", { ascending: true })) as { data: UserType[] | null };
 
   return data;
@@ -31,31 +32,32 @@ export default function DicomsTable({
 
   const [activeUserId, setActiveUserId] = useState(userId);
 
-  const { data: users, isLoading: isLoadingUsers } = useSWR(
-    adminUsersKey,
-    usersFetcher
+  const { data: users, isLoading: isLoadingUsers } = useSWR(adminActiveUsersKey, usersFetcher);
+
+  const { hasPermission: canOtherViewDicoms, isLoading: isLoadingCanSeeOtherDicoms } =
+    useCheckPermission(userRoleId, Permissions.VIEW_OTHER_DICOMS);
+
+  const { hasPermission: canViewDicoms, isLoading: isLoading } = useCheckPermission(
+    userRoleId,
+    Permissions.VIEW_DICOMS,
   );
 
-  const {
-    hasPermission: canOtherViewDicoms,
-    isLoading: isLoadingCanSeeOtherDicoms,
-  } = useCheckPermission(userRoleId, Permissions.VIEW_OTHER_DICOMS);
+  const { hasPermission: canViewNew, isLoading: isLoadingCanViewNew } = useCheckPermission(
+    userRoleId,
+    Permissions.VIEW_NEW_REPORTS,
+  );
 
-  const { hasPermission: canViewDicoms, isLoading: isLoading } =
-    useCheckPermission(userRoleId, Permissions.VIEW_DICOMS);
+  const { hasPermission: canViewViewed, isLoading: isLoadingCanViewViewed } = useCheckPermission(
+    userRoleId,
+    Permissions.VIEW_VIEWED_REPORTS,
+  );
 
-  const { hasPermission: canViewNew, isLoading: isLoadingCanViewNew } =
-    useCheckPermission(userRoleId, Permissions.VIEW_NEW_REPORTS);
-
-  const { hasPermission: canViewViewed, isLoading: isLoadingCanViewViewed } =
-    useCheckPermission(userRoleId, Permissions.VIEW_VIEWED_REPORTS);
-
-  const { hasPermission: canViewDraft, isLoading: isLoadingCanViewDraft } =
-    useCheckPermission(userRoleId, Permissions.VIEW_DRAFT_REPORTS);
-  const {
-    hasPermission: canViewCompleted,
-    isLoading: isLoadingCanViewCompleted,
-  } = useCheckPermission(userRoleId, Permissions.VIEW_COMPLETED_REPORTS);
+  const { hasPermission: canViewDraft, isLoading: isLoadingCanViewDraft } = useCheckPermission(
+    userRoleId,
+    Permissions.VIEW_DRAFT_REPORTS,
+  );
+  const { hasPermission: canViewCompleted, isLoading: isLoadingCanViewCompleted } =
+    useCheckPermission(userRoleId, Permissions.VIEW_COMPLETED_REPORTS);
 
   if (
     isLoadingUsers ||
@@ -82,8 +84,7 @@ export default function DicomsTable({
             {users?.map(({ id, first_name, role, last_name, email }) => {
               return (
                 <option value={id} key={id}>
-                  ({role?.name ?? "No role"}) - {first_name} {last_name} (
-                  {email})
+                  ({role?.name ?? "No role"}) - {first_name} {last_name} ({email})
                 </option>
               );
             })}

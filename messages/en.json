@@ -92,5 +92,13 @@
     "description": "Dear Doctor, we confirm that a imaging study (scan) has been successfully uploaded to the platform www.cadia.pe. It is now available for your immediate review and diagnosis.",
     "view-report-link": "View Report",
     "instructions": "For more detailed information about our services, including the types of studies we offer and how we can help you, please visit our website at"
+  },
+  "Step2": {
+    "title": "Step 2",
+    "description": "Attach the medical order or second opinion request."
+  },
+  "Step3": {
+    "title": "Step 3",
+    "description": "Add any notes or details you consider important for your radiologist."
   }
 }

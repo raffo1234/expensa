@@ -92,5 +92,13 @@
     "description": "Estimado Doctor: Le confirmamos que un estudio de imagen (scan) ha sido cargado exitosamente a la plataforma www.cadia.pe. Ya se encuentra disponible para su revisión y diagnóstico inmediatos.",
     "view-report-link": "Ver Reporte",
     "instructions": "Para información más detallada sobre nuestros servicios, incluyendo los tipos de estudios que ofrecemos y cómo podemos ayudarle, por favor visite nuestro sitio web en"
+  },
+  "Step2": {
+    "title": "Paso 2",
+    "description": "Adjunta la orden médica o la solicitud de segunda opinión."
+  },
+  "Step3": {
+    "title": "Paso 3",
+    "description": "Agrega cualquier nota o detalle que consideres importante para tu médico radiólogo."
   }
 }

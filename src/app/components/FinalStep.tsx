@@ -1,0 +1,51 @@
+"use client";
+
+import { ICON_SIZE } from "@/constants";
+import { Icon } from "@iconify/react/dist/iconify.js";
+import { useTranslations } from "next-intl";
+import Link from "next/link";
+import { useState } from "react";
+import { Popover } from "react-tiny-popover";
+
+export default function FinalStep() {
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const t = useTranslations("FinalStep");
+
+  const handleMouseEnter = () => {
+    setIsPopoverOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsPopoverOpen(false);
+  };
+
+  return (
+    <Popover
+      isOpen={true}
+      positions={["top"]}
+      padding={12}
+      content={
+        <div
+          className={`${isPopoverOpen ? "opacity-100 -translate-y-0" : "opacity-0 -translate-y-4"} 
+                                            pointer-events-none p-4 max-w-56 bg-slate-800 rounded-xl transition-all duration-500 ease-in-out`}
+        >
+          <div className="absolute bottom-[-4px] left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-800 rotate-45" />
+          <h4 className="text-white font-semibold mb-2">{t("title")}</h4>
+          <p className="text-slate-200">{t("description")}</p>
+        </div>
+      }
+    >
+      <Link
+        href="/admin/my-studies"
+        target="_blank"
+        title={t("title")}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        type="button"
+        className="self-stretch flex items-center bg-cyan-500 hover:bg-cyan-500 transition-colors duration-300 text-white cursor-pointer rounded-lg px-3"
+      >
+        <Icon icon="solar:hand-heart-linear" fontSize={ICON_SIZE} />
+      </Link>
+    </Popover>
+  );
+}

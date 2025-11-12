@@ -8,6 +8,7 @@ import { useUpdateFieldById } from "@/hooks/useUpdateFieldById";
 import { UUIDTypes } from "uuid";
 import { DicomStateEnum } from "@/enums/dicomStateEnum";
 import { Popover } from "react-tiny-popover";
+import { useTranslations } from "next-intl";
 
 function DicomCommentEditor({
   dicomId,
@@ -71,6 +72,7 @@ function DicomCommentEditor({
 export default function ModalToCommentDicom({ dicomId }: { dicomId: UUIDTypes }) {
   const { setModalContent, setModalOpen } = useGlobalState();
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const t = useTranslations("Step3");
 
   const swrKey = `admin-${dicomId}`;
   const {
@@ -125,10 +127,8 @@ export default function ModalToCommentDicom({ dicomId }: { dicomId: UUIDTypes })
               pointer-events-none p-4 max-w-48 bg-slate-800 rounded-xl transition-all duration-500 ease-in-out`}
         >
           <div className="absolute bottom-[-4px] left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-800 rotate-45" />
-          <h4 className="text-white font-semibold mb-2">Step 3</h4>
-          <p className="text-slate-200">
-            Agrega cualquier nota o detalle que consideres importante para tu médico radiólogo.
-          </p>
+          <h4 className="text-white font-semibold mb-2">{t("title")}</h4>
+          <p className="text-slate-200">{t("description")}</p>
         </div>
       }
     >

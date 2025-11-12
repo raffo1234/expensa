@@ -29,6 +29,7 @@ import ModalToAttachFilesToDicom from "./ModalToAttachFilesToDicom";
 import ModalToCommentDicom from "./ModalToCommentDicom";
 import { useTranslations } from "next-intl";
 import UploadInputs from "./UploadInputs";
+import FinalStep from "./FinalStep";
 
 Archive.init({
   workerUrl: "/libarchive.js/dist/worker-bundle.js",
@@ -518,85 +519,89 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                   ].includes(state);
 
                   return (
-                    <div
-                      key={id}
-                      className={`${colorClassMap[color] ? colorClassMap[color] : "border bg-white border-gray-200"} px-4 py-3 rounded-lg`}
-                    >
-                      <div className="flex">
-                        {canSwitchStoreDicom ? (
-                          <label
-                            className={`${
-                              state !== CustomFileStateType.selected
-                                ? "opacity-40 pointer-events-none"
-                                : ""
-                            } inline-flex pt-1 cursor-pointer`}
-                          >
-                            <input
-                              type="checkbox"
-                              name={files[index].id}
-                              checked={files[index].isAvailableForR2Upload}
-                              disabled={state !== CustomFileStateType.selected}
-                              onChange={() =>
-                                handleIsAvailableForR2(
-                                  files[index].id,
-                                  files[index].isAvailableForR2Upload,
-                                )
-                              }
-                              className="sr-only peer"
-                            />
-                            <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-100 dark:peer-focus:ring-cyan-100 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-400 peer-checked:bg-cyan-400 dark:peer-checked:bg-cyan-400"></div>
-                          </label>
-                        ) : null}
-                        <div className="flex-1 truncate pl-4">
-                          <div className="text-sm truncate font-semibold mb-0.5">{patientName}</div>
-                          <div className="text-sm text-gray-500">
-                            {state === CustomFileStateType.selected || studies.length === 0 ? (
-                              state
-                            ) : (
-                              <>
-                                {studies.length} Stud
-                                {studies.length === 1 ? "y" : "ies"}
-                              </>
+                    <div key={id} className="flex items-center gap-1">
+                      <div
+                        className={`${colorClassMap[color] ? colorClassMap[color] : "border bg-white border-gray-200"} px-4 py-3 rounded-lg min-w-0`}
+                      >
+                        <div className="flex">
+                          {canSwitchStoreDicom ? (
+                            <label
+                              className={`${
+                                state !== CustomFileStateType.selected
+                                  ? "opacity-40 pointer-events-none"
+                                  : ""
+                              } inline-flex pt-1 cursor-pointer`}
+                            >
+                              <input
+                                type="checkbox"
+                                name={files[index].id}
+                                checked={files[index].isAvailableForR2Upload}
+                                disabled={state !== CustomFileStateType.selected}
+                                onChange={() =>
+                                  handleIsAvailableForR2(
+                                    files[index].id,
+                                    files[index].isAvailableForR2Upload,
+                                  )
+                                }
+                                className="sr-only peer"
+                              />
+                              <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-100 dark:peer-focus:ring-cyan-100 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-400 peer-checked:bg-cyan-400 dark:peer-checked:bg-cyan-400"></div>
+                            </label>
+                          ) : null}
+                          <div className="flex-1 truncate pl-4">
+                            <div className="text-sm truncate font-semibold mb-0.5">
+                              {patientName}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {state === CustomFileStateType.selected || studies.length === 0 ? (
+                                state
+                              ) : (
+                                <>
+                                  {studies.length} Stud
+                                  {studies.length === 1 ? "y" : "ies"}
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          <div className="whitespace-nowrap pl-10 flex flex-col gap-2 justify-center flex-shrink-0">
+                            {state === CustomFileStateType.duplicated ||
+                            state === CustomFileStateType.inserted
+                              ? studies.map(({ id, state }) => (
+                                  <div key={id} className="flex gap-2 items-center">
+                                    <LinkInsertedOrDuplicated
+                                      id={id}
+                                      userId={userId}
+                                      userRoleId={userRoleId}
+                                      state={state}
+                                      isDuplicated={state === CustomFileStateType.duplicated}
+                                    />
+                                    <ModalToAttachFilesToDicom dicomId={id} defaultPopoverOpen />
+                                    <ModalToCommentDicom dicomId={id} />
+                                  </div>
+                                ))
+                              : null}
+                            {displayWarningIcon && (
+                              <Icon
+                                icon="solar:shield-warning-outline"
+                                className="text-rose-300"
+                                fontSize="24"
+                              />
                             )}
                           </div>
                         </div>
-                        <div className="whitespace-nowrap pl-10 flex flex-col gap-2 justify-center flex-shrink-0">
-                          {state === CustomFileStateType.duplicated ||
-                          state === CustomFileStateType.inserted
-                            ? studies.map(({ id, state }) => (
-                                <div key={id} className="flex gap-2 items-center">
-                                  <LinkInsertedOrDuplicated
-                                    id={id}
-                                    userId={userId}
-                                    userRoleId={userRoleId}
-                                    state={state}
-                                    isDuplicated={state === CustomFileStateType.duplicated}
-                                  />
-                                  <ModalToAttachFilesToDicom dicomId={id} />
-                                  <ModalToCommentDicom dicomId={id} />
-                                </div>
-                              ))
-                            : null}
-                          {displayWarningIcon && (
-                            <Icon
-                              icon="solar:shield-warning-outline"
-                              className="text-rose-300"
-                              fontSize="24"
-                            />
-                          )}
-                        </div>
-                      </div>
-                      {showProgressBar ? (
-                        <div className="mt-2 relative w-full bg-gray-300 h-1 rounded-full">
-                          <div
-                            style={{ width: `${uploadPercentage}%` }}
-                            className="absolute top-0 left-0 h-full bg-gradient-to-r from-cyan-100 animate-pulse to-cyan-400 rounded-full transition-all duration-300"
-                          ></div>
-                          <div className="absolute right-0 bottom-2.5 text-sm text-gray-400">
-                            {uploadPercentage}%
+                        {showProgressBar ? (
+                          <div className="mt-2 relative w-full bg-gray-300 h-1 rounded-full">
+                            <div
+                              style={{ width: `${uploadPercentage}%` }}
+                              className="absolute top-0 left-0 h-full bg-gradient-to-r from-cyan-100 animate-pulse to-cyan-400 rounded-full transition-all duration-300"
+                            ></div>
+                            <div className="absolute right-0 bottom-2.5 text-sm text-gray-400">
+                              {uploadPercentage}%
+                            </div>
                           </div>
-                        </div>
-                      ) : null}
+                        ) : null}
+                      </div>
+                      <FinalStep />
                     </div>
                   );
                 },

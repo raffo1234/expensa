@@ -32,10 +32,16 @@ const fetcherDicom = async (id: string) => {
   return data;
 };
 
-export default function ModalToAttachFilesToDicom({ dicomId }: { dicomId: string }) {
+export default function ModalToAttachFilesToDicom({
+  dicomId,
+  defaultPopoverOpen = false,
+}: {
+  dicomId: string;
+  defaultPopoverOpen?: boolean;
+}) {
   const swrKey = `admin-${dicomId}`;
   const { setModalContent, setOnModalClose, setModalOpen } = useGlobalState();
-  const [isPopoverOpen, setIsPopoverOpen] = useState(true);
+  const [isPopoverOpen, setIsPopoverOpen] = useState(defaultPopoverOpen);
   const t = useTranslations("Step2");
 
   const {

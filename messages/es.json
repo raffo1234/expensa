@@ -100,5 +100,9 @@
   "Step3": {
     "title": "Paso 3",
     "description": "Agrega cualquier nota o detalle que consideres importante para tu médico radiólogo."
+  },
+  "FinalStep": {
+    "title": "Ver mis estudios",
+    "description": "El informe estará disponible en esta plataforma en menos de 24 horas. Recibirás una notificación por correo electrónico cuando esté listo. Si tienes alguna duda, puedes comunicarte con nosotros a través de WhatsApp."
   }
 }

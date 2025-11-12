@@ -100,5 +100,9 @@
   "Step3": {
     "title": "Step 3",
     "description": "Add any notes or details you consider important for your radiologist."
+  },
+  "FinalStep": {
+    "title": "Ver my studies",
+    "description": "The report will be available on this platform in less than 24 hours. You will receive an email notification when it is ready. If you have any questions, you can contact us via WhatsApp."
   }
 }

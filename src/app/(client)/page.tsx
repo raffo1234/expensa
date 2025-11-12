@@ -63,7 +63,7 @@ export default async function Index() {
           <Link
             target="_blank"
             href="https://wa.me/51939331390?text=Hola,%20quiero%20solicitar%20mi%20informe%20de%20segunda%20opinion%20en%20menos%20de%2024%20horas."
-            title="Whatsapp: 939331390"
+            title="Whatsapp Cadia: 939331390"
             className="cursor-pointer flex gap-4 items-center justify-center w-fit mx-auto text-lg text-center bg-[#4dca5a] hover:bg-[#47b752] px-8 py-3 text-white rounded-full transition-colors duration-700 active:bg-[#3c9b46]"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24">

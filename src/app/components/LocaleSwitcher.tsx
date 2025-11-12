@@ -30,7 +30,7 @@ export default function LanguageSwitchButton() {
           key={code}
           onClick={() => setLocale(code)}
           disabled={isPending}
-          className={`text-xs self-end font-semibold cursor-pointer px-4 border border-slate-100 rounded-full py-2 disabled:opacity-50 disabled:pointer-events-none transition-all duration-300 ${
+          className={`text-xs self-end font-semibold cursor-pointer px-2 border border-slate-100 rounded-full py-2 disabled:opacity-50 disabled:pointer-events-none transition-all duration-300 ${
             locale === code
               ? "bg-black text-white pointer-events-none"
               : "hover:bg-slate-100 border-slate-200"

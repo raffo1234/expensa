@@ -1,6 +1,7 @@
 import ProfilePopover from "@/components/ProfilePopover";
 import LocaleSwitcher from "./LocaleSwitcher";
 import LogoLink from "./LogoLink";
+import WhatsappLink from "./WhatsappLink";
 
 export default async function Header() {
   return (
@@ -8,6 +9,7 @@ export default async function Header() {
       <LogoLink />
       <div className="flex gap-2 items-center">
         <LocaleSwitcher />
+        <WhatsappLink />
         <ProfilePopover />
       </div>
     </nav>

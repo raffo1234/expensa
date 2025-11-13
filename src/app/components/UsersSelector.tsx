@@ -20,7 +20,7 @@ interface UserOption {
 }
 
 const UserOptionLabel = ({ roleName, fullName, email }: UserOption) => (
-  <div className="flex flex-col py-1 text-sm">
+  <div className="flex flex-col py-1">
     <div className="flex justify-between items-center font-semibold">
       <span>{fullName}</span>
       <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-100 text-cyan-700">{roleName}</span>
@@ -57,7 +57,7 @@ export default function UsersSelector({
           user.last_name
         } (${user.email})`,
         roleName: user.role?.name ?? "No role",
-        fullName: `${user.first_name} ${user.last_name}`,
+        fullName: `${user.first_name ?? ""} ${user.last_name ?? ""}`,
         email: user.email,
       })) ?? [],
     [users],
@@ -104,12 +104,12 @@ export default function UsersSelector({
                 : "border-gray-200 hover:border-cyan-400",
             ].join(" "),
           valueContainer: () => "px-1",
-          placeholder: () => "text-gray-400 text-sm",
+          placeholder: () => "text-gray-400",
           menu: () =>
             "mt-1 rounded-xl shadow-lg border border-gray-100 overflow-hidden z-20 bg-white",
           option: ({ isSelected, isFocused }) =>
             [
-              "px-3 py-2 cursor-pointer text-sm",
+              "px-3 py-2 cursor-pointer",
               isSelected ? "bg-cyan-400 text-white" : isFocused ? "bg-cyan-50" : "",
             ].join(" "),
           singleValue: () => "text-gray-900 font-medium",

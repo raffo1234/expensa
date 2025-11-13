@@ -14,7 +14,7 @@ import UsersSelector from "./UsersSelector";
 const usersFetcher = async () => {
   const { data } = (await supabase
     .from("user")
-    .select("id, first_name, role_id, last_name, email, role(name)")
+    .select("id, first_name, image_url, role_id, last_name, email, role(name)")
     .is("archived_at", null)
     .order("first_name", { ascending: true })) as { data: UserType[] | null };
 

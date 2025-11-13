@@ -3,6 +3,7 @@
 import { useEffect, useMemo } from "react";
 import Select, { SingleValue, components, OptionProps, SingleValueProps } from "react-select";
 import { UserType } from "@/types/userType";
+import Image from "next/image";
 
 interface UsersSelectorProps {
   users: UserType[] | null | undefined;
@@ -12,6 +13,7 @@ interface UsersSelectorProps {
 }
 
 interface UserOption {
+  image_url?: React.ReactNode;
   value: string;
   label: string;
   roleName: string;
@@ -19,13 +21,24 @@ interface UserOption {
   email: string;
 }
 
-const UserOptionLabel = ({ roleName, fullName, email }: UserOption) => (
-  <div className="flex flex-col py-1">
-    <div className="flex justify-between items-center font-semibold">
-      <span>{fullName}</span>
-      <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-100 text-cyan-700">{roleName}</span>
+const UserOptionLabel = ({ roleName, image_url, fullName, email }: UserOption) => (
+  <div className="flex items-center gap-3 py-2">
+    <Image
+      className="rounded-full block flex-shrink-0"
+      src={image_url as string}
+      width={32}
+      height={32}
+      alt={fullName}
+    />
+    <div>
+      <div className="flex items-center gap-2">
+        <div>{fullName}</div>
+        <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-100 text-cyan-700">
+          {roleName}
+        </span>
+      </div>
+      <div className="text-xs opacity-70 mt-0.5">{email}</div>
     </div>
-    <div className="text-xs opacity-70 mt-0.5">{email}</div>
   </div>
 );
 
@@ -59,6 +72,7 @@ export default function UsersSelector({
         roleName: user.role?.name ?? "No role",
         fullName: `${user.first_name ?? ""} ${user.last_name ?? ""}`,
         email: user.email,
+        image_url: user.image_url,
       })) ?? [],
     [users],
   );

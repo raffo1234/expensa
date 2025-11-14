@@ -9,7 +9,7 @@ import { supabase } from "@/lib/supabase";
 import { DicomType } from "@/types/dicomType";
 import AttachedFilesContent from "./AttachedFilesContent"; // Import the new component
 import { FileType } from "@/types/fileType";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 
 const filesFetcher = async (dicomId: string) => {
@@ -66,6 +66,19 @@ export default function ModalToAttachFilesToDicom({
   const handleMouseLeave = () => {
     setIsPopoverOpen(false);
   };
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isPopoverOpen && defaultPopoverOpen) {
+      timer = setTimeout(() => {
+        setIsPopoverOpen(false);
+      }, 3000);
+    }
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [isPopoverOpen, defaultPopoverOpen]);
 
   if (fetchError) {
     return <div className="text-rose-400">Error loading DICOM status.</div>;

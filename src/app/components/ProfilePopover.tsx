@@ -5,6 +5,7 @@ import { signOut, auth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { ICON_SIZE } from "@/constants";
 import { getTranslations } from "next-intl/server";
+import RoleName from "./RoleName";
 
 export default async function ProfilePopover() {
   const session = await auth();
@@ -72,9 +73,7 @@ export default async function ProfilePopover() {
                   {session.user?.name}
                 </p>
                 <p className="text-slate-500 text-xs mb-2">{user?.email}</p>
-                <p className="text-xs bg-cyan-100 px-2 py-0.5 w-fit mx-auto text-cyan-700 rounded-full">
-                  {roleName}
-                </p>
+                <RoleName roleName={roleName} />
               </li>
               <li>
                 <Link href="/" className="py-2 px-6 hover:bg-gray-50 flex items-center gap-3.5">

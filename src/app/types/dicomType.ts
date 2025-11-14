@@ -10,8 +10,8 @@ export type AssignedByType = {
   role: {
     id: string;
     name: string;
-  }
-}
+  };
+};
 
 export type DicomType = {
   id: string;

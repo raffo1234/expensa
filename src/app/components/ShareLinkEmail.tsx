@@ -18,34 +18,31 @@ export default function ShareLinkEmail({ link }: { link: string }) {
       <Tailwind>
         <Body>
           <Container>
-            <Preview>
-              Instant access to your Cadia study report - download or view
-              online.
-            </Preview>
+            <Preview>Instant access to your Cadia study report - download or view online.</Preview>
             <Section className="my-[16px]">
               <Section className="text-center">
                 <Button
                   className="w-[46px] cursor-pointer mb-4"
-                  href="https://www.cadia.pe/"
+                  href="https://www.cadia.cc/"
                   target="_blank"
                 >
                   <Img
-                    alt="Cadia.pe"
+                    alt="Cadia"
                     className="w-full rounded-[12px] object-cover"
                     height="46"
-                    src="https://www.cadia.pe/favicon.png"
+                    src="https://www.cadia.cc/favicon.png"
                   />
                 </Button>
               </Section>
               <Img
-                alt="Cadia.pe"
+                alt="Cadia"
                 className="w-full rounded-[12px] object-cover"
                 height="320"
-                src="https://www.cadia.pe/radiologist.png"
+                src="https://www.cadia.cc/radiologist.png"
               />
               <Section className="mt-[32px] text-center">
                 <Link
-                  href="https://www.cadia.pe"
+                  href="https://www.cadia.cc"
                   target="_blank"
                   className="my-[16px] font-semibold text-[18px] text-rose-400 leading-[28px]"
                 >
@@ -58,8 +55,8 @@ export default function ShareLinkEmail({ link }: { link: string }) {
                   Your Report is Ready
                 </Heading>
                 <Text className="text-[16px] text-gray-500 leading-[24px]">
-                  We are pleased to inform you that your report is now ready and
-                  instantly accessible.
+                  We are pleased to inform you that your report is now ready and instantly
+                  accessible.
                 </Text>
                 <Button
                   className="text-[16px] cursor-pointer text-white font-semibold mb-8 gap-4 px-8 py-4 bg-cyan-500 rounded-full"
@@ -68,15 +65,14 @@ export default function ShareLinkEmail({ link }: { link: string }) {
                   View Your Report
                 </Button>
                 <Text className="text-[14px] text-gray-500 leading-[24px]">
-                  For more detailed information about our services, including
-                  the types of studies we offer and how we can help you, please
-                  visit our website at{" "}
+                  For more detailed information about our services, including the types of studies
+                  we offer and how we can help you, please visit our website at{" "}
                   <Link
-                    href="https://www.cadia.pe/"
+                    href="https://www.cadia.cc/"
                     target="_blank"
                     className="text-black underline"
                   >
-                    www.cadia.pe
+                    www.cadia.cc
                   </Link>
                   .
                 </Text>

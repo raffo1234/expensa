@@ -25,6 +25,8 @@ import useControlEnter from "@/hooks/useControlEnter";
 import Attachments from "./Attachments";
 import { ICON_SIZE } from "@/constants";
 import ModalToDisplayDicomComment from "./ModalToDisplayDicomComment";
+import { sendEmailToUser } from "@/utils/sendEmailToUser";
+import { useTranslations } from "next-intl";
 
 export default function Report({
   templates,
@@ -35,6 +37,7 @@ export default function Report({
   dicomId: string;
   userRoleId: string;
 }) {
+  const t = useTranslations("EmailToUserWhenUPloadingDicom");
   const [isSaving, setIsSaving] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -83,7 +86,7 @@ export default function Report({
     } finally {
       mutate();
       setIsSaving(false);
-      toast.success("Report updated successfully!");
+      toast.success("Report completed successfully!");
     }
   };
 
@@ -105,6 +108,11 @@ export default function Report({
         state: DicomStateEnum.COMPLETED,
         completed_at: new Date(),
       });
+      if (dicom.user?.email)
+        await sendEmailToUser({
+          to: dicom.user.email,
+          subject: t("subjectOnCompleting"),
+        });
     } else {
       console.warn("DICOM is already COMPLETED. Just redirecting.");
       toast.success("Report is already completed.");

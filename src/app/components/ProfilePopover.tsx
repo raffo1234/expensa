@@ -9,13 +9,15 @@ import { getTranslations } from "next-intl/server";
 export default async function ProfilePopover() {
   const session = await auth();
   const user = session?.user;
+
   let roleName = undefined;
+
   const t = await getTranslations("Popover");
 
   if (user?.id) {
     const { data } = await supabase
       .from("user")
-      .select("role_id, template_id")
+      .select("role_id, email, template_id")
       .eq("id", user?.id)
       .single();
 
@@ -66,10 +68,13 @@ export default async function ProfilePopover() {
                   ) : null}
                   <div className="w-3 h-3 absolute top-9 right-0 rounded-full bg-green-400 border-2 border-white" />
                 </div>
-                <p className="text-center text-sm font-semibold w-full mb-1">
+                <p className="text-center text-sm font-semibold w-full mb-0.5">
                   {session.user?.name}
                 </p>
-                <p className="text-sm text-gray-500">{roleName}</p>
+                <p className="text-slate-500 text-xs mb-2">{user?.email}</p>
+                <p className="text-xs bg-cyan-100 px-2 py-0.5 w-fit mx-auto text-cyan-700 rounded-full">
+                  {roleName}
+                </p>
               </li>
               <li>
                 <Link href="/" className="py-2 px-6 hover:bg-gray-50 flex items-center gap-3.5">

@@ -1,4 +1,4 @@
-export const sendEmailToUser = async ({ to }: { to: string }) => {
+export const sendEmailToUser = async ({ to, subject }: { to: string; subject?: string }) => {
   try {
     const response = await fetch("/api/send-email-user", {
       method: "POST",
@@ -7,7 +7,8 @@ export const sendEmailToUser = async ({ to }: { to: string }) => {
       },
       body: JSON.stringify({
         to: to,
-        link: "https://cadia.pe/admin/my-studies",
+        link: "https://cadia.cc/admin/my-studies",
+        subject: subject || "Cadia",
       }),
     });
 

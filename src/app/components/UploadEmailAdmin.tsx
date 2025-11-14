@@ -11,10 +11,10 @@ import {
   Container,
   Preview,
 } from "@react-email/components";
-import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 
-export default function UploadEmailAdmin({ link }: { link: string }) {
-  const t = useTranslations("EmailToAdminWhenUserUploadingDicom");
+export default async function UploadEmailAdmin({ link }: { link: string }) {
+  const t = await getTranslations("EmailToAdminWhenUserUploadingDicom");
 
   return (
     <Html>
@@ -26,26 +26,26 @@ export default function UploadEmailAdmin({ link }: { link: string }) {
               <Section className="text-center">
                 <Button
                   className="w-[46px] cursor-pointer mb-4"
-                  href="https://www.cadia.pe/"
+                  href="https://www.cadia.cc/"
                   target="_blank"
                 >
                   <Img
-                    alt="Cadia.pe"
+                    alt="Cadia"
                     className="w-full rounded-[12px] object-cover"
                     height="46"
-                    src="https://www.cadia.pe/favicon.png"
+                    src="https://www.cadia.cc/favicon.png"
                   />
                 </Button>
               </Section>
               <Img
-                alt="Cadia.pe"
+                alt="Cadia"
                 className="w-full rounded-[12px] object-cover"
                 height="320"
-                src="https://www.cadia.pe/radiologist.png"
+                src="https://www.cadia.cc/radiologist.png"
               />
               <Section className="mt-[32px] text-center">
                 <Link
-                  href="https://www.cadia.pe"
+                  href="https://www.cadia.cc"
                   target="_blank"
                   className="my-[16px] font-semibold text-[18px] text-rose-400 leading-[28px]"
                 >
@@ -67,11 +67,11 @@ export default function UploadEmailAdmin({ link }: { link: string }) {
                 <Text className="text-[14px] text-gray-500 leading-[24px]">
                   {t("instructions")}{" "}
                   <Link
-                    href="https://www.cadia.pe/"
+                    href="https://www.cadia.cc/"
                     target="_blank"
                     className="text-black underline"
                   >
-                    www.cadia.pe
+                    www.cadia.cc
                   </Link>
                   .
                 </Text>

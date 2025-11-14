@@ -11,12 +11,12 @@ export default function WhatsappLink() {
       <svg xmlns="http://www.w3.org/2000/svg" width="47.63" height="48" viewBox="0 0 256 258">
         <defs>
           <linearGradient id="SVGBRLHCcSy" x1="50%" x2="50%" y1="100%" y2="0%">
-            <stop offset="0%" stop-color="#1faf38" />
-            <stop offset="100%" stop-color="#60d669" />
+            <stop offset="0%" stopColor="#1faf38" />
+            <stop offset="100%" stopColor="#60d669" />
           </linearGradient>
           <linearGradient id="SVGHW6lecxh" x1="50%" x2="50%" y1="100%" y2="0%">
-            <stop offset="0%" stop-color="#f9f9f9" />
-            <stop offset="100%" stop-color="#fff" />
+            <stop offset="0%" stopColor="#f9f9f9" />
+            <stop offset="100%" stopColor="#fff" />
           </linearGradient>
         </defs>
         <path

@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     const recipients = Array.isArray(to) ? to : [to];
 
     const data = await resend.emails.send({
-      from: "Cadia Medical <inform@cadia.pe>",
+      from: "Cadia MRI <inform@cadia.cc>",
       to: recipients,
       subject: "Cadia: New Report Uploaded!",
       react: UploadEmailAdmin({ link }),

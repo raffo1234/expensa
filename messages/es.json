@@ -70,7 +70,7 @@
     "link": "cláusula para el tratamiento y resguardo de datos personales",
     "title": "Cláusula para el Tratamiento y Resguardo de Datos Personales",
     "introduccion": "En estricto cumplimiento de la Ley N° 29733, Ley de Protección de Datos Personales (LDPD), se informa a usted sobre las condiciones inherentes al tratamiento de su información:",
-    "FINALIDAD": "Los datos personales proporcionados a CADIA serán tratados con la única finalidad de la prestación del servicio de orden médica, la obtención de resultados analíticos y el cumplimiento de fines técnicos inherentes al diagnóstico. La remisión de los resultados se efectuará mediante la plataforma www.cadia.pe o a través del correo electrónico especificado.",
+    "FINALIDAD": "Los datos personales proporcionados a CADIA serán tratados con la única finalidad de la prestación del servicio de orden médica, la obtención de resultados analíticos y el cumplimiento de fines técnicos inherentes al diagnóstico. La remisión de los resultados se efectuará mediante la plataforma www.cadia.cc o a través del correo electrónico especificado.",
     "TRANSFERENCIAS Y DESTINATARIOS": "Los datos personales y los resultados analíticos generados podrán ser objeto de tratamiento para su debida emisión, el trámite administrativo y el seguimiento particular del caso. Los datos serán custodiados en territorio nacional, con la excepción expresa de las copias de respaldo de seguridad, las cuales serán almacenadas bajo protección en servidores ubicados en los Estados Unidos de América. El PLAZO DE CONSERVACIÓN DE LOS DATOS PERSONALES es de carácter permanente por un periodo de 60 días.",
     "EJERCICIO DE LOS DERECHOS ARCO": "En su calidad de titular de los datos personales, usted mantiene el pleno derecho de ejercer los Derechos de Acceso, Rectificación, Cancelación y Oposición ante CADIA. Esto incluye el derecho a conocer las características de su tratamiento, rectificar datos inexactos o incompletos, solicitar su supresión u oponerse a su tratamiento para fines específicos.",
     "revocacion_uso": "El titular podrá revocar su consentimiento en cualquier momento, así como establecer limitaciones al uso o divulgación de sus datos. Las solicitudes relativas al ejercicio de estos derechos deben dirigirse a la siguiente dirección electrónica: cadia.second.opinions@gmail.com.",
@@ -80,16 +80,17 @@
     "declaracion_informado": "Declaro haber sido debidamente informado, conforme a lo estipulado en el Artículo 18 de la Ley 29733, Ley de Protección de Datos Personales."
   },
   "EmailToUserWhenUPloadingDicom": {
-    "preview": "Su estudio fue subido. Accede a tus escaneos al instante. Simplifica el procesamiento DICOM y la creación de informes",
+    "preview": "Encuentra la Claridad para tu Diagnóstico",
     "title": "Su estudio fue subido",
     "description": "Nos complace informarle que su informe más reciente ha sido cargado exitosamente y ya se encuentra disponible para acceso instantáneo.",
     "view-report-link": "Ver Reporte",
-    "instructions": "Para información más detallada sobre nuestros servicios, incluyendo los tipos de estudios que ofrecemos y cómo podemos ayudarle, por favor visite nuestro sitio web en"
+    "instructions": "Para información más detallada sobre nuestros servicios, incluyendo los tipos de estudios que ofrecemos y cómo podemos ayudarle, por favor visite nuestro sitio web en",
+    "subjectOnCompleting": "Cadia: Reporte listo para descargar"
   },
   "EmailToAdminWhenUPloadingDicom": {
-    "preview": "Un estudio fue subido. Accede a tus escaneos al instante. Simplifica el procesamiento DICOM y la creación de informes",
+    "preview": "Encuentra la Claridad para tu Diagnóstico",
     "title": "Un estudio fue subido",
-    "description": "Estimado Doctor: Le confirmamos que un estudio de imagen (scan) ha sido cargado exitosamente a la plataforma www.cadia.pe. Ya se encuentra disponible para su revisión y diagnóstico inmediatos.",
+    "description": "Estimado Doctor: Le confirmamos que un estudio de imagen (scan) ha sido cargado exitosamente a la plataforma www.cadia.cc. Ya se encuentra disponible para su revisión y diagnóstico inmediatos.",
     "view-report-link": "Ver Reporte",
     "instructions": "Para información más detallada sobre nuestros servicios, incluyendo los tipos de estudios que ofrecemos y cómo podemos ayudarle, por favor visite nuestro sitio web en"
   },

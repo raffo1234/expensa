@@ -7,7 +7,7 @@ export const sendEmailToAdmin = async ({ idDicom }: { idDicom: string }) => {
       },
       body: JSON.stringify({
         to: "ivan.meza1@unmsm.edu.pe",
-        link: `https://cadia.pe/admin/dicoms/${idDicom}`,
+        link: `https://cadia.cc/admin/dicoms/${idDicom}`,
       }),
     });
 

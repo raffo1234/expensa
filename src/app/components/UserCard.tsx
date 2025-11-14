@@ -6,7 +6,7 @@ import Link from "next/link";
 import { updateUser } from "@/actions/updateUser";
 
 export default function UserCard({ user, mutate }: { user: UserType; mutate: () => void }) {
-  const { first_name, last_name, archived_at, id, role, image_url } = user;
+  const { first_name, last_name, email, archived_at, id, role, image_url } = user;
 
   const archive = async () => {
     await updateUser(user.id, { archived_at: new Date() });
@@ -23,15 +23,23 @@ export default function UserCard({ user, mutate }: { user: UserType; mutate: () 
       <Image
         src={image_url}
         className="rounded-full mb-3 mx-auto bg-gray-100"
-        alt={first_name || id}
+        alt={`${first_name} ${last_name ?? ""}`}
         width={44}
         height={44}
-        title={first_name}
+        title={`${first_name} ${last_name ?? ""}`}
       />
-      <div className="font-semibold w-full mb-1 text-center truncate" title={first_name}>
-        {first_name} {last_name}
+      <div
+        className="font-semibold w-full mb-1 text-center truncate"
+        title={`${first_name} ${last_name ?? ""}`}
+      >
+        {first_name} {last_name ?? ""}
       </div>
-      <div className="text-sm text-gray-500 w-full text-center mb-4">{role?.name}</div>
+      <div title={email} className="truncate text-xs text-slate-500 mb-3">
+        {email}
+      </div>
+      <div className="text-xs text-cyan-700 px-2 py-0.5 bg-cyan-100 rounded-full w-fit mx-auto mb-5">
+        {role?.name}
+      </div>
       <div className="flex gap-2 items-center justify-center">
         <Link
           type="button"

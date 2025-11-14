@@ -27,6 +27,8 @@ import { ICON_SIZE } from "@/constants";
 import ModalToDisplayDicomComment from "./ModalToDisplayDicomComment";
 import { sendEmailToUser } from "@/utils/sendEmailToUser";
 import { useTranslations } from "next-intl";
+import { Permissions } from "@/types/propertyState";
+import useCheckPermission from "@/hooks/useCheckPermission";
 
 export default function Report({
   templates,
@@ -48,6 +50,11 @@ export default function Report({
     isLoading,
     mutate,
   } = useSWR(`admin-${dicomId}`, () => fetcherDicom(dicomId));
+
+  const { hasPermission: canSendEmailAfterUploading } = useCheckPermission(
+    dicom?.user?.role_id, // owner of the dicom, not current logged user
+    Permissions.SEND_EMAIL_AFTER_UPLOADING,
+  );
 
   const updateDicomImmediately = useCallback(
     async (value: string) => {
@@ -108,11 +115,16 @@ export default function Report({
         state: DicomStateEnum.COMPLETED,
         completed_at: new Date(),
       });
-      if (dicom.user?.email)
-        await sendEmailToUser({
-          to: dicom.user.email,
-          subject: t("subjectOnCompleting"),
-        });
+      if (dicom.user?.email) {
+        if (process.env.NODE_ENV !== "development") {
+          if (canSendEmailAfterUploading) {
+            await sendEmailToUser({
+              to: dicom.user.email,
+              subject: t("subjectOnCompleting"),
+            });
+          }
+        }
+      }
     } else {
       console.warn("DICOM is already COMPLETED. Just redirecting.");
       toast.success("Report is already completed.");

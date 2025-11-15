@@ -8,6 +8,7 @@ import { ReactScan } from "@/components/ReactScan";
 import Slider from "@/components/Slider";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, getLocale } from "next-intl/server";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 
 const title = "Encuentra la Claridad para tu Diagnóstico";
 const description =
@@ -51,7 +52,7 @@ export default async function Layout({ children }: Readonly<LayoutProps>) {
     const permissionData = await prefetchPermissionServer(slug);
     Object.assign(initialPermissions, permissionData);
   }
-  console.log(locale);
+
   return (
     <html lang={locale}>
       <body id="admin" className="text-sm">
@@ -66,6 +67,7 @@ export default async function Layout({ children }: Readonly<LayoutProps>) {
         </SWRConfig>
         <GlobalModal />
         <Slider />
+        <GoogleAnalytics />
       </body>
     </html>
   );

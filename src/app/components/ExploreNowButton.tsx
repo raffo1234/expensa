@@ -5,11 +5,19 @@ import roleFetcher from "@/fetchers/roleFetcher";
 import Link from "next/link";
 import { preload } from "swr";
 import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function ExploreNowButton({ userRoleId }: { userRoleId?: string }) {
   const t = useTranslations("HomePage");
   const onMouseEnter = () =>
     preload("currentUserRole", () => (userRoleId ? roleFetcher(userRoleId) : null));
+
+  const router = useRouter();
+
+  useEffect(() => {
+    router.prefetch("/admin/dicom");
+  }, []);
 
   return (
     <Link

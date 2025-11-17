@@ -28,6 +28,7 @@ import AssignedBy from "./AssignedBy";
 import { ICON_SIZE } from "@/constants";
 import FilterByState from "./FilterByState";
 import ClearButton from "./ClearButton";
+import { useRouter } from "next/navigation";
 
 type SortDirection = "asc" | "desc" | null;
 
@@ -262,6 +263,8 @@ export default function Pagination({
     mutate,
   } = useSWR<FetchResult | null, number>(swrKey, fetcher);
 
+  const router = useRouter();
+
   const hasMore: boolean =
     result?.data !== undefined && result?.data !== null && result?.data.length === pageSize;
 
@@ -461,6 +464,14 @@ export default function Pagination({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [totalPages]);
+
+  useEffect(() => {
+    if (!result?.data) return;
+
+    for (const item of result.data) {
+      router.prefetch(`/admin/dicoms/${item.id}`);
+    }
+  }, [result?.data]);
 
   return (
     <>

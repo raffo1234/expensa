@@ -17,6 +17,7 @@ export default function ExploreNowButton({ userRoleId }: { userRoleId?: string }
 
   useEffect(() => {
     router.prefetch("/admin/dicom");
+    router.prefetch("/admin/dicoms");
   }, []);
 
   return (

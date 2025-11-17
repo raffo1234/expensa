@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import DicomsTable from "@/components/DicomsTable";
 import { supabase } from "@/lib/supabase";
+import { Suspense } from "react";
 
 export default async function Page() {
   const session = await auth();
@@ -19,5 +20,9 @@ export default async function Page() {
 
   if (!user?.id || !user.role_id) return null;
 
-  return <DicomsTable userId={user.id} userRoleId={user.role_id} />;
+  return (
+    <Suspense>
+      <DicomsTable userId={user.id} userRoleId={user.role_id} />
+    </Suspense>
+  );
 }

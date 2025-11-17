@@ -4,7 +4,7 @@ import FallbackPermission from "@/components/FallbackPermission";
 import { Permissions } from "@/types/propertyState";
 import useCheckPermission from "@/hooks/useCheckPermission";
 import UploaderR2 from "./UploaderR2";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { UPLOAD_OPTION } from "@/enums/uploadOption";
 import { supportsWebkitDirectory } from "@/lib/supportsWebkitDirectory";
 import OptionButton from "./OptionButton";
@@ -44,13 +44,15 @@ export default function UploaderPage({
           );
         })}
       </div>
-      <UploaderR2
-        option={option}
-        setOption={setOption}
-        userId={userId}
-        userRoleId={userRoleId}
-        userEmail={userEmail}
-      />
+      <Suspense>
+        <UploaderR2
+          option={option}
+          setOption={setOption}
+          userId={userId}
+          userRoleId={userRoleId}
+          userEmail={userEmail}
+        />
+      </Suspense>
     </>
   );
 }

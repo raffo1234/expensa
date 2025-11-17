@@ -7,7 +7,7 @@ import useScrollRestorationLocalStorage from "@/hooks/useScrollRestorationLocalS
 import { supabase } from "@/lib/supabase";
 import { Permissions } from "@/types/propertyState";
 import { UserType } from "@/types/userType";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import useSWR from "swr";
 import UsersSelector from "./UsersSelector";
 
@@ -75,22 +75,26 @@ export default function DicomsTable({
   return (
     <>
       {canOtherViewDicoms ? (
-        <UsersSelector
-          users={users}
-          activeUserId={activeUserId}
-          onChange={setActiveUserId}
-          localStorageKey="activeUserIdSelected"
-        />
+        <Suspense>
+          <UsersSelector
+            users={users}
+            activeUserId={activeUserId}
+            onChange={setActiveUserId}
+            localStorageKey="activeUserIdSelected"
+          />
+        </Suspense>
       ) : null}
-      <Pagination
-        tableName="dicom"
-        userRoleId={userRoleId}
-        userId={canOtherViewDicoms ? activeUserId : userId}
-        canViewNew={canViewNew}
-        canViewViewed={canViewViewed}
-        canViewDraft={canViewDraft}
-        canViewCompleted={canViewCompleted}
-      />
+      <Suspense>
+        <Pagination
+          tableName="dicom"
+          userRoleId={userRoleId}
+          userId={canOtherViewDicoms ? activeUserId : userId}
+          canViewNew={canViewNew}
+          canViewViewed={canViewViewed}
+          canViewDraft={canViewDraft}
+          canViewCompleted={canViewCompleted}
+        />
+      </Suspense>
     </>
   );
 }

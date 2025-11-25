@@ -375,6 +375,13 @@ export default function Pagination({
   const noData = !isLoading && !error && result?.data && result?.data.length === 0;
   const startItemNumber = page * pageSize + 1;
 
+  const clearLocalStorageSearch = () => {
+    handleSearchChange(null);
+    if (searchInputRef.current) {
+      searchInputRef.current.value = "";
+    }
+  };
+
   const clearLocalStorage = () => {
     handleSearchChange(null);
     if (searchInputRef.current) {
@@ -478,14 +485,40 @@ export default function Pagination({
       <div className="w-full flex flex-col xl:flex-row gap-2 mb-4">
         <div className="flex gap-2 flex-grow-1">
           <UploadLink />
-          <input
-            ref={searchInputRef}
-            type="text"
-            className="bg-white w-full rounded-full border border-gray-200 outline-0 px-5 py-2 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
-            placeholder="Search ..."
-            defaultValue={search ?? ""}
-            onChange={(event) => debouncedSearch(event.target.value)}
-          />
+          <div className="relative w-full">
+            <input
+              ref={searchInputRef}
+              type="text"
+              className="bg-white w-full rounded-full border border-gray-200 outline-0 px-5 py-2 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
+              placeholder="Search ..."
+              defaultValue={search ?? ""}
+              onChange={(event) => debouncedSearch(event.target.value)}
+            />
+            {searchInputRef.current && searchInputRef.current.value.length > 0 ? (
+              <button
+                type="button"
+                onClick={clearLocalStorageSearch}
+                title="Clear Search"
+                className="absolute top-1/2 -translate-y-1/2 right-[4px] hover:bg-slate-200 transition-colors duration-300 p-1.5 cursor-pointer rounded-full bg-slate-50"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width={ICON_SIZE}
+                  height={ICON_SIZE}
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="m7 7l10 10M7 17L17 7"
+                    stroke-width="1"
+                  />
+                </svg>
+              </button>
+            ) : null}
+          </div>
           <div className="xl:hidden block">
             <ClearButton clearLocalStorage={clearLocalStorage} />
           </div>

@@ -414,6 +414,18 @@ export default function Pagination({
     toast.success("Filters was cleared Successfully!");
   };
 
+  const FIVE_MINUTES = 5 * 60 * 1000;
+
+  useEffect(() => {
+    if (!searchInputRef.current?.value) return;
+
+    const timer = setTimeout(() => {
+      clearLocalStorageSearch();
+    }, FIVE_MINUTES);
+
+    return () => clearTimeout(timer);
+  }, [searchInputRef.current?.value]);
+
   useEffect(() => {
     if (savedPage) {
       setPage(defaultPage);
@@ -510,8 +522,8 @@ export default function Pagination({
                   <path
                     fill="none"
                     stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                     d="m7 7l10 10M7 17L17 7"
                     stroke-width="1"
                   />

@@ -19,7 +19,13 @@ export default async function Index() {
           fontFamily: "poppins",
         }}
       >
-        {t("title")}
+        {t("title")}{" "}
+        <span
+          className="italic text-cyan-500"
+          style={{ fontFamily: "ibm-plex-san", fontSize: "1.15em" }}
+        >
+          {t("italicTitle")}
+        </span>
       </h1>
       <p className="sm:text-xl text-center text-gray-500">{t("description")}</p>
       {session ? (

@@ -35,7 +35,7 @@
     "libarchive.js": "^2.0.2",
     "lodash": "^4.17.21",
     "minio": "^8.0.5",
-    "next": "15.3.6",
+    "next": "15.3.8",
     "next-auth": "^5.0.0-beta.28",
     "next-intl": "^4.3.12",
     "next-s3-upload": "^0.3.4",

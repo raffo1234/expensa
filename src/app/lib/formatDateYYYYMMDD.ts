@@ -1,29 +1,25 @@
 export default function formatDateYYYYMMDD(dateString: string) {
-  // 1. Guard Clauses (Early return)
+  // 1. Early return: Validación de integridad
   if (!dateString || typeof dateString !== "string" || dateString.length !== 8) {
     return null;
   }
 
+  // 2. Extracción directa (Evitamos el objeto Date y sus desfases)
   const year = dateString.substring(0, 4);
-  const monthStr = dateString.substring(4, 6);
-  const dayStr = dateString.substring(6, 8);
+  const monthIdx = parseInt(dateString.substring(4, 6), 10) - 1;
+  const day = parseInt(dateString.substring(6, 8), 10);
 
-  // 2. Validación básica de números
-  const yearNum = parseInt(year, 10);
-  const monthIndex = parseInt(monthStr, 10) - 1; // 0-11
-  const dayNum = parseInt(dayStr, 10);
-
-  if (isNaN(yearNum) || isNaN(monthIndex) || isNaN(dayNum)) return null;
-
+  // 3. Diccionario de meses
   const monthNames = [
     "enero", "febrero", "marzo", "abril", "mayo", "junio",
     "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
   ];
 
-  // 3. Validación de rango de mes
-  if (monthIndex < 0 || monthIndex > 11) return null;
+  // 4. Validación de lógica de calendario básica
+  if (isNaN(monthIdx) || monthIdx < 0 || monthIdx > 11 || isNaN(day)) {
+    return null;
+  }
 
-  // Retornamos directamente los valores parseados sin pasar por new Date()
-  // Esto evita cualquier problema de Timezone local vs UTC.
-  return `${dayNum} ${monthNames[monthIndex]} ${yearNum}`;
+  // 5. Retorno limpio
+  return `${day} ${monthNames[monthIdx]} ${year}`;
 }

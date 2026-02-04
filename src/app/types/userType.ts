@@ -21,4 +21,5 @@ export type UserType = {
   residents?: UserType[] | null;
   user?: UserType;
   archived_at?: Date | null;
+  created_at?: string;
 };

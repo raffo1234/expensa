@@ -4,9 +4,10 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import Image from "next/image";
 import Link from "next/link";
 import { updateUser } from "@/actions/updateUser";
+import { formatTimestamp } from "@/utils/formatTimestamp";
 
 export default function UserCard({ user, mutate }: { user: UserType; mutate: () => void }) {
-  const { first_name, last_name, email, archived_at, id, role, image_url } = user;
+  const { first_name, last_name, created_at, email, archived_at, id, role, image_url } = user;
 
   const archive = async () => {
     await updateUser(user.id, { archived_at: new Date() });
@@ -37,9 +38,12 @@ export default function UserCard({ user, mutate }: { user: UserType; mutate: () 
       <div title={email} className="truncate text-xs text-slate-500 mb-3">
         {email}
       </div>
-      <div className="text-xs text-cyan-700 px-2 py-0.5 bg-cyan-100 rounded-full w-fit mx-auto mb-5">
+      <div className="text-xs text-cyan-700 px-2 py-0.5 bg-cyan-100 rounded-full w-fit mx-auto mb-4">
         {role?.name}
       </div>
+      <p className="text-xs text-center mb-5 text-slate-600">
+        Creado: {formatTimestamp(created_at, "short")}
+      </p>
       <div className="flex gap-2 items-center justify-center">
         <Link
           type="button"

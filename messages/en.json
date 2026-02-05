@@ -44,6 +44,14 @@
     "privacy": "Privacy",
     "terms": "Terms"
   },
+  "MissingReport": {
+    "badge": "Instant Interpretation",
+    "title": "Have the images,",
+    "italicTitle": "but no report?",
+    "description": "Whether it's a CT or an MRI, we bridge the gap between raw data and clinical clarity. Get your expert second opinion in less than 24 hours.",
+    "cta": "Get your report today",
+    "status": "STATUS: PENDING"
+  },
   "DicomPage": {
     "title": "Upload Files",
     "description": ".dcm Compressed, Folder containing .dcm or a .dcm",

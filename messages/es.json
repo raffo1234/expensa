@@ -44,6 +44,14 @@
     "privacy": "Privacidad",
     "terms": "Términos"
   },
+  "MissingReport": {
+    "badge": "Interpretación Inmediata",
+    "title": "¿Tienes las imágenes,",
+    "italicTitle": "pero no el informe?",
+    "description": "Si te hiciste una tomografía o resonancia y sigues esperando, nosotros cerramos la brecha hacia la claridad clínica. Obtén tu segunda opinión experta en menos de 24 horas.",
+    "cta": "Obtén tu informe hoy",
+    "status": "ESTADO: PENDIENTE"
+  },
   "DicomPage": {
     "title": "Subir archivos",
     "description": "DICOM comprimido, carpeta con DICOM o un solo archivo DICOM",

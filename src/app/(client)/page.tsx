@@ -6,6 +6,7 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import Why from "@/components/Why";
 import Footer from "@/components/Footer";
+import MissingReport from "@/components/MissingReport";
 
 export default async function Index() {
   const session = await auth();
@@ -19,9 +20,8 @@ export default async function Index() {
           <h1
             className="text-center font-medium tracking-[-0.04em] text-[#0A0A0A] [text-wrap:balance]"
             style={{
-              /* Clamp más agresivo: escala mejor en pantallas grandes */
               fontSize: "clamp(2.5rem, 8vw + 1rem, 6rem)",
-              lineHeight: "0.95", // Interlineado ajustado para impacto visual
+              lineHeight: "0.95", 
               fontFamily: "var(--font-poppins)",
             }}
           >
@@ -29,7 +29,7 @@ export default async function Index() {
             <span
               className="italic font-light text-cyan-500 inline-block transform -translate-y-1"
               style={{
-                fontFamily: "var(--font-ibm-plex-serif)", // Recomendado Serif para el itálico
+                fontFamily: "var(--font-ibm-plex-serif)",
                 fontSize: "1.05em",
                 letterSpacing: "-0.02em",
               }}
@@ -128,6 +128,7 @@ export default async function Index() {
             </div>
           </div>
         </section>
+        <MissingReport />
         <Why />
       </main>
       <Footer />

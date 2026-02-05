@@ -87,14 +87,14 @@ export default async function Footer() {
         </div>
         <div className="pt-10 flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] font-medium tracking-[0.3em] uppercase">
           <p className="text-gray-300">{t("copyright")}</p>
-          <div className="flex gap-8 text-gray-400">
+          {/* <div className="flex gap-8 text-gray-400">
             <Link href="/privacy" className="hover:text-cyan-600 transition-colors">
               {t("privacy")}
             </Link>
             <Link href="/terms" className="hover:text-cyan-600 transition-colors">
               {t("terms")}
             </Link>
-          </div>
+          </div> */}
         </div>
       </div>
     </footer>

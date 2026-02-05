@@ -15,22 +15,38 @@ export default async function Index() {
   return (
     <>
       <main className="flex flex-col justify-center items-center gap-5 sm:gap-7">
-        <h1
-          className="text-center leading-12 sm:leading-20 tracking-tighter"
-          style={{
-            fontSize: "clamp(14px, 10vw + .3rem, 70px)",
-            fontFamily: "poppins",
-          }}
-        >
-          {t("title")}{" "}
-          <span
-            className="italic text-cyan-500"
-            style={{ fontFamily: "ibm-plex-san", fontSize: "1.15em" }}
+        <div className="flex flex-col items-center max-w-5xl mx-auto px-6">
+          <h1
+            className="text-center font-medium tracking-[-0.04em] text-[#0A0A0A] [text-wrap:balance]"
+            style={{
+              /* Clamp más agresivo: escala mejor en pantallas grandes */
+              fontSize: "clamp(2.5rem, 8vw + 1rem, 6rem)",
+              lineHeight: "0.95", // Interlineado ajustado para impacto visual
+              fontFamily: "var(--font-poppins)",
+            }}
           >
-            {t("italicTitle")}
-          </span>
-        </h1>
-        <p className="sm:text-xl text-center text-gray-500">{t("description")}</p>
+            {t("title")}{" "}
+            <span
+              className="italic font-light text-cyan-500 inline-block transform -translate-y-1"
+              style={{
+                fontFamily: "var(--font-ibm-plex-serif)", // Recomendado Serif para el itálico
+                fontSize: "1.05em",
+                letterSpacing: "-0.02em",
+              }}
+            >
+              {t("italicTitle")}
+            </span>
+          </h1>
+
+          <p
+            className="mt-8 text-gray-400 font-light leading-relaxed max-w-2xl text-center"
+            style={{
+              fontSize: "clamp(1rem, 1.5vw, 1.25rem)", // Consistencia en la estrategia de clamp
+            }}
+          >
+            {t("description")}
+          </p>
+        </div>
         {session ? (
           <ExploreNowButton userRoleId={userRoleId} />
         ) : (

@@ -35,6 +35,15 @@
       "description": "El tiempo es crítico en salud. Nuestro sistema optimizado de asignación de estudios elimina cuellos de botella, entregando tu segunda opinión en tiempo récord sin comprometer la precisión."
     }
   },
+  "Footer": {
+    "description": "Elevando los estándares de diagnóstico mediante interconsulta médica especializada y tecnología DICOM avanzada.",
+    "cta": "Comenzar ahora",
+    "socialTitle": "Ecosistema Social",
+    "socialSubtitle": "Sigue nuestras últimas actualizaciones médicas.",
+    "copyright": "© 2026 CADIA TECHNOLOGIES // MOTOR DE RADIOLOGÍA GLOBAL",
+    "privacy": "Privacidad",
+    "terms": "Términos"
+  },
   "DicomPage": {
     "title": "Subir archivos",
     "description": "DICOM comprimido, carpeta con DICOM o un solo archivo DICOM",

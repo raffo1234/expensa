@@ -35,6 +35,15 @@
       "description": "Time is the most critical factor in health. Our optimized routing system eliminates administrative bottlenecks, delivering your second opinion in record time without compromising precision."
     }
   },
+  "Footer": {
+    "description": "Elevating diagnostic standards through specialized medical interconsultation and advanced DICOM technology.",
+    "cta": "Get Started Now",
+    "socialTitle": "Social Ecosystem",
+    "socialSubtitle": "Follow our latest medical insights.",
+    "copyright": "© 2026 CADIA TECHNOLOGIES // GLOBAL RADIOLOGY ENGINE",
+    "privacy": "Privacy",
+    "terms": "Terms"
+  },
   "DicomPage": {
     "title": "Upload Files",
     "description": ".dcm Compressed, Folder containing .dcm or a .dcm",

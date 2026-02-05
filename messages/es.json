@@ -14,7 +14,26 @@
     "title2": "¡Tu Informe en Menos de 24 Horas!",
     "description2": "Si te realizaste una tomografía o resonancia y aún no tienes el informe . No esperes más y compártenos tus imágenes para un informe de segunda opinión en menos de 24 horas",
     "priorityBadge": "Atención Prioritaria"
-
+  },
+  "WhySection": {
+    "badge": "Excelencia Diagnóstica",
+    "mainTitle": "Por qué es vital una segunda opinión.",
+    "item1": {
+      "title": "Reduce el Error Diagnóstico",
+      "description": "Estudios demuestran que una segunda revisión de imágenes DICOM puede cambiar el diagnóstico primario hasta en un 15% de los casos, asegurando el camino correcto para tu salud."
+    },
+    "item2": {
+      "title": "Sub-especialización Experta",
+      "description": "Tu informe inicial puede ser general. Cadia conecta tus estudios con especialistas que se enfocan exclusivamente en tu tipología específica (Neurología, Oncología, etc.)."
+    },
+    "item3": {
+      "title": "Tranquilidad y Alivio",
+      "description": "La validación es el puente entre la incertidumbre y la calma. Confirmar un diagnóstico te permite iniciar tu tratamiento con un 100% de confianza."
+    },
+    "item4": {
+      "title": "Entrega Clínica Acelerada",
+      "description": "El tiempo es crítico en salud. Nuestro sistema optimizado de asignación de estudios elimina cuellos de botella, entregando tu segunda opinión en tiempo récord sin comprometer la precisión."
+    }
   },
   "DicomPage": {
     "title": "Subir archivos",

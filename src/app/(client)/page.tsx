@@ -4,6 +4,7 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import Image from "next/image";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import Why from "@/components/Why";
 
 export default async function Index() {
   const session = await auth();
@@ -109,6 +110,7 @@ export default async function Index() {
           </div>
         </div>
       </section>
+      <Why />
     </main>
   );
 }

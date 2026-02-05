@@ -15,6 +15,26 @@
     "description2": "Had a CT or MRI scan but haven't received your official report? Don't delay! Share your images now and get a second opinion report in under 24 hours.",
     "priorityBadge": "Priority Care"
   },
+  "WhySection": {
+    "badge": "Diagnostic Excellence",
+    "mainTitle": "Why a second opinion is vital.",
+    "item1": {
+      "title": "Mitigate Diagnostic Error",
+      "description": "Clinical studies demonstrate that a secondary DICOM review can refine or change the primary diagnosis in up to 15% of cases, securing the most accurate path for your recovery."
+    },
+    "item2": {
+      "title": "Expert Sub-specialization",
+      "description": "General reports may overlook nuances. Cadia routes your studies to radiologists specializing exclusively in your specific pathology (Neurology, Oncology, etc.)."
+    },
+    "item3": {
+      "title": "Clarity and Peace of Mind",
+      "description": "Validation is the bridge between uncertainty and relief. Confirming a diagnosis empowers you to proceed with treatment under 100% clinical confidence."
+    },
+    "item4": {
+      "title": "Accelerated Clinical Turnaround",
+      "description": "Time is the most critical factor in health. Our optimized routing system eliminates administrative bottlenecks, delivering your second opinion in record time without compromising precision."
+    }
+  },
   "DicomPage": {
     "title": "Upload Files",
     "description": ".dcm Compressed, Folder containing .dcm or a .dcm",

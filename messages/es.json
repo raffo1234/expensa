@@ -12,7 +12,9 @@
     "description": "Segunda Opinión Experta para Tomografía, Resonancia y Rayos X. Obtén la certeza que necesitas en menos de 24 horas",
     "button": "Empieza Ahora",
     "title2": "¡Tu Informe en Menos de 24 Horas!",
-    "description2": "Si te realizaste una tomografía o resonancia y aún no tienes el informe . No esperes más y compártenos tus imágenes para un informe de segunda opinión en menos de 24 horas"
+    "description2": "Si te realizaste una tomografía o resonancia y aún no tienes el informe . No esperes más y compártenos tus imágenes para un informe de segunda opinión en menos de 24 horas",
+    "priorityBadge": "Atención Prioritaria"
+
   },
   "DicomPage": {
     "title": "Subir archivos",

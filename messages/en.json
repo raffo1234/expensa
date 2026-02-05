@@ -12,7 +12,8 @@
     "description": "Expert Second Opinion for Tomography, Resonance (MRI), and X-Rays. Get the certainty you need in less than 24 hours.",
     "button": "Start Now",
     "title2": "Report Delivered in Under 24 Hours!",
-    "description2": "Had a CT or MRI scan but haven't received your official report? Don't delay! Share your images now and get a second opinion report in under 24 hours."
+    "description2": "Had a CT or MRI scan but haven't received your official report? Don't delay! Share your images now and get a second opinion report in under 24 hours.",
+    "priorityBadge": "Priority Care"
   },
   "DicomPage": {
     "title": "Upload Files",

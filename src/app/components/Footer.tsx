@@ -1,9 +1,13 @@
 import Link from "next/link";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { getTranslations } from "next-intl/server";
+import ExploreNowButton from "./ExploreNowButton";
+import { auth } from "@/lib/auth";
 
 export default async function Footer() {
   const t = await getTranslations("Footer");
+  const session = await auth();
+  const userRoleId = session?.user?.role_id || "";
 
   return (
     <footer className="w-full bg-[#FCFCFC] border-t border-gray-100 pt-24 pb-12">
@@ -17,14 +21,23 @@ export default async function Footer() {
               {t("description")}
             </p>
           </div>
-          <Link href="/session/new" className="group flex flex-col items-end gap-4">
-            <span className="text-[10px] uppercase tracking-[0.4em] text-gray-400 font-bold group-hover:text-cyan-600 transition-colors">
-              {t("cta")}
-            </span>
-            <div className="w-20 h-20 rounded-full border border-gray-200 flex items-center justify-center group-hover:bg-black group-hover:text-white transition-all duration-500 shadow-sm">
-              <Icon icon="solar:arrow-right-up-linear" fontSize={32} />
-            </div>
-          </Link>
+          {session ? (
+            <ExploreNowButton userRoleId={userRoleId} />
+          ) : (
+            <Link
+              href="/session/new"
+              title={t("cta")}
+              type="submit"
+              className="group cursor-pointer text-lg flex items-center gap-4 px-8 py-3 bg-black text-white rounded-full transition-colors duration-500 hover:bg-gray-800 active:bg-gray-900"
+            >
+              <span>{t("cta")}</span>
+              <Icon
+                icon="solar:arrow-right-linear"
+                className="group-hover:translate-x-2 transition-transform duration-500"
+                fontSize={24}
+              ></Icon>
+            </Link>
+          )}
         </div>
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center py-16 border-y border-gray-100 gap-12">
           <div className="flex flex-col gap-2">
@@ -33,7 +46,6 @@ export default async function Footer() {
             </h4>
             <p className="text-sm text-gray-400 font-light italic">{t("socialSubtitle")}</p>
           </div>
-
           <div className="flex flex-wrap gap-8 lg:gap-16">
             <Link
               href="https://www.tiktok.com/@cadia_pe"

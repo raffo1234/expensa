@@ -10,19 +10,16 @@ import { useEffect } from "react";
 
 export default function ExploreNowButton({ userRoleId }: { userRoleId?: string }) {
   const t = useTranslations("HomePage");
-  const onMouseEnter = () =>
-    preload("currentUserRole", () => (userRoleId ? roleFetcher(userRoleId) : null));
-
   const router = useRouter();
 
   useEffect(() => {
     router.prefetch("/admin/dicom");
     router.prefetch("/admin/dicoms");
+    preload("currentUserRole", () => (userRoleId ? roleFetcher(userRoleId) : null));
   }, []);
 
   return (
     <Link
-      onMouseEnter={onMouseEnter}
       href="/admin/dicom"
       title={t("button")}
       style={{ fontFamily: "poppins" }}

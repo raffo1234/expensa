@@ -67,7 +67,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: {
     strategy: "jwt",
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.AUTH_SECRET,
   callbacks: {
     async signIn({ user, account, profile }) {
       if (user && account?.provider === "google" && profile) {
@@ -100,6 +100,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return token;
     },
     async session({ session, token }) {
+      console.log("Session Callback Token:", token);
       if (token?.user_id) {
         session.user.id = token.user_id as string;
         session.user.role_id = token.user_role_id as string;

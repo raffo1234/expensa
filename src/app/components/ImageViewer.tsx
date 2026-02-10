@@ -32,8 +32,6 @@ export const ImageViewer = ({ src, alt = "", title }: Props) => {
             transform: `rotate(${rotation}deg) scale(${zoom})`,
             width: isVertical ? "calc(100vh - 150px)" : "100%",
             height: isVertical ? "100%" : "calc(100vh - 150px)",
-            minWidth: isVertical ? "calc(100vh - 150px)" : "800px",
-            minHeight: isVertical ? "800px" : "calc(100vh - 150px)",
             transformOrigin: "center center",
           }}
         >
@@ -49,7 +47,7 @@ export const ImageViewer = ({ src, alt = "", title }: Props) => {
         </div>
       </div>
       <div className="flex justify-center p-4 shrink-0">
-        <div className="bg-cyan-400 p-2 rounded-full z-30 shadow-lg shadow-cyan-200/50 flex gap-2 items-center">
+        <div className="bg-cyan-400 p-1.5 rounded-full z-30 shadow-lg shadow-cyan-200/50 flex gap-2 items-center">
           <div className="flex gap-1">
             <button
               onClick={() => setZoom((z) => Math.max(z - 0.2, 0.5))}
@@ -57,7 +55,7 @@ export const ImageViewer = ({ src, alt = "", title }: Props) => {
             >
               <Icon icon="ph:minus-bold" fontSize={24} />
             </button>
-            <div className="bg-white/20 px-4 py-2 rounded-full text-white min-w-[70px] text-center">
+            <div className="bg-white/20 flex items-center px-3 py-1.5 rounded-full text-white text-sm min-w-[60px] text-center">
               {(zoom * 100).toFixed(0)}%
             </div>
             <button
@@ -67,9 +65,6 @@ export const ImageViewer = ({ src, alt = "", title }: Props) => {
               <Icon icon="ph:plus-bold" fontSize={24} />
             </button>
           </div>
-
-          <div className="w-[1px] h-6 bg-white/40" />
-
           <div className="flex gap-1">
             <button
               onClick={rotateLeft}
@@ -84,9 +79,6 @@ export const ImageViewer = ({ src, alt = "", title }: Props) => {
               <Icon icon="ph:arrow-clockwise-bold" fontSize={22} />
             </button>
           </div>
-
-          <div className="w-[1px] h-6 bg-white/40" />
-
           <button
             onClick={reset}
             className="bg-white rounded-full w-10 h-10 flex justify-center items-center text-cyan-400 shadow-sm"

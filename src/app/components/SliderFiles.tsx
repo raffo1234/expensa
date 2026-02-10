@@ -1,4 +1,5 @@
-import useSwipe from "@/hooks/useSwipe";
+"use client";
+
 import { FileType } from "@/types/fileType";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { useEffect, useState, useCallback } from "react";
@@ -15,22 +16,8 @@ export default function SliderFiles({
 }) {
   const [currentFile, setCurrentFile] = useState<FileType | null>(null);
   const { setSliderOpen } = useSliderState();
-  const currentIndex = currentFile ? files.indexOf(currentFile) : -1;
 
-  const useKeyboardNavigation = (onEscape: () => void, onPrev: () => void, onNext: () => void) => {
-    useEffect(() => {
-      const handleKey = (event: KeyboardEvent) => {
-        if (event.key === "Escape") onEscape();
-        if (event.key === "ArrowLeft") onPrev();
-        if (event.key === "ArrowRight") onNext();
-      };
-      window.addEventListener("keyup", handleKey);
-
-      return () => {
-        window.removeEventListener("keyup", handleKey);
-      };
-    }, [onEscape, onPrev, onNext]);
-  };
+  const currentIndex = currentFile ? files.findIndex((f) => f.id === currentFile.id) : -1;
 
   const showPrev = useCallback(() => {
     if (currentIndex > 0) {
@@ -48,17 +35,16 @@ export default function SliderFiles({
     }
   }, [currentIndex, files]);
 
-  useKeyboardNavigation(() => setSliderOpen(false), showPrev, showNext);
-
-  const handleSwipe = useCallback(
-    (direction: "left" | "right" | "up" | "down") => {
-      if (direction === "left") showNext();
-      if (direction === "right") showPrev();
-    },
-    [showPrev, showNext],
-  );
-
-  useSwipe(handleSwipe, 50);
+  // Keyboard Navigation
+  useEffect(() => {
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSliderOpen(false);
+      if (event.key === "ArrowLeft") showPrev();
+      if (event.key === "ArrowRight") showNext();
+    };
+    window.addEventListener("keyup", handleKey);
+    return () => window.removeEventListener("keyup", handleKey);
+  }, [setSliderOpen, showPrev, showNext]);
 
   useEffect(() => {
     if (files.length > 0 && firstIndex >= 0 && firstIndex < files.length) {
@@ -69,77 +55,60 @@ export default function SliderFiles({
   if (!currentFile) return null;
 
   return (
-    <>
-      {currentFile.extension === "application/pdf" ? (
-        <PDFViewer controls fileUrl={currentFile.path} />
-      ) : (
-        <ImageViewer src={currentFile.path} />
-      )}
+    <div className="fixed inset-0 z-[100] bg-black/95 flex flex-col overflow-hidden">
+      <div className="relative flex-1 w-full h-full overflow-hidden">
+        {currentFile.extension === "application/pdf" ? (
+          <PDFViewer controls fileUrl={currentFile.path} />
+        ) : (
+          <ImageViewer src={currentFile.path} alt={currentFile.name} />
+        )}
+      </div>
       <div className="absolute z-20 flex space-x-3 -translate-x-1/2 left-1/2 bottom-6">
         {files.map((file, index) => (
           <button
             key={file.id}
             aria-label={`Show ${file.name}`}
             onClick={() => setCurrentFile(file)}
-            className={`flex items-center justify-center w-6 h-6 rounded-full transition duration-300 ease-in-out ${
-              index === currentIndex ? "bg-rose-400" : "bg-white bg-opacity-40 hover:bg-opacity-100"
+            className={`flex items-center justify-center w-6 h-6 rounded-full transition-all duration-300 ease-in-out ${
+              index === currentIndex
+                ? "bg-cyan-400 scale-110 shadow-[0_0_10px_rgba(34,211,238,0.5)]"
+                : "bg-white/40 hover:bg-white/100"
             }`}
           ></button>
         ))}
       </div>
-      <div className="absolute z-20 flex items-center top-5 right-5 bg-rose-400 p-2 rounded-[50px]">
-        <div className="flex items-center h-10 px-4 mr-2 bg-white/20 rounded-full text-white">
-          {currentIndex + 1}&nbsp;/&nbsp;{files.length}
+      <div className="absolute z-50 flex items-center top-5 right-5 bg-cyan-400 p-2 rounded-[50px] shadow-lg">
+        <div className="flex items-center h-10 px-4 mr-2 bg-white/20 rounded-full text-white font-medium">
+          {currentIndex + 1} / {files.length}
         </div>
         <button
           onClick={() => setSliderOpen(false)}
           title="Close"
-          className="flex cursor-pointer items-center justify-center rounded-full w-10 h-10 text-rose-400 bg-white"
+          className="flex cursor-pointer items-center justify-center rounded-full w-10 h-10 text-cyan-500 bg-white hover:bg-cyan-50 transition-colors shadow-sm"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 72 72">
-            <path
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="m17.5 17.5l37 37m0-37l-37 37"
-            />
-          </svg>
+          <Icon icon="ph:x-bold" width={24} height={24} />
         </button>
       </div>
       {files.length > 1 && (
         <>
           <button
-            className="hidden sm:block absolute top-1/2 -translate-y-1/2 left-0 z-10 p-4 focus:outline-none group"
+            className="absolute top-1/2 -translate-y-1/2 left-4 z-10 p-2 focus:outline-none group"
             onClick={showPrev}
-            aria-label="Previous Image"
           >
-            <span className="flex items-center justify-center w-16 h-16 rounded-full bg-rose-400 group-focus:ring">
-              <Icon
-                icon="material-symbols-light:arrow-back-rounded"
-                width={40}
-                height={40}
-                className="text-white"
-              />
+            <span className="flex items-center justify-center w-10 h-10 rounded-full bg-cyan-400/80 group-hover:bg-cyan-400 transition-all text-white shadow-xl">
+              <Icon icon="ph:caret-left-bold" width={32} height={32} />
             </span>
           </button>
           <button
-            className="hidden sm:block absolute top-1/2 -translate-y-1/2 right-0 z-10 p-4 focus:outline-none group"
+            className="absolute top-1/2 -translate-y-1/2 right-4 z-10 p-2 focus:outline-none group"
             onClick={showNext}
-            aria-label="Next Image"
           >
-            <span className="flex items-center justify-center w-16 h-16 rounded-full bg-rose-400 group-focus:ring">
-              <Icon
-                icon="material-symbols-light:arrow-forward-rounded"
-                width={40}
-                height={40}
-                className="text-white"
-              />
+            <span className="flex items-center justify-center w-10 h-10 rounded-full bg-cyan-400/80 group-hover:bg-cyan-400 transition-all text-white shadow-xl">
+              <Icon icon="ph:caret-right-bold" width={32} height={32} />
             </span>
           </button>
         </>
       )}
-    </>
+    </div>
   );
 }

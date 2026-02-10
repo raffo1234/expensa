@@ -88,15 +88,15 @@ export default function SliderFiles({
         ))}
       </div>
       <div className="absolute z-20 flex items-center top-5 right-5 bg-rose-400 p-2 rounded-[50px]">
-        <div className="flex items-center h-12 px-4 mr-2 bg-white/20 rounded-full text-white">
+        <div className="flex items-center h-10 px-4 mr-2 bg-white/20 rounded-full text-white">
           {currentIndex + 1}&nbsp;/&nbsp;{files.length}
         </div>
         <button
           onClick={() => setSliderOpen(false)}
           title="Close"
-          className="flex cursor-pointer items-center justify-center rounded-full w-12 h-12 text-rose-400 bg-white"
+          className="flex cursor-pointer items-center justify-center rounded-full w-10 h-10 text-rose-400 bg-white"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 72 72">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 72 72">
             <path
               fill="none"
               stroke="currentColor"

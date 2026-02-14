@@ -53,7 +53,7 @@
     "status": "ESTADO: PENDIENTE"
   },
   "DicomPage": {
-    "title": "Subir archivos",
+    "title": "Subir estudios",
     "description": "DICOM comprimido, carpeta con DICOM o un solo archivo DICOM",
     "button": "Ver todos"
   },
@@ -61,7 +61,7 @@
     "home": "Inicio",
     "sign-in": "Login",
     "sign-out": "Salir",
-    "upload": "Subir Archivos"
+    "upload": "Subir Estudios"
   },
   "Uploader": {
     "containing": "conteniendo",

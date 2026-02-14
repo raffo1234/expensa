@@ -53,7 +53,7 @@
     "status": "STATUS: PENDING"
   },
   "DicomPage": {
-    "title": "Upload Files",
+    "title": "Upload Studies",
     "description": ".dcm Compressed, Folder containing .dcm or a .dcm",
     "button": "View all"
   },
@@ -61,7 +61,7 @@
     "home": "Home",
     "sign-in": "Sign In",
     "sign-out": "Sign Out",
-    "upload": "Upload Files"
+    "upload": "Upload Studies"
   },
   "Uploader": {
     "containing": "containing",

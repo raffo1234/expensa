@@ -7,6 +7,7 @@ import {
   init as initCore,
   Types,
   imageLoadPoolManager,
+  cache,
 } from "@cornerstonejs/core";
 
 import {
@@ -20,7 +21,7 @@ import {
   utilities as csToolsUtils,
 } from "@cornerstonejs/tools";
 import { Enums as csToolsEnums } from "@cornerstonejs/tools";
-// @ts-expect-error - El cargador de imágenes no tiene tipos oficiales completos en v4 aún
+// @ts-expect-error - Loader types are still evolving in v4
 import { init as initDicomImageLoader } from "@cornerstonejs/dicom-image-loader";
 
 let initialized = false;
@@ -29,6 +30,8 @@ async function initCornerstone() {
   if (initialized) return;
   await initCore();
   await initTools();
+
+  // Configuración de alto rendimiento para el cargador
   await initDicomImageLoader({
     maxWebWorkers: navigator.hardwareConcurrency || 4,
     startWebWorkersOnDemand: true,
@@ -42,25 +45,16 @@ async function initCornerstone() {
   initialized = true;
 }
 
-// ✅ Definición estricta de la interfaz de la instancia
 interface Instance {
   instance_number: number;
   storage_url: string;
-  // Puedes añadir más campos según tu base de datos de Supabase
-  series_instance_uid?: string;
-  sop_instance_uid?: string;
 }
 
-interface DicomViewerProps {
-  instances: Instance[] | undefined;
-}
-
-export default function DicomViewerClient({ instances }: DicomViewerProps) {
+export default function DicomViewerClient({ instances }: { instances: Instance[] | undefined }) {
   const leftRef = useRef<HTMLDivElement | null>(null);
   const rightRef = useRef<HTMLDivElement | null>(null);
   const engineRef = useRef<RenderingEngine | null>(null);
 
-  // IDs tipados como constantes literales para evitar errores de string
   const ids = useMemo(
     () => ({
       engine: "engine-dual" as const,
@@ -87,57 +81,53 @@ export default function DicomViewerClient({ instances }: DicomViewerProps) {
       await initCornerstone();
       if (cancelled) return;
 
+      // 1. Gestión de Memoria: Limitar caché para evitar crashes en estudios grandes
+      // 1GB es un estándar seguro para navegadores modernos
+      cache.setMaxCacheSize(1024 * 1024 * 1024);
+
       if (!engineRef.current) {
         engineRef.current = new RenderingEngine(ids.engine);
 
-        const viewportInput: Types.PublicViewportInput[] = [
-          {
-            viewportId: ids.left,
-            type: Enums.ViewportType.STACK,
-            element: leftRef.current!,
-          },
-          {
-            viewportId: ids.right,
-            type: Enums.ViewportType.STACK,
-            element: rightRef.current!,
-          },
-        ];
+        engineRef.current.setViewports([
+          { viewportId: ids.left, type: Enums.ViewportType.STACK, element: leftRef.current! },
+          { viewportId: ids.right, type: Enums.ViewportType.STACK, element: rightRef.current! },
+        ]);
 
-        engineRef.current.setViewports(viewportInput);
-
-        let toolGroup = ToolGroupManager.getToolGroup(ids.group);
-        if (!toolGroup) {
-          toolGroup = ToolGroupManager.createToolGroup(ids.group);
-          if (toolGroup) {
-            [StackScrollTool, WindowLevelTool, PanTool, ZoomTool].forEach((t) =>
-              toolGroup!.addTool(t.toolName),
-            );
-            toolGroup.addViewport(ids.left, ids.engine);
-            toolGroup.addViewport(ids.right, ids.engine);
-
-            toolGroup.setToolActive(StackScrollTool.toolName, {
-              bindings: [{ mouseButton: csToolsEnums.MouseBindings.Wheel }],
-            });
-            toolGroup.setToolActive(WindowLevelTool.toolName, {
-              bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
-            });
-          }
+        const toolGroup = ToolGroupManager.createToolGroup(ids.group);
+        if (toolGroup) {
+          [StackScrollTool, WindowLevelTool, PanTool, ZoomTool].forEach((t) =>
+            toolGroup.addTool(t.toolName),
+          );
+          toolGroup.addViewport(ids.left, ids.engine);
+          toolGroup.addViewport(ids.right, ids.engine);
+          toolGroup.setToolActive(StackScrollTool.toolName, {
+            bindings: [{ mouseButton: csToolsEnums.MouseBindings.Wheel }],
+          });
+          toolGroup.setToolActive(WindowLevelTool.toolName, {
+            bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
+          });
         }
       }
 
-      // Casting a IStackViewport para acceder a métodos específicos como setStack
       const leftViewport = engineRef.current.getViewport(ids.left) as Types.IStackViewport;
       const rightViewport = engineRef.current.getViewport(ids.right) as Types.IStackViewport;
 
-      if (leftViewport && rightViewport) {
-        await Promise.all([leftViewport.setStack(imageIds), rightViewport.setStack(imageIds)]);
+      await Promise.all([leftViewport.setStack(imageIds), rightViewport.setStack(imageIds)]);
 
-        // ⚡️ Activación de Prefetch (v4 utilities)
-        csToolsUtils.stackPrefetch.enable(leftRef.current!);
+      // ⚡️ CONFIGURACIÓN PREFETCH v4 (TikTok Mode)
+      // Verificado: En v4 setConfiguration es el método para pasar las opciones
+      csToolsUtils.stackPrefetch.setConfiguration({
+        maxImagesToPrefetch: Infinity,
+        preservePreFetchedImages: true,
+        // Proximity garantiza que el buffer se llene alrededor del scroll actual
+        prefetchStrategy: "proximity",
+      });
 
-        leftViewport.render();
-        rightViewport.render();
-      }
+      // Solo pasamos el elemento como requiere la firma de enable()
+      csToolsUtils.stackPrefetch.enable(leftRef.current!);
+
+      leftViewport.render();
+      rightViewport.render();
     };
 
     setup();
@@ -147,12 +137,10 @@ export default function DicomViewerClient({ instances }: DicomViewerProps) {
       if (leftRef.current) {
         try {
           csToolsUtils.stackPrefetch.disable(leftRef.current);
-        } catch (e) {
-          console.warn("Error disabling prefetch", e);
-        }
+        } catch {}
       }
 
-      // ✅ Tipado correcto de Enums de Cornerstone
+      // ✅ Limpieza agresiva de red para liberar ancho de banda al instante
       imageLoadPoolManager.clearRequestStack(Enums.RequestType.Prefetch);
       imageLoadPoolManager.clearRequestStack(Enums.RequestType.Interaction);
 

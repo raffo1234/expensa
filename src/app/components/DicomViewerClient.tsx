@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { RenderingEngine, Enums, init as initCore, Types } from "@cornerstonejs/core";
+import {
+  RenderingEngine,
+  Enums,
+  init as initCore,
+  Types,
+  imageLoadPoolManager,
+} from "@cornerstonejs/core";
 
 import {
   init as initTools,
@@ -11,19 +17,18 @@ import {
   WindowLevelTool,
   PanTool,
   ZoomTool,
+  utilities as csToolsUtils,
 } from "@cornerstonejs/tools";
 import { Enums as csToolsEnums } from "@cornerstonejs/tools";
-// @ts-expect-error is not negatively impacting our code and avoids a big bundle size increase
+// @ts-expect-error - El cargador de imágenes no tiene tipos oficiales completos en v4 aún
 import { init as initDicomImageLoader } from "@cornerstonejs/dicom-image-loader";
 
 let initialized = false;
 
 async function initCornerstone() {
   if (initialized) return;
-
   await initCore();
   await initTools();
-
   await initDicomImageLoader({
     maxWebWorkers: navigator.hardwareConcurrency || 4,
     startWebWorkersOnDemand: true,
@@ -34,26 +39,39 @@ async function initCornerstone() {
       addTool(tool);
     } catch {}
   });
-
   initialized = true;
 }
 
-type Instance = {
+// ✅ Definición estricta de la interfaz de la instancia
+interface Instance {
   instance_number: number;
   storage_url: string;
-};
+  // Puedes añadir más campos según tu base de datos de Supabase
+  series_instance_uid?: string;
+  sop_instance_uid?: string;
+}
 
-export default function DicomViewerClient({ instances }: { instances: Instance[] | undefined }) {
+interface DicomViewerProps {
+  instances: Instance[] | undefined;
+}
+
+export default function DicomViewerClient({ instances }: DicomViewerProps) {
   const leftRef = useRef<HTMLDivElement | null>(null);
   const rightRef = useRef<HTMLDivElement | null>(null);
   const engineRef = useRef<RenderingEngine | null>(null);
 
-  const renderingEngineId = useMemo(() => "engine-dual", []);
-  const viewportLeftId = useMemo(() => "viewport-left", []);
-  const viewportRightId = useMemo(() => "viewport-right", []);
-  const toolGroupId = useMemo(() => "toolgroup-dual", []);
+  // IDs tipados como constantes literales para evitar errores de string
+  const ids = useMemo(
+    () => ({
+      engine: "engine-dual" as const,
+      left: "viewport-left" as const,
+      right: "viewport-right" as const,
+      group: "toolgroup-dual" as const,
+    }),
+    [],
+  );
 
-  const imageIds = useMemo(() => {
+  const imageIds = useMemo((): string[] => {
     if (!instances) return [];
     return [...instances]
       .sort((a, b) => Number(a.instance_number) - Number(b.instance_number))
@@ -61,8 +79,7 @@ export default function DicomViewerClient({ instances }: { instances: Instance[]
   }, [instances]);
 
   useEffect(() => {
-    if (!leftRef.current || !rightRef.current) return;
-    if (!imageIds.length) return;
+    if (!leftRef.current || !rightRef.current || !imageIds.length) return;
 
     let cancelled = false;
 
@@ -71,76 +88,95 @@ export default function DicomViewerClient({ instances }: { instances: Instance[]
       if (cancelled) return;
 
       if (!engineRef.current) {
-        engineRef.current = new RenderingEngine(renderingEngineId);
+        engineRef.current = new RenderingEngine(ids.engine);
 
-        engineRef.current.enableElement({
-          viewportId: viewportLeftId,
-          type: Enums.ViewportType.STACK,
-          element: leftRef.current!,
-        });
+        const viewportInput: Types.PublicViewportInput[] = [
+          {
+            viewportId: ids.left,
+            type: Enums.ViewportType.STACK,
+            element: leftRef.current!,
+          },
+          {
+            viewportId: ids.right,
+            type: Enums.ViewportType.STACK,
+            element: rightRef.current!,
+          },
+        ];
 
-        engineRef.current.enableElement({
-          viewportId: viewportRightId,
-          type: Enums.ViewportType.STACK,
-          element: rightRef.current!,
-        });
+        engineRef.current.setViewports(viewportInput);
 
-        // 🔹 Crear toolGroup correctamente (VERSION SAFE)
-        ToolGroupManager.createToolGroup(toolGroupId);
-        const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-
+        let toolGroup = ToolGroupManager.getToolGroup(ids.group);
         if (!toolGroup) {
-          throw new Error("ToolGroup not created correctly");
+          toolGroup = ToolGroupManager.createToolGroup(ids.group);
+          if (toolGroup) {
+            [StackScrollTool, WindowLevelTool, PanTool, ZoomTool].forEach((t) =>
+              toolGroup!.addTool(t.toolName),
+            );
+            toolGroup.addViewport(ids.left, ids.engine);
+            toolGroup.addViewport(ids.right, ids.engine);
+
+            toolGroup.setToolActive(StackScrollTool.toolName, {
+              bindings: [{ mouseButton: csToolsEnums.MouseBindings.Wheel }],
+            });
+            toolGroup.setToolActive(WindowLevelTool.toolName, {
+              bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
+            });
+          }
         }
-
-        toolGroup.addTool(StackScrollTool.toolName);
-        toolGroup.addTool(WindowLevelTool.toolName);
-        toolGroup.addTool(PanTool.toolName);
-        toolGroup.addTool(ZoomTool.toolName);
-
-        toolGroup.addViewport(viewportLeftId, renderingEngineId);
-        toolGroup.addViewport(viewportRightId, renderingEngineId);
-
-        toolGroup.setToolActive(StackScrollTool.toolName, {
-          bindings: [{ mouseButton: csToolsEnums.MouseBindings.Wheel }],
-        });
-
-        toolGroup.setToolActive(WindowLevelTool.toolName, {
-          bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
-        });
-
-        toolGroup.setToolActive(PanTool.toolName, {
-          bindings: [{ mouseButton: csToolsEnums.MouseBindings.Auxiliary }],
-        });
       }
 
-      const engine = engineRef.current;
+      // Casting a IStackViewport para acceder a métodos específicos como setStack
+      const leftViewport = engineRef.current.getViewport(ids.left) as Types.IStackViewport;
+      const rightViewport = engineRef.current.getViewport(ids.right) as Types.IStackViewport;
 
-      const leftViewport = engine.getViewport(viewportLeftId) as Types.IStackViewport;
+      if (leftViewport && rightViewport) {
+        await Promise.all([leftViewport.setStack(imageIds), rightViewport.setStack(imageIds)]);
 
-      const rightViewport = engine.getViewport(viewportRightId) as Types.IStackViewport;
+        // ⚡️ Activación de Prefetch (v4 utilities)
+        csToolsUtils.stackPrefetch.enable(leftRef.current!);
 
-      await leftViewport.setStack(imageIds);
-      await rightViewport.setStack(imageIds);
-
-      await leftViewport.setImageIdIndex(0);
-      await rightViewport.setImageIdIndex(0);
-
-      leftViewport.render();
-      rightViewport.render();
+        leftViewport.render();
+        rightViewport.render();
+      }
     };
 
     setup();
 
     return () => {
       cancelled = true;
+      if (leftRef.current) {
+        try {
+          csToolsUtils.stackPrefetch.disable(leftRef.current);
+        } catch (e) {
+          console.warn("Error disabling prefetch", e);
+        }
+      }
+
+      // ✅ Tipado correcto de Enums de Cornerstone
+      imageLoadPoolManager.clearRequestStack(Enums.RequestType.Prefetch);
+      imageLoadPoolManager.clearRequestStack(Enums.RequestType.Interaction);
+
+      if (engineRef.current) {
+        engineRef.current.destroy();
+        engineRef.current = null;
+      }
     };
-  }, [imageIds]);
+  }, [imageIds, ids]);
 
   return (
-    <div className="grid grid-cols-2 gap-2 w-full h-[650px] bg-black">
-      <div ref={leftRef} className="w-full h-full" tabIndex={0} style={{ outline: "none" }} />
-      <div ref={rightRef} className="w-full h-full" tabIndex={0} style={{ outline: "none" }} />
+    <div className="grid grid-cols-2 gap-2 w-full h-[650px] bg-black border border-zinc-800 rounded-md overflow-hidden">
+      <div
+        ref={leftRef}
+        className="w-full h-full relative"
+        tabIndex={0}
+        style={{ outline: "none" }}
+      />
+      <div
+        ref={rightRef}
+        className="w-full h-full relative border-l border-zinc-800"
+        tabIndex={0}
+        style={{ outline: "none" }}
+      />
     </div>
   );
 }

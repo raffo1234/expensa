@@ -13,6 +13,9 @@ export const ICON_SIZE = 19;
 
 export const FIELD_TAGS: Record<string, string[]> = {
   studyInstanceUID: ["x0020000d"],
+  seriesInstanceUID: ["x0020000e"], // (0020,000E) - The Series/Folder
+  sopInstanceUID: ["x00080018"], // (0008,0018) - The Individual Image
+  instanceNumber: ["x00200013"], // (0020,0013) - The Slice Order
   patientName: ["x00100010"],
   patientId: ["x70051024", "x00100020"],
   patientAge: ["x00101010"],

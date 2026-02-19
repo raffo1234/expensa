@@ -1,7 +1,6 @@
 import { DicomMetadata } from "@/types/dicomMetadata";
 import { SupabaseClient } from "@supabase/supabase-js";
 import getAgeFromYYYYMMDD from "@/lib/getAgeFromYYYYMMDD";
-import { DicomImageData, InsertImageOperationResult } from "@/types/DicomImageData";
 
 interface InsertOperationResult {
   id: string | null; // Null if insertion failed
@@ -78,62 +77,5 @@ export async function insertToDicom(
   } else {
     console.error("Insert operation returned no data despite no error.");
     return { id: null, error: new Error("Insert operation returned no data.") };
-  }
-}
-
-export async function insertToDicomImage(
-  supabase: SupabaseClient,
-  imageData: DicomImageData,
-): Promise<InsertImageOperationResult> {
-  const table = "dicom_image";
-
-  const { data, error } = await supabase
-    .from(table)
-    .insert([
-      {
-        dicom_id: imageData.dicomId,
-        image_url: imageData.imageUrl,
-        series_instance_uid: imageData.seriesInstanceUID,
-        sop_instance_uid: imageData.sopInstanceUID,
-        instance_number: imageData.instanceNumber,
-        series_number: imageData.seriesNumber,
-        file_path_in_archive: imageData.filePathInArchive,
-        acquisition_date: imageData.acquisitionDate,
-        acquisition_time: imageData.acquisitionTime,
-        image_type: imageData.imageType,
-        rows: imageData.rows,
-        columns: imageData.columns,
-        pixel_spacing: imageData.pixelSpacing,
-        bits_stored: imageData.bitsStored,
-        high_bit: imageData.highBit,
-        pixel_representation: imageData.pixelRepresentation,
-        photometric_interpretation: imageData.photometricInterpretation,
-        window_center: imageData.windowCenter,
-        window_width: imageData.windowWidth,
-        series_description: imageData.seriesDescription,
-        body_part_examined: imageData.bodyPartExamined,
-        protocol_name: imageData.protocolName,
-        patient_position: imageData.patientPosition,
-        image_orientation_patient: imageData.imageOrientationPatient,
-        image_position_patient: imageData.imagePositionPatient,
-        kvp: imageData.kvp,
-        x_ray_tube_current: imageData.xRayTubeCurrent,
-        exposure_time: imageData.exposureTime,
-        gantry_detector_tilt: imageData.gantryDetectorTilt,
-      },
-    ])
-    .select("id")
-    .single();
-
-  if (error) {
-    console.error("Error inserting record into dicom_image:", error.message);
-    return { id: null, error: new Error(error.message) };
-  }
-
-  if (data) {
-    return { id: data.id, error: null };
-  } else {
-    console.error("Dicom image insert operation returned no data despite no error.");
-    return { id: null, error: new Error("Dicom image insert operation returned no data.") };
   }
 }

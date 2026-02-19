@@ -13,6 +13,13 @@ export type AssignedByType = {
   };
 };
 
+export interface DicomInstance {
+  storage_url: string;
+  instance_number: string; // Keep as string if that's how it comes from your DICOM parser
+  sop_instance_uid: string;
+  series_instance_uid: string;
+}
+
 export type DicomType = {
   id: string;
   dicom_url: string;
@@ -36,6 +43,8 @@ export type DicomType = {
   template?: TemplateType | undefined;
   assigned_by?: AssignedByType | null;
   comment?: string | null;
+  study_instance_uid: string | null;
+  instances?: DicomInstance[] | null;
 };
 
 export type PartialDicomWithTemplate = Partial<Omit<DicomType, "template">> & {

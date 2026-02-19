@@ -48,7 +48,7 @@ export default function UploadDicomButton({
               />
               <animate fill="freeze" attributeName="strokeDashoffset" dur="0.4s" values="20;0" />
             </path>
-            <path strokeDasharray="14" stroke-dashoffset="14" d="M6 19h12">
+            <path strokeDasharray="14" strokeDashoffset="14" d="M6 19h12">
               <animate
                 fill="freeze"
                 attributeName="strokeDashoffset"

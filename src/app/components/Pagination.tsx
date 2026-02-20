@@ -995,7 +995,7 @@ export default function Pagination({
                       <td className="py-5 px-2 truncate whitespace-nowrap ">
                         <Link
                           title={patient_id}
-                          href={`${hasInstances ? `/admin/study/${id}` : `/admin/dicoms/${id}`}`}
+                          href={`${hasInstances ? `https://viewers-xi.vercel.app/viewer/dicomjson?url=https://www.cadia.cc/api/dicom-json/${id}` : `/admin/dicoms/${id}`}`}
                           className="text-sm flex items-center truncate relative"
                           target="_blank"
                         >

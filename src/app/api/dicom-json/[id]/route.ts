@@ -2,7 +2,7 @@ import { supabase } from "@/lib/supabase";
 import { NextResponse } from "next/server";
 import { PostgrestError } from "@supabase/supabase-js";
 
-// 1. Tipados Estrictos (Clean & No Any)
+// 1. Tipados Estrictos
 interface DicomInstance {
   storage_url: string;
   instance_number: number;
@@ -30,6 +30,12 @@ interface SeriesInstance {
     SamplesPerPixel: number;
     PhotometricInterpretation: string;
     BitsAllocated: number;
+    BitsStored: number;
+    HighBit: number;
+    PixelRepresentation: number;
+    ImagePositionPatient: [number, number, number];
+    ImageOrientationPatient: [number, number, number, number, number, number];
+    PixelSpacing: [number, number];
   };
   url: string;
 }
@@ -38,7 +44,6 @@ interface SeriesGroup {
   [key: string]: SeriesInstance[];
 }
 
-// 2. Función para obtener datos de Supabase
 async function getStudyData(studyId: string) {
   const { data, error }: { data: DicomTable | null; error: PostgrestError | null } = await supabase
     .from("dicom")
@@ -70,7 +75,6 @@ async function getStudyData(studyId: string) {
   };
 }
 
-// 3. Método GET
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
@@ -92,8 +96,16 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
           SamplesPerPixel: 1,
           PhotometricInterpretation: "MONOCHROME2",
           BitsAllocated: 16,
+          // --- CAMPOS CRÍTICOS PARA RENDERIZADO ---
+          BitsStored: 16,
+          HighBit: 15,
+          PixelRepresentation: 0,
+          ImagePositionPatient: [0, 0, inst.instance_number],
+          ImageOrientationPatient: [1, 0, 0, 0, 1, 0],
+          PixelSpacing: [1, 1],
         },
-        url: inst.storage_url,
+        // El prefijo dicomweb: es un truco para que OHIF use el visualizador correcto
+        url: `dicomweb:${inst.storage_url}`,
       });
     });
 
@@ -105,7 +117,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
           PatientID: studyData.patient_id,
           StudyDate: studyData.created_at
             ? new Date(studyData.created_at).toISOString().split("T")[0].replace(/-/g, "")
-            : "20260101",
+            : "20260220",
           StudyTime: "120000",
           StudyDescription: studyData.description,
           NumInstances: studyData.instances.length,
@@ -120,7 +132,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       ],
     };
 
-    // --- RESPUESTA CON HEADERS DE COMPATIBILIDAD OHIF v3 ---
     return NextResponse.json(dicomJson, {
       status: 200,
       headers: {
@@ -144,7 +155,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   }
 }
 
-// 4. Método OPTIONS (Crucial para corregir el 'Failed to fetch')
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 204,

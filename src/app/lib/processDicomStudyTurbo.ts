@@ -6,7 +6,6 @@ import uploadDicomProcessor from "./uploadDicomProcessor";
 import getAgeFromYYYYMMDD from "./getAgeFromYYYYMMDD";
 import { getDICOMMetadata } from "./getDICOMMetadata";
 
-// 1. Interfaz actualizada con los campos de diagnóstico
 export interface DicomInstance {
   sop_instance_uid: string;
   series_instance_uid: string;
@@ -21,7 +20,6 @@ export interface DicomInstance {
   bits_stored: number;
   high_bit: number;
   pixel_representation: number;
-  // --- NUEVOS CAMPOS ---
   pixel_spacing?: [number, number];
   image_orientation?: [number, number, number, number, number, number];
   image_position?: [number, number, number];
@@ -44,6 +42,23 @@ interface DicomStudy {
   gender: string;
   birthday: string;
   institution: string;
+}
+
+export interface DicomTableRow {
+  id: string;
+  user_id: string;
+  study_instance_uid: string;
+  patient_name: string;
+  patient_id: string;
+  patient_age: string;
+  study_description: string;
+  modality: string;
+  study_date: string;
+  gender: string;
+  birthday: string;
+  institution: string;
+  instances: DicomInstance[];
+  created_at: string;
 }
 
 const isDicomBinary = (buffer: Uint8Array): boolean => {
@@ -94,6 +109,7 @@ export const processDicomStudyTurbo = async (
                 ? metadata.patientAge
                 : getAgeFromYYYYMMDD(metadata.patientBirthDate || "");
 
+            // MAPEADO A COLUMNAS DE TU TABLA DICOM
             study = {
               study_instance_uid: metadata.studyInstanceUID,
               user_id: userId,
@@ -111,7 +127,6 @@ export const processDicomStudyTurbo = async (
             studiesMap.set(metadata.studyInstanceUID, study);
           }
 
-          // 2. Mapeo de metadata a la instancia (Sincronizado con getDICOMMetadata)
           study.instances.push({
             sop_instance_uid: metadata.sopInstanceUID,
             series_instance_uid: metadata.seriesInstanceUID,
@@ -126,7 +141,6 @@ export const processDicomStudyTurbo = async (
             bits_stored: metadata.bitsStored || 16,
             high_bit: metadata.highBit || 15,
             pixel_representation: metadata.pixelRepresentation || 0,
-            // Nuevos datos de diagnóstico
             pixel_spacing: metadata.pixelSpacing,
             image_orientation: metadata.imageOrientation,
             image_position: metadata.imagePosition,
@@ -149,7 +163,6 @@ export const processDicomStudyTurbo = async (
 
   if (studiesMap.size > 0) {
     for (const [uid, studyData] of studiesMap.entries()) {
-      // Verificamos si ya existe para no duplicar
       const { data: exists } = await supabase
         .from("dicom")
         .select("study_instance_uid")
@@ -157,14 +170,9 @@ export const processDicomStudyTurbo = async (
         .maybeSingle();
 
       if (!exists) {
-        // Ordenamos por número de instancia antes de subir
         studyData.instances.sort((a, b) => a.instance_number - b.instance_number);
-
         const { error: insertError } = await supabase.from("dicom").insert(studyData);
-
-        if (insertError) {
-          console.error("Error al insertar estudio:", insertError.message);
-        }
+        if (insertError) console.error("Error insert:", insertError.message);
       }
     }
   }

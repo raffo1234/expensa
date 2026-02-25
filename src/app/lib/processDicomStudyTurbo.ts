@@ -18,6 +18,7 @@ export interface DicomInstance {
   columns: number;
   bits_allocated: number;
   bits_stored: number;
+  slice_thickness?: number;
   high_bit: number;
   pixel_representation: number;
   pixel_spacing?: [number, number];
@@ -53,11 +54,13 @@ export interface DicomTableRow {
   patient_age: string;
   study_description: string;
   modality: string;
+  slice_thickness?: number;
   study_date: string;
   gender: string;
   birthday: string;
   institution: string;
   instances: DicomInstance[];
+  
   created_at: string;
 }
 
@@ -136,6 +139,7 @@ export const processDicomStudyTurbo = async (
             series_number: metadata.seriesNumber || 1,
             series_description: metadata.seriesDescription || "",
             rows: metadata.rows || 512,
+            slice_thickness: metadata.sliceThickness,
             columns: metadata.columns || 512,
             bits_allocated: metadata.bitsAllocated || 16,
             bits_stored: metadata.bitsStored || 16,

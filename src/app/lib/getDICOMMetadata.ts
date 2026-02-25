@@ -24,10 +24,10 @@ export interface DicomMetadata {
   bitsStored: number;
   highBit: number;
   pixelRepresentation: number;
-  // Campos de diagnóstico corregidos
   pixelSpacing?: [number, number];
   imageOrientation?: [number, number, number, number, number, number];
   imagePosition?: [number, number, number];
+  sliceThickness?: number; // Añadido para reconstrucción 3D
   windowCenter?: number;
   windowWidth?: number;
   rescaleIntercept?: number;
@@ -45,15 +45,34 @@ export async function getDICOMMetadata(file: Blob): Promise<DicomMetadata | null
 
     const studyUID = cleanString(dataset.string("x0020000d")) || "unknown_study";
 
-    // Helper seguro para parsear strings de DICOM a arrays numéricos
+    // Helper con normalización a 6 decimales para consistencia geométrica
     const parseTagToNumbers = (tag: string): number[] | undefined => {
       const val = dataset.string(tag);
       if (!val) return undefined;
       return val
         .split("\\")
-        .map((n) => parseFloat(n))
+        .map((n) => {
+          const parsed = parseFloat(n);
+          // Normalizamos a 6 decimales para que OHIF no vea "inconsistencias" por redondeo
+          return Number(parsed.toFixed(6));
+        })
         .filter((n) => !isNaN(n));
     };
+
+    const safeFloat = (tag: string, fallback?: number): number | undefined => {
+      const val = dataset.string(tag);
+      if (!val) return fallback;
+      const parsed = parseFloat(val);
+      return isNaN(parsed) ? fallback : parsed;
+    };
+
+    // Extraer datos geométricos primero
+    const orientation = parseTagToNumbers("x00200037") as
+      | [number, number, number, number, number, number]
+      | undefined;
+    const position = parseTagToNumbers("x00200032") as [number, number, number] | undefined;
+    const spacing = parseTagToNumbers("x00280030") as [number, number] | undefined;
+    const thickness = safeFloat("x00180050");
 
     return {
       studyInstanceUID: studyUID,
@@ -66,18 +85,16 @@ export async function getDICOMMetadata(file: Blob): Promise<DicomMetadata | null
       instanceNumber: parseInt(dataset.string("x00200013") || "1"),
 
       patientName: cleanString(dataset.string("x00100010")),
-
       patientId:
         cleanString(dataset.string("x70051024")) || cleanString(dataset.string("x00100020")),
-
       patientAge: cleanString(dataset.string("x00101010")),
       patientSex: cleanString(dataset.string("x00100040")),
       patientBirthDate: cleanString(dataset.string("x00100030")),
+
       studyDescription:
         cleanString(dataset.string("x00081030")) ||
         cleanString(dataset.string("x00181030")) ||
         cleanString(dataset.string("x7005100d")),
-
       studyDate: cleanString(dataset.string("x00080020")),
       institutionName: cleanString(dataset.string("x00080080")),
       modality: cleanString(dataset.string("x00080060")) || "OT",
@@ -91,16 +108,17 @@ export async function getDICOMMetadata(file: Blob): Promise<DicomMetadata | null
       highBit: dataset.uint16("x00280102") || 15,
       pixelRepresentation: dataset.uint16("x00280103") || 0,
 
-      pixelSpacing: parseTagToNumbers("x00280030") as [number, number] | undefined,
-      imageOrientation: parseTagToNumbers("x00200037") as
-        | [number, number, number, number, number, number]
-        | undefined,
-      imagePosition: parseTagToNumbers("x00200032") as [number, number, number] | undefined,
+      // Geometría normalizada
+      pixelSpacing: spacing,
+      imageOrientation: orientation,
+      imagePosition: position,
+      sliceThickness: thickness,
 
-      windowCenter: parseFloat(dataset.string("x00281050") || ""),
-      windowWidth: parseFloat(dataset.string("x00281051") || ""),
-      rescaleIntercept: parseFloat(dataset.string("x00281052") || "0"),
-      rescaleSlope: parseFloat(dataset.string("x00281053") || "1"),
+      // Ventaneo y rescale
+      windowCenter: safeFloat("x00281050"),
+      windowWidth: safeFloat("x00281051"),
+      rescaleIntercept: safeFloat("x00281052", 0),
+      rescaleSlope: safeFloat("x00281053", 1),
     };
   } catch (error) {
     console.error("Error al parsear DICOM:", error);

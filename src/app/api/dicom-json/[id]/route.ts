@@ -15,6 +15,13 @@ interface DicomInstance {
   bits_stored: number;
   high_bit: number;
   pixel_representation: number;
+  pixel_spacing?: [number, number];
+  image_orientation?: [number, number, number, number, number, number];
+  image_position?: [number, number, number];
+  window_center?: number;
+  window_width?: number;
+  rescale_intercept?: number;
+  rescale_slope?: number;
 }
 
 interface DicomTable {
@@ -28,6 +35,7 @@ interface DicomTable {
   modality: string | null;
 }
 
+// Interfaz para el JSON final que OHIF entiende
 interface OHIFInstance {
   metadata: {
     SOPInstanceUID: string;
@@ -41,9 +49,13 @@ interface OHIFInstance {
     BitsStored: number;
     HighBit: number;
     PixelRepresentation: number;
-    ImagePositionPatient: [number, number, number];
-    ImageOrientationPatient: [number, number, number, number, number, number];
-    PixelSpacing: [number, number];
+    ImagePositionPatient: number[];
+    ImageOrientationPatient: number[];
+    PixelSpacing: number[];
+    WindowCenter?: number;
+    WindowWidth?: number;
+    RescaleIntercept?: number;
+    RescaleSlope?: number;
   };
   url: string;
 }
@@ -58,15 +70,13 @@ async function getStudyData(studyId: string) {
     .returns<DicomTable[]>()
     .single();
 
-  if (error || !data) {
-    throw new Error(error?.message || "Study not found in database");
-  }
+  if (error || !data) throw new Error(error?.message || "Study not found");
 
   return {
     study_uid: data.study_instance_uid || `1.2.826.0.1.368.498.${data.id}`,
-    patient_name: data.patient_name || "Paciente Desconocido",
+    patient_name: data.patient_name || "Unknown",
     patient_id: data.patient_id || "unknown",
-    description: data.study_description || "Estudio DICOM",
+    description: data.study_description || "Study",
     created_at: data.created_at,
     instances: data.instances || [],
     modality: data.modality || "OT",
@@ -80,32 +90,22 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
     const seriesGroups: Record<
       string,
-      {
-        instances: OHIFInstance[];
-        number: number;
-        description: string;
-      }
+      { instances: OHIFInstance[]; number: number; description: string }
     > = {};
 
     studyData.instances.forEach((inst) => {
       const sUID = inst.series_instance_uid;
 
-      // Inicializar el grupo de serie si no existe
       if (!seriesGroups[sUID]) {
-        const sNum = inst.series_number || 1;
-        const sDesc =
-          inst.series_description && inst.series_description.trim() !== ""
-            ? inst.series_description
-            : `${studyData.modality} Serie ${sNum}`;
-
         seriesGroups[sUID] = {
           instances: [],
-          number: sNum,
-          description: sDesc,
+          number: inst.series_number || 1,
+          description:
+            inst.series_description?.trim() ||
+            `${studyData.modality} Serie ${inst.series_number || 1}`,
         };
       }
 
-      // Agregar la instancia al grupo correspondiente
       seriesGroups[sUID].instances.push({
         metadata: {
           SOPInstanceUID: inst.sop_instance_uid,
@@ -119,58 +119,53 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
           BitsStored: inst.bits_stored,
           HighBit: inst.high_bit,
           PixelRepresentation: inst.pixel_representation,
-          ImagePositionPatient: [0, 0, inst.instance_number],
-          ImageOrientationPatient: [1, 0, 0, 0, 1, 0],
-          PixelSpacing: [1, 1],
+          // Datos Geométricos con fallbacks numéricos
+          PixelSpacing: inst.pixel_spacing || [1, 1],
+          ImageOrientationPatient: inst.image_orientation || [1, 0, 0, 0, 1, 0],
+          ImagePositionPatient: inst.image_position || [0, 0, inst.instance_number],
+          // Datos de Ventana
+          WindowCenter: inst.window_center,
+          WindowWidth: inst.window_width,
+          RescaleIntercept: inst.rescale_intercept,
+          RescaleSlope: inst.rescale_slope,
         },
         url: `dicomweb:${inst.storage_url}`,
       });
     });
 
-    const dicomJson = {
-      studies: [
-        {
-          StudyInstanceUID: studyData.study_uid,
-          PatientName: studyData.patient_name,
-          PatientID: studyData.patient_id,
-          StudyDate: studyData.created_at
-            ? new Date(studyData.created_at).toISOString().split("T")[0].replace(/-/g, "")
-            : "20260225",
-          StudyTime: "120000",
-          StudyDescription: studyData.description,
-          NumInstances: studyData.instances.length,
-          series: Object.entries(seriesGroups).map(([sUID, group]) => ({
-            SeriesInstanceUID: sUID,
-            SeriesNumber: group.number,
-            Modality: studyData.modality,
-            SeriesDescription: group.description,
-            instances: group.instances,
-          })),
-        },
-      ],
-    };
-
-    return NextResponse.json(dicomJson, {
-      status: 200,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Cross-Origin-Resource-Policy": "cross-origin",
-        "Cross-Origin-Embedder-Policy": "require-corp",
+    return NextResponse.json(
+      {
+        studies: [
+          {
+            StudyInstanceUID: studyData.study_uid,
+            PatientName: studyData.patient_name,
+            PatientID: studyData.patient_id,
+            StudyDate: studyData.created_at
+              ? new Date(studyData.created_at).toISOString().split("T")[0].replace(/-/g, "")
+              : "20260225",
+            StudyTime: "120000",
+            StudyDescription: studyData.description,
+            NumInstances: studyData.instances.length,
+            series: Object.entries(seriesGroups).map(([sUID, group]) => ({
+              SeriesInstanceUID: sUID,
+              SeriesNumber: group.number,
+              Modality: studyData.modality,
+              SeriesDescription: group.description,
+              instances: group.instances,
+            })),
+          },
+        ],
       },
-    });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unknown error occurred";
-    return NextResponse.json({ error: message }, { status: 404 });
+      {
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Cross-Origin-Resource-Policy": "cross-origin",
+          "Cross-Origin-Embedder-Policy": "require-corp",
+        },
+      },
+    );
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Error";
+    return NextResponse.json({ error: msg }, { status: 404 });
   }
-}
-
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 204,
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, OPTIONS",
-      "Cross-Origin-Resource-Policy": "cross-origin",
-    },
-  });
 }

@@ -6,21 +6,29 @@ import uploadDicomProcessor from "./uploadDicomProcessor";
 import getAgeFromYYYYMMDD from "./getAgeFromYYYYMMDD";
 import { getDICOMMetadata } from "./getDICOMMetadata";
 
-// Definición estricta de la instancia para evitar errores de mapeo
+// 1. Interfaz actualizada con los campos de diagnóstico
 export interface DicomInstance {
   sop_instance_uid: string;
   series_instance_uid: string;
   instance_number: number;
   storage_url: string;
   sop_class_uid: string;
-  series_number: number; // Tag (0020,0011)
-  series_description: string; // Tag (0008,103E)
+  series_number: number;
+  series_description: string;
   rows: number;
   columns: number;
   bits_allocated: number;
   bits_stored: number;
   high_bit: number;
   pixel_representation: number;
+  // --- NUEVOS CAMPOS ---
+  pixel_spacing?: [number, number];
+  image_orientation?: [number, number, number, number, number, number];
+  image_position?: [number, number, number];
+  window_center?: number;
+  window_width?: number;
+  rescale_intercept?: number;
+  rescale_slope?: number;
 }
 
 interface DicomStudy {
@@ -103,13 +111,14 @@ export const processDicomStudyTurbo = async (
             studiesMap.set(metadata.studyInstanceUID, study);
           }
 
+          // 2. Mapeo de metadata a la instancia (Sincronizado con getDICOMMetadata)
           study.instances.push({
             sop_instance_uid: metadata.sopInstanceUID,
             series_instance_uid: metadata.seriesInstanceUID,
-            instance_number: Number(metadata.instanceNumber) || 0,
+            instance_number: metadata.instanceNumber || 0,
             storage_url: `${storageDomain}/${storagePath}`,
             sop_class_uid: metadata.sopClassUID,
-            series_number: Number(metadata.seriesNumber) || 1,
+            series_number: metadata.seriesNumber || 1,
             series_description: metadata.seriesDescription || "",
             rows: metadata.rows || 512,
             columns: metadata.columns || 512,
@@ -117,6 +126,14 @@ export const processDicomStudyTurbo = async (
             bits_stored: metadata.bitsStored || 16,
             high_bit: metadata.highBit || 15,
             pixel_representation: metadata.pixelRepresentation || 0,
+            // Nuevos datos de diagnóstico
+            pixel_spacing: metadata.pixelSpacing,
+            image_orientation: metadata.imageOrientation,
+            image_position: metadata.imagePosition,
+            window_center: metadata.windowCenter,
+            window_width: metadata.windowWidth,
+            rescale_intercept: metadata.rescaleIntercept,
+            rescale_slope: metadata.rescaleSlope,
           });
         }
       } catch (err) {
@@ -132,6 +149,7 @@ export const processDicomStudyTurbo = async (
 
   if (studiesMap.size > 0) {
     for (const [uid, studyData] of studiesMap.entries()) {
+      // Verificamos si ya existe para no duplicar
       const { data: exists } = await supabase
         .from("dicom")
         .select("study_instance_uid")
@@ -139,8 +157,14 @@ export const processDicomStudyTurbo = async (
         .maybeSingle();
 
       if (!exists) {
+        // Ordenamos por número de instancia antes de subir
         studyData.instances.sort((a, b) => a.instance_number - b.instance_number);
-        await supabase.from("dicom").insert(studyData);
+
+        const { error: insertError } = await supabase.from("dicom").insert(studyData);
+
+        if (insertError) {
+          console.error("Error al insertar estudio:", insertError.message);
+        }
       }
     }
   }

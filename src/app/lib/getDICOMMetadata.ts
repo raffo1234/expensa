@@ -64,7 +64,22 @@ export async function getDICOMMetadata(file: Blob): Promise<DicomMetadata | null
         `SYN_SOP_${uuidv5(Date.now().toString(), NAMESPACE)}`,
       sopClassUID: cleanString(dataset.string("x00080016")) || "1.2.840.10008.5.1.4.1.1.7",
       instanceNumber: parseInt(dataset.string("x00200013") || "1"),
+
       patientName: cleanString(dataset.string("x00100010")),
+
+      patientId:
+        cleanString(dataset.string("x70051024")) || cleanString(dataset.string("x00100020")),
+
+      patientAge: cleanString(dataset.string("x00101010")),
+      patientSex: cleanString(dataset.string("x00100040")),
+      patientBirthDate: cleanString(dataset.string("x00100030")),
+      studyDescription:
+        cleanString(dataset.string("x00081030")) ||
+        cleanString(dataset.string("x00181030")) ||
+        cleanString(dataset.string("x7005100d")),
+
+      studyDate: cleanString(dataset.string("x00080020")),
+      institutionName: cleanString(dataset.string("x00080080")),
       modality: cleanString(dataset.string("x00080060")) || "OT",
       seriesNumber: parseInt(dataset.string("x00200011") || "1"),
       seriesDescription: cleanString(dataset.string("x0008103e")) || "",

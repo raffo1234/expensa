@@ -1,13 +1,20 @@
 import { supabase } from "@/lib/supabase";
 import { NextResponse } from "next/server";
-import { PostgrestError } from "@supabase/supabase-js";
 
-// 1. Tipados Estrictos
 interface DicomInstance {
   storage_url: string;
   instance_number: number;
   sop_instance_uid: string;
   series_instance_uid: string;
+  sop_class_uid: string;
+  series_number: number;
+  series_description: string;
+  rows: number;
+  columns: number;
+  bits_allocated: number;
+  bits_stored: number;
+  high_bit: number;
+  pixel_representation: number;
 }
 
 interface DicomTable {
@@ -18,9 +25,10 @@ interface DicomTable {
   patient_id: string | null;
   patient_name: string | null;
   study_description: string | null;
+  modality: string | null;
 }
 
-interface SeriesInstance {
+interface OHIFInstance {
   metadata: {
     SOPInstanceUID: string;
     InstanceNumber: number;
@@ -40,25 +48,14 @@ interface SeriesInstance {
   url: string;
 }
 
-interface SeriesGroup {
-  [key: string]: SeriesInstance[];
-}
-
 async function getStudyData(studyId: string) {
-  const { data, error }: { data: DicomTable | null; error: PostgrestError | null } = await supabase
+  const { data, error } = await supabase
     .from("dicom")
     .select(
-      `
-      id,
-      created_at,
-      study_instance_uid,
-      instances, 
-      patient_id,
-      patient_name,
-      study_description
-    `,
+      "id, created_at, study_instance_uid, instances, patient_id, patient_name, study_description, modality",
     )
     .eq("id", studyId)
+    .returns<DicomTable[]>()
     .single();
 
   if (error || !data) {
@@ -72,6 +69,7 @@ async function getStudyData(studyId: string) {
     description: data.study_description || "Estudio DICOM",
     created_at: data.created_at,
     instances: data.instances || [],
+    modality: data.modality || "OT",
   };
 }
 
@@ -80,31 +78,51 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const { id } = await params;
     const studyData = await getStudyData(id);
 
-    const seriesMap: SeriesGroup = {};
+    const seriesGroups: Record<
+      string,
+      {
+        instances: OHIFInstance[];
+        number: number;
+        description: string;
+      }
+    > = {};
 
-    studyData.instances.forEach((inst: DicomInstance) => {
-      const sUID = inst.series_instance_uid || "1.2.3.4.default";
-      if (!seriesMap[sUID]) seriesMap[sUID] = [];
+    studyData.instances.forEach((inst) => {
+      const sUID = inst.series_instance_uid;
 
-      seriesMap[sUID].push({
+      // Inicializar el grupo de serie si no existe
+      if (!seriesGroups[sUID]) {
+        const sNum = inst.series_number || 1;
+        const sDesc =
+          inst.series_description && inst.series_description.trim() !== ""
+            ? inst.series_description
+            : `${studyData.modality} Serie ${sNum}`;
+
+        seriesGroups[sUID] = {
+          instances: [],
+          number: sNum,
+          description: sDesc,
+        };
+      }
+
+      // Agregar la instancia al grupo correspondiente
+      seriesGroups[sUID].instances.push({
         metadata: {
           SOPInstanceUID: inst.sop_instance_uid,
           InstanceNumber: inst.instance_number,
-          SOPClassUID: "1.2.840.10008.5.1.4.1.1.2", // CT Image Storage
-          Rows: 512,
-          Columns: 512,
+          SOPClassUID: inst.sop_class_uid,
+          Rows: inst.rows,
+          Columns: inst.columns,
           SamplesPerPixel: 1,
           PhotometricInterpretation: "MONOCHROME2",
-          BitsAllocated: 16,
-          // --- CAMPOS CRÍTICOS PARA RENDERIZADO ---
-          BitsStored: 16,
-          HighBit: 15,
-          PixelRepresentation: 0,
+          BitsAllocated: inst.bits_allocated,
+          BitsStored: inst.bits_stored,
+          HighBit: inst.high_bit,
+          PixelRepresentation: inst.pixel_representation,
           ImagePositionPatient: [0, 0, inst.instance_number],
           ImageOrientationPatient: [1, 0, 0, 0, 1, 0],
           PixelSpacing: [1, 1],
         },
-        // El prefijo dicomweb: es un truco para que OHIF use el visualizador correcto
         url: `dicomweb:${inst.storage_url}`,
       });
     });
@@ -117,16 +135,16 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
           PatientID: studyData.patient_id,
           StudyDate: studyData.created_at
             ? new Date(studyData.created_at).toISOString().split("T")[0].replace(/-/g, "")
-            : "20260220",
+            : "20260225",
           StudyTime: "120000",
           StudyDescription: studyData.description,
           NumInstances: studyData.instances.length,
-          series: Object.entries(seriesMap).map(([sUID, instances], index) => ({
+          series: Object.entries(seriesGroups).map(([sUID, group]) => ({
             SeriesInstanceUID: sUID,
-            SeriesNumber: index + 1,
-            Modality: "CT",
-            SeriesDescription: `Serie ${index + 1}`,
-            instances: instances,
+            SeriesNumber: group.number,
+            Modality: studyData.modality,
+            SeriesDescription: group.description,
+            instances: group.instances,
           })),
         },
       ],
@@ -136,22 +154,13 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       status: 200,
       headers: {
         "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With, Range",
-        "Access-Control-Expose-Headers": "Content-Length, Content-Range",
         "Cross-Origin-Resource-Policy": "cross-origin",
-        "Cross-Origin-Embedder-Policy": "credentialless",
+        "Cross-Origin-Embedder-Policy": "require-corp",
       },
     });
   } catch (err: unknown) {
-    const errorMessage = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json(
-      { error: errorMessage },
-      {
-        status: 404,
-        headers: { "Access-Control-Allow-Origin": "*" },
-      },
-    );
+    const message = err instanceof Error ? err.message : "Unknown error occurred";
+    return NextResponse.json({ error: message }, { status: 404 });
   }
 }
 
@@ -161,8 +170,6 @@ export async function OPTIONS() {
     headers: {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With, Range",
-      "Access-Control-Max-Age": "86400",
       "Cross-Origin-Resource-Policy": "cross-origin",
     },
   });

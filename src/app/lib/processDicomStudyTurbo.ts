@@ -1,17 +1,26 @@
-// src/lib/dicom-processor.ts
 import JSZip from "jszip";
 import pLimit from "p-limit";
 import { supabase } from "@/lib/supabase";
+import { fileTypeFromBuffer } from "file-type";
 import uploadDicomProcessor from "./uploadDicomProcessor";
 import getAgeFromYYYYMMDD from "./getAgeFromYYYYMMDD";
 import { getDICOMMetadata } from "./getDICOMMetadata";
 
-// --- Interfaces de Dominio ---
-interface DicomInstance {
+// Definición estricta de la instancia para evitar errores de mapeo
+export interface DicomInstance {
   sop_instance_uid: string;
   series_instance_uid: string;
   instance_number: number;
   storage_url: string;
+  sop_class_uid: string;
+  series_number: number; // Tag (0020,0011)
+  series_description: string; // Tag (0008,103E)
+  rows: number;
+  columns: number;
+  bits_allocated: number;
+  bits_stored: number;
+  high_bit: number;
+  pixel_representation: number;
 }
 
 interface DicomStudy {
@@ -29,6 +38,11 @@ interface DicomStudy {
   institution: string;
 }
 
+const isDicomBinary = (buffer: Uint8Array): boolean => {
+  if (buffer.length < 132) return false;
+  return new TextDecoder().decode(buffer.slice(128, 132)) === "DICM";
+};
+
 export const processDicomStudyTurbo = async (
   zipFile: File,
   userId: string,
@@ -38,99 +52,97 @@ export const processDicomStudyTurbo = async (
   const studiesMap = new Map<string, DicomStudy>();
   const limit = pLimit(15);
 
-  const allEntries = Object.keys(zip.files);
-  // Filtramos archivos válidos (no directorios, no basura de sistema)
-  const filesToProcess = allEntries.filter((path) => {
+  const filesToProcess = Object.keys(zip.files).filter((path) => {
     const f = zip.files[path];
     return !f.dir && !path.includes("__MACOSX") && !path.toLowerCase().includes("dicomdir");
   });
 
   const totalFiles = filesToProcess.length;
   let processedCount = 0;
-
-  // Extraemos el dominio una sola vez y validamos
-  const storageDomain = process.env.NEXT_PUBLIC_STORAGE_DOMAIN?.replace(/\/$/, "");
-  if (!storageDomain) throw new Error("NEXT_PUBLIC_STORAGE_DOMAIN no está configurada.");
+  const storageDomain = (process.env.NEXT_PUBLIC_STORAGE_DOMAIN || "").replace(/\/$/, "");
 
   const tasks = filesToProcess.map((relativePath) => {
     const file = zip.files[relativePath];
-
     return limit(async () => {
       try {
         const content = await file.async("uint8array");
         if (content.length === 0) return;
 
-        // Cast seguro para el Blob
+        const typeInfo = await fileTypeFromBuffer(content);
+        if (!isDicomBinary(content) && typeInfo?.ext !== "dcm") return;
+
         const fileBlob = new Blob([content as BlobPart], { type: "application/dicom" });
         const metadata = await getDICOMMetadata(fileBlob);
 
-        if (metadata) {
-          const { studyInstanceUID, seriesInstanceUID, sopInstanceUID, instanceNumber } = metadata;
-          const storagePath = `dicom/${studyInstanceUID}/${seriesInstanceUID}/${sopInstanceUID}.dcm`;
+        if (metadata?.studyInstanceUID) {
+          const storagePath = `dicom/${metadata.studyInstanceUID}/${metadata.seriesInstanceUID}/${metadata.sopInstanceUID}.dcm`;
 
-          // Subida a R2
           await uploadDicomProcessor(fileBlob, storagePath, () => {});
 
-          // Gestión del Map con tipado fuerte
-          let study = studiesMap.get(studyInstanceUID);
+          let study = studiesMap.get(metadata.studyInstanceUID);
           if (!study) {
+            const finalAge =
+              metadata.patientAge && metadata.patientAge !== ""
+                ? metadata.patientAge
+                : getAgeFromYYYYMMDD(metadata.patientBirthDate || "");
+
             study = {
-              study_instance_uid: studyInstanceUID,
+              study_instance_uid: metadata.studyInstanceUID,
               user_id: userId,
-              modality: metadata.modality || "N/A",
+              modality: metadata.modality || "OT",
               instances: [],
-              patient_name: metadata.patientName || "Unknown Patient",
-              patient_id: metadata.patientId || "Unknown ID",
-              study_description: metadata.studyDescription || "No Description",
-              study_date: metadata.studyDate || "Unknown Date",
-              patient_age: String(
-                metadata.patientAge || getAgeFromYYYYMMDD(metadata.patientBirthDate ?? ""),
-              ),
-              gender: metadata.patientSex || "Unknown Gender",
-              birthday: metadata.patientBirthDate || "Unknown Birthday",
-              institution: metadata.institutionName || "Unknown Institution",
+              patient_name: metadata.patientName || "Unknown",
+              patient_id: metadata.patientId || "Unknown",
+              study_description: metadata.studyDescription || "",
+              study_date: metadata.studyDate || "",
+              patient_age: String(finalAge),
+              gender: metadata.patientSex || "O",
+              birthday: metadata.patientBirthDate || "",
+              institution: metadata.institutionName || "",
             };
-            studiesMap.set(studyInstanceUID, study);
+            studiesMap.set(metadata.studyInstanceUID, study);
           }
 
           study.instances.push({
-            sop_instance_uid: sopInstanceUID,
-            series_instance_uid: seriesInstanceUID,
-            instance_number: Number(instanceNumber) || 0,
+            sop_instance_uid: metadata.sopInstanceUID,
+            series_instance_uid: metadata.seriesInstanceUID,
+            instance_number: Number(metadata.instanceNumber) || 0,
             storage_url: `${storageDomain}/${storagePath}`,
+            sop_class_uid: metadata.sopClassUID,
+            series_number: Number(metadata.seriesNumber) || 1,
+            series_description: metadata.seriesDescription || "",
+            rows: metadata.rows || 512,
+            columns: metadata.columns || 512,
+            bits_allocated: metadata.bitsAllocated || 16,
+            bits_stored: metadata.bitsStored || 16,
+            high_bit: metadata.highBit || 15,
+            pixel_representation: metadata.pixelRepresentation || 0,
           });
         }
-      } catch (err: unknown) {
-        const errorMsg = err instanceof Error ? err.message : "Error desconocido";
-        console.error(`Error en archivo ${relativePath}:`, errorMsg);
+      } catch (err) {
+        console.error("Error procesando:", relativePath, err);
       } finally {
         processedCount++;
-        if (onProgress) {
-          onProgress(Math.round((processedCount / totalFiles) * 100));
-        }
+        onProgress?.(Math.round((processedCount / totalFiles) * 100));
       }
     });
   });
 
-  // Esperamos a que todas las tareas de R2 terminen
   await Promise.all(tasks);
 
-  // Inserción final en Supabase
   if (studiesMap.size > 0) {
-    const upsertPromises = Array.from(studiesMap.values()).map((studyData) => {
-      // Ordenamos las instancias por número antes de guardar
-      studyData.instances.sort((a, b) => a.instance_number - b.instance_number);
+    for (const [uid, studyData] of studiesMap.entries()) {
+      const { data: exists } = await supabase
+        .from("dicom")
+        .select("study_instance_uid")
+        .eq("study_instance_uid", uid)
+        .maybeSingle();
 
-      return supabase.from("dicom").insert(studyData);
-    });
-
-    const results = await Promise.all(upsertPromises);
-
-    // Verificamos si hubo errores en la DB
-    results.forEach((res) => {
-      if (res.error) throw new Error(`Supabase Error: ${res.error.message}`);
-    });
+      if (!exists) {
+        studyData.instances.sort((a, b) => a.instance_number - b.instance_number);
+        await supabase.from("dicom").insert(studyData);
+      }
+    }
   }
-
   return Array.from(studiesMap.keys());
 };

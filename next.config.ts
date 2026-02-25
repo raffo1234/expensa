@@ -4,17 +4,24 @@ import createNextIntlPlugin from "next-intl/plugin";
 const withNextIntl = createNextIntlPlugin();
 
 const nextConfig: NextConfig = {
-  // 1. Cabeceras CORS para permitir a OHIF acceder a la API
+  // 1. Cabeceras de seguridad y CORS
   async headers() {
     return [
       {
-        // Aplica a todas las rutas bajo /api/dicom-json/
+        // Global: Necesario para habilitar SharedArrayBuffer en OHIF
+        source: "/(.*)",
+        headers: [
+          { key: "Cross-Origin-Embedder-Policy", value: "require-corp" },
+          { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+        ],
+      },
+      {
+        // Específico para tu API DICOM
         source: "/api/dicom-json/:path*",
         headers: [
           { key: "Cross-Origin-Resource-Policy", value: "cross-origin" },
-          { key: "Cross-Origin-Embedder-Policy", value: "credentialless" },
           { key: "Access-Control-Allow-Credentials", value: "true" },
-          { key: "Access-Control-Allow-Origin", value: "https://viewer.ohif.org" },
+          { key: "Access-Control-Allow-Origin", value: "*" }, // O tu dominio de visor específico
           { key: "Access-Control-Allow-Methods", value: "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
           {
             key: "Access-Control-Allow-Headers",
@@ -26,7 +33,7 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  // 2. Transpilar paquetes que usan sintaxis de Node o ESM específica
+  // 2. Transpilar paquetes
   transpilePackages: ["@react-pdf/renderer"],
 
   images: {

@@ -2,7 +2,6 @@ import { DicomInstance, DicomTableRow } from "@/lib/processDicomStudyTurbo";
 import { supabase } from "@/lib/supabase";
 import { NextResponse } from "next/server";
 
-// Interfaces para cumplir con el esquema de metadatos de OHIF v3
 interface OHIFInstance {
   metadata: {
     SOPInstanceUID: string;
@@ -44,34 +43,25 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const { searchParams } = new URL(request.url);
     const seriesUid = searchParams.get("seriesUid");
 
-    // 1. Fetch de datos desde Supabase
     const { data, error } = await supabase.from("dicom").select("*").eq("id", id).single();
-
     const study = data as unknown as DicomTableRow | null;
 
-    if (error || !study) {
-      return NextResponse.json({ error: "Study not found" }, { status: 404 });
-    }
+    if (error || !study) return NextResponse.json({ error: "Study not found" }, { status: 404 });
 
     const allInstances: DicomInstance[] = study.instances || [];
     const seriesMap = new Map<string, OHIFSeries>();
-
-    // Cache para asegurar que toda la serie tenga la misma orientación (Fix Warning #1)
     const orientationCache = new Map<string, number[]>();
 
-    // 2. Procesamiento y Agrupación por Series
     for (const inst of allInstances) {
       const sUID = inst.series_instance_uid;
 
       if (!seriesMap.has(sUID)) {
-        // Normalizamos la orientación de la primera instancia como referencia
         if (inst.image_orientation) {
           orientationCache.set(
             sUID,
             inst.image_orientation.map((v) => Number(v.toFixed(6))),
           );
         }
-
         seriesMap.set(sUID, {
           SeriesInstanceUID: sUID,
           SeriesNumber: inst.series_number || 1,
@@ -85,15 +75,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       const s = seriesMap.get(sUID)!;
       s.NumInstances++;
 
-      // Lazy Loading: Solo incluimos metadatos detallados si es la serie solicitada o carga inicial
       if (!seriesUid || sUID === seriesUid) {
-        // Redondeo de posición para evitar errores por ruido decimal (Fix Warning #2)
+        // Normalización inicial de metadatos
+        const orientation = orientationCache.get(sUID) || [1, 0, 0, 0, 1, 0];
         const position = inst.image_position
           ? inst.image_position.map((v) => Number(v.toFixed(4)))
           : [0, 0, inst.instance_number];
-
-        const orientation = orientationCache.get(sUID) || [1, 0, 0, 0, 1, 0];
-        const thickness = inst.slice_thickness || 1;
 
         s.instances.push({
           metadata: {
@@ -113,8 +100,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
               : [1, 1],
             ImageOrientationPatient: orientation,
             ImagePositionPatient: position,
-            SliceThickness: thickness,
-            SpacingBetweenSlices: thickness, // Requerido para reconstrucción volumétrica
+            SliceThickness: inst.slice_thickness || 1,
+            SpacingBetweenSlices: inst.slice_thickness || 1,
             ...(typeof inst.window_center === "number" && { WindowCenter: inst.window_center }),
             ...(typeof inst.window_width === "number" && { WindowWidth: inst.window_width }),
             ...(typeof inst.rescale_intercept === "number" && {
@@ -127,23 +114,37 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       }
     }
 
-    // 3. Normalización Final de la Serie (Fix Warning #3 y #4)
+    // --- BLOQUE DE NORMALIZACIÓN GEOMÉTRICA FORZADA ---
     seriesMap.forEach((series) => {
-      if (series.instances.length > 0) {
-        // A. Ordenamiento físico por coordenada Z (Profundidad)
+      if (series.instances.length > 1) {
+        // 1. Ordenar físicamente por Z
         series.instances.sort(
           (a, b) => a.metadata.ImagePositionPatient[2] - b.metadata.ImagePositionPatient[2],
         );
 
-        // B. Re-indexación correlativa de InstanceNumber
-        // Esto elimina el error "Missing Frames" al crear una secuencia sin huecos
+        // 2. Calcular el espaciado real entre las primeras dos
+        const z0 = series.instances[0].metadata.ImagePositionPatient[2];
+        const z1 = series.instances[1].metadata.ImagePositionPatient[2];
+        const step =
+          Number(Math.abs(z1 - z0).toFixed(4)) || series.instances[0].metadata.SliceThickness || 1;
+
+        // 3. Linealizar toda la serie
         series.instances.forEach((inst, index) => {
+          // Fix: Missing Frames
           inst.metadata.InstanceNumber = index + 1;
+
+          // Fix: Inconsistent Position / Irregular Spacing
+          // Forzamos a que cada slice esté exactamente a 'step' de distancia del anterior
+          const forcedZ = Number((z0 + index * (z1 > z0 ? step : -step)).toFixed(4));
+          inst.metadata.ImagePositionPatient[2] = forcedZ;
+
+          // Fix: Not a reconstructable 3D volume
+          inst.metadata.SliceThickness = step;
+          inst.metadata.SpacingBetweenSlices = step;
         });
       }
     });
 
-    // 4. Respuesta con Headers de Seguridad para SharedArrayBuffer (COEP/COOP)
     return NextResponse.json(
       {
         studies: [
@@ -163,7 +164,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       {
         headers: {
           "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
           "Cross-Origin-Resource-Policy": "cross-origin",
           "Cross-Origin-Embedder-Policy": "require-corp",
         },

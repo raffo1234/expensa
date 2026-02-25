@@ -2,6 +2,7 @@ import { DicomInstance, DicomTableRow } from "@/lib/processDicomStudyTurbo";
 import { supabase } from "@/lib/supabase";
 import { NextResponse } from "next/server";
 
+// Interfaces estrictas para el Schema de OHIF/Cornerstone
 interface OHIFInstance {
   metadata: {
     SOPInstanceUID: string;
@@ -56,12 +57,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       const sUID = inst.series_instance_uid;
 
       if (!seriesMap.has(sUID)) {
-        if (inst.image_orientation) {
-          orientationCache.set(
-            sUID,
-            inst.image_orientation.map((v) => Number(v.toFixed(6))),
-          );
-        }
+        // Normalización estricta de Orientación (Warning #1 fix)
+        // Forzamos 6 decimales para que todos los vectores sean IDÉNTICOS
+        const rawOri = inst.image_orientation || [1, 0, 0, 0, 1, 0];
+        orientationCache.set(
+          sUID,
+          rawOri.map((v) => Number(v.toFixed(6))),
+        );
+
         seriesMap.set(sUID, {
           SeriesInstanceUID: sUID,
           SeriesNumber: inst.series_number || 1,
@@ -76,12 +79,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       s.NumInstances++;
 
       if (!seriesUid || sUID === seriesUid) {
-        // Normalización inicial de metadatos
-        const orientation = orientationCache.get(sUID) || [1, 0, 0, 0, 1, 0];
-        const position = inst.image_position
-          ? inst.image_position.map((v) => Number(v.toFixed(4)))
-          : [0, 0, inst.instance_number];
-
         s.instances.push({
           metadata: {
             SOPInstanceUID: inst.sop_instance_uid,
@@ -98,8 +95,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
             PixelSpacing: inst.pixel_spacing
               ? inst.pixel_spacing.map((v) => Number(v.toFixed(6)))
               : [1, 1],
-            ImageOrientationPatient: orientation,
-            ImagePositionPatient: position,
+            ImageOrientationPatient: orientationCache.get(sUID)!,
+            ImagePositionPatient: inst.image_position
+              ? inst.image_position.map((v) => Number(v.toFixed(4)))
+              : [0, 0, inst.instance_number],
             SliceThickness: inst.slice_thickness || 1,
             SpacingBetweenSlices: inst.slice_thickness || 1,
             ...(typeof inst.window_center === "number" && { WindowCenter: inst.window_center }),
@@ -114,7 +113,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       }
     }
 
-    // --- BLOQUE DE NORMALIZACIÓN GEOMÉTRICA FORZADA ---
+    // --- NORMALIZACIÓN GEOMÉTRICA RADICAL ---
     seriesMap.forEach((series) => {
       if (series.instances.length > 1) {
         // 1. Ordenar físicamente por Z
@@ -122,25 +121,28 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
           (a, b) => a.metadata.ImagePositionPatient[2] - b.metadata.ImagePositionPatient[2],
         );
 
-        // 2. Calcular el espaciado real entre las primeras dos
+        // 2. Determinar la dirección del stack (ascendente o descendente)
         const z0 = series.instances[0].metadata.ImagePositionPatient[2];
-        const z1 = series.instances[1].metadata.ImagePositionPatient[2];
-        const step =
-          Number(Math.abs(z1 - z0).toFixed(4)) || series.instances[0].metadata.SliceThickness || 1;
+        const zLast =
+          series.instances[series.instances.length - 1].metadata.ImagePositionPatient[2];
 
-        // 3. Linealizar toda la serie
+        // Calcular el espaciado PROMEDIO para ignorar irregularidades locales (Fix Warning #2 y #3)
+        const totalDistance = Math.abs(zLast - z0);
+        const averageSpacing = Number((totalDistance / (series.instances.length - 1)).toFixed(4));
+        const direction = zLast > z0 ? 1 : -1;
+
+        // 3. Forzar alineación perfecta
         series.instances.forEach((inst, index) => {
-          // Fix: Missing Frames
+          // Fix Warning #4 (InstanceNumber correlativo)
           inst.metadata.InstanceNumber = index + 1;
 
-          // Fix: Inconsistent Position / Irregular Spacing
-          // Forzamos a que cada slice esté exactamente a 'step' de distancia del anterior
-          const forcedZ = Number((z0 + index * (z1 > z0 ? step : -step)).toFixed(4));
+          // Re-posicionamiento matemático exacto
+          const forcedZ = Number((z0 + index * averageSpacing * direction).toFixed(4));
           inst.metadata.ImagePositionPatient[2] = forcedZ;
 
-          // Fix: Not a reconstructable 3D volume
-          inst.metadata.SliceThickness = step;
-          inst.metadata.SpacingBetweenSlices = step;
+          // Forzamos el espaciado para que el visor no detecte "gaps"
+          inst.metadata.SliceThickness = averageSpacing;
+          inst.metadata.SpacingBetweenSlices = averageSpacing;
         });
       }
     });
@@ -164,6 +166,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       {
         headers: {
           "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
           "Cross-Origin-Resource-Policy": "cross-origin",
           "Cross-Origin-Embedder-Policy": "require-corp",
         },

@@ -41,10 +41,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const { searchParams } = new URL(request.url);
     const seriesUid = searchParams.get("seriesUid");
 
-    // Usamos el genérico en .from para un tipado real desde el inicio
+    // 1. Fetch de Supabase
     const { data, error } = await supabase.from("dicom").select("*").eq("id", id).single();
 
-    // Casting seguro
     const study = data as unknown as DicomTableRow | null;
 
     if (error || !study) {
@@ -52,22 +51,31 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     }
 
     const allInstances: DicomInstance[] = study.instances || [];
+    const seriesMap = new Map<string, OHIFSeries>();
 
-    // --- MODO LAZY: Metadatos de una Serie ---
-    if (seriesUid) {
-      const filtered = allInstances.filter((i) => i.series_instance_uid === seriesUid);
+    // 2. Procesamiento Unificado (Crucial para evitar el error e[0])
+    for (const inst of allInstances) {
+      const sUID = inst.series_instance_uid;
 
-      const instances: OHIFInstance[] = filtered.map((inst) => {
-        // Aseguramos que los arrays existan para cumplir con el tipo OHIFInstance
-        const pixelSpacing = inst.pixel_spacing ? [...inst.pixel_spacing] : [1, 1];
-        const imageOrientation = inst.image_orientation
-          ? [...inst.image_orientation]
-          : [1, 0, 0, 0, 1, 0];
-        const imagePosition = inst.image_position
-          ? [...inst.image_position]
-          : [0, 0, inst.instance_number];
+      if (!seriesMap.has(sUID)) {
+        seriesMap.set(sUID, {
+          SeriesInstanceUID: sUID,
+          SeriesNumber: inst.series_number || 1,
+          Modality: study.modality || "OT",
+          SeriesDescription: inst.series_description?.trim() || `Serie ${inst.series_number}`,
+          NumInstances: 0,
+          instances: [], // Se llena selectivamente abajo
+        });
+      }
 
-        return {
+      const s = seriesMap.get(sUID)!;
+      s.NumInstances++;
+
+      // Solo inyectamos metadatos de instancias si:
+      // a) Es el modo inicial (no hay seriesUid)
+      // b) Esta es la serie específica que el visor está pidiendo (Lazy Load)
+      if (!seriesUid || sUID === seriesUid) {
+        s.instances.push({
           metadata: {
             SOPInstanceUID: inst.sop_instance_uid,
             InstanceNumber: inst.instance_number,
@@ -80,9 +88,13 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
             BitsStored: inst.bits_stored,
             HighBit: inst.high_bit,
             PixelRepresentation: inst.pixel_representation,
-            PixelSpacing: pixelSpacing,
-            ImageOrientationPatient: imageOrientation,
-            ImagePositionPatient: imagePosition,
+            PixelSpacing: inst.pixel_spacing ? [...inst.pixel_spacing] : [1, 1],
+            ImageOrientationPatient: inst.image_orientation
+              ? [...inst.image_orientation]
+              : [1, 0, 0, 0, 1, 0],
+            ImagePositionPatient: inst.image_position
+              ? [...inst.image_position]
+              : [0, 0, inst.instance_number],
             ...(typeof inst.window_center === "number" && { WindowCenter: inst.window_center }),
             ...(typeof inst.window_width === "number" && { WindowWidth: inst.window_width }),
             ...(typeof inst.rescale_intercept === "number" && {
@@ -91,33 +103,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
             ...(typeof inst.rescale_slope === "number" && { RescaleSlope: inst.rescale_slope }),
           },
           url: `dicomweb:${inst.storage_url}`,
-        };
-      });
-
-      return NextResponse.json({ SeriesInstanceUID: seriesUid, instances });
-    }
-
-    // --- MODO RESUMEN: Carga Inicial ---
-    const seriesMap = new Map<string, OHIFSeries>();
-
-    for (const inst of allInstances) {
-      const sUID = inst.series_instance_uid;
-      let s = seriesMap.get(sUID);
-
-      if (!s) {
-        s = {
-          SeriesInstanceUID: sUID,
-          SeriesNumber: inst.series_number || 1,
-          Modality: study.modality || "OT",
-          SeriesDescription: inst.series_description?.trim() || `Serie ${inst.series_number}`,
-          NumInstances: 0,
-          instances: [],
-        };
-        seriesMap.set(sUID, s);
+        });
       }
-      s.NumInstances++;
     }
 
+    // 3. Respuesta con cabeceras de seguridad COEP/COOP
+    // Esto soluciona el error ERR_BLOCKED_BY_RESPONSE
     return NextResponse.json(
       {
         studies: [
@@ -128,12 +119,15 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
             StudyDate: study.study_date ? study.study_date.replace(/-/g, "") : "20260225",
             StudyTime: "120000",
             StudyDescription: study.study_description || "",
+            AccessionNumber: "",
+            NumInstances: allInstances.length,
             series: Array.from(seriesMap.values()),
           },
         ],
       },
       {
         headers: {
+          "Content-Type": "application/json",
           "Access-Control-Allow-Origin": "*",
           "Cross-Origin-Resource-Policy": "cross-origin",
           "Cross-Origin-Embedder-Policy": "require-corp",
@@ -141,7 +135,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       },
     );
   } catch (err) {
-    console.error(err);
+    console.error("Route Error:", err);
     return NextResponse.json({ error: "Internal Error" }, { status: 500 });
   }
 }

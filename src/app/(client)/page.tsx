@@ -9,19 +9,19 @@ import Footer from "@/components/Footer";
 import MissingReport from "@/components/MissingReport";
 
 export default async function Index() {
-  const session = await auth();
+  const [session, t] = await Promise.all([auth(), getTranslations("HomePage")]);
   const userRoleId = session?.user?.role_id || "";
-  const t = await getTranslations("HomePage");
 
   return (
     <>
+      <link rel="preload" as="image" href="/radiologist.png" fetchPriority="high" />
       <main className="flex flex-col justify-center items-center gap-5 sm:gap-7">
         <div className="flex flex-col items-center max-w-5xl mx-auto px-6">
           <h1
             className="text-center font-medium tracking-[-0.04em] text-[#0A0A0A] [text-wrap:balance]"
             style={{
               fontSize: "clamp(2.5rem, 8vw + 1rem, 6rem)",
-              lineHeight: "0.95", 
+              lineHeight: "0.95",
               fontFamily: "var(--font-poppins)",
             }}
           >
@@ -41,7 +41,7 @@ export default async function Index() {
           <p
             className="mt-8 text-gray-400 font-light leading-relaxed max-w-2xl text-center"
             style={{
-              fontSize: "clamp(1rem, 1.5vw, 1.25rem)", // Consistencia en la estrategia de clamp
+              fontSize: "clamp(1rem, 1.5vw, 1.25rem)",
             }}
           >
             {t("description")}
@@ -69,8 +69,10 @@ export default async function Index() {
             src="/radiologist.png"
             priority
             fill
+            fetchPriority="high"
+            sizes="(max-width: 1000px) 100vw, 1000px"
             alt="Radiologo"
-            className="h-auto object-cover rounded-2xl "
+            className="object-cover rounded-2xl "
           />
         </header>
         <section className="relative overflow-hidden bg-white border border-gray-100 rounded-[3rem] p-6 md:p-12 lg:p-20 flex flex-col lg:flex-row items-center gap-16 shadow-[0_40px_100px_-30px_rgba(0,0,0,0.05)]">

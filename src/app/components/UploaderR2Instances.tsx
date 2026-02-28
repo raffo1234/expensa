@@ -177,7 +177,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
 
     for (let index = 0; index < sortedFiles.length; index++) {
       const fileEntity = files[index];
-      console.log({ fileEntity });
+
       if (fileEntity.state !== CustomFileStateType.selected) {
         console.info(`Skipping file at index ${index} because it is not in the selected state.`);
         continue;
@@ -198,11 +198,12 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
 
       try {
         // let extractedFiles: ExtractedFilesObject = {};
+
         // switch (mime) {
         //   case "application/zip":
         //   case "application/x-zip-compressed":
         //     extractedFiles = await processZipFile(selectedFile);
-        //     break;
+-       //     break;
         //   case "application/x-compressed":
         //   case "application/x-rar-compressed":
         //     const archiveRar = await Archive.open(selectedFile);
@@ -218,7 +219,6 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
         //     });
         //     continue;
         // }
-
         const updateProgress = (progress: number) => {
           editCustomFileById(setFiles, fileEntity.id, {
             uploadPercentage: progress,
@@ -226,7 +226,6 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
         };
 
         // 2. Procesamiento secuencial (recomendado para no saturar la red/R2)
-
         const studiesByInstanceUID = await processDicomStudyTurbo(
           selectedFile,
           userId,
@@ -355,13 +354,41 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
         transition-all  hover:outline-8 outline-cyan-50 duration-300 hover:border-cyan-200 bg-white flex flex-col group items-center justify-center py-20 w-full border border-dashed rounded-2xl px-4`}
       >
         <div className="w-11 h-11 relative mb-3">
-          <Icon
-            icon="solar:record-broken"
+          <svg
             className={`${
               uploading || isDropping ? "opacity-100" : "opacity-0"
             } text-gray-500 animate-spin absolute left-0 top-0 group-hover:text-cyan-400 transition-all duration-300`}
-            fontSize={42}
-          />
+            xmlns="http://www.w3.org/2000/svg"
+            width="42"
+            height="42"
+            viewBox="0 0 24 24"
+          >
+            <g
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+            >
+              <path stroke-dasharray="18" d="M12 3c4.97 0 9 4.03 9 9">
+                <animate fill="freeze" attributeName="stroke-dashoffset" dur="0.3s" values="18;0" />
+                <animateTransform
+                  attributeName="transform"
+                  dur="1.5s"
+                  repeatCount="indefinite"
+                  type="rotate"
+                  values="0 12 12;360 12 12"
+                />
+              </path>
+              <path
+                stroke-dasharray="60"
+                d="M12 3c4.97 0 9 4.03 9 9c0 4.97 -4.03 9 -9 9c-4.97 0 -9 -4.03 -9 -9c0 -4.97 4.03 -9 9 -9Z"
+                opacity="0.3"
+              >
+                <animate fill="freeze" attributeName="stroke-dashoffset" dur="1.2s" values="60;0" />
+              </path>
+            </g>
+          </svg>
           <Icon
             icon="solar:cloud-upload-broken"
             className={`${
@@ -445,17 +472,17 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
             <div className="flex flex-col gap-2">
               {Array.from(sortFilesByName(files)).map(
                 ({ id, patientName, state, color, studies, uploadPercentage }, index) => {
-                  // const showProgressBar =
-                  //   files[index].isAvailableForR2Upload &&
-                  //   uploadPercentage !== 100 &&
-                  //   [
-                  //     CustomFileStateType.verifying,
-                  //     CustomFileStateType.selected,
-                  //     CustomFileStateType.inserting,
-                  //     CustomFileStateType.processing,
-                  //     CustomFileStateType.processed,
-                  //     CustomFileStateType.uploading,
-                  //   ].includes(state);
+                  const showProgressBar =
+                    files[index].isAvailableForR2Upload &&
+                    uploadPercentage !== 100 &&
+                    [
+                      CustomFileStateType.verifying,
+                      CustomFileStateType.selected,
+                      CustomFileStateType.inserting,
+                      CustomFileStateType.processing,
+                      CustomFileStateType.processed,
+                      CustomFileStateType.uploading,
+                    ].includes(state);
 
                   const displayWarningIcon = [
                     CustomFileStateType.errorInserting,
@@ -537,16 +564,17 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                             )}
                           </div>
                         </div>
-
-                        <div className="mt-2 relative w-full bg-gray-300 h-1 rounded-full">
-                          <div
-                            style={{ width: `${uploadPercentage}%` }}
-                            className="absolute top-0 left-0 h-full bg-gradient-to-r from-cyan-100 animate-pulse to-cyan-400 rounded-full transition-all duration-300"
-                          ></div>
-                          <div className="absolute right-0 bottom-2.5 text-sm text-gray-400">
-                            {uploadPercentage}%
+                        {showProgressBar ? (
+                          <div className="mt-2 relative w-full bg-gray-300 h-1 rounded-full">
+                            <div
+                              style={{ width: `${uploadPercentage}%` }}
+                              className="absolute top-0 left-0 h-full bg-gradient-to-r from-cyan-100 animate-pulse to-cyan-400 rounded-full transition-all duration-300"
+                            ></div>
+                            <div className="absolute right-0 bottom-2.5 text-sm text-gray-400">
+                              {uploadPercentage}%
+                            </div>
                           </div>
-                        </div>
+                        ) : null}
                       </div>
                       <FinalStep />
                     </div>

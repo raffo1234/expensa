@@ -203,7 +203,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
         //   case "application/zip":
         //   case "application/x-zip-compressed":
         //     extractedFiles = await processZipFile(selectedFile);
--       //     break;
+        //     break;
         //   case "application/x-compressed":
         //   case "application/x-rar-compressed":
         //     const archiveRar = await Archive.open(selectedFile);
@@ -370,7 +370,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
               stroke-linejoin="round"
               stroke-width="2"
             >
-              <path stroke-dasharray="18" d="M12 3c4.97 0 9 4.03 9 9">
+              <path strokeDasharray="18" d="M12 3c4.97 0 9 4.03 9 9">
                 <animate fill="freeze" attributeName="stroke-dashoffset" dur="0.3s" values="18;0" />
                 <animateTransform
                   attributeName="transform"
@@ -381,7 +381,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                 />
               </path>
               <path
-                stroke-dasharray="60"
+                strokeDasharray="60"
                 d="M12 3c4.97 0 9 4.03 9 9c0 4.97 -4.03 9 -9 9c-4.97 0 -9 -4.03 -9 -9c0 -4.97 4.03 -9 9 -9Z"
                 opacity="0.3"
               >

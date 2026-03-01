@@ -26,9 +26,11 @@ import UploadInputs from "./UploadInputs";
 import FinalStep from "./FinalStep";
 import { processDicomStudyTurbo } from "@/lib/processDicomStudyTurbo";
 
-Archive.init({
-  workerUrl: "/libarchive.js/dist/worker-bundle.js",
-});
+if (typeof window !== "undefined") {
+  Archive.init({
+    workerUrl: "/libarchive.js/dist/worker-bundle.js", 
+  });
+}
 
 declare module "react" {
   interface InputHTMLAttributes<T> extends HTMLAttributes<T> {
@@ -366,9 +368,9 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
             <g
               fill="none"
               stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
             >
               <path strokeDasharray="18" d="M12 3c4.97 0 9 4.03 9 9">
                 <animate fill="freeze" attributeName="stroke-dashoffset" dur="0.3s" values="18;0" />

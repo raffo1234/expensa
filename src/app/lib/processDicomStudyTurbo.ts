@@ -5,6 +5,7 @@ import { fileTypeFromBuffer } from "file-type";
 import uploadDicomProcessor from "./uploadDicomProcessor";
 import getAgeFromYYYYMMDD from "./getAgeFromYYYYMMDD";
 import { getDICOMMetadata } from "./getDICOMMetadata";
+import { Archive } from "libarchive.js";
 
 export interface DicomInstance {
   sop_instance_uid: string;
@@ -60,7 +61,7 @@ export interface DicomTableRow {
   birthday: string;
   institution: string;
   instances: DicomInstance[];
-  
+
   created_at: string;
 }
 
@@ -70,49 +71,80 @@ const isDicomBinary = (buffer: Uint8Array): boolean => {
 };
 
 export const processDicomStudyTurbo = async (
-  zipFile: File,
+  selectedFile: File,
   userId: string,
   onProgress?: (percent: number) => void,
 ): Promise<string[]> => {
-  const zip = await new JSZip().loadAsync(zipFile);
   const studiesMap = new Map<string, DicomStudy>();
   const limit = pLimit(15);
-
-  const filesToProcess = Object.keys(zip.files).filter((path) => {
-    const f = zip.files[path];
-    return !f.dir && !path.includes("__MACOSX") && !path.toLowerCase().includes("dicomdir");
-  });
-
-  const totalFiles = filesToProcess.length;
-  let processedCount = 0;
   const storageDomain = (process.env.NEXT_PUBLIC_STORAGE_DOMAIN || "").replace(/\/$/, "");
 
-  const tasks = filesToProcess.map((relativePath) => {
-    const file = zip.files[relativePath];
+  // Mapa temporal para buffers
+  const fileBuffers: { name: string; buffer: Uint8Array }[] = [];
+
+  // --- EXTRACTOR LOGIC ---
+  const mime = selectedFile.type || "";
+  const ext = selectedFile.name.split(".").pop()?.toLowerCase();
+
+  interface ArchiveFile {
+    arrayBuffer: () => Promise<ArrayBuffer>;
+    name: string;
+    size: number;
+  }
+
+  if (mime === "application/dicom" || ext === "dcm") {
+    fileBuffers.push({
+      name: selectedFile.name,
+      buffer: new Uint8Array(await selectedFile.arrayBuffer()),
+    });
+  } else if (mime.includes("zip") || ext === "zip") {
+    const zip = await new JSZip().loadAsync(selectedFile);
+    for (const [path, file] of Object.entries(zip.files)) {
+      if (!file.dir && !path.includes("__MACOSX") && !path.toLowerCase().includes("dicomdir")) {
+        fileBuffers.push({ name: path, buffer: await file.async("uint8array") });
+      }
+    }
+  } else if (mime.includes("rar") || ext === "rar") {
+    const archive = await Archive.open(selectedFile);
+
+    const files = (await archive.extractFiles()) as Record<string, ArchiveFile>;
+
+    for (const [path, fileContent] of Object.entries(files)) {
+      if (!path.includes("__MACOSX") && !path.toLowerCase().includes("dicomdir")) {
+        const buffer = new Uint8Array(await fileContent.arrayBuffer());
+
+        if (buffer.length > 0) {
+          fileBuffers.push({ name: path, buffer });
+        }
+      }
+    }
+  }
+
+  const totalFiles = fileBuffers.length;
+  let processedCount = 0;
+
+  // --- PROCESSOR LOGIC ---
+  const tasks = fileBuffers.map(({ name, buffer }) => {
     return limit(async () => {
       try {
-        const content = await file.async("uint8array");
-        if (content.length === 0) return;
+        if (buffer.length === 0) return;
 
-        const typeInfo = await fileTypeFromBuffer(content);
-        if (!isDicomBinary(content) && typeInfo?.ext !== "dcm") return;
+        const typeInfo = await fileTypeFromBuffer(buffer);
+        if (!isDicomBinary(buffer) && typeInfo?.ext !== "dcm") return;
 
-        const fileBlob = new Blob([content as BlobPart], { type: "application/dicom" });
+        const fileBlob = new Blob([buffer as unknown as BlobPart], { type: "application/dicom" });
         const metadata = await getDICOMMetadata(fileBlob);
 
         if (metadata?.studyInstanceUID) {
           const storagePath = `dicom/${metadata.studyInstanceUID}/${metadata.seriesInstanceUID}/${metadata.sopInstanceUID}.dcm`;
 
+          // Upload concurrente
           await uploadDicomProcessor(fileBlob, storagePath, () => {});
 
           let study = studiesMap.get(metadata.studyInstanceUID);
           if (!study) {
             const finalAge =
-              metadata.patientAge && metadata.patientAge !== ""
-                ? metadata.patientAge
-                : getAgeFromYYYYMMDD(metadata.patientBirthDate || "");
-
-            // MAPEADO A COLUMNAS DE TU TABLA DICOM
+              metadata.patientAge || getAgeFromYYYYMMDD(metadata.patientBirthDate || "");
             study = {
               study_instance_uid: metadata.studyInstanceUID,
               user_id: userId,
@@ -139,12 +171,12 @@ export const processDicomStudyTurbo = async (
             series_number: metadata.seriesNumber || 1,
             series_description: metadata.seriesDescription || "",
             rows: metadata.rows || 512,
-            slice_thickness: metadata.sliceThickness,
             columns: metadata.columns || 512,
             bits_allocated: metadata.bitsAllocated || 16,
             bits_stored: metadata.bitsStored || 16,
             high_bit: metadata.highBit || 15,
             pixel_representation: metadata.pixelRepresentation || 0,
+            slice_thickness: metadata.sliceThickness,
             pixel_spacing: metadata.pixelSpacing,
             image_orientation: metadata.imageOrientation,
             image_position: metadata.imagePosition,
@@ -155,7 +187,7 @@ export const processDicomStudyTurbo = async (
           });
         }
       } catch (err) {
-        console.error("Error procesando:", relativePath, err);
+        console.error(`Error en ${name}:`, err);
       } finally {
         processedCount++;
         onProgress?.(Math.round((processedCount / totalFiles) * 100));
@@ -165,20 +197,24 @@ export const processDicomStudyTurbo = async (
 
   await Promise.all(tasks);
 
+  // --- FINAL DATABASE INSERT ---
   if (studiesMap.size > 0) {
-    for (const [uid, studyData] of studiesMap.entries()) {
+    const studyEntries = Array.from(studiesMap.values());
+    for (const studyData of studyEntries) {
+      // Check exists
       const { data: exists } = await supabase
         .from("dicom")
         .select("study_instance_uid")
-        .eq("study_instance_uid", uid)
+        .eq("study_instance_uid", studyData.study_instance_uid)
         .maybeSingle();
 
       if (!exists) {
         studyData.instances.sort((a, b) => a.instance_number - b.instance_number);
         const { error: insertError } = await supabase.from("dicom").insert(studyData);
-        if (insertError) console.error("Error insert:", insertError.message);
+        if (insertError) throw new Error(`Supabase Insert Error: ${insertError.message}`);
       }
     }
   }
+
   return Array.from(studiesMap.keys());
 };

@@ -2,11 +2,12 @@ import JSZip from "jszip";
 import pLimit from "p-limit";
 import { supabase } from "@/lib/supabase";
 import { fileTypeFromBuffer } from "file-type";
+import { Archive } from "libarchive.js";
 import uploadDicomProcessor from "./uploadDicomProcessor";
 import getAgeFromYYYYMMDD from "./getAgeFromYYYYMMDD";
 import { getDICOMMetadata } from "./getDICOMMetadata";
-import { Archive } from "libarchive.js";
 
+// --- INTERFACES ---
 export interface DicomInstance {
   sop_instance_uid: string;
   series_instance_uid: string;
@@ -65,32 +66,37 @@ export interface DicomTableRow {
   created_at: string;
 }
 
+interface ArchiveFile {
+  arrayBuffer: () => Promise<ArrayBuffer>;
+}
+
 const isDicomBinary = (buffer: Uint8Array): boolean => {
   if (buffer.length < 132) return false;
   return new TextDecoder().decode(buffer.slice(128, 132)) === "DICM";
 };
 
+/**
+ * PROCESADOR DICOM TURBO - ESTRATEGIA DE AISLAMIENTO TOTAL
+ * Cada usuario tiene su propia copia física en R2 y su propia fila en Supabase.
+ */
 export const processDicomStudyTurbo = async (
   selectedFile: File,
   userId: string,
   onProgress?: (percent: number) => void,
+  isAvailableForR2Upload: boolean = false,
 ): Promise<string[]> => {
   const studiesMap = new Map<string, DicomStudy>();
   const limit = pLimit(15);
   const storageDomain = (process.env.NEXT_PUBLIC_STORAGE_DOMAIN || "").replace(/\/$/, "");
 
-  // Mapa temporal para buffers
+  // Cache de estado filtrado por usuario actual
+  const userStudyStatusCache = new Map<string, { exists: boolean; hasInstances: boolean }>();
+
   const fileBuffers: { name: string; buffer: Uint8Array }[] = [];
 
-  // --- EXTRACTOR LOGIC ---
+  // --- 1. EXTRACCIÓN (Zip, Rar, Dcm) ---
   const mime = selectedFile.type || "";
   const ext = selectedFile.name.split(".").pop()?.toLowerCase();
-
-  interface ArchiveFile {
-    arrayBuffer: () => Promise<ArrayBuffer>;
-    name: string;
-    size: number;
-  }
 
   if (mime === "application/dicom" || ext === "dcm") {
     fileBuffers.push({
@@ -106,16 +112,11 @@ export const processDicomStudyTurbo = async (
     }
   } else if (mime.includes("rar") || ext === "rar") {
     const archive = await Archive.open(selectedFile);
-
     const files = (await archive.extractFiles()) as Record<string, ArchiveFile>;
-
     for (const [path, fileContent] of Object.entries(files)) {
       if (!path.includes("__MACOSX") && !path.toLowerCase().includes("dicomdir")) {
         const buffer = new Uint8Array(await fileContent.arrayBuffer());
-
-        if (buffer.length > 0) {
-          fileBuffers.push({ name: path, buffer });
-        }
+        if (buffer.length > 0) fileBuffers.push({ name: path, buffer });
       }
     }
   }
@@ -123,7 +124,7 @@ export const processDicomStudyTurbo = async (
   const totalFiles = fileBuffers.length;
   let processedCount = 0;
 
-  // --- PROCESSOR LOGIC ---
+  // --- 2. PROCESAMIENTO Y AISLAMIENTO POR USUARIO ---
   const tasks = fileBuffers.map(({ name, buffer }) => {
     return limit(async () => {
       try {
@@ -136,17 +137,41 @@ export const processDicomStudyTurbo = async (
         const metadata = await getDICOMMetadata(fileBlob);
 
         if (metadata?.studyInstanceUID) {
-          const storagePath = `dicom/${metadata.studyInstanceUID}/${metadata.seriesInstanceUID}/${metadata.sopInstanceUID}.dcm`;
+          const sUID = metadata.studyInstanceUID;
 
-          // Upload concurrente
-          await uploadDicomProcessor(fileBlob, storagePath, () => {});
+          // --- PRE-CHECK POR USUARIO ---
+          if (!userStudyStatusCache.has(sUID)) {
+            const { data } = await supabase
+              .from("dicom")
+              .select("instances")
+              .eq("study_instance_uid", sUID)
+              .eq("user_id", userId) // Aislamiento: verificamos si ESTE usuario ya lo tiene
+              .maybeSingle();
 
-          let study = studiesMap.get(metadata.studyInstanceUID);
+            userStudyStatusCache.set(sUID, {
+              exists: !!data,
+              hasInstances: !!(data?.instances && data.instances.length > 0),
+            });
+          }
+
+          const status = userStudyStatusCache.get(sUID)!;
+
+          // ESTRUCTURA DE RUTA AISLADA: dicom/{userId}/{studyUID}/...
+          const storagePath = `dicom/${userId}/${sUID}/${metadata.seriesInstanceUID}/${metadata.sopInstanceUID}.dcm`;
+
+          // Solo subir si el usuario actual no tiene las imágenes cargadas aún
+          const shouldUpload = isAvailableForR2Upload && !status.hasInstances;
+
+          if (shouldUpload) {
+            await uploadDicomProcessor(fileBlob, storagePath, () => {});
+          }
+
+          let study = studiesMap.get(sUID);
           if (!study) {
             const finalAge =
               metadata.patientAge || getAgeFromYYYYMMDD(metadata.patientBirthDate || "");
             study = {
-              study_instance_uid: metadata.studyInstanceUID,
+              study_instance_uid: sUID,
               user_id: userId,
               modality: metadata.modality || "OT",
               instances: [],
@@ -159,35 +184,38 @@ export const processDicomStudyTurbo = async (
               birthday: metadata.patientBirthDate || "",
               institution: metadata.institutionName || "",
             };
-            studiesMap.set(metadata.studyInstanceUID, study);
+            studiesMap.set(sUID, study);
           }
 
-          study.instances.push({
-            sop_instance_uid: metadata.sopInstanceUID,
-            series_instance_uid: metadata.seriesInstanceUID,
-            instance_number: metadata.instanceNumber || 0,
-            storage_url: `${storageDomain}/${storagePath}`,
-            sop_class_uid: metadata.sopClassUID,
-            series_number: metadata.seriesNumber || 1,
-            series_description: metadata.seriesDescription || "",
-            rows: metadata.rows || 512,
-            columns: metadata.columns || 512,
-            bits_allocated: metadata.bitsAllocated || 16,
-            bits_stored: metadata.bitsStored || 16,
-            high_bit: metadata.highBit || 15,
-            pixel_representation: metadata.pixelRepresentation || 0,
-            slice_thickness: metadata.sliceThickness,
-            pixel_spacing: metadata.pixelSpacing,
-            image_orientation: metadata.imageOrientation,
-            image_position: metadata.imagePosition,
-            window_center: metadata.windowCenter,
-            window_width: metadata.windowWidth,
-            rescale_intercept: metadata.rescaleIntercept,
-            rescale_slope: metadata.rescaleSlope,
-          });
+          if (isAvailableForR2Upload) {
+            // Mantenemos tu mapeo original exacto
+            study.instances.push({
+              sop_instance_uid: metadata.sopInstanceUID,
+              series_instance_uid: metadata.seriesInstanceUID,
+              instance_number: metadata.instanceNumber || 0,
+              storage_url: `${storageDomain}/${storagePath}`,
+              sop_class_uid: metadata.sopClassUID,
+              series_number: metadata.seriesNumber || 1,
+              series_description: metadata.seriesDescription || "",
+              rows: metadata.rows || 512,
+              columns: metadata.columns || 512,
+              bits_allocated: metadata.bitsAllocated || 16,
+              bits_stored: metadata.bitsStored || 16,
+              high_bit: metadata.highBit || 15,
+              pixel_representation: metadata.pixelRepresentation || 0,
+              slice_thickness: metadata.sliceThickness,
+              pixel_spacing: metadata.pixelSpacing,
+              image_orientation: metadata.imageOrientation,
+              image_position: metadata.imagePosition,
+              window_center: metadata.windowCenter,
+              window_width: metadata.windowWidth,
+              rescale_intercept: metadata.rescaleIntercept,
+              rescale_slope: metadata.rescaleSlope,
+            });
+          }
         }
       } catch (err) {
-        console.error(`Error en ${name}:`, err);
+        console.error(`Error procesando ${name}:`, err);
       } finally {
         processedCount++;
         onProgress?.(Math.round((processedCount / totalFiles) * 100));
@@ -197,21 +225,30 @@ export const processDicomStudyTurbo = async (
 
   await Promise.all(tasks);
 
-  // --- FINAL DATABASE INSERT ---
+  // --- 3. PERSISTENCIA EN SUPABASE ---
   if (studiesMap.size > 0) {
-    const studyEntries = Array.from(studiesMap.values());
-    for (const studyData of studyEntries) {
-      // Check exists
-      const { data: exists } = await supabase
-        .from("dicom")
-        .select("study_instance_uid")
-        .eq("study_instance_uid", studyData.study_instance_uid)
-        .maybeSingle();
+    for (const studyData of studiesMap.values()) {
+      const status = userStudyStatusCache.get(studyData.study_instance_uid);
+      const incomingHasInstances = studyData.instances.length > 0;
 
-      if (!exists) {
+      // SI NO EXISTE PARA ESTE USUARIO -> INSERT
+      if (!status?.exists) {
+        if (incomingHasInstances) {
+          studyData.instances.sort((a, b) => a.instance_number - b.instance_number);
+        }
+        const { error } = await supabase.from("dicom").insert(studyData);
+        if (error) throw new Error(`Insert Error: ${error.message}`);
+      }
+      // SI EXISTE PERO ESTABA VACÍO -> UPDATE
+      else if (!status.hasInstances && incomingHasInstances) {
         studyData.instances.sort((a, b) => a.instance_number - b.instance_number);
-        const { error: insertError } = await supabase.from("dicom").insert(studyData);
-        if (insertError) throw new Error(`Supabase Insert Error: ${insertError.message}`);
+        const { error } = await supabase
+          .from("dicom")
+          .update({ instances: studyData.instances })
+          .eq("study_instance_uid", studyData.study_instance_uid)
+          .eq("user_id", userId); // Aislamiento en el update
+
+        if (error) throw new Error(`Update Error: ${error.message}`);
       }
     }
   }

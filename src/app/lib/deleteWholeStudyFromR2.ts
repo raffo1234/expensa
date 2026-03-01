@@ -1,7 +1,5 @@
-// src/services/dicom-storage.ts
 import { DeleteObjectsCommand, paginateListObjectsV2, S3Client } from "@aws-sdk/client-s3";
 
-// Definimos el tipo de retorno para consistencia en toda la app
 export interface R2DeleteResponse {
   success: boolean;
   count?: number;
@@ -17,17 +15,22 @@ const r2Client = new S3Client({
   },
 });
 
-export const deleteWholeStudyFromR2 = async (studyUID: string): Promise<R2DeleteResponse> => {
-  if (!studyUID) {
-    return { success: false, error: "No studyUID provided" };
+export const deleteWholeStudyFromR2 = async (
+  studyUID: string,
+  userId: string, // Nuevo parámetro obligatorio
+): Promise<R2DeleteResponse> => {
+  if (!studyUID || !userId) {
+    return { success: false, error: "Missing studyUID or userId" };
   }
 
   const bucket = process.env.CLOUDFLARE_R2_BUCKET_NAME;
-  const prefix = `dicom/${studyUID}/`;
+  // LA RUTA DEBE COINCIDIR CON: dicom/${userId}/${studyUID}/
+  const prefix = `dicom/${userId}/${studyUID}/`;
 
   try {
     const keysToDelete: { Key: string }[] = [];
 
+    // Usamos el paginador para manejar estudios de más de 1000 imágenes
     const paginator = paginateListObjectsV2(
       { client: r2Client },
       { Bucket: bucket, Prefix: prefix },
@@ -42,9 +45,11 @@ export const deleteWholeStudyFromR2 = async (studyUID: string): Promise<R2Delete
     }
 
     if (keysToDelete.length === 0) {
+      console.log(`⚠️ No se encontraron archivos en R2 para el prefijo: ${prefix}`);
       return { success: true, count: 0 };
     }
 
+    // Borrado por chunks de 1000 (Límite de la API de S3/R2)
     const chunkSize = 1000;
     for (let i = 0; i < keysToDelete.length; i += chunkSize) {
       const chunk = keysToDelete.slice(i, i + chunkSize);
@@ -60,16 +65,11 @@ export const deleteWholeStudyFromR2 = async (studyUID: string): Promise<R2Delete
       );
     }
 
-    console.log(`✅ R2: Eliminados ${keysToDelete.length} archivos del estudio ${studyUID}`);
+    console.log(`✅ R2: Eliminados ${keysToDelete.length} archivos de ${prefix}`);
     return { success: true, count: keysToDelete.length };
   } catch (error: unknown) {
-    // Eliminamos 'any' y validamos el error de forma segura
     const errorMessage = error instanceof Error ? error.message : "Error desconocido";
     console.error("❌ Error al eliminar de R2:", errorMessage);
-
-    return {
-      success: false,
-      error: errorMessage,
-    };
+    return { success: false, error: errorMessage };
   }
 };

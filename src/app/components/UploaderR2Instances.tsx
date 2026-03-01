@@ -9,7 +9,7 @@ import { useDropzone } from "react-dropzone";
 import { ExtractedFilesObject } from "@/lib/decompress";
 import { findAllDicomFilesWithDifferentStudyUID } from "@/lib/dicoms";
 import sortFilesByName from "@/utils/sortFilesByName";
-import { CustomFileStateType, CustomFileType } from "@/types/customFileType";
+import { CustomFileStateType, CustomFileType, Study } from "@/types/customFileType";
 import { v4 as uuidv4 } from "uuid";
 import useCheckPermission from "@/hooks/useCheckPermission";
 import editCustomFileById from "@/lib/editCustomFileById";
@@ -28,7 +28,7 @@ import { processDicomStudyTurbo } from "@/lib/processDicomStudyTurbo";
 
 if (typeof window !== "undefined") {
   Archive.init({
-    workerUrl: "/libarchive.js/dist/worker-bundle.js", 
+    workerUrl: "/libarchive.js/dist/worker-bundle.js",
   });
 }
 
@@ -199,28 +199,6 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
       console.warn(`Processing file at index ${index}: ${selectedFile.name}, type: ${mime}`);
 
       try {
-        // let extractedFiles: ExtractedFilesObject = {};
-
-        // switch (mime) {
-        //   case "application/zip":
-        //   case "application/x-zip-compressed":
-        //     extractedFiles = await processZipFile(selectedFile);
-        //     break;
-        //   case "application/x-compressed":
-        //   case "application/x-rar-compressed":
-        //     const archiveRar = await Archive.open(selectedFile);
-        //     extractedFiles = await archiveRar.extractFiles();
-        //     break;
-        //   case "application/dicom":
-        //     extractedFiles = { [selectedFile.name]: selectedFile };
-        //     break;
-        //   default:
-        //     editCustomFileById(setFiles, fileEntity.id, {
-        //       state: CustomFileStateType.fileNotSupported,
-        //       color: "rose-50",
-        //     });
-        //     continue;
-        // }
         const updateProgress = (progress: number) => {
           editCustomFileById(setFiles, fileEntity.id, {
             uploadPercentage: progress,
@@ -232,6 +210,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
           selectedFile,
           userId,
           updateProgress,
+          fileEntity.isAvailableForR2Upload,
         );
 
         if (studiesByInstanceUID.length === 0) {
@@ -249,31 +228,32 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
 
         console.log({ studiesByInstanceUID });
 
-        // const studies: Study[] = [];
-        // for (const study of studiesByInstanceUID) {
-        //   editCustomFileById(setFiles, fileEntity.id, {
-        //     state: CustomFileStateType.verifying,
-        //     color: "cyan-50",
-        //   });
+        const studies: Study[] = [];
+        for (const study of studiesByInstanceUID) {
+          console.log(study);
+          editCustomFileById(setFiles, fileEntity.id, {
+            state: CustomFileStateType.verifying,
+            color: "cyan-50",
+          });
 
-        //   editCustomFileById(setFiles, fileEntity.id, {
-        //     state: CustomFileStateType.inserting,
-        //     color: "bg-cyan-50",
-        //   });
+          editCustomFileById(setFiles, fileEntity.id, {
+            state: CustomFileStateType.inserting,
+            color: "bg-cyan-50",
+          });
 
-        //   editCustomFileById(setFiles, fileEntity.id, {
-        //     state: CustomFileStateType.inserted,
-        //     color: "green-50",
-        //     studies,
-        //   });
+          editCustomFileById(setFiles, fileEntity.id, {
+            state: CustomFileStateType.inserted,
+            color: "green-50",
+            studies,
+          });
 
-        //   // if (process.env.NODE_ENV !== "development") {
-        //   //   if (canSendEmailAfterUploading) {
-        //   //     await sendEmailToAdmin({ idDicom: study.id.toString() });
-        //   //     await sendEmailToUser({ to: userEmail });
-        //   //   }
-        //   // }
-        // }
+          //   // if (process.env.NODE_ENV !== "development") {
+          //   //   if (canSendEmailAfterUploading) {
+          //   //     await sendEmailToAdmin({ idDicom: study.id.toString() });
+          //   //     await sendEmailToUser({ to: userEmail });
+          //   //   }
+          //   // }
+        }
       } catch {
         editCustomFileById(setFiles, fileEntity.id, {
           state: CustomFileStateType.errorLoading,

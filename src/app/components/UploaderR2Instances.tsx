@@ -9,7 +9,7 @@ import { useDropzone } from "react-dropzone";
 import { ExtractedFilesObject } from "@/lib/decompress";
 import { findAllDicomFilesWithDifferentStudyUID } from "@/lib/dicoms";
 import sortFilesByName from "@/utils/sortFilesByName";
-import { CustomFileStateType, CustomFileType, Study } from "@/types/customFileType";
+import { CustomFileStateType, CustomFileType } from "@/types/customFileType";
 import { v4 as uuidv4 } from "uuid";
 import useCheckPermission from "@/hooks/useCheckPermission";
 import editCustomFileById from "@/lib/editCustomFileById";
@@ -178,20 +178,9 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
     setUploading(true);
 
     for (let index = 0; index < sortedFiles.length; index++) {
-      const fileEntity = files[index];
+      const fileEntity = sortedFiles[index]; // Usar sortedFiles para mantener consistencia
 
-      if (fileEntity.state !== CustomFileStateType.selected) {
-        console.info(`Skipping file at index ${index} because it is not in the selected state.`);
-        continue;
-      }
-
-      const selectedFile = fileEntity.file;
-
-      const fileBuffer = await selectedFile.arrayBuffer();
-      const extensionFromBuffer = await fileTypeFromBuffer(fileBuffer);
-      const mime = extensionFromBuffer?.mime;
-
-      console.warn(`Processing file at index ${index}: ${selectedFile.name}, type: ${mime}`);
+      if (fileEntity.state !== CustomFileStateType.selected) continue;
 
       const updateProgress = (progress: number, newState?: CustomFileStateType) => {
         editCustomFileById(setFiles, fileEntity.id, {
@@ -205,61 +194,31 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
       };
 
       try {
+        // 1. Iniciamos procesamiento
         updateProgress(0, CustomFileStateType.processing);
 
+        // 2. El procesador ahora hace TODO (Subida R2, DB Insert, y update de setFiles con IDs reales)
         const studiesByInstanceUID = await processDicomStudyTurbo(
-          selectedFile,
+          fileEntity.file,
           userId,
+          fileEntity.id,
+          setFiles,
           updateProgress,
           (newState) => updateProgress(fileEntity.uploadPercentage, newState),
           fileEntity.isAvailableForR2Upload,
         );
 
-        updateProgress(100, CustomFileStateType.inserted);
-
+        // 3. Verificación de seguridad si no se encontraron DICOMs
         if (!studiesByInstanceUID || studiesByInstanceUID.length === 0) {
           editCustomFileById(setFiles, fileEntity.id, {
             state: CustomFileStateType.noDcimFile,
             color: "rose-50",
           });
-          continue;
         }
 
-        editCustomFileById(setFiles, fileEntity.id, {
-          state: CustomFileStateType.inserted,
-          color: "emerald-50",
-          uploadPercentage: 100,
-          studies: studiesByInstanceUID.map((id) => ({ id, state: CustomFileStateType.inserted })),
-        });
-
-        const studies: Study[] = [];
-        for (const study of studiesByInstanceUID) {
-          console.log(study);
-          editCustomFileById(setFiles, fileEntity.id, {
-            state: CustomFileStateType.verifying,
-            color: "cyan-50",
-          });
-
-          editCustomFileById(setFiles, fileEntity.id, {
-            state: CustomFileStateType.inserting,
-            color: "bg-cyan-50",
-          });
-
-          editCustomFileById(setFiles, fileEntity.id, {
-            state: CustomFileStateType.inserted,
-            color: "green-50",
-            studies,
-          });
-
-          //   // if (process.env.NODE_ENV !== "development") {
-          //   //   if (canSendEmailAfterUploading) {
-          //   //     await sendEmailToAdmin({ idDicom: study.id.toString() });
-          //   //     await sendEmailToUser({ to: userEmail });
-          //   //   }
-          //   // }
-        }
+        // NOTA: Ya no necesitamos el bucle manual de "editCustomFileById" aquí
+        // porque processDicomStudyTurbo ya lo hizo con los IDs reales de la DB.
       } catch (error) {
-        updateProgress(0, CustomFileStateType.errorLoading);
         console.error("Upload error:", error);
         editCustomFileById(setFiles, fileEntity.id, {
           state: CustomFileStateType.errorLoading,

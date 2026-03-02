@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { useGlobalState } from "@/lib/globalState";
 import { ICON_SIZE } from "@/constants";
@@ -29,6 +31,7 @@ function DicomCommentEditor({
 
   const handleUpdate = async () => {
     if (isUpdating) return;
+    // Actualización directa en la tabla dicom usando el ID
     await updateField("dicom", dicomId, "comment", newComment);
     onClose();
   };
@@ -87,6 +90,7 @@ export default function ModalToCommentDicom({ dicomId }: { dicomId: UUIDTypes })
 
     setModalContent(
       <DicomCommentEditor
+        key={`dicomId-${dicomId}`}
         dicomId={dicomId}
         initialComment={dicom.comment ?? ""}
         swrKey={swrKey}
@@ -100,25 +104,16 @@ export default function ModalToCommentDicom({ dicomId }: { dicomId: UUIDTypes })
     setModalOpen(true);
   };
 
-  const handleMouseEnter = () => {
-    setIsPopoverOpen(true);
-  };
+  const handleMouseEnter = () => setIsPopoverOpen(true);
+  const handleMouseLeave = () => setIsPopoverOpen(false);
 
-  const handleMouseLeave = () => {
-    setIsPopoverOpen(false);
-  };
-
-  if (!dicom) return null;
-
-  if (fetchError) {
-    return <div className="text-rose-400">No data.</div>;
-  }
-
+  // La verdad directa: Si no hay data o está completado, no mostramos nada
+  if (fetchError || !dicom) return null;
   if (dicom?.state === DicomStateEnum.COMPLETED) return null;
 
   return (
     <Popover
-      isOpen={true}
+      isOpen={true} // Se mantiene abierto para manejar la opacidad por CSS como tenías
       positions={["top"]}
       padding={12}
       content={
@@ -139,7 +134,7 @@ export default function ModalToCommentDicom({ dicomId }: { dicomId: UUIDTypes })
         disabled={isLoadingDicom}
         type="button"
         title="Add/Edit Study Comment"
-        className={`${dicom.comment === null || dicom?.comment?.trim() === "" ? "bg-white text-cyan-400" : "bg-cyan-400 hover:bg-cyan-500 text-white"} cursor-pointer p-1 rounded-lg transition-colors border border-cyan-400`}
+        className={`${!dicom?.comment?.trim() ? "bg-white text-cyan-400" : "bg-cyan-400 hover:bg-cyan-500 text-white"} cursor-pointer p-1 rounded-lg transition-colors border border-cyan-400`}
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"

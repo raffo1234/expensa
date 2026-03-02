@@ -6,9 +6,10 @@ import { Archive } from "libarchive.js";
 import uploadDicomProcessor from "./uploadDicomProcessor";
 import getAgeFromYYYYMMDD from "./getAgeFromYYYYMMDD";
 import { getDICOMMetadata } from "./getDICOMMetadata";
-import { CustomFileStateType } from "@/types/customFileType";
+import { CustomFileStateType, CustomFileType, Study } from "@/types/customFileType";
+import editCustomFileById from "./editCustomFileById";
 
-// ... (Interfaces DicomInstance, DicomStudy, DicomTableRow, ArchiveFile se mantienen idénticas)
+// --- INTERFACES ---
 export interface DicomInstance {
   sop_instance_uid: string;
   series_instance_uid: string;
@@ -48,24 +49,6 @@ interface DicomStudy {
   institution: string;
 }
 
-export interface DicomTableRow {
-  id: string;
-  user_id: string;
-  study_instance_uid: string;
-  patient_name: string;
-  patient_id: string;
-  patient_age: string;
-  study_description: string;
-  modality: string;
-  slice_thickness?: number;
-  study_date: string;
-  gender: string;
-  birthday: string;
-  institution: string;
-  instances: DicomInstance[];
-  created_at: string;
-}
-
 interface ArchiveFile {
   arrayBuffer: () => Promise<ArrayBuffer>;
 }
@@ -77,30 +60,22 @@ const isDicomBinary = (buffer: Uint8Array): boolean => {
 
 /**
  * FUNCIÓN AUXILIAR: Subida con Reintentos
- * Maneja errores de red temporales (como ERR_NETWORK_CHANGED)
  */
 const uploadWithRetry = async (fileBlob: Blob, storagePath: string, maxRetries: number = 3) => {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      // Intentamos la subida
       await uploadDicomProcessor(fileBlob, storagePath, () => {});
-      return; // Éxito: salimos de la función
+      return;
     } catch (err) {
       const isLastAttempt = attempt === maxRetries - 1;
-
-      // Si es un error de red y no es el último intento, esperamos y reintentamos
       if (!isLastAttempt) {
-        // Delay progresivo: 1s, 2s, 3s...
         const delay = (attempt + 1) * 1000;
         console.warn(
-          `[Retry] Error en subida (Intento ${attempt + 1}/${maxRetries}). Reintentando en ${delay}ms...`,
-          storagePath,
+          `[Retry] Intento ${attempt + 1}/${maxRetries} para ${storagePath}. Reintentando en ${delay}ms...`,
         );
         await new Promise((resolve) => setTimeout(resolve, delay));
         continue;
       }
-
-      // Si llegamos aquí, fallaron todos los reintentos
       throw err;
     }
   }
@@ -112,6 +87,8 @@ const uploadWithRetry = async (fileBlob: Blob, storagePath: string, maxRetries: 
 export const processDicomStudyTurbo = async (
   selectedFile: File,
   userId: string,
+  fileId: string,
+  setFiles: React.Dispatch<React.SetStateAction<CustomFileType[]>>,
   onProgress?: (percent: number) => void,
   onStateChange?: (state: CustomFileStateType) => void,
   isAvailableForR2Upload: boolean = false,
@@ -119,16 +96,15 @@ export const processDicomStudyTurbo = async (
   onStateChange?.(CustomFileStateType.processing);
   onProgress?.(2);
 
+  const studies: Study[] = [];
   const studiesMap = new Map<string, DicomStudy>();
-
-  // CAMBIO CRÍTICO: Reducimos la concurrencia de 15 a 5 para evitar ERR_NETWORK_CHANGED
   const limit = pLimit(5);
 
   const storageDomain = (process.env.NEXT_PUBLIC_STORAGE_DOMAIN || "").replace(/\/$/, "");
   const userStudyStatusCache = new Map<string, { exists: boolean; hasInstances: boolean }>();
   const fileBuffers: { name: string; buffer: Uint8Array }[] = [];
 
-  // --- 1. EXTRACCIÓN (Lógica de ZIP/RAR/DCM idéntica) ---
+  // --- 1. EXTRACCIÓN ---
   const mime = selectedFile.type || "";
   const ext = selectedFile.name.split(".").pop()?.toLowerCase();
 
@@ -193,10 +169,8 @@ export const processDicomStudyTurbo = async (
 
           const status = userStudyStatusCache.get(sUID)!;
           const storagePath = `dicom/${userId}/${sUID}/${metadata.seriesInstanceUID}/${metadata.sopInstanceUID}.dcm`;
-          const shouldUpload = isAvailableForR2Upload && !status.hasInstances;
 
-          // --- CAMBIO AQUÍ: Usamos la función con reintentos ---
-          if (shouldUpload) {
+          if (isAvailableForR2Upload && !status.hasInstances) {
             await uploadWithRetry(fileBlob, storagePath, 3);
           }
 
@@ -249,24 +223,17 @@ export const processDicomStudyTurbo = async (
         }
       } catch (err) {
         console.error(`Error procesando ${name}:`, err);
-        // Si una subida falla definitivamente después de los reintentos,
-        // podrías optar por lanzar el error aquí para detener todo el proceso.
         throw err;
       } finally {
         processedCount++;
-        const progress = Math.round((processedCount / totalFiles) * 80) + 10;
-        onProgress?.(progress);
-
-        if (processedCount % 5 === 0) {
-          await new Promise((resolve) => setTimeout(resolve, 0));
-        }
+        onProgress?.(Math.round((processedCount / totalFiles) * 80) + 10);
       }
     });
   });
 
   await Promise.all(tasks);
 
-  // --- 3. PERSISTENCIA EN SUPABASE (Lógica idéntica) ---
+  // --- 3. PERSISTENCIA EN SUPABASE ---
   if (studiesMap.size > 0) {
     onStateChange?.(CustomFileStateType.inserting);
     onProgress?.(95);
@@ -274,24 +241,69 @@ export const processDicomStudyTurbo = async (
     for (const studyData of studiesMap.values()) {
       const status = userStudyStatusCache.get(studyData.study_instance_uid);
       const incomingHasInstances = studyData.instances.length > 0;
+      let dbId: string | undefined;
+      let finalState: CustomFileStateType = CustomFileStateType.inserted;
 
-      if (!status?.exists) {
-        if (incomingHasInstances) {
+      try {
+        if (!status?.exists) {
+          // CASO 1: Es nuevo, insertamos
+          if (incomingHasInstances) {
+            studyData.instances.sort((a, b) => a.instance_number - b.instance_number);
+          }
+          const { data, error } = await supabase
+            .from("dicom")
+            .insert(studyData)
+            .select("id")
+            .single();
+
+          if (error) throw error;
+          dbId = data.id.toString();
+        } else if (!status.hasInstances && incomingHasInstances) {
+          // CASO 2: Existía el "cascarón" pero no las imágenes, actualizamos
           studyData.instances.sort((a, b) => a.instance_number - b.instance_number);
-        }
-        const { error } = await supabase.from("dicom").insert(studyData);
-        if (error) throw new Error(`Insert Error: ${error.message}`);
-      } else if (!status.hasInstances && incomingHasInstances) {
-        studyData.instances.sort((a, b) => a.instance_number - b.instance_number);
-        const { error } = await supabase
-          .from("dicom")
-          .update({ instances: studyData.instances })
-          .eq("study_instance_uid", studyData.study_instance_uid)
-          .eq("user_id", userId);
+          const { data, error } = await supabase
+            .from("dicom")
+            .update({ instances: studyData.instances })
+            .eq("study_instance_uid", studyData.study_instance_uid)
+            .eq("user_id", userId)
+            .select("id")
+            .single();
 
-        if (error) throw new Error(`Update Error: ${error.message}`);
+          if (error) throw error;
+          dbId = data.id.toString();
+        } else {
+          // CASO 3: DUPLICADO (Ya existe con instancias)
+          const { data, error } = await supabase
+            .from("dicom")
+            .select("id")
+            .eq("study_instance_uid", studyData.study_instance_uid)
+            .eq("user_id", userId)
+            .single();
+
+          if (error) throw error;
+
+          dbId = data?.id?.toString();
+          finalState = CustomFileStateType.duplicated;
+        }
+
+        if (dbId) {
+          studies.push({
+            id: dbId,
+            state: finalState,
+          });
+        }
+      } catch (err) {
+        console.error(`Error en DB para ${studyData.study_instance_uid}:`, err);
+        throw err;
       }
     }
+
+    editCustomFileById(setFiles, fileId, {
+      studies: studies,
+      state: studies.every((s) => s.state === CustomFileStateType.duplicated)
+        ? CustomFileStateType.inserted
+        : CustomFileStateType.inserted,
+    });
   }
 
   onProgress?.(100);

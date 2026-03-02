@@ -547,12 +547,21 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                           </div>
                         </div>
                         {showProgressBar ? (
-                          <div className="mt-2 relative w-full bg-gray-300 h-1 rounded-full">
-                            <div
-                              style={{ width: `${uploadPercentage}%` }}
-                              className="absolute top-0 left-0 h-full bg-gradient-to-r from-cyan-100 animate-pulse to-cyan-400 rounded-full transition-all duration-300"
-                            ></div>
-                            <div className="absolute right-0 bottom-2.5 text-sm text-gray-400">
+                          <div className="mt-2 relative w-full group">
+                            <div className="relative flex items-center w-full bg-gray-100 h-2.5 rounded-full">
+                              <div
+                                style={{
+                                  width: `${uploadPercentage}%`,
+                                  transition: "width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                                }}
+                                className="relative h-full rounded-full bg-[length:200%_200%] animate-[liquid_4s_linear_infinite] bg-gradient-to-r from-cyan-400 via-blue-500 to-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.4)]"
+                              >
+                                <div className="absolute inset-0 opacity-40 animate-[bubble-rise_1.5s_linear_infinite] bg-[radial-gradient(circle,rgba(255,255,255,0.7)_1.2px,transparent_1.2px)] bg-[length:12px_12px]" />
+                                <div className="absolute top-0.5 left-1 right-1 h-[30%] bg-gradient-to-b from-white/50 to-transparent rounded-full" />
+                                <div className="absolute right-0 top-0 h-full w-4 bg-white/20 blur-[2px] rounded-r-full" />
+                              </div>
+                            </div>
+                            <div className="absolute right-0 -top-5 text-xs text-gray-500">
                               {uploadPercentage}%
                             </div>
                           </div>

@@ -187,33 +187,37 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
 
       const selectedFile = fileEntity.file;
 
-      editCustomFileById(setFiles, fileEntity.id, {
-        state: CustomFileStateType.processing,
-        color: "cyan-50",
-      });
-
       const fileBuffer = await selectedFile.arrayBuffer();
       const extensionFromBuffer = await fileTypeFromBuffer(fileBuffer);
       const mime = extensionFromBuffer?.mime;
 
       console.warn(`Processing file at index ${index}: ${selectedFile.name}, type: ${mime}`);
 
-      try {
-        const updateProgress = (progress: number) => {
-          editCustomFileById(setFiles, fileEntity.id, {
-            uploadPercentage: progress,
-          });
-        };
+      const updateProgress = (progress: number, newState?: CustomFileStateType) => {
+        editCustomFileById(setFiles, fileEntity.id, {
+          uploadPercentage: progress,
+          ...(newState && { state: newState }),
+          color:
+            progress === 100 || newState === CustomFileStateType.inserted
+              ? "emerald-50"
+              : "cyan-50",
+        });
+      };
 
-        // 2. Procesamiento secuencial (recomendado para no saturar la red/R2)
+      try {
+        updateProgress(0, CustomFileStateType.processing);
+
         const studiesByInstanceUID = await processDicomStudyTurbo(
           selectedFile,
           userId,
           updateProgress,
+          (newState) => updateProgress(fileEntity.uploadPercentage, newState),
           fileEntity.isAvailableForR2Upload,
         );
 
-        if (studiesByInstanceUID.length === 0) {
+        updateProgress(100, CustomFileStateType.inserted);
+
+        if (!studiesByInstanceUID || studiesByInstanceUID.length === 0) {
           editCustomFileById(setFiles, fileEntity.id, {
             state: CustomFileStateType.noDcimFile,
             color: "rose-50",
@@ -223,10 +227,10 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
 
         editCustomFileById(setFiles, fileEntity.id, {
           state: CustomFileStateType.inserted,
-          color: "green-50",
+          color: "emerald-50",
+          uploadPercentage: 100,
+          studies: studiesByInstanceUID.map((id) => ({ id, state: CustomFileStateType.inserted })),
         });
-
-        console.log({ studiesByInstanceUID });
 
         const studies: Study[] = [];
         for (const study of studiesByInstanceUID) {
@@ -254,7 +258,9 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
           //   //   }
           //   // }
         }
-      } catch {
+      } catch (error) {
+        updateProgress(0, CustomFileStateType.errorLoading);
+        console.error("Upload error:", error);
         editCustomFileById(setFiles, fileEntity.id, {
           state: CustomFileStateType.errorLoading,
           color: "rose-50",

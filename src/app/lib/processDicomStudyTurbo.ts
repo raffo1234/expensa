@@ -6,6 +6,7 @@ import { Archive } from "libarchive.js";
 import uploadDicomProcessor from "./uploadDicomProcessor";
 import getAgeFromYYYYMMDD from "./getAgeFromYYYYMMDD";
 import { getDICOMMetadata } from "./getDICOMMetadata";
+import { CustomFileStateType } from "@/types/customFileType";
 
 // --- INTERFACES ---
 export interface DicomInstance {
@@ -82,19 +83,21 @@ const isDicomBinary = (buffer: Uint8Array): boolean => {
 export const processDicomStudyTurbo = async (
   selectedFile: File,
   userId: string,
-  onProgress?: (percent: number) => void,
-  isAvailableForR2Upload: boolean = false,
+  onProgress?: (percent: number) => void, // 3er parámetro
+  onStateChange?: (state: CustomFileStateType) => void, // 4to parámetro
+  isAvailableForR2Upload: boolean = false, // 5to parámetro (opcional al final)
 ): Promise<string[]> => {
+  // --- INICIO ---
+  onStateChange?.(CustomFileStateType.processing);
+  onProgress?.(2); // Feedback inmediato de que algo empezó
+
   const studiesMap = new Map<string, DicomStudy>();
   const limit = pLimit(15);
   const storageDomain = (process.env.NEXT_PUBLIC_STORAGE_DOMAIN || "").replace(/\/$/, "");
-
-  // Cache de estado filtrado por usuario actual
   const userStudyStatusCache = new Map<string, { exists: boolean; hasInstances: boolean }>();
-
   const fileBuffers: { name: string; buffer: Uint8Array }[] = [];
 
-  // --- 1. EXTRACCIÓN (Zip, Rar, Dcm) ---
+  // --- 1. EXTRACCIÓN ---
   const mime = selectedFile.type || "";
   const ext = selectedFile.name.split(".").pop()?.toLowerCase();
 
@@ -121,15 +124,20 @@ export const processDicomStudyTurbo = async (
     }
   }
 
+  // Cambio de estado tras extracción
+  onStateChange?.(
+    isAvailableForR2Upload ? CustomFileStateType.uploading : CustomFileStateType.processing,
+  );
+  onProgress?.(10);
+
   const totalFiles = fileBuffers.length;
   let processedCount = 0;
 
-  // --- 2. PROCESAMIENTO Y AISLAMIENTO POR USUARIO ---
+  // --- 2. PROCESAMIENTO PARALELO CON PROGRESO REAL ---
   const tasks = fileBuffers.map(({ name, buffer }) => {
     return limit(async () => {
       try {
         if (buffer.length === 0) return;
-
         const typeInfo = await fileTypeFromBuffer(buffer);
         if (!isDicomBinary(buffer) && typeInfo?.ext !== "dcm") return;
 
@@ -139,13 +147,12 @@ export const processDicomStudyTurbo = async (
         if (metadata?.studyInstanceUID) {
           const sUID = metadata.studyInstanceUID;
 
-          // --- PRE-CHECK POR USUARIO ---
           if (!userStudyStatusCache.has(sUID)) {
             const { data } = await supabase
               .from("dicom")
               .select("instances")
               .eq("study_instance_uid", sUID)
-              .eq("user_id", userId) // Aislamiento: verificamos si ESTE usuario ya lo tiene
+              .eq("user_id", userId)
               .maybeSingle();
 
             userStudyStatusCache.set(sUID, {
@@ -155,11 +162,7 @@ export const processDicomStudyTurbo = async (
           }
 
           const status = userStudyStatusCache.get(sUID)!;
-
-          // ESTRUCTURA DE RUTA AISLADA: dicom/{userId}/{studyUID}/...
           const storagePath = `dicom/${userId}/${sUID}/${metadata.seriesInstanceUID}/${metadata.sopInstanceUID}.dcm`;
-
-          // Solo subir si el usuario actual no tiene las imágenes cargadas aún
           const shouldUpload = isAvailableForR2Upload && !status.hasInstances;
 
           if (shouldUpload) {
@@ -188,7 +191,6 @@ export const processDicomStudyTurbo = async (
           }
 
           if (isAvailableForR2Upload) {
-            // Mantenemos tu mapeo original exacto
             study.instances.push({
               sop_instance_uid: metadata.sopInstanceUID,
               series_instance_uid: metadata.seriesInstanceUID,
@@ -218,7 +220,14 @@ export const processDicomStudyTurbo = async (
         console.error(`Error procesando ${name}:`, err);
       } finally {
         processedCount++;
-        onProgress?.(Math.round((processedCount / totalFiles) * 100));
+        // Calculamos el progreso para que llegue máximo al 90% antes de DB
+        const progress = Math.round((processedCount / totalFiles) * 80) + 10;
+        onProgress?.(progress);
+
+        // PEQUEÑO TRUCO: Si procesamos muy rápido, permitimos que el loop de React respire
+        if (processedCount % 5 === 0) {
+          await new Promise((resolve) => setTimeout(resolve, 0));
+        }
       }
     });
   });
@@ -227,31 +236,33 @@ export const processDicomStudyTurbo = async (
 
   // --- 3. PERSISTENCIA EN SUPABASE ---
   if (studiesMap.size > 0) {
+    onStateChange?.(CustomFileStateType.inserting);
+    onProgress?.(95);
+
     for (const studyData of studiesMap.values()) {
       const status = userStudyStatusCache.get(studyData.study_instance_uid);
       const incomingHasInstances = studyData.instances.length > 0;
 
-      // SI NO EXISTE PARA ESTE USUARIO -> INSERT
       if (!status?.exists) {
         if (incomingHasInstances) {
           studyData.instances.sort((a, b) => a.instance_number - b.instance_number);
         }
         const { error } = await supabase.from("dicom").insert(studyData);
         if (error) throw new Error(`Insert Error: ${error.message}`);
-      }
-      // SI EXISTE PERO ESTABA VACÍO -> UPDATE
-      else if (!status.hasInstances && incomingHasInstances) {
+      } else if (!status.hasInstances && incomingHasInstances) {
         studyData.instances.sort((a, b) => a.instance_number - b.instance_number);
         const { error } = await supabase
           .from("dicom")
           .update({ instances: studyData.instances })
           .eq("study_instance_uid", studyData.study_instance_uid)
-          .eq("user_id", userId); // Aislamiento en el update
+          .eq("user_id", userId);
 
         if (error) throw new Error(`Update Error: ${error.message}`);
       }
     }
   }
 
+  onProgress?.(100);
+  onStateChange?.(CustomFileStateType.inserted);
   return Array.from(studiesMap.keys());
 };

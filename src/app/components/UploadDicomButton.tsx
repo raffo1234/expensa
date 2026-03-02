@@ -25,39 +25,10 @@ export default function UploadDicomButton({
         <Icon icon="solar:record-broken" fontSize={26} className="animate-spin" />
       ) : (
         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24">
-          <g
-            fill="none"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-          >
-            <path
-              fill="currentColor"
-              fillOpacity="0"
-              strokeDasharray="20"
-              strokeDashoffset="20"
-              d="M12 15h2v-6h2.5l-4.5 -4.5M12 15h-2v-6h-2.5l4.5 -4.5"
-            >
-              <animate
-                fill="freeze"
-                attributeName="fill-opacity"
-                begin="0.7s"
-                dur="0.5s"
-                values="0;1"
-              />
-              <animate fill="freeze" attributeName="strokeDashoffset" dur="0.4s" values="20;0" />
-            </path>
-            <path strokeDasharray="14" strokeDashoffset="14" d="M6 19h12">
-              <animate
-                fill="freeze"
-                attributeName="strokeDashoffset"
-                begin="0.5s"
-                dur="0.2s"
-                values="14;0"
-              />
-            </path>
-          </g>
+          <path
+            fill="currentColor"
+            d="M5 20h14q.425 0 .713.288T20 21t-.288.713T19 22H5q-.425 0-.712-.288T4 21t.288-.712T5 20m5-2q-.425 0-.712-.288T9 17v-6H7.05q-.625 0-.9-.562t.1-1.063l4.95-6.35q.15-.2.363-.3t.437-.1t.438.1t.362.3l4.95 6.35q.375.5.1 1.063t-.9.562H15v6q0 .425-.288.713T14 18z"
+          />
         </svg>
       )}
       <span>

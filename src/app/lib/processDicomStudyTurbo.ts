@@ -8,7 +8,7 @@ import getAgeFromYYYYMMDD from "./getAgeFromYYYYMMDD";
 import { getDICOMMetadata } from "./getDICOMMetadata";
 import { CustomFileStateType } from "@/types/customFileType";
 
-// --- INTERFACES ---
+// ... (Interfaces DicomInstance, DicomStudy, DicomTableRow, ArchiveFile se mantienen idénticas)
 export interface DicomInstance {
   sop_instance_uid: string;
   series_instance_uid: string;
@@ -63,7 +63,6 @@ export interface DicomTableRow {
   birthday: string;
   institution: string;
   instances: DicomInstance[];
-
   created_at: string;
 }
 
@@ -77,27 +76,59 @@ const isDicomBinary = (buffer: Uint8Array): boolean => {
 };
 
 /**
- * PROCESADOR DICOM TURBO - ESTRATEGIA DE AISLAMIENTO TOTAL
- * Cada usuario tiene su propia copia física en R2 y su propia fila en Supabase.
+ * FUNCIÓN AUXILIAR: Subida con Reintentos
+ * Maneja errores de red temporales (como ERR_NETWORK_CHANGED)
+ */
+const uploadWithRetry = async (fileBlob: Blob, storagePath: string, maxRetries: number = 3) => {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      // Intentamos la subida
+      await uploadDicomProcessor(fileBlob, storagePath, () => {});
+      return; // Éxito: salimos de la función
+    } catch (err) {
+      const isLastAttempt = attempt === maxRetries - 1;
+
+      // Si es un error de red y no es el último intento, esperamos y reintentamos
+      if (!isLastAttempt) {
+        // Delay progresivo: 1s, 2s, 3s...
+        const delay = (attempt + 1) * 1000;
+        console.warn(
+          `[Retry] Error en subida (Intento ${attempt + 1}/${maxRetries}). Reintentando en ${delay}ms...`,
+          storagePath,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        continue;
+      }
+
+      // Si llegamos aquí, fallaron todos los reintentos
+      throw err;
+    }
+  }
+};
+
+/**
+ * PROCESADOR DICOM TURBO
  */
 export const processDicomStudyTurbo = async (
   selectedFile: File,
   userId: string,
-  onProgress?: (percent: number) => void, // 3er parámetro
-  onStateChange?: (state: CustomFileStateType) => void, // 4to parámetro
-  isAvailableForR2Upload: boolean = false, // 5to parámetro (opcional al final)
+  onProgress?: (percent: number) => void,
+  onStateChange?: (state: CustomFileStateType) => void,
+  isAvailableForR2Upload: boolean = false,
 ): Promise<string[]> => {
-  // --- INICIO ---
   onStateChange?.(CustomFileStateType.processing);
-  onProgress?.(2); // Feedback inmediato de que algo empezó
+  onProgress?.(2);
 
   const studiesMap = new Map<string, DicomStudy>();
-  const limit = pLimit(15);
+
+  // CAMBIO CRÍTICO: Reducimos la concurrencia de 15 a 5 para evitar ERR_NETWORK_CHANGED
+  const limit = pLimit(5);
+
   const storageDomain = (process.env.NEXT_PUBLIC_STORAGE_DOMAIN || "").replace(/\/$/, "");
   const userStudyStatusCache = new Map<string, { exists: boolean; hasInstances: boolean }>();
   const fileBuffers: { name: string; buffer: Uint8Array }[] = [];
 
-  // --- 1. EXTRACCIÓN ---
+  // --- 1. EXTRACCIÓN (Lógica de ZIP/RAR/DCM idéntica) ---
   const mime = selectedFile.type || "";
   const ext = selectedFile.name.split(".").pop()?.toLowerCase();
 
@@ -124,7 +155,6 @@ export const processDicomStudyTurbo = async (
     }
   }
 
-  // Cambio de estado tras extracción
   onStateChange?.(
     isAvailableForR2Upload ? CustomFileStateType.uploading : CustomFileStateType.processing,
   );
@@ -133,7 +163,7 @@ export const processDicomStudyTurbo = async (
   const totalFiles = fileBuffers.length;
   let processedCount = 0;
 
-  // --- 2. PROCESAMIENTO PARALELO CON PROGRESO REAL ---
+  // --- 2. PROCESAMIENTO PARALELO ---
   const tasks = fileBuffers.map(({ name, buffer }) => {
     return limit(async () => {
       try {
@@ -165,8 +195,9 @@ export const processDicomStudyTurbo = async (
           const storagePath = `dicom/${userId}/${sUID}/${metadata.seriesInstanceUID}/${metadata.sopInstanceUID}.dcm`;
           const shouldUpload = isAvailableForR2Upload && !status.hasInstances;
 
+          // --- CAMBIO AQUÍ: Usamos la función con reintentos ---
           if (shouldUpload) {
-            await uploadDicomProcessor(fileBlob, storagePath, () => {});
+            await uploadWithRetry(fileBlob, storagePath, 3);
           }
 
           let study = studiesMap.get(sUID);
@@ -218,13 +249,14 @@ export const processDicomStudyTurbo = async (
         }
       } catch (err) {
         console.error(`Error procesando ${name}:`, err);
+        // Si una subida falla definitivamente después de los reintentos,
+        // podrías optar por lanzar el error aquí para detener todo el proceso.
+        throw err;
       } finally {
         processedCount++;
-        // Calculamos el progreso para que llegue máximo al 90% antes de DB
         const progress = Math.round((processedCount / totalFiles) * 80) + 10;
         onProgress?.(progress);
 
-        // PEQUEÑO TRUCO: Si procesamos muy rápido, permitimos que el loop de React respire
         if (processedCount % 5 === 0) {
           await new Promise((resolve) => setTimeout(resolve, 0));
         }
@@ -234,7 +266,7 @@ export const processDicomStudyTurbo = async (
 
   await Promise.all(tasks);
 
-  // --- 3. PERSISTENCIA EN SUPABASE ---
+  // --- 3. PERSISTENCIA EN SUPABASE (Lógica idéntica) ---
   if (studiesMap.size > 0) {
     onStateChange?.(CustomFileStateType.inserting);
     onProgress?.(95);

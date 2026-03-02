@@ -397,7 +397,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
             {files.length} {t("file-label", { count: files.length })}
           </div>
           {canSwitchStoreDicom ? (
-            <div className="mx-auto max-w-xl mb-4 pl-4.5 flex items-center gap-2">
+            <div className="mx-auto max-w-3xl mb-4 pl-4.5 flex items-center gap-2">
               <label
                 className={`${!hasSelectedItems ? "opacity-50 pointer-events-none" : ""} inline-flex items-center cursor-pointer`}
               >
@@ -415,7 +415,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
               </span>
             </div>
           ) : null}
-          <div className="w-full mx-auto max-w-xl">
+          <div className="w-full mx-auto max-w-3xl">
             <div className="flex flex-col gap-2">
               {Array.from(sortFilesByName(files)).map(
                 ({ id, patientName, state, color, studies, uploadPercentage }, index) => {
@@ -489,7 +489,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                             {state === CustomFileStateType.duplicated ||
                             state === CustomFileStateType.inserted
                               ? studies.map(({ id, state }) => (
-                                  <div key={id} className="flex gap-2 items-center">
+                                  <div key={id} className="flex gap-2 items-center bg-slate-100 rounded-lg p-2">
                                     <LinkInsertedOrDuplicated
                                       id={id}
                                       userId={userId}

@@ -560,7 +560,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                                   width: `${uploadPercentage}%`,
                                   transition: "width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)",
                                 }}
-                                className="relative h-full rounded-full bg-[length:200%_200%] animate-[liquid_4s_linear_infinite] bg-gradient-to-r from-cyan-400 via-blue-500 to-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.4)]"
+                                className="relative h-full rounded-full bg-[length:200%_200%] animate-[liquid_4s_linear_infinite] bg-gradient-to-r from-cyan-400 via-blue-500 to-cyan-400"
                               >
                                 <div className="absolute inset-0 opacity-40 animate-[bubble-rise_1.5s_linear_infinite] bg-[radial-gradient(circle,rgba(255,255,255,0.7)_1.2px,transparent_1.2px)] bg-[length:12px_12px]" />
                                 <div className="absolute top-0.5 left-1 right-1 h-[30%] bg-gradient-to-b from-white/50 to-transparent rounded-full" />

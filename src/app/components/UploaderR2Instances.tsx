@@ -441,98 +441,96 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                   ].includes(state);
 
                   return (
-                    <div key={id} className="flex items-center gap-1">
-                      <div
-                        className={`${colorClassMap[color] ? colorClassMap[color] : "border bg-white border-gray-200"} px-4 py-3 rounded-lg min-w-0 flex-1`}
-                      >
-                        <div className="flex">
-                          {canSwitchStoreDicom ? (
-                            <label
-                              className={`${
-                                state !== CustomFileStateType.selected
-                                  ? "opacity-40 pointer-events-none"
-                                  : ""
-                              } inline-flex pt-1 cursor-pointer`}
-                            >
-                              <input
-                                type="checkbox"
-                                name={files[index].id}
-                                checked={files[index].isAvailableForR2Upload}
-                                disabled={state !== CustomFileStateType.selected}
-                                onChange={() =>
-                                  handleIsAvailableForR2(
-                                    files[index].id,
-                                    files[index].isAvailableForR2Upload,
-                                  )
-                                }
-                                className="sr-only peer"
-                              />
-                              <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-100 dark:peer-focus:ring-cyan-100 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-400 peer-checked:bg-cyan-400 dark:peer-checked:bg-cyan-400"></div>
-                            </label>
-                          ) : null}
-                          <div className="flex-1 truncate pl-4">
-                            <div className="text-sm truncate font-semibold mb-0.5">
-                              {patientName}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {state === CustomFileStateType.selected || studies.length === 0 ? (
-                                state
-                              ) : (
-                                <>
-                                  {studies.length} Stud
-                                  {studies.length === 1 ? "y" : "ies"}
-                                </>
-                              )}
-                            </div>
-                          </div>
-                          <div className="whitespace-nowrap pl-10 flex flex-col gap-2 justify-center flex-shrink-0">
-                            {state === CustomFileStateType.duplicated ||
-                            state === CustomFileStateType.inserted
-                              ? studies.map(({ id, state }) => (
-                                  <div key={id} className="flex gap-2 items-center bg-slate-100 rounded-lg p-2">
-                                    <LinkInsertedOrDuplicated
-                                      id={id}
-                                      userId={userId}
-                                      userRoleId={userRoleId}
-                                      state={state}
-                                      isDuplicated={state === CustomFileStateType.duplicated}
-                                    />
-                                    <ModalToAttachFilesToDicom dicomId={id} defaultPopoverOpen />
-                                    <ModalToCommentDicom dicomId={id} />
-                                  </div>
-                                ))
-                              : null}
-                            {displayWarningIcon && (
-                              <Icon
-                                icon="solar:shield-warning-outline"
-                                className="text-rose-300"
-                                fontSize="24"
+                    <div
+                      key={id}
+                      className={`${colorClassMap[color] ? colorClassMap[color] : "border bg-white border-gray-200"} p-4 rounded-2xl min-w-0 flex-1`}
+                    >
+                      <div className="flex">
+                        {canSwitchStoreDicom ? (
+                          <label
+                            className={`${
+                              state !== CustomFileStateType.selected
+                                ? "opacity-40 pointer-events-none"
+                                : ""
+                            } inline-flex pt-1 cursor-pointer`}
+                          >
+                            <input
+                              type="checkbox"
+                              name={files[index].id}
+                              checked={files[index].isAvailableForR2Upload}
+                              disabled={state !== CustomFileStateType.selected}
+                              onChange={() =>
+                                handleIsAvailableForR2(
+                                  files[index].id,
+                                  files[index].isAvailableForR2Upload,
+                                )
+                              }
+                              className="sr-only peer"
+                            />
+                            <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-100 dark:peer-focus:ring-cyan-100 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-400 peer-checked:bg-cyan-400 dark:peer-checked:bg-cyan-400"></div>
+                          </label>
+                        ) : null}
+                        <div className="flex-1 truncate pl-4">
+                          <div className="text-sm truncate font-semibold mb-1">{patientName}</div>
+                          <div className="text-sm text-gray-500">
+                            {state === CustomFileStateType.selected || studies.length === 0 ? (
+                              state
+                            ) : (
+                              <FinalStep
+                                label={`${studies.length} Stud${studies.length === 1 ? "y" : "ies"}`}
                               />
                             )}
                           </div>
                         </div>
-                        {showProgressBar ? (
-                          <div className="mt-2 relative w-full group">
-                            <div className="relative flex items-center w-full bg-gray-100 h-2.5 rounded-full">
-                              <div
-                                style={{
-                                  width: `${uploadPercentage}%`,
-                                  transition: "width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)",
-                                }}
-                                className="relative h-full rounded-full bg-[length:200%_200%] animate-[liquid_4s_linear_infinite] bg-gradient-to-r from-cyan-400 via-blue-500 to-cyan-400"
-                              >
-                                <div className="absolute inset-0 opacity-40 animate-[bubble-rise_1.5s_linear_infinite] bg-[radial-gradient(circle,rgba(255,255,255,0.7)_1.2px,transparent_1.2px)] bg-[length:12px_12px]" />
-                                <div className="absolute top-0.5 left-1 right-1 h-[30%] bg-gradient-to-b from-white/50 to-transparent rounded-full" />
-                                <div className="absolute right-0 top-0 h-full w-4 bg-white/20 blur-[2px] rounded-r-full" />
-                              </div>
-                            </div>
-                            <div className="absolute right-0 -top-5 text-xs text-gray-500">
-                              {uploadPercentage}%
+                        <div className="whitespace-nowrap pl-10 flex flex-col gap-2 justify-center flex-shrink-0">
+                          {state === CustomFileStateType.duplicated ||
+                          state === CustomFileStateType.inserted
+                            ? studies.map(({ id, state }) => (
+                                <div
+                                  key={id}
+                                  className="flex gap-3 items-center bg-slate-100 rounded-lg p-2"
+                                >
+                                  <LinkInsertedOrDuplicated
+                                    id={id}
+                                    userId={userId}
+                                    userRoleId={userRoleId}
+                                    state={state}
+                                    isDuplicated={state === CustomFileStateType.duplicated}
+                                  />
+                                  <ModalToAttachFilesToDicom dicomId={id} defaultPopoverOpen />
+                                  <ModalToCommentDicom dicomId={id} />
+                                </div>
+                              ))
+                            : null}
+                          {displayWarningIcon && (
+                            <Icon
+                              icon="solar:shield-warning-outline"
+                              className="text-rose-300"
+                              fontSize="24"
+                            />
+                          )}
+                        </div>
+                      </div>
+                      {showProgressBar ? (
+                        <div className="mt-2 relative w-full group">
+                          <div className="relative flex items-center w-full bg-gray-100 h-2.5 rounded-full">
+                            <div
+                              style={{
+                                width: `${uploadPercentage}%`,
+                                transition: "width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                              }}
+                              className="relative h-full rounded-full bg-[length:200%_200%] animate-[liquid_4s_linear_infinite] bg-gradient-to-r from-cyan-400 via-blue-500 to-cyan-400"
+                            >
+                              <div className="absolute inset-0 opacity-40 animate-[bubble-rise_1.5s_linear_infinite] bg-[radial-gradient(circle,rgba(255,255,255,0.7)_1.2px,transparent_1.2px)] bg-[length:12px_12px]" />
+                              <div className="absolute top-0.5 left-1 right-1 h-[30%] bg-gradient-to-b from-white/50 to-transparent rounded-full" />
+                              <div className="absolute right-0 top-0 h-full w-4 bg-white/20 blur-[2px] rounded-r-full" />
                             </div>
                           </div>
-                        ) : null}
-                      </div>
-                      <FinalStep />
+                          <div className="absolute right-0 -top-5 text-xs text-gray-500">
+                            {uploadPercentage}%
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
                   );
                 },

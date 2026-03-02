@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Popover } from "react-tiny-popover";
 
-export default function FinalStep() {
+export default function FinalStep({ label = ""}: { label?: string }) {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const t = useTranslations("FinalStep");
 
@@ -41,9 +41,9 @@ export default function FinalStep() {
         title={t("title")}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        type="button"
-        className="self-stretch flex items-center bg-cyan-500 hover:bg-cyan-500 transition-colors duration-300 text-white cursor-pointer rounded-lg px-3"
+        className="self-stretch flex gap-2 items-center w-fit text-cyan-500 hover:text-cyan-500 cursor-pointer hover:underline underline-offset-4"
       >
+        {label}
         <Icon icon="solar:hand-heart-linear" fontSize={ICON_SIZE} />
       </Link>
     </Popover>

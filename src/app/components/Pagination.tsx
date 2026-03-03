@@ -29,6 +29,7 @@ import { ICON_SIZE } from "@/constants";
 import FilterByState from "./FilterByState";
 import ClearButton from "./ClearButton";
 import { useRouter } from "next/navigation";
+import DownloadAllZip from "./DownloadAllZip";
 
 type SortDirection = "asc" | "desc" | null;
 
@@ -1106,6 +1107,7 @@ export default function Pagination({
                             <Icon icon="solar:cloud-download-outline" fontSize={ICON_SIZE} />
                           </Link>
                         ) : null}
+                        {hasInstances ? <DownloadAllZip fileIds={[id]} /> : null}
                       </td>
                       <td className="py-2 px-2">
                         {result.data ? (

@@ -13,10 +13,6 @@ interface MultipartInitResponse {
   uploadId: string;
 }
 
-interface MultipartPartResponse {
-  etag: string;
-}
-
 interface UploadedPart {
   partNumber: number;
   etag: string;

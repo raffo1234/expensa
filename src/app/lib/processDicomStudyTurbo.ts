@@ -53,9 +53,62 @@ interface ArchiveFile {
   arrayBuffer: () => Promise<ArrayBuffer>;
 }
 
+const DICOM_KNOWN_TAGS = [
+  0x00080000, // Group 0008 (Identifying)
+  0x00080008, // Image Type
+  0x00080016, // SOP Class UID
+  0x00080018, // SOP Instance UID
+  0x00080020, // Study Date
+  0x00080060, // Modality
+  0x00100010, // Patient Name
+  0x00100020, // Patient ID
+  0x0020000d, // Study Instance UID
+  0x0020000e, // Series Instance UID
+];
+
 const isDicomBinary = (buffer: Uint8Array): boolean => {
-  if (buffer.length < 132) return false;
-  return new TextDecoder().decode(buffer.slice(128, 132)) === "DICM";
+  if (buffer.length < 8) return false;
+
+  // ✅ CHECK 1: Standard DICOM Part 10 (magic bytes at offset 128)
+  if (buffer.length >= 132) {
+    const magic = new TextDecoder().decode(buffer.slice(128, 132));
+    if (magic === "DICM") return true;
+  }
+
+  // ✅ CHECK 2: Legacy DICOM — starts directly with a known tag (little-endian)
+  // Tags are encoded as (gggg,eeee) — group/element as 2-byte LE words
+  const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+
+  const tryLegacyDicom = (littleEndian: boolean): boolean => {
+    try {
+      const group = view.getUint16(0, littleEndian);
+      const element = view.getUint16(2, littleEndian);
+      const tag = (group << 16) | element;
+      return DICOM_KNOWN_TAGS.includes(tag);
+    } catch {
+      return false;
+    }
+  };
+
+  // Try little-endian first (most common), then big-endian
+  if (tryLegacyDicom(true)) return true;
+  if (tryLegacyDicom(false)) return true;
+
+  // ✅ CHECK 3: Scan first 2KB for DICM magic (some files have non-standard preamble size)
+  const scanLimit = Math.min(buffer.length - 4, 2048);
+  const dicmBytes = [0x44, 0x49, 0x43, 0x4d]; // "DICM"
+  for (let i = 0; i <= scanLimit; i++) {
+    if (
+      buffer[i] === dicmBytes[0] &&
+      buffer[i + 1] === dicmBytes[1] &&
+      buffer[i + 2] === dicmBytes[2] &&
+      buffer[i + 3] === dicmBytes[3]
+    ) {
+      return true;
+    }
+  }
+
+  return false;
 };
 
 /**

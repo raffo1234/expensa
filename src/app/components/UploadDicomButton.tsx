@@ -20,6 +20,7 @@ export default function UploadDicomButton({
       className="flex text-lg mx-auto mt-4 gap-4 items-center text-white disabled:opacity-50 disabled:cursor-no-drop cursor-pointer font-semibold disabled:border-cyan-400 disabled:bg-cyan-400 py-3 px-10 bg-cyan-500 hover:bg-cyan-400 transition-colors duration-500 rounded-lg"
       disabled={isDisabled}
       onClick={handleUpload}
+      title={isUploading ? `${t("processing")}...` : `${t("read-dicom-files", { count })}`}
     >
       {isUploading ? (
         <Icon icon="solar:record-broken" fontSize={26} className="animate-spin" />

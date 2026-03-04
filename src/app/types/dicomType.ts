@@ -40,6 +40,7 @@ export type DicomType = {
   gender: string;
   birthday: string;
   institution: string;
+  is_duplicated: boolean;
   template?: TemplateType | undefined;
   assigned_by?: AssignedByType | null;
   comment?: string | null;

@@ -16,7 +16,7 @@ export function DeleteDicomWithInstancesButton({
   mutate: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
-
+  
   const onClick = () => {
     if (!confirm("¿Eliminar este estudio y todos sus archivos en R2?")) return;
 

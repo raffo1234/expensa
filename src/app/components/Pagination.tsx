@@ -30,6 +30,7 @@ import FilterByState from "./FilterByState";
 import ClearButton from "./ClearButton";
 import { useRouter } from "next/navigation";
 import DownloadAllZip from "./DownloadAllZip";
+import DuplicateDicom from "./DuplicateDicom";
 
 type SortDirection = "asc" | "desc" | null;
 
@@ -872,6 +873,7 @@ export default function Pagination({
               <th className="w-9"></th>
               <th className="w-10"></th>
               <th className="w-10"></th>
+              <th className="w-10"></th>
               <th className="w-64"></th>
             </tr>
           </thead>
@@ -921,6 +923,7 @@ export default function Pagination({
                     dicom_url,
                     assigned_by,
                     instances,
+                    is_duplicated,
                   },
                   index,
                 ) => {
@@ -1096,18 +1099,25 @@ export default function Pagination({
                         />
                       </td>
                       <td className="text-center">
-                        {dicom_url ? (
-                          <Link
-                            target="_blank"
-                            href={dicom_url}
-                            download
-                            title="Download"
-                            className="flex w-fit p-1.5 outline-0 cursor-pointer border hover:border-cyan-200 border-gray-200 rounded-lg bg-gray-100 hover:bg-cyan-50 hover:text-cyan-400 transition-colors"
-                          >
-                            <Icon icon="solar:cloud-download-outline" fontSize={ICON_SIZE} />
-                          </Link>
+                        <>
+                          {dicom_url ? (
+                            <Link
+                              target="_blank"
+                              href={dicom_url}
+                              download
+                              title="Download"
+                              className="flex w-fit p-1.5 outline-0 cursor-pointer border hover:border-cyan-200 border-gray-200 rounded-lg bg-gray-100 hover:bg-cyan-50 hover:text-cyan-400 transition-colors"
+                            >
+                              <Icon icon="solar:cloud-download-outline" fontSize={ICON_SIZE} />
+                            </Link>
+                          ) : null}
+                          {hasInstances ? <DownloadAllZip fileIds={[id]} /> : null}
+                        </>
+                      </td>
+                      <td>
+                        {!is_duplicated ? (
+                          <DuplicateDicom originalDicomId={id} mutate={mutate} />
                         ) : null}
-                        {hasInstances ? <DownloadAllZip fileIds={[id]} /> : null}
                       </td>
                       <td className="py-2 px-2">
                         {result.data ? (

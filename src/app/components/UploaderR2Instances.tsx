@@ -25,12 +25,11 @@ import { useTranslations } from "next-intl";
 import UploadInputs from "./UploadInputs";
 import FinalStep from "./FinalStep";
 import { processDicomStudyTurbo } from "@/lib/processDicomStudyTurbo";
+import { useDicomUploadSync } from "@/lib/useDicomUploadSync";
 import pLimit from "p-limit";
 
 if (typeof window !== "undefined") {
-  Archive.init({
-    workerUrl: "/libarchive.js/dist/worker-bundle.js",
-  });
+  Archive.init({ workerUrl: "/libarchive.js/dist/worker-bundle.js" });
 }
 
 declare module "react" {
@@ -64,20 +63,22 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
   const t = useTranslations("Uploader");
   const tZip = useTranslations("UploaderZip");
   const tDcm = useTranslations("UploaderDcm");
-  console.log(userEmail)
+
   const { hasPermission: storeByDefault } = useCheckPermission(
     userRoleId,
     Permissions.STORE_BY_DEFAULT,
   );
-
   const { hasPermission: canSwitchStoreDicom } = useCheckPermission(
     userRoleId,
     Permissions.SWITCH_STORE_DICOM,
   );
 
   const [uploading, setUploading] = useState(false);
-  const [isDropping, setIsDropping] = useState(false); // fixed typo: setSiDropping -> setIsDropping
+  const [isDropping, setIsDropping] = useState(false);
   const [files, setFiles] = useState<CustomFileType[]>([]);
+
+  // ✅ Service Worker + IndexedDB queue — resumes pending uploads on mount
+  const { pendingCount, failedCount, flushQueue, isResuming } = useDicomUploadSync(userId);
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
@@ -172,13 +173,11 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
     setUploading(true);
     let successCount = 0;
 
-    // Process up to 2 studies concurrently at the outer level
     const outerLimit = pLimit(2);
 
     await Promise.allSettled(
       sortedFiles.map((fileEntity) =>
         outerLimit(async () => {
-          // Fixed stale closure: handlers don't read fileEntity.uploadPercentage
           const updateProgress = (progress: number) => {
             editCustomFileById(setFiles, fileEntity.id, {
               uploadPercentage: progress,
@@ -226,11 +225,7 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
       ),
     );
 
-    // Only fire onUploadSuccess if at least one study was actually inserted
-    if (successCount > 0 && onUploadSuccess) {
-      onUploadSuccess();
-    }
-
+    if (successCount > 0 && onUploadSuccess) onUploadSuccess();
     setUploading(false);
   };
 
@@ -250,7 +245,6 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
     }
   };
 
-  // Only switch to COMPRESSED if user hasn't deliberately chosen DCM or FOLDER
   const onDragEnter = () => {
     if (option === UPLOAD_OPTION.DCM || option === UPLOAD_OPTION.FOLDER) return;
     setOption(UPLOAD_OPTION.COMPRESSED);
@@ -263,20 +257,17 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
   });
 
   const handleIsAvailableForR2 = (id: string, isAvailableForR2Upload: boolean) => {
-    editCustomFileById(setFiles, id, {
-      isAvailableForR2Upload: !isAvailableForR2Upload,
-    });
+    editCustomFileById(setFiles, id, { isAvailableForR2Upload: !isAvailableForR2Upload });
   };
 
   const selectAllFiles = useCallback(
     (shouldSelect: boolean): void => {
       setFiles((prevFiles) =>
-        prevFiles.map((file) => {
-          if (file.state === CustomFileStateType.selected) {
-            return { ...file, isAvailableForR2Upload: shouldSelect };
-          }
-          return file;
-        }),
+        prevFiles.map((file) =>
+          file.state === CustomFileStateType.selected
+            ? { ...file, isAvailableForR2Upload: shouldSelect }
+            : file,
+        ),
       );
     },
     [setFiles],
@@ -299,6 +290,59 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
 
   return (
     <>
+      {/* ✅ Pending resume banner */}
+      {(pendingCount > 0 || isResuming) && (
+        <div className="mb-4 flex items-center gap-3 bg-cyan-50 border border-cyan-200 rounded-xl px-4 py-3">
+          <svg
+            className="animate-spin text-cyan-400 shrink-0"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M12 3c4.97 0 9 4.03 9 9" strokeDasharray="18">
+              <animateTransform
+                attributeName="transform"
+                type="rotate"
+                values="0 12 12;360 12 12"
+                dur="1s"
+                repeatCount="indefinite"
+              />
+            </path>
+          </svg>
+          <span className="text-sm text-cyan-700 font-medium">
+            {isResuming
+              ? `Resuming ${pendingCount} interrupted upload${pendingCount !== 1 ? "s" : ""}...`
+              : `${pendingCount} upload${pendingCount !== 1 ? "s" : ""} pending from last session`}
+          </span>
+          {!isResuming && (
+            <button
+              onClick={flushQueue}
+              className="ml-auto text-xs font-semibold text-cyan-600 hover:text-cyan-800 underline"
+            >
+              Resume now
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* ✅ Failed uploads banner */}
+      {failedCount > 0 && (
+        <div className="mb-4 flex items-center gap-3 bg-rose-50 border border-rose-200 rounded-xl px-4 py-3">
+          <Icon
+            icon="solar:shield-warning-outline"
+            className="text-rose-400 shrink-0"
+            fontSize={18}
+          />
+          <span className="text-sm text-rose-700 font-medium">
+            {failedCount} upload{failedCount !== 1 ? "s" : ""} failed permanently and have been
+            logged for review.
+          </span>
+        </div>
+      )}
+
       <div
         {...getRootProps()}
         className={`${isDragActive ? "bg-cyan-50 border-cyan-100" : "bg-gray-50 border-gray-300"}
@@ -307,9 +351,7 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
       >
         <div className="w-11 h-11 relative mb-3">
           <svg
-            className={`${
-              uploading || isDropping ? "opacity-100" : "opacity-0"
-            } text-gray-500 animate-spin absolute left-0 top-0 group-hover:text-cyan-400 transition-all duration-300`}
+            className={`${uploading || isDropping ? "opacity-100" : "opacity-0"} text-gray-500 animate-spin absolute left-0 top-0 group-hover:text-cyan-400 transition-all duration-300`}
             xmlns="http://www.w3.org/2000/svg"
             width="42"
             height="42"
@@ -343,9 +385,7 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
           </svg>
           <Icon
             icon="solar:cloud-upload-broken"
-            className={`${
-              uploading || isDropping ? "opacity-0" : "opacity-100"
-            } text-gray-700 absolute left-0 top-0 group-hover:text-cyan-400 transition-colors duration-300`}
+            className={`${uploading || isDropping ? "opacity-0" : "opacity-100"} text-gray-700 absolute left-0 top-0 group-hover:text-cyan-400 transition-colors duration-300`}
             fontSize={42}
           />
         </div>
@@ -396,6 +436,7 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
           multiple
         />
       </div>
+
       {files.length > 0 ? (
         <div className="mt-6">
           <div className="max-w-xl text-center text-lg mx-auto font-semibold mb-6">
@@ -453,11 +494,7 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
                       <div className="flex">
                         {canSwitchStoreDicom ? (
                           <label
-                            className={`${
-                              state !== CustomFileStateType.selected
-                                ? "opacity-40 pointer-events-none"
-                                : ""
-                            } inline-flex pt-1 cursor-pointer`}
+                            className={`${state !== CustomFileStateType.selected ? "opacity-40 pointer-events-none" : ""} inline-flex pt-1 cursor-pointer`}
                           >
                             <input
                               type="checkbox"
@@ -544,6 +581,7 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
           </div>
         </div>
       ) : null}
+
       {files.filter((file) => file.state === CustomFileStateType.selected).length ? (
         <UploadInputs
           handleUpload={handleUpload}
@@ -556,6 +594,7 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
           count={files.filter((file) => file.state === CustomFileStateType.selected).length}
         />
       ) : null}
+
       {files.length ? (
         <div className="flex justify-center mt-3 w-full">
           <ViewAllDicomsLink userRoleId={userRoleId} />

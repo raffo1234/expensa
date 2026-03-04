@@ -16,7 +16,7 @@ export default async function Page() {
     <>
       <div className="flex justify-between">
         <h1 className="mb-6 font-semibold text-lg block">
-          <strong className="text-rose-400 font-semibold">TEST!!! (solo ZIP)</strong><br />
+          <strong className="text-rose-400 font-semibold">TEST!!!</strong><br />
           {t("title")}
 
           <span className="text-sm text-gray-500 font-normal block pt-1">{t("description")}</span>

@@ -8,6 +8,7 @@ import getAgeFromYYYYMMDD from "./getAgeFromYYYYMMDD";
 import { getDICOMMetadata } from "./getDICOMMetadata";
 import { CustomFileStateType, CustomFileType, Study } from "@/types/customFileType";
 import editCustomFileById from "./editCustomFileById";
+import isDicomBinary from "./isDicomBinary";
 
 // --- INTERFACES ---
 export interface DicomInstance {
@@ -53,86 +54,109 @@ interface ArchiveFile {
   arrayBuffer: () => Promise<ArrayBuffer>;
 }
 
-const DICOM_KNOWN_TAGS = [
-  0x00080000, // Group 0008 (Identifying)
-  0x00080008, // Image Type
-  0x00080016, // SOP Class UID
-  0x00080018, // SOP Instance UID
-  0x00080020, // Study Date
-  0x00080060, // Modality
-  0x00100010, // Patient Name
-  0x00100020, // Patient ID
-  0x0020000d, // Study Instance UID
-  0x0020000e, // Series Instance UID
+// --- RETRY LOGIC ---
+const RETRYABLE_MESSAGES = [
+  "fetch failed",
+  "network",
+  "timeout",
+  "econnreset",
+  "econnrefused",
+  "socket",
+  "503",
+  "502",
+  "429",
+  "rate limit",
 ];
 
-const isDicomBinary = (buffer: Uint8Array): boolean => {
-  if (buffer.length < 8) return false;
-
-  // ✅ CHECK 1: Standard DICOM Part 10 (magic bytes at offset 128)
-  if (buffer.length >= 132) {
-    const magic = new TextDecoder().decode(buffer.slice(128, 132));
-    if (magic === "DICM") return true;
-  }
-
-  // ✅ CHECK 2: Legacy DICOM — starts directly with a known tag (little-endian)
-  // Tags are encoded as (gggg,eeee) — group/element as 2-byte LE words
-  const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
-
-  const tryLegacyDicom = (littleEndian: boolean): boolean => {
-    try {
-      const group = view.getUint16(0, littleEndian);
-      const element = view.getUint16(2, littleEndian);
-      const tag = (group << 16) | element;
-      return DICOM_KNOWN_TAGS.includes(tag);
-    } catch {
-      return false;
-    }
-  };
-
-  // Try little-endian first (most common), then big-endian
-  if (tryLegacyDicom(true)) return true;
-  if (tryLegacyDicom(false)) return true;
-
-  // ✅ CHECK 3: Scan first 2KB for DICM magic (some files have non-standard preamble size)
-  const scanLimit = Math.min(buffer.length - 4, 2048);
-  const dicmBytes = [0x44, 0x49, 0x43, 0x4d]; // "DICM"
-  for (let i = 0; i <= scanLimit; i++) {
-    if (
-      buffer[i] === dicmBytes[0] &&
-      buffer[i + 1] === dicmBytes[1] &&
-      buffer[i + 2] === dicmBytes[2] &&
-      buffer[i + 3] === dicmBytes[3]
-    ) {
-      return true;
-    }
-  }
-
-  return false;
+const isRetryableError = (err: unknown): boolean => {
+  if (!(err instanceof Error)) return true;
+  const msg = err.message.toLowerCase();
+  return RETRYABLE_MESSAGES.some((keyword) => msg.includes(keyword));
 };
 
-/**
- * FUNCIÓN AUXILIAR: Subida con Reintentos
- */
-const uploadWithRetry = async (fileBlob: Blob, storagePath: string, maxRetries: number = 3) => {
+const uploadWithRetry = async (
+  fileBlob: Blob,
+  storagePath: string,
+  maxRetries: number = 5,
+  timeoutMs: number = 30_000,
+): Promise<void> => {
+  let lastError: unknown;
+
   for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
     try {
-      await uploadDicomProcessor(fileBlob, storagePath, () => {});
-      return;
+      await uploadDicomProcessor(fileBlob, storagePath, () => {}, controller.signal);
+      return; // ✅ success
     } catch (err) {
-      const isLastAttempt = attempt === maxRetries - 1;
-      if (!isLastAttempt) {
-        const delay = (attempt + 1) * 1000;
+      lastError = err;
+
+      const isLast = attempt === maxRetries - 1;
+
+      if (!isRetryableError(err)) {
+        console.error(`[Upload] Fatal error for ${storagePath}, aborting retries:`, err);
+        throw err;
+      }
+
+      if (!isLast) {
+        const baseDelay = Math.min(1000 * Math.pow(2, attempt), 15_000);
+        const jitter = Math.random() * 500;
+        const delay = baseDelay + jitter;
         console.warn(
-          `[Retry] Intento ${attempt + 1}/${maxRetries} para ${storagePath}. Reintentando en ${delay}ms...`,
+          `[Retry] Attempt ${attempt + 1}/${maxRetries} failed for ${storagePath}. ` +
+            `Retrying in ${Math.round(delay)}ms...`,
+          err,
         );
         await new Promise((resolve) => setTimeout(resolve, delay));
-        continue;
       }
-      throw err;
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
+
+  console.error(`[Upload] All ${maxRetries} attempts failed for ${storagePath}`, lastError);
+  throw lastError;
 };
+
+// --- STUDY STATUS CACHE WITH LOCK (fixes race condition) ---
+type StudyStatus = { exists: boolean; hasInstances: boolean };
+
+const buildStudyStatusResolver = (userId: string) => {
+  const cache = new Map<string, StudyStatus>();
+  const locks = new Map<string, Promise<void>>();
+
+  return async (sUID: string): Promise<StudyStatus> => {
+    if (cache.has(sUID)) return cache.get(sUID)!;
+
+    if (!locks.has(sUID)) {
+      locks.set(
+        sUID,
+        (async () => {
+          // Double-check after acquiring lock
+          if (cache.has(sUID)) return;
+          const { data } = await supabase
+            .from("dicom")
+            .select("instances")
+            .eq("study_instance_uid", sUID)
+            .eq("user_id", userId)
+            .maybeSingle();
+
+          cache.set(sUID, {
+            exists: !!data,
+            hasInstances: !!(data?.instances && data.instances.length > 0),
+          });
+        })(),
+      );
+    }
+
+    await locks.get(sUID);
+    return cache.get(sUID)!;
+  };
+};
+
+// --- BATCH PROCESSING (avoids memory crash on large studies) ---
+const BATCH_SIZE = 50;
 
 /**
  * PROCESADOR DICOM TURBO
@@ -151,13 +175,13 @@ export const processDicomStudyTurbo = async (
 
   const studies: Study[] = [];
   const studiesMap = new Map<string, DicomStudy>();
-  const limit = pLimit(5);
+  const limit = pLimit(3); // safe concurrency for R2
 
   const storageDomain = (process.env.NEXT_PUBLIC_STORAGE_DOMAIN || "").replace(/\/$/, "");
-  const userStudyStatusCache = new Map<string, { exists: boolean; hasInstances: boolean }>();
+  const getStudyStatus = buildStudyStatusResolver(userId); // ✅ locked cache
   const fileBuffers: { name: string; buffer: Uint8Array }[] = [];
 
-  // --- 1. EXTRACCIÓN ---
+  // --- 1. EXTRACTION ---
   const mime = selectedFile.type || "";
   const ext = selectedFile.name.split(".").pop()?.toLowerCase();
 
@@ -191,115 +215,122 @@ export const processDicomStudyTurbo = async (
 
   const totalFiles = fileBuffers.length;
   let processedCount = 0;
+  let failedCount = 0;
 
-  // --- 2. PROCESAMIENTO PARALELO ---
-  const tasks = fileBuffers.map(({ name, buffer }) => {
-    return limit(async () => {
-      try {
-        if (buffer.length === 0) return;
-        const typeInfo = await fileTypeFromBuffer(buffer);
-        if (!isDicomBinary(buffer) && typeInfo?.ext !== "dcm") return;
+  // --- 2. BATCHED PARALLEL PROCESSING (✅ avoids RAM crash on large studies) ---
+  for (let batchStart = 0; batchStart < fileBuffers.length; batchStart += BATCH_SIZE) {
+    const batch = fileBuffers.slice(batchStart, batchStart + BATCH_SIZE);
 
-        const fileBlob = new Blob([buffer as unknown as BlobPart], { type: "application/dicom" });
-        const metadata = await getDICOMMetadata(fileBlob);
+    const tasks = batch.map(({ name, buffer }) =>
+      limit(async () => {
+        try {
+          if (buffer.length === 0) return;
+          const typeInfo = await fileTypeFromBuffer(buffer);
+          if (!isDicomBinary(buffer) && typeInfo?.ext !== "dcm") return;
 
-        if (metadata?.studyInstanceUID) {
-          const sUID = metadata.studyInstanceUID;
+          const fileBlob = new Blob([buffer as unknown as BlobPart], {
+            type: "application/dicom",
+          });
+          const metadata = await getDICOMMetadata(fileBlob);
 
-          if (!userStudyStatusCache.has(sUID)) {
-            const { data } = await supabase
-              .from("dicom")
-              .select("instances")
-              .eq("study_instance_uid", sUID)
-              .eq("user_id", userId)
-              .maybeSingle();
+          if (metadata?.studyInstanceUID) {
+            const sUID = metadata.studyInstanceUID;
 
-            userStudyStatusCache.set(sUID, {
-              exists: !!data,
-              hasInstances: !!(data?.instances && data.instances.length > 0),
-            });
+            // ✅ Race-condition-safe status check
+            const status = await getStudyStatus(sUID);
+            const storagePath = `dicom/${userId}/${sUID}/${metadata.seriesInstanceUID}/${metadata.sopInstanceUID}.dcm`;
+
+            if (isAvailableForR2Upload && !status.hasInstances) {
+              await uploadWithRetry(fileBlob, storagePath, 5);
+            }
+
+            let study = studiesMap.get(sUID);
+            if (!study) {
+              const finalAge =
+                metadata.patientAge || getAgeFromYYYYMMDD(metadata.patientBirthDate || "");
+              study = {
+                study_instance_uid: sUID,
+                user_id: userId,
+                modality: metadata.modality || "OT",
+                instances: [],
+                patient_name: metadata.patientName || "Unknown",
+                patient_id: metadata.patientId || "Unknown",
+                study_description: metadata.studyDescription || "",
+                study_date: metadata.studyDate || "",
+                patient_age: String(finalAge),
+                gender: metadata.patientSex || "O",
+                birthday: metadata.patientBirthDate || "",
+                institution: metadata.institutionName || "",
+              };
+              studiesMap.set(sUID, study);
+            }
+
+            if (isAvailableForR2Upload) {
+              study.instances.push({
+                sop_instance_uid: metadata.sopInstanceUID,
+                series_instance_uid: metadata.seriesInstanceUID,
+                instance_number: metadata.instanceNumber || 0,
+                storage_url: `${storageDomain}/${storagePath}`,
+                sop_class_uid: metadata.sopClassUID,
+                series_number: metadata.seriesNumber || 1,
+                series_description: metadata.seriesDescription || "",
+                rows: metadata.rows || 512,
+                columns: metadata.columns || 512,
+                bits_allocated: metadata.bitsAllocated || 16,
+                bits_stored: metadata.bitsStored || 16,
+                high_bit: metadata.highBit || 15,
+                pixel_representation: metadata.pixelRepresentation || 0,
+                slice_thickness: metadata.sliceThickness,
+                pixel_spacing: metadata.pixelSpacing,
+                image_orientation: metadata.imageOrientation,
+                image_position: metadata.imagePosition,
+                window_center: metadata.windowCenter,
+                window_width: metadata.windowWidth,
+                rescale_intercept: metadata.rescaleIntercept,
+                rescale_slope: metadata.rescaleSlope,
+              });
+            }
           }
-
-          const status = userStudyStatusCache.get(sUID)!;
-          const storagePath = `dicom/${userId}/${sUID}/${metadata.seriesInstanceUID}/${metadata.sopInstanceUID}.dcm`;
-
-          if (isAvailableForR2Upload && !status.hasInstances) {
-            await uploadWithRetry(fileBlob, storagePath, 3);
-          }
-
-          let study = studiesMap.get(sUID);
-          if (!study) {
-            const finalAge =
-              metadata.patientAge || getAgeFromYYYYMMDD(metadata.patientBirthDate || "");
-            study = {
-              study_instance_uid: sUID,
-              user_id: userId,
-              modality: metadata.modality || "OT",
-              instances: [],
-              patient_name: metadata.patientName || "Unknown",
-              patient_id: metadata.patientId || "Unknown",
-              study_description: metadata.studyDescription || "",
-              study_date: metadata.studyDate || "",
-              patient_age: String(finalAge),
-              gender: metadata.patientSex || "O",
-              birthday: metadata.patientBirthDate || "",
-              institution: metadata.institutionName || "",
-            };
-            studiesMap.set(sUID, study);
-          }
-
-          if (isAvailableForR2Upload) {
-            study.instances.push({
-              sop_instance_uid: metadata.sopInstanceUID,
-              series_instance_uid: metadata.seriesInstanceUID,
-              instance_number: metadata.instanceNumber || 0,
-              storage_url: `${storageDomain}/${storagePath}`,
-              sop_class_uid: metadata.sopClassUID,
-              series_number: metadata.seriesNumber || 1,
-              series_description: metadata.seriesDescription || "",
-              rows: metadata.rows || 512,
-              columns: metadata.columns || 512,
-              bits_allocated: metadata.bitsAllocated || 16,
-              bits_stored: metadata.bitsStored || 16,
-              high_bit: metadata.highBit || 15,
-              pixel_representation: metadata.pixelRepresentation || 0,
-              slice_thickness: metadata.sliceThickness,
-              pixel_spacing: metadata.pixelSpacing,
-              image_orientation: metadata.imageOrientation,
-              image_position: metadata.imagePosition,
-              window_center: metadata.windowCenter,
-              window_width: metadata.windowWidth,
-              rescale_intercept: metadata.rescaleIntercept,
-              rescale_slope: metadata.rescaleSlope,
-            });
-          }
+        } catch (err) {
+          // ✅ Log but don't kill the whole batch (Promise.allSettled behaviour)
+          failedCount++;
+          console.error(`[processDicom] Error procesando ${name}:`, err);
+        } finally {
+          processedCount++;
+          onProgress?.(Math.round((processedCount / totalFiles) * 80) + 10);
         }
-      } catch (err) {
-        console.error(`Error procesando ${name}:`, err);
-        throw err;
-      } finally {
-        processedCount++;
-        onProgress?.(Math.round((processedCount / totalFiles) * 80) + 10);
-      }
-    });
-  });
+      }),
+    );
 
-  await Promise.all(tasks);
+    // ✅ Promise.allSettled — one failure won't abort the rest
+    const results = await Promise.allSettled(tasks);
+    const batchFailed = results.filter((r) => r.status === "rejected");
+    if (batchFailed.length > 0) {
+      console.warn(
+        `[processDicom] Batch ${Math.floor(batchStart / BATCH_SIZE) + 1}: ` +
+          `${batchFailed.length} tasks rejected`,
+      );
+    }
+  }
 
-  // --- 3. PERSISTENCIA EN SUPABASE ---
+  if (failedCount > 0) {
+    console.warn(`[processDicom] Total failed files: ${failedCount}/${totalFiles}`);
+  }
+
+  // --- 3. SUPABASE PERSISTENCE ---
   if (studiesMap.size > 0) {
     onStateChange?.(CustomFileStateType.inserting);
     onProgress?.(95);
 
     for (const studyData of studiesMap.values()) {
-      const status = userStudyStatusCache.get(studyData.study_instance_uid);
+      const status = await getStudyStatus(studyData.study_instance_uid);
       const incomingHasInstances = studyData.instances.length > 0;
       let dbId: string | undefined;
       let finalState: CustomFileStateType = CustomFileStateType.inserted;
 
       try {
         if (!status?.exists) {
-          // CASO 1: Es nuevo, insertamos
+          // CASE 1: New study — insert
           if (incomingHasInstances) {
             studyData.instances.sort((a, b) => a.instance_number - b.instance_number);
           }
@@ -312,7 +343,7 @@ export const processDicomStudyTurbo = async (
           if (error) throw error;
           dbId = data.id.toString();
         } else if (!status.hasInstances && incomingHasInstances) {
-          // CASO 2: Existía el "cascarón" pero no las imágenes, actualizamos
+          // CASE 2: Shell existed, no images yet — update
           studyData.instances.sort((a, b) => a.instance_number - b.instance_number);
           const { data, error } = await supabase
             .from("dicom")
@@ -325,7 +356,7 @@ export const processDicomStudyTurbo = async (
           if (error) throw error;
           dbId = data.id.toString();
         } else {
-          // CASO 3: DUPLICADO (Ya existe con instancias)
+          // CASE 3: Duplicate — already exists with instances
           const { data, error } = await supabase
             .from("dicom")
             .select("id")
@@ -334,28 +365,22 @@ export const processDicomStudyTurbo = async (
             .single();
 
           if (error) throw error;
-
           dbId = data?.id?.toString();
           finalState = CustomFileStateType.duplicated;
         }
 
         if (dbId) {
-          studies.push({
-            id: dbId,
-            state: finalState,
-          });
+          studies.push({ id: dbId, state: finalState });
         }
       } catch (err) {
-        console.error(`Error en DB para ${studyData.study_instance_uid}:`, err);
+        console.error(`[processDicom] DB error for ${studyData.study_instance_uid}:`, err);
         throw err;
       }
     }
 
     editCustomFileById(setFiles, fileId, {
-      studies: studies,
-      state: studies.every((s) => s.state === CustomFileStateType.duplicated)
-        ? CustomFileStateType.inserted
-        : CustomFileStateType.inserted,
+      studies,
+      state: CustomFileStateType.inserted,
     });
   }
 

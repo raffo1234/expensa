@@ -25,6 +25,7 @@ import { useTranslations } from "next-intl";
 import UploadInputs from "./UploadInputs";
 import FinalStep from "./FinalStep";
 import { processDicomStudyTurbo } from "@/lib/processDicomStudyTurbo";
+import pLimit from "p-limit";
 
 if (typeof window !== "undefined") {
   Archive.init({
@@ -41,8 +42,8 @@ declare module "react" {
 const compressedMimeTypes = [
   "application/zip",
   "application/x-zip-compressed",
-  "application/x-compressed", // .rar
-  "application/x-rar-compressed", // .rar
+  "application/x-compressed",
+  "application/x-rar-compressed",
 ];
 
 const compressedExtensions: Record<string, string[]> = {
@@ -52,7 +53,7 @@ const compressedExtensions: Record<string, string[]> = {
   "application/x-rar-compressed": [".rar"],
 };
 
-const UploaderR2: React.FC<UploaderR2Props> = ({
+const UploaderR2Instances: React.FC<UploaderR2Props> = ({
   option,
   setOption,
   userId,
@@ -63,33 +64,26 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
   const t = useTranslations("Uploader");
   const tZip = useTranslations("UploaderZip");
   const tDcm = useTranslations("UploaderDcm");
-
+  console.log(userEmail)
   const { hasPermission: storeByDefault } = useCheckPermission(
     userRoleId,
     Permissions.STORE_BY_DEFAULT,
   );
-
-  // const { hasPermission: canSendEmailAfterUploading } = useCheckPermission(
-  //   userRoleId,
-  //   Permissions.SEND_EMAIL_AFTER_UPLOADING,
-  // );
-
-  console.warn(userEmail);
-  const [uploading, setUploading] = useState(false);
-  const [isDropping, setSiDropping] = useState(false);
-  const [files, setFiles] = useState<CustomFileType[]>([]);
 
   const { hasPermission: canSwitchStoreDicom } = useCheckPermission(
     userRoleId,
     Permissions.SWITCH_STORE_DICOM,
   );
 
+  const [uploading, setUploading] = useState(false);
+  const [isDropping, setIsDropping] = useState(false); // fixed typo: setSiDropping -> setIsDropping
+  const [files, setFiles] = useState<CustomFileType[]>([]);
+
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
-      setSiDropping(true);
+      setIsDropping(true);
       const isFolder = option === UPLOAD_OPTION.FOLDER;
 
-      // option === Folder
       if (isFolder) {
         const compressedFiles = await compressFiles(Array.from(acceptedFiles));
         if (compressedFiles instanceof File) {
@@ -107,32 +101,30 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
             },
           ]);
         }
-        setSiDropping(false);
+        setIsDropping(false);
         return;
       }
 
       const nonCompressedFiles: ExtractedFilesObject = {};
-      const compressedFiles: File[] = [];
+      const compressedFilesList: File[] = [];
 
       for (const file of acceptedFiles) {
         const fileBuffer = await file.arrayBuffer();
         const extensionFromBuffer = await fileTypeFromBuffer(fileBuffer);
-
         const isCompressed = extensionFromBuffer
           ? compressedMimeTypes.includes(extensionFromBuffer.mime)
           : false;
 
         if (isCompressed) {
-          compressedFiles.push(file);
+          compressedFilesList.push(file);
         } else {
           nonCompressedFiles[file.name] = file;
         }
       }
 
-      // Process non-compressed files (.dcm) -> option === .dcm
       const studiesByInstanceUID = await findAllDicomFilesWithDifferentStudyUID(nonCompressedFiles);
       if (studiesByInstanceUID && studiesByInstanceUID.length > 0) {
-        studiesByInstanceUID.map(({ file, metadata }) => {
+        studiesByInstanceUID.forEach(({ file, metadata }) => {
           setFiles((prev) => [
             ...prev,
             {
@@ -150,8 +142,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
         });
       }
 
-      // Process compressed files, option === compressed
-      compressedFiles.map((file) => {
+      compressedFilesList.forEach((file) => {
         setFiles((prev) => [
           ...prev,
           {
@@ -168,65 +159,78 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
         ]);
       });
 
-      setSiDropping(false);
+      setIsDropping(false);
     },
     [storeByDefault, option],
   );
 
   const handleUpload = async () => {
-    const sortedFiles = sortFilesByName(files, "desc");
+    const sortedFiles = sortFilesByName(files, "desc").filter(
+      (f) => f.state === CustomFileStateType.selected,
+    );
+
     setUploading(true);
+    let successCount = 0;
 
-    for (let index = 0; index < sortedFiles.length; index++) {
-      const fileEntity = sortedFiles[index]; // Usar sortedFiles para mantener consistencia
+    // Process up to 2 studies concurrently at the outer level
+    const outerLimit = pLimit(2);
 
-      if (fileEntity.state !== CustomFileStateType.selected) continue;
+    await Promise.allSettled(
+      sortedFiles.map((fileEntity) =>
+        outerLimit(async () => {
+          // Fixed stale closure: handlers don't read fileEntity.uploadPercentage
+          const updateProgress = (progress: number) => {
+            editCustomFileById(setFiles, fileEntity.id, {
+              uploadPercentage: progress,
+              color: progress === 100 ? "emerald-50" : "cyan-50",
+            });
+          };
 
-      const updateProgress = (progress: number, newState?: CustomFileStateType) => {
-        editCustomFileById(setFiles, fileEntity.id, {
-          uploadPercentage: progress,
-          ...(newState && { state: newState }),
-          color:
-            progress === 100 || newState === CustomFileStateType.inserted
-              ? "emerald-50"
-              : "cyan-50",
-        });
-      };
+          const handleStateChange = (newState: CustomFileStateType) => {
+            editCustomFileById(setFiles, fileEntity.id, {
+              state: newState,
+              color: newState === CustomFileStateType.inserted ? "emerald-50" : "cyan-50",
+            });
+          };
 
-      try {
-        // 1. Iniciamos procesamiento
-        updateProgress(0, CustomFileStateType.processing);
+          try {
+            updateProgress(0);
+            handleStateChange(CustomFileStateType.processing);
 
-        // 2. El procesador ahora hace TODO (Subida R2, DB Insert, y update de setFiles con IDs reales)
-        const studiesByInstanceUID = await processDicomStudyTurbo(
-          fileEntity.file,
-          userId,
-          fileEntity.id,
-          setFiles,
-          updateProgress,
-          (newState) => updateProgress(fileEntity.uploadPercentage, newState),
-          fileEntity.isAvailableForR2Upload,
-        );
+            const studiesByInstanceUID = await processDicomStudyTurbo(
+              fileEntity.file,
+              userId,
+              fileEntity.id,
+              setFiles,
+              updateProgress,
+              handleStateChange,
+              fileEntity.isAvailableForR2Upload,
+            );
 
-        // 3. Verificación de seguridad si no se encontraron DICOMs
-        if (!studiesByInstanceUID || studiesByInstanceUID.length === 0) {
-          editCustomFileById(setFiles, fileEntity.id, {
-            state: CustomFileStateType.noDcimFile,
-            color: "rose-50",
-          });
-        }
+            if (!studiesByInstanceUID || studiesByInstanceUID.length === 0) {
+              editCustomFileById(setFiles, fileEntity.id, {
+                state: CustomFileStateType.noDcimFile,
+                color: "rose-50",
+              });
+            } else {
+              successCount++;
+            }
+          } catch (error) {
+            console.error(`[UploaderR2] Error uploading ${fileEntity.patientName}:`, error);
+            editCustomFileById(setFiles, fileEntity.id, {
+              state: CustomFileStateType.errorLoading,
+              color: "rose-50",
+            });
+          }
+        }),
+      ),
+    );
 
-        // NOTA: Ya no necesitamos el bucle manual de "editCustomFileById" aquí
-        // porque processDicomStudyTurbo ya lo hizo con los IDs reales de la DB.
-      } catch (error) {
-        console.error("Upload error:", error);
-        editCustomFileById(setFiles, fileEntity.id, {
-          state: CustomFileStateType.errorLoading,
-          color: "rose-50",
-        });
-      }
+    // Only fire onUploadSuccess if at least one study was actually inserted
+    if (successCount > 0 && onUploadSuccess) {
+      onUploadSuccess();
     }
-    if (onUploadSuccess) onUploadSuccess();
+
     setUploading(false);
   };
 
@@ -246,7 +250,9 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
     }
   };
 
+  // Only switch to COMPRESSED if user hasn't deliberately chosen DCM or FOLDER
   const onDragEnter = () => {
+    if (option === UPLOAD_OPTION.DCM || option === UPLOAD_OPTION.FOLDER) return;
     setOption(UPLOAD_OPTION.COMPRESSED);
   };
 
@@ -277,8 +283,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
   );
 
   const handleSelectAllChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const isChecked = event.target.checked;
-    selectAllFiles(isChecked);
+    selectAllFiles(event.target.checked);
   };
 
   const selectedFilesWithStateSelected = files.filter(
@@ -298,7 +303,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
         {...getRootProps()}
         className={`${isDragActive ? "bg-cyan-50 border-cyan-100" : "bg-gray-50 border-gray-300"}
         ${uploading || isDropping ? "cursor-no-drop" : "cursor-pointer"}
-        transition-all  hover:outline-8 outline-cyan-50 duration-300 hover:border-cyan-200 bg-white flex flex-col group items-center justify-center py-20 w-full border border-dashed rounded-2xl px-4`}
+        transition-all hover:outline-8 outline-cyan-50 duration-300 hover:border-cyan-200 bg-white flex flex-col group items-center justify-center py-20 w-full border border-dashed rounded-2xl px-4`}
       >
         <div className="w-11 h-11 relative mb-3">
           <svg
@@ -366,13 +371,13 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
               <div className="border-r w-30 text-center text-sm text-gray-600 py-1 px-5 border-gray-200">
                 {t("selected")}
               </div>
-              <div className="border-r border-gray-200 w-30 text-center text-sm text-gray-600 py-1 px-5 ">
+              <div className="border-r border-gray-200 w-30 text-center text-sm text-gray-600 py-1 px-5">
                 {t("processed")}
               </div>
-              <div className="w-30 text-center text-sm text-gray-600 py-1 px-5 ">Total</div>
+              <div className="w-30 text-center text-sm text-gray-600 py-1 px-5">Total</div>
             </div>
             <div className="flex items-center">
-              <h5 className=" border-r border-gray-200 w-30 text-center text-sm text-gray-600 py-1 px-5">
+              <h5 className="border-r border-gray-200 w-30 text-center text-sm text-gray-600 py-1 px-5">
                 {files.filter((file) => file.state === CustomFileStateType.selected).length}
               </h5>
               <h5 className="border-r border-gray-200 w-30 text-center text-sm text-gray-600 py-1 px-5">
@@ -560,4 +565,4 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
   );
 };
 
-export default UploaderR2;
+export default UploaderR2Instances;

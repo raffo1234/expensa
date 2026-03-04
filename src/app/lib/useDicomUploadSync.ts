@@ -1,14 +1,3 @@
-/**
- * useDicomUploadSync.ts
- * React hook that:
- * 1. Registers the DICOM upload Service Worker
- * 2. Resumes any pending IndexedDB queue items on mount
- * 3. Registers background sync so uploads continue after tab close
- *
- * Usage: Call once at the top of UploaderR2 or a parent layout component.
- *   const { pendingCount, flushQueue } = useDicomUploadSync(userId);
- */
-
 import { useEffect, useState, useCallback } from "react";
 import {
   getPendingItems,
@@ -31,88 +20,93 @@ interface UseDicomUploadSyncResult {
   isResuming: boolean;
 }
 
+/**
+ * Extend ServiceWorkerRegistration with optional experimental APIs
+ */
+interface ExtendedServiceWorkerRegistration extends ServiceWorkerRegistration {
+  sync?: {
+    register(tag: string): Promise<void>;
+  };
+  periodicSync?: {
+    register(tag: string, options: { minInterval: number }): Promise<void>;
+  };
+}
+
 export const useDicomUploadSync = (userId: string): UseDicomUploadSyncResult => {
   const [pendingCount, setPendingCount] = useState(0);
   const [failedCount, setFailedCount] = useState(0);
   const [isResuming, setIsResuming] = useState(false);
 
-  // --- REGISTER SERVICE WORKER ---
   useEffect(() => {
     if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
 
     const register = async () => {
       try {
-        const registration = await navigator.serviceWorker.register(SW_PATH);
-        console.log("[SW] DICOM upload service worker registered:", registration.scope);
+        const registration = (await navigator.serviceWorker.register(
+          SW_PATH,
+        )) as ExtendedServiceWorkerRegistration;
 
-        // Register background sync
-        if ("sync" in registration) {
-          await (registration as any).sync.register(SYNC_TAG);
-          console.log("[SW] Background sync registered");
+        if (registration.sync) {
+          await registration.sync.register(SYNC_TAG);
         }
 
-        // Register periodic background sync (Chrome 80+)
-        if ("periodicSync" in registration) {
+        if (registration.periodicSync) {
           try {
-            await (registration as any).periodicSync.register(SYNC_TAG, {
-              minInterval: 5 * 60 * 1000, // every 5 minutes
+            await registration.periodicSync.register(SYNC_TAG, {
+              minInterval: 5 * 60 * 1000,
             });
-            console.log("[SW] Periodic background sync registered");
           } catch {
-            // periodicSync may be denied without permission — not fatal
+            // ignore permission errors
           }
         }
-      } catch (err) {
-        console.warn("[SW] Service worker registration failed:", err);
+      } catch {
+        // ignore registration errors
       }
     };
 
     register();
   }, []);
 
-  // --- PROCESS ONE QUEUE ITEM ---
   const processQueueItem = useCallback(
     async (item: QueueItem): Promise<void> => {
+      const nextAttempts = item.attempts + 1;
+
       await updateQueueItem(item.id, {
         status: "uploading",
         lastAttemptAt: Date.now(),
-        attempts: item.attempts + 1,
+        attempts: nextAttempts,
       });
 
       try {
         await uploadDicomFile(item.blob, item.storagePath);
 
-        // Verify before marking done
         const verified = await verifyUploadedFile(item.storagePath);
         if (!verified) {
           throw new Error("File not found in R2 after upload");
         }
 
         await removeQueueItem(item.id);
-        console.log(`[Queue] Resumed successfully: ${item.storagePath}`);
       } catch (err) {
-        const nextAttempts = item.attempts + 1;
+        const errorMessage = err instanceof Error ? err.message : String(err);
 
         if (nextAttempts >= MAX_RESUME_RETRIES) {
-          // Permanently failed — send to dead letter queue
           await updateQueueItem(item.id, {
             status: "failed",
-            failedReason: err instanceof Error ? err.message : String(err),
+            failedReason: errorMessage,
           });
 
           await sendToDeadLetterQueue({
             user_id: userId,
             storage_path: item.storagePath,
             study_instance_uid: item.studyInstanceUID,
-            error_message: err instanceof Error ? err.message : String(err),
+            error_message: errorMessage,
             attempts: nextAttempts,
           });
         } else {
-          // Back to pending for next flush
           await updateQueueItem(item.id, {
             status: "pending",
             attempts: nextAttempts,
-            failedReason: err instanceof Error ? err.message : String(err),
+            failedReason: errorMessage,
           });
         }
 
@@ -122,29 +116,26 @@ export const useDicomUploadSync = (userId: string): UseDicomUploadSyncResult => 
     [userId],
   );
 
-  // --- FLUSH ALL PENDING ---
   const flushQueue = useCallback(async (): Promise<void> => {
     if (!userId) return;
+
     setIsResuming(true);
 
     try {
       const pending = await getPendingItems(userId);
       if (pending.length === 0) return;
 
-      console.log(`[Queue] Resuming ${pending.length} pending uploads...`);
       setPendingCount(pending.length);
 
-      // Process sequentially to avoid overwhelming R2
       for (const item of pending) {
         try {
           await processQueueItem(item);
           setPendingCount((n) => Math.max(0, n - 1));
         } catch {
-          // Continue with next item even if this one fails
+          // continue processing remaining items
         }
       }
 
-      // Update failed count
       const failed = await getFailedItems(userId);
       setFailedCount(failed.length);
     } finally {
@@ -152,7 +143,6 @@ export const useDicomUploadSync = (userId: string): UseDicomUploadSyncResult => 
     }
   }, [userId, processQueueItem]);
 
-  // --- ON MOUNT: CHECK FOR PENDING ITEMS ---
   useEffect(() => {
     if (!userId) return;
 
@@ -166,26 +156,27 @@ export const useDicomUploadSync = (userId: string): UseDicomUploadSyncResult => 
       setFailedCount(failed.length);
 
       if (pending.length > 0) {
-        console.log(`[Queue] Found ${pending.length} pending uploads from previous session`);
         await flushQueue();
       }
     };
 
-    checkQueue();
+    void checkQueue();
   }, [userId, flushQueue]);
 
-  // --- NOTIFY SERVICE WORKER TO FLUSH ---
   useEffect(() => {
     if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
 
     const notifySW = async () => {
       const registration = await navigator.serviceWorker.getRegistration(SW_PATH);
+
       if (registration?.active) {
-        registration.active.postMessage({ type: "FLUSH_DICOM_QUEUE" });
+        registration.active.postMessage({
+          type: "FLUSH_DICOM_QUEUE",
+        });
       }
     };
 
-    notifySW();
+    void notifySW();
   }, [userId]);
 
   return { pendingCount, failedCount, flushQueue, isResuming };

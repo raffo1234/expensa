@@ -5,7 +5,6 @@ import { DicomType } from "@/types/dicomType";
 import fetcherDicom from "@/fetchers/dicomFetcher";
 import useSWR from "swr";
 import GeneratePDFButtonInner from "./GeneratePDFButtonInner";
-import { Popover } from "react-tiny-popover";
 import InnerCircularButton from "./InnerCircularButton";
 import { ICON_SIZE } from "@/constants";
 

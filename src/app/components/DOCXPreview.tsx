@@ -33,9 +33,6 @@ const IconLoading = () => {
 
 export default function DOCXPreview({ dicomId }: { dicomId: DicomType["id"] }) {
   const [isLoading, setIsLoading] = useState(false);
-  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-  const openPopover = () => setIsPopoverOpen(true);
-  const closePopover = () => setIsPopoverOpen(false);
 
   const {
     data: dicom,
@@ -65,12 +62,7 @@ export default function DOCXPreview({ dicomId }: { dicomId: DicomType["id"] }) {
   if (!dicom || error) return null;
 
   return (
-    <button
-      onMouseEnter={openPopover}
-      onMouseLeave={closePopover}
-      onClick={() => generateDocx(dicom)}
-      title={title}
-    >
+    <button onClick={() => generateDocx(dicom)} title={title}>
       <InnerCircularButton title={title}>
         {isLoading || isLoadingDicom ? (
           <IconLoading />

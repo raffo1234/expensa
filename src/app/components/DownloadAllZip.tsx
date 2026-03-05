@@ -39,7 +39,7 @@ export default function DownloadAllZip({ fileIds }: { fileIds: string[] }) {
     <button onClick={handleDownload} title={title} disabled={isZipping || fileIds.length === 0}>
       <InnerCircularButton isDisabled={isZipping} title={title}>
         <Icon
-          icon={isZipping ? "line-md:loading-twotone-loop" : "hugeicons:zip-02"}
+          icon={isZipping ? "line-md:loading-twotone-loop" : "solar:arrow-down-linear"}
           fontSize={ICON_SIZE}
         />
       </InnerCircularButton>

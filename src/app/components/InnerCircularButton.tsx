@@ -33,10 +33,10 @@ export default function InnerCircularButton({
       <span
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
-        className={`p-2 flex transition-colors duration-300 rounded-full ${
+        className={`p-2 flex transition-colors duration-300 border rounded-full ${
           isDisabled
-            ? "cursor-not-allowed opacity-50 pointer-events-none border border-cyan-200 text-cyan-200 bg-white"
-            : `cursor-pointer ${isActive ? "bg-cyan-400 hover:bg-cyan-500 text-white" : "text-cyan-400 border border-cyan-400 bg-white hover:bg-cyan-50"}`
+            ? "cursor-not-allowed opacity-50 pointer-events-none border-cyan-200 text-cyan-200 bg-white"
+            : `cursor-pointer ${isActive ? "bg-cyan-300 border-cyan-300 hover:bg-cyan-400 text-white" : "text-cyan-400 border-cyan-200 bg-white hover:bg-cyan-50"}`
         }`}
       >
         {children}

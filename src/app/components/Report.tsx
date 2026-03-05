@@ -52,7 +52,7 @@ export default function Report({
   } = useSWR(`admin-${dicomId}`, () => fetcherDicom(dicomId));
 
   const { hasPermission: canSendEmailAfterUploading } = useCheckPermission(
-    dicom?.user?.role_id, // owner of the dicom, not current logged user
+    dicom?.user?.role_id,
     Permissions.SEND_EMAIL_AFTER_UPLOADING,
   );
 
@@ -133,30 +133,72 @@ export default function Report({
     router.push("/admin/dicoms");
   };
 
+  const assignDicomTemplateByEmail = async (dicomId: string) => {
+    const { data: dicom, error: dicomError } = await supabase
+      .from("dicom")
+      .select("user_id(email)")
+      .eq("id", dicomId)
+      .single();
+
+    if (dicomError) throw new Error(`Dicom not found: ${dicomError.message}`);
+    const email = (dicom.user_id as unknown as { email: string }).email;
+
+    const { data: templates, error: templateError } = await supabase
+      .from("template")
+      .select("id")
+      .eq("email", email)
+      .limit(1);
+
+    if (templateError)
+      throw new Error(`No template found for email ${email}: ${templateError.message}`);
+
+    const template = templates?.[0];
+    if (!template) return;
+
+    const { data, error } = await supabase
+      .from("dicom")
+      .update({ template_id: template.id })
+      .eq("id", dicomId)
+      .select()
+      .single();
+
+    if (error) throw new Error(`Failed to assign template: ${error.message}`);
+    mutate();
+    return data;
+  };
+
   useControlEnter(completeDicom, document, false, isSaving);
 
   useEffect(() => {
-    if (dicom) {
-      if (dicom.state !== DicomStateEnum.COMPLETED && !dicom?.state) {
-        updateDicom(dicomId, { state: DicomStateEnum.VIEWED });
+    if (!dicom) return;
+
+    const run = async () => {
+      const isNotCompleted = dicom.state !== DicomStateEnum.COMPLETED;
+
+      if (isNotCompleted && !dicom.state) {
+        await updateDicom(dicomId, { state: DicomStateEnum.VIEWED });
       }
 
-      if (dicom.state !== DicomStateEnum.COMPLETED && !dicom.template_id) {
-        const fuse = new Fuse(templates, {
-          useExtendedSearch: true,
-          threshold: 0.4,
-          keys: ["name", "description"],
-        });
+      if (isNotCompleted && !dicom.template_id) {
+        if (dicom.institution) {
+          const fuse = new Fuse(templates, {
+            useExtendedSearch: true,
+            threshold: 0.4,
+            keys: ["name", "description"],
+          });
 
-        const result = fuse.search(
-          dicom.institution ? dicom.institution.split(" ").join(" | ") : "",
-        );
+          const result = fuse.search(dicom.institution.split(" ").join(" | "));
 
-        if (result.length > 0) {
-          updateDicom(dicomId, { template_id: result[0].item.id });
+          if (result.length > 0) {
+            await updateDicom(dicomId, { template_id: result[0].item.id });
+          }
+        } else {
+          await assignDicomTemplateByEmail(dicomId);
         }
       }
-    }
+    };
+
+    run();
   }, [dicom]);
 
   if (!dicom) return <LoadingReportComponent />;

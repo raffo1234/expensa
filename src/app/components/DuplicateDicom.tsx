@@ -21,7 +21,7 @@ export default function DuplicateDicom({
     setModalContent(
       <DicomDuplicateEditor
         dicomId={dicom.id}
-        initialComment={dicom.comment ?? ""}
+        initialStudyDescription=""
         onClose={() => setModalOpen(false)}
         mutate={mutate}
       />,
@@ -46,7 +46,7 @@ export default function DuplicateDicom({
         onMouseEnter={() => setIsPopoverOpen(true)}
         onMouseLeave={() => setIsPopoverOpen(false)}
         onClick={openDuplicateModal}
-        className="flex w-fit p-1.5 outline-0 border border-gray-200 rounded-lg bg-gray-100 hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-400 transition-all"
+        className="flex w-fit p-1.5 cursor-pointer outline-0 border border-gray-200 rounded-lg bg-gray-100 hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-400 transition-all"
         type="button"
       >
         <svg

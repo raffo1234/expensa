@@ -7,26 +7,23 @@ import TextareaAutosize from "react-textarea-autosize";
 
 interface Props {
   dicomId: string;
-  initialComment: string;
+  initialStudyDescription: string;
   onClose: () => void;
   mutate: () => void;
 }
 
-export function DicomDuplicateEditor({ dicomId, initialComment, onClose, mutate }: Props) {
-  // Inicializamos con el comentario o un string vacío por seguridad
-  const [comment, setComment] = useState(initialComment || "");
+export function DicomDuplicateEditor({ dicomId, initialStudyDescription, onClose, mutate }: Props) {
+  const [comment, setComment] = useState(initialStudyDescription || "");
   const [isPending, startTransition] = useTransition();
 
-  // FIX: Sincronizar el estado si la prop cambia o si el modal se reutiliza
   useEffect(() => {
-    setComment(initialComment || "");
-  }, [initialComment, dicomId]);
+    setComment(initialStudyDescription || "");
+  }, [initialStudyDescription, dicomId]);
 
-  // VALIDACIÓN: Check si está vacío o solo tiene espacios
   const isInvalid = !comment.trim() || isPending;
 
   const handleDuplicate = () => {
-    if (isInvalid) return; // Protección extra
+    if (isInvalid) return;
 
     startTransition(async () => {
       try {
@@ -38,7 +35,6 @@ export function DicomDuplicateEditor({ dicomId, initialComment, onClose, mutate 
 
         if (fetchError || !original) throw new Error("Original study not found");
 
-        // Limpieza de datos sensibles
         const { id, created_at, report, state, ...dataToDuplicate } = original;
         console.log({ id, created_at, report, state });
         const { error: insertError } = await supabase.from("dicom").insert([
@@ -88,7 +84,7 @@ export function DicomDuplicateEditor({ dicomId, initialComment, onClose, mutate 
         <button
           onClick={handleDuplicate}
           disabled={isInvalid}
-          className={`px-4 py-2 rounded-lg text-white font-semibold transition-colors 
+          className={`px-4 cursor-pointer py-2 rounded-lg text-white font-semibold transition-colors
             ${isInvalid ? "bg-gray-300 cursor-not-allowed" : "bg-cyan-500 hover:bg-cyan-600"}`}
         >
           {isPending ? "Duplicating..." : "Confirm & Duplicate"}

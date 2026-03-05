@@ -31,14 +31,15 @@ export default function DuplicateDicom({
 
   return (
     <Popover
-      isOpen={isPopoverOpen}
-      positions={["top"]}
-      padding={10}
+      isOpen={true}
+      positions={["top", "bottom"]}
+      padding={12}
       content={
-        <div className="p-3 max-w-48 bg-slate-800 rounded-xl shadow-xl">
-          <p className="text-white text-xs font-medium text-center">
-            Duplicate with custom description
-          </p>
+        <div
+          className={`${isPopoverOpen ? "opacity-100 -translate-y-0" : "opacity-0 -translate-y-4"}
+                  pointer-events-none text-white px-3 py-2 max-w-48 bg-slate-800 rounded-lg transition-all duration-500 ease-in-out`}
+        >
+          Duplicate study
         </div>
       }
     >

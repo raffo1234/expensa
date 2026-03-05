@@ -1115,8 +1115,8 @@ export default function Pagination({
                         </>
                       </td>
                       <td>
-                        {!is_duplicated ? (
-                          <DuplicateDicom originalDicomId={id} mutate={mutate} />
+                        {!is_duplicated && result.data ? (
+                          <DuplicateDicom mutate={mutate} dicom={result.data[index]} />
                         ) : null}
                       </td>
                       <td className="py-2 px-2">

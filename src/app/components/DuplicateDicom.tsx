@@ -1,69 +1,54 @@
 "use client";
 
+import { useState } from "react";
+import { useGlobalState } from "@/lib/globalState";
 import { ICON_SIZE } from "@/constants";
-import { supabase } from "@/lib/supabase";
-import { useTransition } from "react";
-import { Icon } from "@iconify/react";
-import toast from "react-hot-toast";
+import { Popover } from "react-tiny-popover";
+import { DicomType } from "@/types/dicomType";
+import { DicomDuplicateEditor } from "./DicomDuplicateEditor";
 
-interface DuplicatedDicomProps {
-  originalDicomId: string;
+export default function DuplicateDicom({
+  mutate,
+  dicom,
+}: {
   mutate: () => void;
-}
+  dicom: DicomType;
+}) {
+  const { setModalContent, setModalOpen } = useGlobalState();
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
-export default function DuplicateDicom({ originalDicomId, mutate }: DuplicatedDicomProps) {
-  const [isPending, startTransition] = useTransition();
-
-  const handleDuplicate = () => {
-    startTransition(async () => {
-      try {
-        const { data: original, error: fetchError } = await supabase
-          .from("dicom")
-          .select("*")
-          .eq("id", originalDicomId)
-          .single();
-
-        if (fetchError || !original) {
-          throw new Error("Original study not found");
-        }
-
-        const { id, created_at, report, ...dataToDuplicate } = original;
-        console.log(id, created_at, report);
-        const { error: insertError } = await supabase.from("dicom").insert([
-          {
-            ...dataToDuplicate,
-            is_duplicated: true,
-          },
-        ]);
-
-        if (insertError) throw insertError;
-
-        mutate();
-        toast.success("Study duplicated successfully");
-      } catch (e: unknown) {
-        const error = e as Error;
-        console.error(error.message);
-        toast.error("Failed to duplicate study");
-      }
-    });
+  const openDuplicateModal = () => {
+    setModalContent(
+      <DicomDuplicateEditor
+        dicomId={dicom.id}
+        initialComment={dicom.comment ?? ""}
+        onClose={() => setModalOpen(false)}
+        mutate={mutate}
+      />,
+    );
+    setModalOpen(true);
   };
 
   return (
-    <button
-      onClick={handleDuplicate}
-      disabled={isPending}
-      className={`flex w-fit p-1.5 outline-0 border rounded-lg transition-all duration-300 items-center justify-center
-        ${
-          isPending
-            ? "bg-gray-200 border-gray-300 cursor-not-allowed text-gray-400"
-            : "bg-gray-100 border-gray-200 hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-400 cursor-pointer"
-        }`}
-      type="button"
-      title="Duplicate study"
+    <Popover
+      isOpen={isPopoverOpen}
+      positions={["top"]}
+      padding={10}
+      content={
+        <div className="p-3 max-w-48 bg-slate-800 rounded-xl shadow-xl">
+          <p className="text-white text-xs font-medium text-center">
+            Duplicate with custom description
+          </p>
+        </div>
+      }
     >
-      {isPending ? (
-        <Icon icon="solar:record-broken" className="animate-spin" fontSize={ICON_SIZE} />
-      ) : (
+      <button
+        onMouseEnter={() => setIsPopoverOpen(true)}
+        onMouseLeave={() => setIsPopoverOpen(false)}
+        onClick={openDuplicateModal}
+        className="flex w-fit p-1.5 outline-0 border border-gray-200 rounded-lg bg-gray-100 hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-400 transition-all"
+        type="button"
+      >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width={ICON_SIZE}
@@ -77,7 +62,7 @@ export default function DuplicateDicom({ originalDicomId, mutate }: DuplicatedDi
             clipRule="evenodd"
           />
         </svg>
-      )}
-    </button>
+      </button>
+    </Popover>
   );
 }

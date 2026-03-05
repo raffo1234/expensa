@@ -10,7 +10,7 @@ import { sanitize } from "@/lib/sanitize";
 import { ICON_SIZE } from "@/constants";
 import fetcherDicom from "@/fetchers/dicomFetcher";
 import useSWR from "swr";
-import { Popover } from "react-tiny-popover";
+import InnerCircularButton from "./InnerCircularButton";
 
 const IconLoading = () => {
   return (
@@ -60,30 +60,27 @@ export default function DOCXPreview({ dicomId }: { dicomId: DicomType["id"] }) {
     }
   };
 
+  const title = "DOCX Preview";
+
   if (!dicom || error) return null;
 
   return (
-    <Popover
-      isOpen={isPopoverOpen}
-      positions={["top", "bottom"]}
-      padding={12}
-      content={
-        <div className="pointer-events-none px-3 py-1 bg-slate-800 text-white rounded-sm transition-all duration-500 ease-in-out">
-          Download
-        </div>
-      }
+    <button
+      onMouseEnter={openPopover}
+      onMouseLeave={closePopover}
+      onClick={() => generateDocx(dicom)}
+      title={title}
     >
-      <button
-        onMouseEnter={openPopover}
-        onMouseLeave={closePopover}
-        onClick={() => generateDocx(dicom)}
-        title="DOCX Preview"
-        className="bg-white px-1 rounded-lg cursor-pointer"
-      >
+      <InnerCircularButton title={title}>
         {isLoading || isLoadingDicom ? (
           <IconLoading />
         ) : (
-          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 32 32">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width={ICON_SIZE}
+            height={ICON_SIZE}
+            viewBox="0 0 32 32"
+          >
             <defs>
               <linearGradient
                 id="SVGCSIZcbiK"
@@ -135,7 +132,7 @@ export default function DOCXPreview({ dicomId }: { dicomId: DicomType["id"] }) {
             />
           </svg>
         )}
-      </button>
-    </Popover>
+      </InnerCircularButton>
+    </button>
   );
 }

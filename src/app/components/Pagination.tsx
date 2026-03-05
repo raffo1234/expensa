@@ -32,6 +32,7 @@ import { useRouter } from "next/navigation";
 import DownloadAllZip from "./DownloadAllZip";
 import DuplicateDicom from "./DuplicateDicom";
 import InformButton from "./InformButton";
+import InnerCircularButton from "./InnerCircularButton";
 
 type SortDirection = "asc" | "desc" | null;
 
@@ -1106,14 +1107,10 @@ export default function Pagination({
                       <td className="text-center">
                         <>
                           {dicom_url ? (
-                            <Link
-                              target="_blank"
-                              href={dicom_url}
-                              download
-                              title="Download"
-                              className="flex w-fit p-1.5 outline-0 cursor-pointer border hover:border-cyan-200 border-gray-200 rounded-lg bg-gray-100 hover:bg-cyan-50 hover:text-cyan-400 transition-colors"
-                            >
-                              <Icon icon="solar:cloud-download-outline" fontSize={ICON_SIZE} />
+                            <Link target="_blank" href={dicom_url} download title="Download Zip">
+                              <InnerCircularButton title="Download Zip">
+                                <Icon icon="solar:cloud-download-outline" fontSize={ICON_SIZE} />
+                              </InnerCircularButton>
                             </Link>
                           ) : null}
                           {hasInstances ? <DownloadAllZip fileIds={[id]} /> : null}

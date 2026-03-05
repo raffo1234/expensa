@@ -1,9 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { useGlobalState } from "@/lib/globalState";
 import { ICON_SIZE } from "@/constants";
-import { Popover } from "react-tiny-popover";
 import { DicomType } from "@/types/dicomType";
 import { DicomDuplicateEditor } from "./DicomDuplicateEditor";
 import InnerCircularButton from "./InnerCircularButton";

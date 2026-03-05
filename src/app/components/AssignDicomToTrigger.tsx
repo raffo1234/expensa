@@ -6,6 +6,7 @@ import useCheckPermission from "@/hooks/useCheckPermission";
 import { Permissions } from "@/types/propertyState";
 import { useDicomHasAssignments } from "@/hooks/useDicomHasAssignments";
 import { ICON_SIZE } from "@/constants";
+import InnerCircularButton from "./InnerCircularButton";
 
 function AssignmentIcon() {
   return (
@@ -53,15 +54,14 @@ export default function AssignDicomToTrigger({
   if (!canAssign) return null;
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="cursor-pointer block text-sm underline underline-offset-3"
-    >
+    <button type="button" onClick={onClick} className="block text-sm underline underline-offset-3">
       {dicomIds.length === 1 ? (
-        <div className={`p-1 ${hasAssignments ? "bg-cyan-400 text-white" : "text-cyan-400 border border-cyan-400 bg-white"} rounded-lg`}>
+        <InnerCircularButton
+          title={hasAssignments ? "View Assignments" : "Assign"}
+          isActive={!!hasAssignments}
+        >
           <AssignmentIcon />
-        </div>
+        </InnerCircularButton>
       ) : (
         "Assignments"
       )}

@@ -3,7 +3,6 @@
 import { DicomStateEnum } from "@/enums/dicomStateEnum";
 import DOCXPreview from "./DOCXPreview";
 import GeneratePDFButton from "./GeneratePDFButton";
-import Link from "next/link";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { DicomType } from "@/types/dicomType";
 import useCheckPermission from "@/hooks/useCheckPermission";
@@ -14,6 +13,7 @@ import { ICON_SIZE } from "@/constants";
 import { DeleteDicomWithInstancesButton } from "./DeleteDicomWithInstancesButton";
 import DeleteDuplicatedDicomButton from "./DeleteDuplicatedDicomButton";
 import { useState } from "react";
+import InformButton from "./InformButton";
 
 interface DeleteDicomButtonsProps {
   dicom: DicomType;
@@ -104,6 +104,9 @@ export default function TableActionButtons({
   const { hasPermission: canDeleteOtherDicoms, isLoading: isLoadingCanDeleteOtherDicoms } =
     useCheckPermission(userRoleId, Permissions.DELETE_OTHER_DICOMS);
 
+  const canDeleteMyDicom = canDelete && activeUserId === signedUserId;
+  const canDeleteOtherDicom = canDeleteOtherDicoms && activeUserId !== signedUserId;
+
   if (isLoadingCanDownload || isLoadingCanDelete || isLoadingCanDeleteOtherDicoms) return null;
 
   return (
@@ -114,24 +117,8 @@ export default function TableActionButtons({
           <DOCXPreview dicomId={dicom.id} />
         </>
       ) : null}
-
-      <Link
-        href={`/admin/dicoms/${dicom.id}`}
-        title="Inform"
-        className="py-2 px-6 flex gap-2 items-center bg-cyan-400 text-white rounded-full cursor-pointer"
-      >
-        <Icon
-          icon={
-            dicom.state === DicomStateEnum.COMPLETED
-              ? "solar:file-check-linear"
-              : "solar:document-add-linear"
-          }
-          fontSize={ICON_SIZE}
-        />
-        <span>{dicom.state !== DicomStateEnum.COMPLETED ? "Inform" : "Amend"}</span>
-      </Link>
-      {(canDelete && activeUserId === signedUserId) ||
-      (canDeleteOtherDicoms && activeUserId !== signedUserId) ? (
+      <InformButton dicomState={dicom.state} dicomId={dicom.id} />
+      {canDeleteMyDicom || canDeleteOtherDicom ? (
         <DeleteDicomButtons dicom={dicom} mutate={mutate} />
       ) : null}
     </div>

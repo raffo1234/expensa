@@ -48,14 +48,15 @@ export default function DeleteDuplicatedDicomButton({
 
   return (
     <Popover
-      isOpen={isPopoverOpen}
-      positions={["top"]}
+      isOpen={true}
+      positions={["top", "bottom"]}
       padding={12}
       content={
-        <div className="pointer-events-none p-3 max-w-40 bg-slate-800 rounded-xl shadow-xl transition-all duration-300">
-          <div className="absolute bottom-[-4px] left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-800 rotate-45" />
-          <h4 className="text-white text-xs font-semibold">Delete copy</h4>
-          <p className="text-slate-300 text-xs">DB only</p>
+        <div
+          className={`${isPopoverOpen ? "opacity-100 -translate-y-0" : "opacity-0 -translate-y-4"} 
+                  pointer-events-none text-white px-3 py-2 max-w-48 bg-slate-800 rounded-lg transition-all duration-500 ease-in-out`}
+        >
+          Delete copy
         </div>
       }
     >
@@ -65,7 +66,7 @@ export default function DeleteDuplicatedDicomButton({
         type="button"
         disabled={isPending}
         onClick={handleDelete}
-        className={`aspect-square p-2 flex-shrink-0 transition-all duration-300 cursor-pointer rounded-full border border-dashed flex items-center justify-center
+        className={`aspect-square p-2 flex-shrink-0 transition-colors duration-300 cursor-pointer rounded-full border border-dashed flex items-center justify-center
           ${
             isPending
               ? "bg-gray-200 border-gray-300 text-gray-400 cursor-not-allowed"

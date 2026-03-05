@@ -31,6 +31,7 @@ import ClearButton from "./ClearButton";
 import { useRouter } from "next/navigation";
 import DownloadAllZip from "./DownloadAllZip";
 import DuplicateDicom from "./DuplicateDicom";
+import InformButton from "./InformButton";
 
 type SortDirection = "asc" | "desc" | null;
 
@@ -657,6 +658,7 @@ export default function Pagination({
             <tr className="border-b border-gray-200">
               <th className="w-13 py-4 text-center"></th>
               <th className="w-6 text-center uppercase text-xs font-semibold py-4">#</th>
+              <th className="w-10 text-center uppercase text-xs font-semibold py-4"></th>
               <th className="w-25 px-[1px]">
                 <button
                   type="button"
@@ -995,6 +997,9 @@ export default function Pagination({
                       </td>
                       <td className="whitespace-nowrap py-5 text-center">
                         {startItemNumber + index}
+                      </td>
+                      <td>
+                        <InformButton dicomId={id} dicomState={state} />
                       </td>
                       <td className="py-5 px-2 truncate whitespace-nowrap ">
                         <Link

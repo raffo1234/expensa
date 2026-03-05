@@ -60,7 +60,7 @@ export function DicomDuplicateEditor({ dicomId, initialStudyDescription, onClose
 
   return (
     <div className="p-1">
-      <h1 className="font-semibold text-xl mb-1">Duplicate Study Description</h1>
+      <h1 className="font-semibold text-xl mb-1">Duplicate Study</h1>
       <p className="mb-6 text-gray-400 text-sm">Add study description for this copy</p>
 
       <TextareaAutosize

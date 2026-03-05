@@ -3,14 +3,9 @@
 import { useGlobalState } from "@/lib/globalState";
 import ShareReport from "./ShareReport";
 import { ICON_SIZE } from "@/constants";
+import InnerCircularButton from "./InnerCircularButton";
 
-export default function ShareReportButton({
-  id,
-  userId,
-}: {
-  id: string;
-  userId: string;
-}) {
+export default function ShareReportButton({ id, userId }: { id: string; userId: string }) {
   const { setModalContent, setModalOpen } = useGlobalState();
 
   const handleOnClick = () => {
@@ -18,25 +13,18 @@ export default function ShareReportButton({
     setModalOpen(true);
   };
 
+  const title = "Share Report";
+
   return (
-    <button
-      onClick={handleOnClick}
-      title="Share Report"
-      className="hover:border-cyan-200 hover:text-cyan-400 transition-colors duration-300 hover:bg-cyan-50 p-1.5 rounded-lg bg-gray-100 cursor-pointer border border-gray-200"
-    >
-      {
+    <button onClick={handleOnClick} title={title}>
+      <InnerCircularButton title={title}>
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width={ICON_SIZE}
           height={ICON_SIZE}
           viewBox="0 0 24 24"
         >
-          <g
-            fill="none"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeWidth="1.5"
-          >
+          <g fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.5">
             <path d="M22 13.998c-.029 3.414-.218 5.296-1.46 6.537C19.076 22 16.718 22 12.003 22s-7.073 0-8.538-1.465S2 16.713 2 11.997C2 7.282 2 4.924 3.465 3.46C4.706 2.218 6.588 2.029 10.002 2" />
             <path
               strokeLinejoin="round"
@@ -44,7 +32,7 @@ export default function ShareReportButton({
             />
           </g>
         </svg>
-      }
+      </InnerCircularButton>
     </button>
   );
 }

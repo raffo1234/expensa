@@ -6,6 +6,7 @@ import { ICON_SIZE } from "@/constants";
 import { Popover } from "react-tiny-popover";
 import { DicomType } from "@/types/dicomType";
 import { DicomDuplicateEditor } from "./DicomDuplicateEditor";
+import InnerCircularButton from "./InnerCircularButton";
 
 export default function DuplicateDicom({
   mutate,
@@ -15,7 +16,6 @@ export default function DuplicateDicom({
   dicom: DicomType;
 }) {
   const { setModalContent, setModalOpen } = useGlobalState();
-  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   const openDuplicateModal = () => {
     setModalContent(
@@ -29,27 +29,11 @@ export default function DuplicateDicom({
     setModalOpen(true);
   };
 
+  const title = "Duplicate study";
+
   return (
-    <Popover
-      isOpen={true}
-      positions={["top", "bottom"]}
-      padding={12}
-      content={
-        <div
-          className={`${isPopoverOpen ? "opacity-100 -translate-y-0" : "opacity-0 -translate-y-4"}
-                  pointer-events-none text-white px-3 py-2 max-w-48 bg-slate-800 rounded-lg transition-all duration-500 ease-in-out`}
-        >
-          Duplicate study
-        </div>
-      }
-    >
-      <button
-        onMouseEnter={() => setIsPopoverOpen(true)}
-        onMouseLeave={() => setIsPopoverOpen(false)}
-        onClick={openDuplicateModal}
-        className="flex w-fit p-1.5 cursor-pointer outline-0 border border-gray-200 rounded-lg bg-gray-100 hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-400 transition-all"
-        type="button"
-      >
+    <button onClick={openDuplicateModal} type="button" title={title}>
+      <InnerCircularButton title={title}>
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width={ICON_SIZE}
@@ -63,7 +47,7 @@ export default function DuplicateDicom({
             clipRule="evenodd"
           />
         </svg>
-      </button>
-    </Popover>
+      </InnerCircularButton>
+    </button>
   );
 }

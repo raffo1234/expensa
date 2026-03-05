@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Icon } from "@iconify/react"; // Asumiendo que usas Iconify por tu código previo
 import { ICON_SIZE } from "@/constants";
+import InnerCircularButton from "./InnerCircularButton";
 
 export default function DownloadAllZip({ fileIds }: { fileIds: string[] }) {
   const [isZipping, setIsZipping] = useState(false);
@@ -32,20 +33,16 @@ export default function DownloadAllZip({ fileIds }: { fileIds: string[] }) {
     }
   };
 
+  const title = "Download Zip";
+
   return (
-    <button
-      onClick={handleDownload}
-      disabled={isZipping || fileIds.length === 0}
-      className={`
-        flex w-fit p-1 outline-0 cursor-pointer border hover:border-cyan-500 border-cyan-400 rounded-lg bg-gray-100 hover:bg-cyan-50 hover:text-cyan-400 transition-colors
-        ${
-          isZipping
-            ? "bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed pointer-events-none"
-            : "bg-white border-cyan-100 text-cyan-400 hover:bg-cyan-50 hover:border-cyan-200"
-        }
-      `}
-    >
-      <Icon icon={isZipping ? "line-md:loading-twotone-loop" : "hugeicons:zip-02"} fontSize={ICON_SIZE} />
+    <button onClick={handleDownload} title={title} disabled={isZipping || fileIds.length === 0}>
+      <InnerCircularButton isDisabled={isZipping} title={title}>
+        <Icon
+          icon={isZipping ? "line-md:loading-twotone-loop" : "hugeicons:zip-02"}
+          fontSize={ICON_SIZE}
+        />
+      </InnerCircularButton>
     </button>
   );
 }

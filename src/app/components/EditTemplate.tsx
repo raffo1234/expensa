@@ -10,13 +10,10 @@ import FieldsSection from "./FieldsSection";
 import FieldLabel from "./FieldLabel";
 import DotsLoading from "./DotsLoading";
 import { useDebouncedCallback } from "use-debounce";
+import toast from "react-hot-toast";
 
 const fetcher = async (id: string) => {
-  const { data, error } = await supabase
-    .from("template")
-    .select("*")
-    .eq("id", id)
-    .single();
+  const { data, error } = await supabase.from("template").select("*").eq("id", id).single();
   if (error) throw error;
   return data;
 };
@@ -24,11 +21,7 @@ const fetcher = async (id: string) => {
 export default function EditTemplate({ id }: { id: string }) {
   const [isSaving, setIsSaving] = useState({ state: false, field: "" });
 
-  const {
-    data: template,
-    isLoading,
-    mutate: mutateTemplate,
-  } = useSWR(id, () => fetcher(id));
+  const { data: template, isLoading, mutate: mutateTemplate } = useSWR(id, () => fetcher(id));
 
   const debouncedInput = useDebouncedCallback((event) => {
     updateTemplate(event.target.name, event.target.value);
@@ -41,6 +34,8 @@ export default function EditTemplate({ id }: { id: string }) {
         .from("template")
         .update({ [fieldName]: data })
         .eq("id", id);
+
+      toast.success("Template saved successfully!");
     } catch (error) {
       console.error(error);
     } finally {
@@ -64,12 +59,7 @@ export default function EditTemplate({ id }: { id: string }) {
               title="Templates"
               className="p-2 hover:text-cyan-400 transition-colors duration-300"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="36"
-                height="36"
-                viewBox="0 0 24 24"
-              >
+              <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24">
                 <g fill="none" stroke="currentColor" strokeWidth="1.5">
                   <path
                     d="M11.142 20c-2.227 0-3.341 0-4.27-.501c-.93-.502-1.52-1.42-2.701-3.259l-.681-1.06C2.497 13.634 2 12.86 2 12s.497-1.634 1.49-3.18l.68-1.06c1.181-1.838 1.771-2.757 2.701-3.259S8.915 4 11.142 4h2.637c3.875 0 5.813 0 7.017 1.172S22 8.229 22 12s0 5.657-1.204 6.828S17.654 20 13.78 20z"
@@ -114,6 +104,25 @@ export default function EditTemplate({ id }: { id: string }) {
                   />
                   <div
                     className={`${isSaving.state && isSaving.field === "description" ? "opacity-100" : "opacity-0"} transition-opacity duration-300 absolute right-2 -bottom-3 sm:-bottom-4`}
+                  >
+                    <DotsLoading />
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-4 items-center">
+                <div className="grow-1 relative">
+                  <FieldLabel htmlFor="email">Email</FieldLabel>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    defaultValue={template.email}
+                    required
+                    onChange={debouncedInput}
+                    className="w-full px-4 bg-white py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
+                  />
+                  <div
+                    className={`${isSaving.state && isSaving.field === "name" ? "opacity-100" : "opacity-0"} transition-opacity duration-300 absolute right-2 -bottom-3 sm:-bottom-4`}
                   >
                     <DotsLoading />
                   </div>

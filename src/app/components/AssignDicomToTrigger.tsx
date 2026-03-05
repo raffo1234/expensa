@@ -54,7 +54,7 @@ export default function AssignDicomToTrigger({
   if (!canAssign) return null;
 
   return (
-    <button type="button" onClick={onClick} className="block text-sm underline underline-offset-3">
+    <button type="button" onClick={onClick} className="inline-block text-sm underline underline-offset-3">
       {dicomIds.length === 1 ? (
         <InnerCircularButton
           title={hasAssignments ? "View Assignments" : "Assign"}

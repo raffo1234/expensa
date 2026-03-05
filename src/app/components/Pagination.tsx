@@ -1067,15 +1067,17 @@ export default function Pagination({
                         {completedAtFormatted}
                       </td>
                       <td className="py-5 px-2 text-center">{modality}</td>
-                      <td>{assigned_by ? <AssignedBy assignedBy={assigned_by} /> : null}</td>
-                      <td>
+                      <td className="text-center">
+                        {assigned_by ? <AssignedBy assignedBy={assigned_by} /> : null}
+                      </td>
+                      <td className="text-center">
                         <AssignDicomToTrigger
                           dicomIds={[id]}
                           userId={userId}
                           userRoleId={userRoleId}
                         />
                       </td>
-                      <td>
+                      <td className="text-center">
                         <ShareReportButton id={id} userId={userId} />
                       </td>
                       <td className="text-center">
@@ -1114,12 +1116,12 @@ export default function Pagination({
                           {hasInstances ? <DownloadAllZip fileIds={[id]} /> : null}
                         </>
                       </td>
-                      <td>
+                      <td className="text-center">
                         {!is_duplicated && result.data ? (
                           <DuplicateDicom mutate={mutate} dicom={result.data[index]} />
                         ) : null}
                       </td>
-                      <td className="py-2 px-2">
+                      <td className="px-2">
                         {result.data ? (
                           <TableActionButtons
                             activeUserId={userId}

@@ -38,8 +38,8 @@ export default function AssignedBy({ assignedBy }: { assignedBy: AssignedByType 
           </div>
         }
       >
-        <button type="button" title="Assigned to" onClick={() => setIsPopoverOpen(!isPopoverOpen)}>
-          <InnerCircularButton isActive={isPopoverOpen} title="Assigned to">
+        <button type="button" title={title} onClick={() => setIsPopoverOpen(!isPopoverOpen)}>
+          <InnerCircularButton isActive={isPopoverOpen} title={title}>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width={ICON_SIZE}

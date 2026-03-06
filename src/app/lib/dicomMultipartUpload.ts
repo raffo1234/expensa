@@ -1,13 +1,16 @@
 /**
  * dicomMultipartUpload.ts
  * Resumable multipart upload for Cloudflare R2.
- * Only failed chunks retry — not the whole file.
- * Falls back to single PUT for files under threshold.
+ * FIX: batchPresignUrls() replaces per-file presign round trips.
+ * For 400 files: 400 round trips → 8 batch calls.
  */
 
-const CHUNK_SIZE = 5 * 1024 * 1024;   // 5MB — R2 minimum part size
-const MULTIPART_THRESHOLD = 10 * 1024 * 1024; // Use multipart only above 10MB
+import pLimit from "p-limit";
+
+const CHUNK_SIZE = 16 * 1024 * 1024;
+const MULTIPART_THRESHOLD = 16 * 1024 * 1024;
 const MAX_PART_RETRIES = 3;
+const PRESIGN_BATCH_SIZE = 50;
 
 interface MultipartInitResponse {
   uploadId: string;
@@ -18,27 +21,47 @@ interface UploadedPart {
   etag: string;
 }
 
-// --- SINGLE PUT (small files) ---
-const uploadSinglePut = async (
-  fileBlob: Blob,
-  storagePath: string,
-  signal?: AbortSignal,
-): Promise<void> => {
-  const signRes = await fetch("/api/generate-dicom-url", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ filename: storagePath }),
-    signal,
-  });
+// --- BATCH PRESIGN ---
+// Call once before uploading — fetches all signed URLs in batches of 50
+export const batchPresignUrls = async (storagePaths: string[]): Promise<Map<string, string>> => {
+  const urlMap = new Map<string, string>();
+  const batches: string[][] = [];
 
-  if (!signRes.ok) {
-    const err = await signRes.json().catch(() => ({}));
-    throw new Error(`[FATAL] Presign failed ${signRes.status}: ${err?.error || signRes.statusText}`);
+  for (let i = 0; i < storagePaths.length; i += PRESIGN_BATCH_SIZE) {
+    batches.push(storagePaths.slice(i, i + PRESIGN_BATCH_SIZE));
   }
 
-  const { signedUrl } = await signRes.json();
-  if (!signedUrl) throw new Error("[FATAL] Missing signedUrl in presign response");
+  // All batches fire in parallel
+  await Promise.all(
+    batches.map(async (batch) => {
+      const res = await fetch("/api/generate-dicom-urls-batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filenames: batch }),
+      });
 
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(`Batch presign failed ${res.status}: ${err?.error || res.statusText}`);
+      }
+
+      const { urls }: { urls: Record<string, string> } = await res.json();
+      for (const [path, url] of Object.entries(urls)) {
+        urlMap.set(path, url);
+      }
+    }),
+  );
+
+  return urlMap;
+};
+
+// --- SINGLE PUT ---
+// signedUrl passed in — no presign round trip inside
+const uploadSinglePut = async (
+  fileBlob: Blob,
+  signedUrl: string,
+  signal?: AbortSignal,
+): Promise<void> => {
   const putRes = await fetch(signedUrl, {
     method: "PUT",
     headers: { "Content-Type": "application/dicom" },
@@ -81,7 +104,6 @@ const uploadPartWithRetry = async (
 
   for (let attempt = 0; attempt < MAX_PART_RETRIES; attempt++) {
     try {
-      // Get presigned URL for this specific part
       const signRes = await fetch("/api/dicom-multipart-part-url", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -105,9 +127,7 @@ const uploadPartWithRetry = async (
         signal,
       });
 
-      if (!putRes.ok) {
-        throw new Error(`Part ${partNumber} PUT failed ${putRes.status}`);
-      }
+      if (!putRes.ok) throw new Error(`Part ${partNumber} PUT failed ${putRes.status}`);
 
       const etag = putRes.headers.get("ETag") || putRes.headers.get("etag") || "";
       return { partNumber, etag };
@@ -116,7 +136,9 @@ const uploadPartWithRetry = async (
       const isLast = attempt === MAX_PART_RETRIES - 1;
       if (!isLast) {
         const delay = 1000 * Math.pow(2, attempt);
-        console.warn(`[Multipart] Part ${partNumber} attempt ${attempt + 1} failed. Retrying in ${delay}ms...`);
+        console.warn(
+          `[Multipart] Part ${partNumber} attempt ${attempt + 1} failed. Retrying in ${delay}ms...`,
+        );
         await new Promise((r) => setTimeout(r, delay));
       }
     }
@@ -145,11 +167,8 @@ const completeMultipartUpload = async (
   }
 };
 
-// --- MULTIPART: ABORT (cleanup on failure) ---
-const abortMultipartUpload = async (
-  storagePath: string,
-  uploadId: string,
-): Promise<void> => {
+// --- MULTIPART: ABORT ---
+const abortMultipartUpload = async (storagePath: string, uploadId: string): Promise<void> => {
   try {
     await fetch("/api/dicom-multipart-abort", {
       method: "POST",
@@ -161,17 +180,18 @@ const abortMultipartUpload = async (
   }
 };
 
-// --- PUBLIC: SMART UPLOAD (auto-selects single PUT vs multipart) ---
+// --- PUBLIC: SMART UPLOAD ---
+// signedUrl must be pre-fetched via batchPresignUrls() before calling
 export const uploadDicomFile = async (
   fileBlob: Blob,
   storagePath: string,
+  signedUrl: string,
   onProgress?: (percent: number) => void,
   signal?: AbortSignal,
 ): Promise<void> => {
-  // Small files: single PUT is faster and simpler
   if (fileBlob.size < MULTIPART_THRESHOLD) {
     onProgress?.(0);
-    await uploadSinglePut(fileBlob, storagePath, signal);
+    await uploadSinglePut(fileBlob, signedUrl, signal);
     onProgress?.(100);
     return;
   }
@@ -179,26 +199,31 @@ export const uploadDicomFile = async (
   // Large files: multipart
   const totalParts = Math.ceil(fileBlob.size / CHUNK_SIZE);
   const uploadId = await initMultipartUpload(storagePath);
-  const parts: UploadedPart[] = [];
 
   try {
-    for (let i = 0; i < totalParts; i++) {
-      if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
+    const partLimit = pLimit(4);
+    let completedParts = 0;
 
+    const partPromises = Array.from({ length: totalParts }, (_, i) => {
       const start = i * CHUNK_SIZE;
       const end = Math.min(start + CHUNK_SIZE, fileBlob.size);
       const chunk = fileBlob.slice(start, end);
 
-      const part = await uploadPartWithRetry(chunk, storagePath, uploadId, i + 1, signal);
-      parts.push(part);
+      return partLimit(async () => {
+        if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
+        const part = await uploadPartWithRetry(chunk, storagePath, uploadId, i + 1, signal);
+        completedParts++;
+        onProgress?.(Math.round((completedParts / totalParts) * 95));
+        return part;
+      });
+    });
 
-      onProgress?.(Math.round(((i + 1) / totalParts) * 95)); // reserve 5% for complete
-    }
+    const parts = await Promise.all(partPromises);
+    parts.sort((a, b) => a.partNumber - b.partNumber);
 
     await completeMultipartUpload(storagePath, uploadId, parts);
     onProgress?.(100);
   } catch (err) {
-    // Clean up the incomplete multipart upload on R2
     await abortMultipartUpload(storagePath, uploadId);
     throw err;
   }

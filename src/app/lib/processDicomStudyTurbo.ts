@@ -7,7 +7,7 @@ import getAgeFromYYYYMMDD from "./getAgeFromYYYYMMDD";
 import { getDICOMMetadata } from "./getDICOMMetadata";
 import { CustomFileStateType, CustomFileType, Study } from "@/types/customFileType";
 import editCustomFileById from "./editCustomFileById";
-import { uploadDicomFile } from "./dicomMultipartUpload";
+import { uploadDicomFile, batchPresignUrls } from "./dicomMultipartUpload";
 import { enqueueUpload, removeQueueItem, updateQueueItem } from "./dicomUploadQueue";
 import {
   verifyUploadedFile,
@@ -61,6 +61,15 @@ interface DicomStudy {
 
 interface ArchiveFile {
   arrayBuffer: () => Promise<ArrayBuffer>;
+}
+
+interface ParsedFile {
+  name: string;
+  buffer: Uint8Array;
+  fileBlob: Blob;
+  storagePath: string;
+  sUID: string;
+  metadata: Awaited<ReturnType<typeof getDICOMMetadata>>;
 }
 
 // --- DICOM DETECTION ---
@@ -120,10 +129,10 @@ const isRetryableError = (err: unknown): boolean => {
 };
 
 // --- RESILIENT UPLOAD ---
-// FIX #3: skipVerify=true on first pass — only verify on retries to avoid 500 round-trips
 const resilientUpload = async (
   fileBlob: Blob,
   storagePath: string,
+  signedUrl: string,
   userId: string,
   studyInstanceUID: string,
   maxRetries: number = 5,
@@ -145,17 +154,13 @@ const resilientUpload = async (
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-      await uploadDicomFile(fileBlob, storagePath, undefined, controller.signal);
+      await uploadDicomFile(fileBlob, storagePath, signedUrl, undefined, controller.signal);
 
-      // FIX #2: reduced from 800ms to 200ms — saves minutes on large studies
       await new Promise((r) => setTimeout(r, 200));
 
-      // FIX #3: skip verification on first attempt, only verify on retries
       if (!skipVerify || attempt > 0) {
         const verified = await verifyUploadedFile(storagePath);
-        if (!verified) {
-          throw new Error("File not found in R2 after upload");
-        }
+        if (!verified) throw new Error("File not found in R2 after upload");
       }
 
       await removeQueueItem(storagePath);
@@ -195,9 +200,7 @@ const resilientUpload = async (
     attempts: maxRetries,
   });
 
-  console.warn(
-    `[Upload] All ${maxRetries} attempts failed for ${storagePath}. SW will retry in background.`,
-  );
+  console.warn(`[Upload] All ${maxRetries} attempts failed for ${storagePath}. SW will retry.`);
   return false;
 };
 
@@ -262,10 +265,7 @@ export const processDicomStudyTurbo = async (
 
   const studies: Study[] = [];
   const studiesMap = new Map<string, DicomStudy>();
-
-  // FIX #1: bumped from 3 to 8 concurrent uploads
   const limit = pLimit(8);
-
   const storageDomain = (process.env.NEXT_PUBLIC_STORAGE_DOMAIN || "").replace(/\/$/, "");
   const getStudyStatus = buildStudyStatusResolver(userId);
   const fileBuffers: { name: string; buffer: Uint8Array }[] = [];
@@ -305,41 +305,77 @@ export const processDicomStudyTurbo = async (
   const totalFiles = fileBuffers.length;
   let processedCount = 0;
 
-  // --- 2. BATCHED PARALLEL PROCESSING ---
-  for (let batchStart = 0; batchStart < fileBuffers.length; batchStart += BATCH_SIZE) {
-    const batch = fileBuffers.slice(batchStart, batchStart + BATCH_SIZE);
+  // ─────────────────────────────────────────────────────────────────
+  // PHASE 1: Parse metadata headers only (64KB) for all files in parallel
+  // Goal: collect all storage paths so we can batch-presign them at once
+  // ─────────────────────────────────────────────────────────────────
+  const parsedFiles: ParsedFile[] = [];
 
-    const tasks = batch.map(({ name, buffer }) =>
+  const parseTasks = fileBuffers.map(({ name, buffer }) =>
+    limit(async () => {
+      try {
+        if (buffer.length === 0) return;
+        const typeInfo = await fileTypeFromBuffer(buffer);
+        if (!isDicomBinary(buffer) && typeInfo?.ext !== "dcm") return;
+
+        const fileBlob = new Blob([buffer as unknown as BlobPart], { type: "application/dicom" });
+
+        // Only read first 64KB for metadata — pixel data not needed here
+        const metadata = await getDICOMMetadata(fileBlob);
+        if (!metadata?.studyInstanceUID) return;
+
+        const sUID = metadata.studyInstanceUID;
+        const storagePath = `dicom/${userId}/${sUID}/${metadata.seriesInstanceUID}/${metadata.sopInstanceUID}.dcm`;
+
+        parsedFiles.push({ name, buffer, fileBlob, storagePath, sUID, metadata });
+      } catch (err) {
+        console.error(`[processDicom] Metadata parse error for ${name}:`, err);
+      }
+    }),
+  );
+
+  await Promise.allSettled(parseTasks);
+  onProgress?.(30);
+
+  // ─────────────────────────────────────────────────────────────────
+  // PHASE 2: Batch presign all paths in one shot
+  // 400 files → 8 batch API calls instead of 400 individual presigns
+  // ─────────────────────────────────────────────────────────────────
+  let signedUrlMap = new Map<string, string>();
+
+  if (isAvailableForR2Upload && parsedFiles.length > 0) {
+    const allPaths = parsedFiles.map((f) => f.storagePath);
+    signedUrlMap = await batchPresignUrls(allPaths);
+  }
+
+  onProgress?.(40);
+
+  // ─────────────────────────────────────────────────────────────────
+  // PHASE 3: Validate + upload using pre-fetched signed URLs
+  // ─────────────────────────────────────────────────────────────────
+  for (let batchStart = 0; batchStart < parsedFiles.length; batchStart += BATCH_SIZE) {
+    const batch = parsedFiles.slice(batchStart, batchStart + BATCH_SIZE);
+
+    const uploadTasks = batch.map(({ name, fileBlob, storagePath, sUID, metadata }) =>
       limit(async () => {
         try {
-          if (buffer.length === 0) return;
-          const typeInfo = await fileTypeFromBuffer(buffer);
-          if (!isDicomBinary(buffer) && typeInfo?.ext !== "dcm") return;
-
-          const fileBlob = new Blob([buffer as unknown as BlobPart], { type: "application/dicom" });
-
-          // FIX #4: parse only first 64KB for metadata — pixel data is irrelevant here
-          const headerBlob = fileBlob.slice(0, 65536);
-          const metadata = await getDICOMMetadata(headerBlob);
-          if (!metadata?.studyInstanceUID) return;
-
-          const { valid, reason } = await validateDicomIntegrity(fileBlob, metadata);
+          const { valid, reason } = await validateDicomIntegrity(fileBlob, metadata!);
           if (!valid) {
             console.warn(`[processDicom] Skipping invalid DICOM ${name}: ${reason}`);
             return;
           }
 
-          const sUID = metadata.studyInstanceUID;
           const status = await getStudyStatus(sUID);
-          const storagePath = `dicom/${userId}/${sUID}/${metadata.seriesInstanceUID}/${metadata.sopInstanceUID}.dcm`;
-
           let uploadConfirmed = !isAvailableForR2Upload;
 
           if (isAvailableForR2Upload && !status.hasInstances) {
-            // FIX #3: skipVerify=true — skip per-file round-trip on first attempt
+            // ✅ Use pre-fetched signed URL — no presign round trip
+            const signedUrl = signedUrlMap.get(storagePath) || "";
+
             const uploaded = await resilientUpload(
               fileBlob,
               storagePath,
+              signedUrl,
               userId,
               sUID,
               5,
@@ -351,15 +387,11 @@ export const processDicomStudyTurbo = async (
               uploadConfirmed = true;
             } else {
               try {
-                console.warn(`[processDicom] Trying server-side fallback for ${storagePath}...`);
                 await uploadViaServer(fileBlob, storagePath);
                 await removeQueueItem(storagePath);
                 uploadConfirmed = true;
               } catch (fallbackErr) {
-                console.error(
-                  `[processDicom] Server fallback also failed for ${name}:`,
-                  fallbackErr,
-                );
+                console.error(`[processDicom] Server fallback failed for ${name}:`, fallbackErr);
                 uploadConfirmed = false;
               }
             }
@@ -368,66 +400,66 @@ export const processDicomStudyTurbo = async (
           let study = studiesMap.get(sUID);
           if (!study) {
             const finalAge =
-              metadata.patientAge || getAgeFromYYYYMMDD(metadata.patientBirthDate || "");
+              metadata!.patientAge || getAgeFromYYYYMMDD(metadata!.patientBirthDate || "");
             study = {
               study_instance_uid: sUID,
               user_id: userId,
-              modality: metadata.modality || "OT",
+              modality: metadata!.modality || "OT",
               instances: [],
-              patient_name: metadata.patientName || "Unknown",
-              patient_id: metadata.patientId || "Unknown",
-              study_description: metadata.studyDescription || "",
-              study_date: metadata.studyDate || "",
+              patient_name: metadata!.patientName || "Unknown",
+              patient_id: metadata!.patientId || "Unknown",
+              study_description: metadata!.studyDescription || "",
+              study_date: metadata!.studyDate || "",
               patient_age: String(finalAge),
-              gender: metadata.patientSex || "O",
-              birthday: metadata.patientBirthDate || "",
-              institution: metadata.institutionName || "",
+              gender: metadata!.patientSex || "O",
+              birthday: metadata!.patientBirthDate || "",
+              institution: metadata!.institutionName || "",
             };
             studiesMap.set(sUID, study);
           }
 
           if (uploadConfirmed) {
             study.instances.push({
-              sop_instance_uid: metadata.sopInstanceUID,
-              series_instance_uid: metadata.seriesInstanceUID,
-              instance_number: metadata.instanceNumber || 0,
+              sop_instance_uid: metadata!.sopInstanceUID,
+              series_instance_uid: metadata!.seriesInstanceUID,
+              instance_number: metadata!.instanceNumber || 0,
               storage_url: `${storageDomain}/${storagePath}`,
-              sop_class_uid: metadata.sopClassUID,
-              series_number: metadata.seriesNumber || 1,
-              series_description: metadata.seriesDescription || "",
-              rows: metadata.rows || 512,
-              columns: metadata.columns || 512,
-              bits_allocated: metadata.bitsAllocated || 16,
-              bits_stored: metadata.bitsStored || 16,
-              high_bit: metadata.highBit || 15,
-              pixel_representation: metadata.pixelRepresentation || 0,
-              slice_thickness: metadata.sliceThickness,
-              pixel_spacing: metadata.pixelSpacing,
-              image_orientation: metadata.imageOrientation,
-              image_position: metadata.imagePosition,
-              window_center: metadata.windowCenter,
-              window_width: metadata.windowWidth,
-              rescale_intercept: metadata.rescaleIntercept,
-              rescale_slope: metadata.rescaleSlope,
-              rescale_type: metadata.rescaleType,
-              samples_per_pixel: metadata.samplesPerPixel,
-              photometric_interpretation: metadata.photometricInterpretation,
-              number_of_frames: metadata.numberOfFrames,
+              sop_class_uid: metadata!.sopClassUID,
+              series_number: metadata!.seriesNumber || 1,
+              series_description: metadata!.seriesDescription || "",
+              rows: metadata!.rows || 512,
+              columns: metadata!.columns || 512,
+              bits_allocated: metadata!.bitsAllocated || 16,
+              bits_stored: metadata!.bitsStored || 16,
+              high_bit: metadata!.highBit || 15,
+              pixel_representation: metadata!.pixelRepresentation || 0,
+              slice_thickness: metadata!.sliceThickness,
+              pixel_spacing: metadata!.pixelSpacing,
+              image_orientation: metadata!.imageOrientation,
+              image_position: metadata!.imagePosition,
+              window_center: metadata!.windowCenter,
+              window_width: metadata!.windowWidth,
+              rescale_intercept: metadata!.rescaleIntercept,
+              rescale_slope: metadata!.rescaleSlope,
+              rescale_type: metadata!.rescaleType,
+              samples_per_pixel: metadata!.samplesPerPixel,
+              photometric_interpretation: metadata!.photometricInterpretation,
+              number_of_frames: metadata!.numberOfFrames,
             });
           }
         } catch (err) {
-          console.error(`[processDicom] Error processing ${name}:`, err);
+          console.error(`[processDicom] Upload error for ${name}:`, err);
         } finally {
           processedCount++;
-          onProgress?.(Math.round((processedCount / totalFiles) * 80) + 10);
+          onProgress?.(Math.round((processedCount / totalFiles) * 50) + 40);
         }
       }),
     );
 
-    await Promise.allSettled(tasks);
+    await Promise.allSettled(uploadTasks);
   }
 
-  // --- 3. SUPABASE PERSISTENCE ---
+  // --- SUPABASE PERSISTENCE ---
   if (studiesMap.size > 0) {
     onStateChange?.(CustomFileStateType.inserting);
     onProgress?.(95);

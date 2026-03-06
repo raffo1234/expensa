@@ -74,7 +74,7 @@ export default function AsideMenuItem({
       padding={12}
       content={
         <div
-          className={`${isPopoverOpen ? "opacity-100 -translate-x-2" : "opacity-0 -translate-x-4"} pointer-events-none px-4 py-1 bg-slate-50 border border-slate-100 font-semibold rounded-xl transition-all duration-500 ease-in-out`}
+          className={`${isPopoverOpen ? "opacity-100 -translate-x-2" : "opacity-0 -translate-x-4"} pointer-events-none px-4 py-1 bg-slate-800 text-white rounded-lg transition-all duration-300 ease-in-out`}
         >
           {page.title}
         </div>

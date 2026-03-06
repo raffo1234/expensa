@@ -1,7 +1,3 @@
-/**
- * processDicomStudyTurbo.ts
- */
-
 import JSZip from "jszip";
 import pLimit from "p-limit";
 import { supabase } from "@/lib/supabase";
@@ -42,6 +38,10 @@ export interface DicomInstance {
   window_width?: number;
   rescale_intercept?: number;
   rescale_slope?: number;
+  rescale_type?: string;
+  samples_per_pixel?: number;
+  photometric_interpretation?: string;
+  number_of_frames?: number;
 }
 
 interface DicomStudy {
@@ -399,6 +399,10 @@ export const processDicomStudyTurbo = async (
               window_width: metadata.windowWidth,
               rescale_intercept: metadata.rescaleIntercept,
               rescale_slope: metadata.rescaleSlope,
+              rescale_type: metadata.rescaleType,
+              samples_per_pixel: metadata.samplesPerPixel,
+              photometric_interpretation: metadata.photometricInterpretation,
+              number_of_frames: metadata.numberOfFrames,
             });
           }
         } catch (err) {

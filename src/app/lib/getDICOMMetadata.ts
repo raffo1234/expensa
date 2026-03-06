@@ -32,6 +32,10 @@ export interface DicomMetadata {
   windowWidth?: number;
   rescaleIntercept?: number;
   rescaleSlope?: number;
+  rescaleType?: string;
+  samplesPerPixel?: number;
+  photometricInterpretation?: string;
+  numberOfFrames?: number;
 }
 
 const NAMESPACE = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
@@ -117,8 +121,12 @@ export async function getDICOMMetadata(file: Blob): Promise<DicomMetadata | null
       // Ventaneo y rescale
       windowCenter: safeFloat("x00281050"),
       windowWidth: safeFloat("x00281051"),
-      rescaleIntercept: safeFloat("x00281052", 0),
-      rescaleSlope: safeFloat("x00281053", 1),
+      rescaleIntercept: safeFloat("x00281052"),
+      rescaleSlope: safeFloat("x00281053"),
+      rescaleType: cleanString(dataset.string("x00281054")),
+      samplesPerPixel: dataset.uint16("x00280002") ?? 1,
+      photometricInterpretation: cleanString(dataset.string("x00280004")) ?? "MONOCHROME2",
+      numberOfFrames: parseInt(dataset.string("x00280008") || "1"),
     };
   } catch (error) {
     console.error("Error al parsear DICOM:", error);

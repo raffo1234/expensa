@@ -26,6 +26,8 @@ interface OHIFInstance {
     WindowWidth?: number;
     RescaleIntercept?: number;
     RescaleSlope?: number;
+    RescaleType?: string;
+    NumberOfFrames?: number;
   };
   url: string;
 }
@@ -87,8 +89,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
             SOPClassUID: inst.sop_class_uid,
             Rows: inst.rows,
             Columns: inst.columns,
-            SamplesPerPixel: 1,
-            PhotometricInterpretation: "MONOCHROME2",
+            SamplesPerPixel: inst.samples_per_pixel ?? 1,
+            PhotometricInterpretation: inst.photometric_interpretation ?? "MONOCHROME2",
             BitsAllocated: inst.bits_allocated,
             BitsStored: inst.bits_stored,
             HighBit: inst.high_bit,
@@ -108,6 +110,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
               RescaleIntercept: inst.rescale_intercept,
             }),
             ...(typeof inst.rescale_slope === "number" && { RescaleSlope: inst.rescale_slope }),
+            ...(inst.rescale_type && { RescaleType: inst.rescale_type }),
+            ...(inst.number_of_frames &&
+              inst.number_of_frames > 1 && { NumberOfFrames: inst.number_of_frames }),
           },
           url: `dicomweb:${inst.storage_url}`,
         });
@@ -115,8 +120,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     }
 
     // --- NORMALIZACIÓN GEOMÉTRICA RADICAL ---
-    seriesMap.forEach((series) => {
-      if (series.instances.length > 1) {
+    seriesMap.forEach((series, sUID) => {
+      const isMultiFrame =
+        allInstances.find((i) => i.series_instance_uid === sUID)?.number_of_frames ?? 1;
+      if (series.instances.length > 1 && isMultiFrame <= 1) {
         // 1. Ordenar físicamente por Z
         series.instances.sort(
           (a, b) => a.metadata.ImagePositionPatient[2] - b.metadata.ImagePositionPatient[2],

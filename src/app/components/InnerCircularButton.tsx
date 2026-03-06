@@ -23,8 +23,8 @@ export default function InnerCircularButton({
       padding={12}
       content={
         <div
-          className={`${isPopoverOpen ? "opacity-100 -translate-y-0" : "opacity-0 -translate-y-4"} 
-                  pointer-events-none text-white px-3 py-2 max-w-48 bg-slate-800 rounded-lg transition-all duration-500 ease-in-out`}
+          className={`${isPopoverOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"}
+                  pointer-events-none text-white px-3 py-2 max-w-48 bg-slate-800 rounded-lg transition-all duration-300 ease-in-out`}
         >
           {title}
         </div>

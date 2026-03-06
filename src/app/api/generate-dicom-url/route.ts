@@ -22,6 +22,8 @@ export async function POST(req: NextRequest) {
         accessKeyId: r2AccessKeyId,
         secretAccessKey: r2SecretAccessKey,
       },
+      requestChecksumCalculation: "WHEN_REQUIRED", // ✅ disables automatic CRC32
+      responseChecksumValidation: "WHEN_REQUIRED", // ✅ same for responses
     });
 
     // 🚨 CAMBIO SENIOR: Usamos 'filename' directamente como 'Key'

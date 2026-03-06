@@ -120,7 +120,7 @@ const isRetryableError = (err: unknown): boolean => {
 };
 
 // --- RESILIENT UPLOAD ---
-// Returns true = uploaded successfully, false = queued for SW background retry
+// FIX #3: skipVerify=true on first pass — only verify on retries to avoid 500 round-trips
 const resilientUpload = async (
   fileBlob: Blob,
   storagePath: string,
@@ -128,8 +128,8 @@ const resilientUpload = async (
   studyInstanceUID: string,
   maxRetries: number = 5,
   timeoutMs: number = 60_000,
+  skipVerify: boolean = false,
 ): Promise<boolean> => {
-  // Enqueue FIRST — survives tab close from this point on
   await enqueueUpload({
     id: storagePath,
     storagePath,
@@ -147,15 +147,17 @@ const resilientUpload = async (
     try {
       await uploadDicomFile(fileBlob, storagePath, undefined, controller.signal);
 
-      // Small delay for R2 eventual consistency
-      await new Promise((r) => setTimeout(r, 800));
+      // FIX #2: reduced from 800ms to 200ms — saves minutes on large studies
+      await new Promise((r) => setTimeout(r, 200));
 
-      const verified = await verifyUploadedFile(storagePath);
-      if (!verified) {
-        throw new Error("File not found in R2 after upload");
+      // FIX #3: skip verification on first attempt, only verify on retries
+      if (!skipVerify || attempt > 0) {
+        const verified = await verifyUploadedFile(storagePath);
+        if (!verified) {
+          throw new Error("File not found in R2 after upload");
+        }
       }
 
-      // ✅ Confirmed — remove from queue
       await removeQueueItem(storagePath);
       return true;
     } catch (err) {
@@ -179,14 +181,12 @@ const resilientUpload = async (
     }
   }
 
-  // All retries exhausted — update queue item attempts count
   await updateQueueItem(storagePath, {
-    status: "pending", // keep as pending so SW can retry
+    status: "pending",
     attempts: maxRetries,
     failedReason: lastError instanceof Error ? lastError.message : String(lastError),
   });
 
-  // Log to dead letter for visibility
   await sendToDeadLetterQueue({
     user_id: userId,
     storage_path: storagePath,
@@ -198,7 +198,7 @@ const resilientUpload = async (
   console.warn(
     `[Upload] All ${maxRetries} attempts failed for ${storagePath}. SW will retry in background.`,
   );
-  return false; // not fatal — SW will retry
+  return false;
 };
 
 // --- SERVER-SIDE FALLBACK ---
@@ -262,7 +262,10 @@ export const processDicomStudyTurbo = async (
 
   const studies: Study[] = [];
   const studiesMap = new Map<string, DicomStudy>();
-  const limit = pLimit(3);
+
+  // FIX #1: bumped from 3 to 8 concurrent uploads
+  const limit = pLimit(8);
+
   const storageDomain = (process.env.NEXT_PUBLIC_STORAGE_DOMAIN || "").replace(/\/$/, "");
   const getStudyStatus = buildStudyStatusResolver(userId);
   const fileBuffers: { name: string; buffer: Uint8Array }[] = [];
@@ -314,7 +317,10 @@ export const processDicomStudyTurbo = async (
           if (!isDicomBinary(buffer) && typeInfo?.ext !== "dcm") return;
 
           const fileBlob = new Blob([buffer as unknown as BlobPart], { type: "application/dicom" });
-          const metadata = await getDICOMMetadata(fileBlob);
+
+          // FIX #4: parse only first 64KB for metadata — pixel data is irrelevant here
+          const headerBlob = fileBlob.slice(0, 65536);
+          const metadata = await getDICOMMetadata(headerBlob);
           if (!metadata?.studyInstanceUID) return;
 
           const { valid, reason } = await validateDicomIntegrity(fileBlob, metadata);
@@ -327,24 +333,29 @@ export const processDicomStudyTurbo = async (
           const status = await getStudyStatus(sUID);
           const storagePath = `dicom/${userId}/${sUID}/${metadata.seriesInstanceUID}/${metadata.sopInstanceUID}.dcm`;
 
-          // Track whether this file was confirmed in R2
-          let uploadConfirmed = !isAvailableForR2Upload; // if no upload needed, treat as confirmed
+          let uploadConfirmed = !isAvailableForR2Upload;
 
           if (isAvailableForR2Upload && !status.hasInstances) {
-            const uploaded = await resilientUpload(fileBlob, storagePath, userId, sUID, 5, 60_000);
+            // FIX #3: skipVerify=true — skip per-file round-trip on first attempt
+            const uploaded = await resilientUpload(
+              fileBlob,
+              storagePath,
+              userId,
+              sUID,
+              5,
+              60_000,
+              true,
+            );
 
             if (uploaded) {
               uploadConfirmed = true;
             } else {
-              // Primary failed — try server-side fallback immediately
               try {
                 console.warn(`[processDicom] Trying server-side fallback for ${storagePath}...`);
                 await uploadViaServer(fileBlob, storagePath);
                 await removeQueueItem(storagePath);
                 uploadConfirmed = true;
               } catch (fallbackErr) {
-                // Both failed — item stays in IndexedDB for SW retry
-                // Do NOT push instance with a broken storage_url
                 console.error(
                   `[processDicom] Server fallback also failed for ${name}:`,
                   fallbackErr,
@@ -375,7 +386,6 @@ export const processDicomStudyTurbo = async (
             studiesMap.set(sUID, study);
           }
 
-          // ✅ Only push instance if file confirmed in R2
           if (uploadConfirmed) {
             study.instances.push({
               sop_instance_uid: metadata.sopInstanceUID,

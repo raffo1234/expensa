@@ -22,37 +22,30 @@ export default function Aside({
 }) {
   const t = useTranslations("Aside");
   const [isOpen, setIsOpen] = useState(false);
-  const { settingValue: isMenuContracted, upsertSetting } = useUpsertUserSetting(
-    userId,
-    "is_menu_contrated",
-  );
+
+  const { settingValue: isMenuContracted, isLoading: isLoadingSetting, upsertSetting } =
+    useUpsertUserSetting(userId, "is_menu_contrated");
+
   const { data: role } = useSWR("user-role", () => roleFetcher(userRoleId));
 
   const closeMenu = () => {
     setIsOpen(false);
-    const documentElement = document.documentElement;
-    documentElement.style.overflow = "visible";
-  };
-
-  const handleToggle = () => {
-    if (isOpen) {
-      closeMenu();
-    } else {
-      handleOpen();
-    }
+    document.documentElement.style.overflow = "visible";
   };
 
   const handleOpen = () => {
     setIsOpen(true);
-    const documentElement = document.documentElement;
-    documentElement.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
   };
 
-  const toggleContracted = () => {
-    upsertSetting(!isMenuContracted);
-  };
+  const handleToggle = () => (isOpen ? closeMenu() : handleOpen());
+  const toggleContracted = () => upsertSetting(!isMenuContracted);
+  const roleName = role?.[0]?.name ?? "...";
 
-  const roleName = role ? role[0]?.name : "...";
+  // Prevent rendering until we know the contracted state to avoid blink
+  if (isLoadingSetting) return (
+    <div className="w-[286px] flex-shrink-0 border-r border-r-gray-200 bg-white" />
+  );
 
   return (
     <div
@@ -80,11 +73,10 @@ export default function Aside({
       </div>
       <AnimatedHamburgerButton isOpen={isOpen} toggleMenu={handleToggle} />
       <aside
-        className={`${
-          isOpen
+        className={`${isOpen
             ? "opacity-100 visible translate-x-0"
             : "invisible opacity-0 lg:visible lg:opacity-100 lg:translate-x-0 -translate-x-2"
-        } transition-all bg-white w-full h-full overflow-auto absolute left-0 top-0 lg:static pb-8 pt-8 lg:pt-0 px-5 z-30`}
+          } transition-all bg-white w-full h-full overflow-auto absolute left-0 top-0 lg:static pb-8 pt-8 lg:pt-0 px-5 z-30`}
       >
         <header className="mb-20">
           <div className="flex gap-4 items-center">
@@ -99,7 +91,7 @@ export default function Aside({
             ) : (
               <div className="w-12 h-12 rounded-full bg-gray-100" />
             )}
-            <div className={`${isMenuContracted ? "lg:hidden" : ""}`}>
+            <div className={isMenuContracted ? "lg:hidden" : ""}>
               <p className="text-sm leading-3 mb-1 text-gray-500">{t("welcome")}</p>
               <h3 className="font-semibold text-gray-700 text-lg">{userName}</h3>
               <p className="text-xs text-gray-500">{roleName}</p>

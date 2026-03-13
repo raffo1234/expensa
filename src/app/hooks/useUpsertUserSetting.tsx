@@ -4,9 +4,21 @@ import toast from "react-hot-toast";
 
 const SETTINGS_TABLE = "user_setting";
 
-const fetcher = async ([tableName, userId, settingKey]: [string, string, string]): Promise<
-  boolean | null
-> => {
+const getLocalKey = (userId: string, settingKey: string) =>
+  `user_setting_${userId}_${settingKey}`;
+
+const readLocalCache = (userId: string, settingKey: string): boolean | null => {
+  if (typeof window === "undefined") return null;
+  const val = localStorage.getItem(getLocalKey(userId, settingKey));
+  if (val === null) return null;
+  return val === "true";
+};
+
+const writeLocalCache = (userId: string, settingKey: string, value: boolean) => {
+  localStorage.setItem(getLocalKey(userId, settingKey), String(value));
+};
+
+const fetcher = async ([tableName, userId, settingKey]: [string, string, string]): Promise<boolean | null> => {
   const { data, error } = await supabase
     .from(tableName)
     .select("setting_value")
@@ -14,17 +26,20 @@ const fetcher = async ([tableName, userId, settingKey]: [string, string, string]
     .eq("setting_key", settingKey)
     .single();
 
-  if (error && error.code !== "PGRST116") {
-    throw error;
-  }
+  if (error && error.code !== "PGRST116") throw error;
 
-  return data?.setting_value === "true";
+  const value = data?.setting_value === "true";
+  writeLocalCache(userId, settingKey, value);
+  return value;
 };
 
 export const useUpsertUserSetting = (userId: string, settingKey: string, initialValue = false) => {
+  const localCached = userId ? readLocalCache(userId, settingKey) : null;
+
   const { data, error, isLoading } = useSWR<boolean | null>(
     userId ? [SETTINGS_TABLE, userId, settingKey] : null,
     fetcher,
+    { fallbackData: localCached }
   );
 
   const settingValue = data ?? initialValue;
@@ -35,25 +50,20 @@ export const useUpsertUserSetting = (userId: string, settingKey: string, initial
       return;
     }
 
+    writeLocalCache(userId, settingKey, newValue);
+    mutate([SETTINGS_TABLE, userId, settingKey], newValue, false);
+
     const { error } = await supabase
       .from(SETTINGS_TABLE)
       .upsert(
-        {
-          user_id: userId,
-          setting_key: settingKey,
-          setting_value: String(newValue),
-        },
-        { onConflict: "user_id,setting_key" },
+        { user_id: userId, setting_key: settingKey, setting_value: String(newValue) },
+        { onConflict: "user_id,setting_key" }
       )
       .select();
 
     if (error) {
       toast.error("Failed to update setting.");
       console.error("Upsert error:", error);
-    } else {
-      console.warn("Setting updated!");
-
-      mutate([SETTINGS_TABLE, userId, settingKey], newValue, false);
     }
   };
 

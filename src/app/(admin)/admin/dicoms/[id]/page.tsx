@@ -1,40 +1,14 @@
-import { supabase } from "@/lib/supabase";
-import Report from "@/components/Report";
-import { TemplateType } from "@/types/templateType";
-import { auth } from "@/lib/auth";
-import Link from "next/link";
-import CheckPermission from "@/components/CheckPermission";
-import { Permissions } from "@/types/propertyState";
-import FallbackPermission from "@/components/FallbackPermission";
+import { Suspense } from "react";
 import LoadingReportComponent from "@/components/LoadingReportComponent";
+import Link from "next/link";
+import ReportSection from "@/components/ReportSection";
 
 type Params = Promise<{ id: string }>;
 
 export default async function Page({ params }: { params: Params }) {
   const { id } = await params;
-  const session = await auth();
-  const user = session?.user;
 
-  const { data } = await supabase
-    .from("user")
-    .select("role_id")
-    .eq("id", user?.id)
-    .single();
-
-  if (!user?.id || !data?.role_id) return null;
-  const userId = user?.id;
-
-  const { data: templates } = (await supabase
-    .from("template")
-    .select(
-      "id, name, description, header_image_url, sign_image_url, footer_image_url"
-    )
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false })) as {
-    data: TemplateType[] | null;
-  };
-
-  if (!user) return null;
+  if (!id) return null;
 
   return (
     <>
@@ -61,18 +35,9 @@ export default async function Page({ params }: { params: Params }) {
           </svg>
         </Link>
       </div>
-      <CheckPermission
-        userRoleId={data.role_id}
-        requiredPermission={Permissions.GENERATE_REPORT}
-        fallback={<FallbackPermission />}
-        loadingComponent={<LoadingReportComponent />}
-      >
-        <Report
-          dicomId={id}
-          userRoleId={data.role_id}
-          templates={templates || []}
-        />
-      </CheckPermission>
+      <Suspense fallback={<LoadingReportComponent />}>
+        <ReportSection dicomId={id} />
+      </Suspense>
     </>
   );
 }

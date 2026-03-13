@@ -2,15 +2,15 @@ import { useState } from "react";
 import { Popover } from "react-tiny-popover";
 
 export default function InnerCircularButton({
-  children,
   title,
   isActive = false,
   isDisabled = false,
+  children = "",
 }: {
-  children: React.ReactNode;
   title: string;
   isActive?: boolean;
   isDisabled?: boolean;
+  children?: React.ReactNode;
 }) {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const onMouseEnter = () => setIsPopoverOpen(true);
@@ -33,11 +33,10 @@ export default function InnerCircularButton({
       <span
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
-        className={`p-2 flex transition-colors duration-300 border rounded-full ${
-          isDisabled
-            ? "cursor-not-allowed opacity-50 pointer-events-none border-cyan-200 text-cyan-200 bg-white"
-            : `cursor-pointer ${isActive ? "bg-cyan-300 border-cyan-300 hover:bg-cyan-400 text-white" : "text-cyan-400 border-cyan-200 bg-white hover:bg-cyan-50"}`
-        }`}
+        className={`p-2 flex transition-colors duration-300 border rounded-full ${isDisabled
+          ? "cursor-not-allowed opacity-50 pointer-events-none border-cyan-200 text-cyan-200 bg-white"
+          : `cursor-pointer ${isActive ? "bg-cyan-300 border-cyan-300 hover:bg-cyan-400 text-white" : "text-cyan-400 border-cyan-200 bg-white hover:bg-cyan-50"}`
+          }`}
       >
         {children}
       </span>

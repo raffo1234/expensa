@@ -500,7 +500,6 @@ export default function Pagination({
     <>
       <div className="w-full flex flex-col xl:flex-row gap-2 mb-4">
         <div className="flex gap-2 flex-grow-1">
-          <UploadLink />
           <div className="relative w-full">
             <input
               ref={searchInputRef}
@@ -535,9 +534,6 @@ export default function Pagination({
               </button>
             ) : null}
           </div>
-          <div className="xl:hidden block">
-            <ClearButton clearLocalStorage={clearLocalStorage} />
-          </div>
         </div>
         <div className="flex-col min-[770px]:flex-row flex gap-2">
           <div className="flex flex-col min-[770px]:flex-row gap-2">
@@ -557,9 +553,7 @@ export default function Pagination({
               filteredByState={filteredByState ?? ""}
               setFilteredByState={setFilteredByState}
             />
-            <div className="hidden xl:block">
-              <ClearButton clearLocalStorage={clearLocalStorage} />
-            </div>
+            <ClearButton clearLocalStorage={clearLocalStorage} />
           </div>
         </div>
       </div>

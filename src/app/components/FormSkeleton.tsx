@@ -13,7 +13,7 @@ export default function TableSkeleton({ rows = 1, cols = 1 }) {
           {[...Array(cols)].map((_, i) => (
             <div
               key={i}
-              className="bg-gray-200 rounded-lg h-12 flex-grow"
+              className="bg-gray-200/80 rounded-lg h-12 flex-grow"
             ></div>
           ))}
         </div>

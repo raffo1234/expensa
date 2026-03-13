@@ -10,6 +10,8 @@ import { UserType } from "@/types/userType";
 import { Suspense, useState } from "react";
 import useSWR from "swr";
 import UsersSelector from "./UsersSelector";
+import NoAccess from "./NoAccess";
+import TableSkeleton from "@/components/FormSkeleton";
 
 const REQUIRED_PERMISSIONS = [
   Permissions.VIEW_DICOMS,
@@ -31,11 +33,22 @@ const usersFetcher = async () => {
 
 function Skeleton() {
   return (
-    <div className="animate-pulse space-y-2 p-4">
-      {Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} className="h-10 rounded-md bg-slate-200" />
-      ))}
-    </div>
+    <>
+      <div className="animate-pulse max-w-[480px] h-16 w-full rounded-xl bg-gray-100 mb-6"></div>
+      <div className="flex gap-2 mb-4">
+        <div className="animate-pulse h-[38px] bg-gray-100 flex-grow-1 rounded-full"></div>
+        <div className="animate-pulse h-[38px] bg-gray-100 flex-grow-1 rounded-full"></div>
+        <div className="animate-pulse h-[38px] bg-gray-100 flex-grow-1 rounded-full"></div>
+        <div className="animate-pulse h-[38px] bg-gray-100 flex-grow-1 rounded-full"></div>
+      </div>
+      <div className="flex justify-end gap-1 ml-auto mb-4 max-w-[200px]">
+        <div className="animate-pulse h-[34px] bg-gray-100 flex-grow-1 rounded-full"></div>
+        <div className="animate-pulse h-[34px] bg-gray-100 flex-grow-1 rounded-full"></div>
+        <div className="animate-pulse h-[34px] bg-gray-100 flex-grow-1 rounded-full"></div>
+      </div>
+      <div className="animate-pulse rounded-lg bg-gray-100 flex h-11 w-full mb-2"></div>
+      <TableSkeleton rows={20} cols={7} />
+    </>
   );
 }
 
@@ -61,7 +74,7 @@ export default function DicomsTable({
   );
 
   if (isLoadingUsers || isLoadingPermissions) return <Skeleton />;
-  if (!permissions?.[Permissions.VIEW_DICOMS]) return null;
+  if (!permissions?.[Permissions.VIEW_DICOMS]) return <NoAccess />;
 
   const canViewOther = permissions[Permissions.VIEW_OTHER_DICOMS];
   const canViewNew = permissions[Permissions.VIEW_NEW_REPORTS];

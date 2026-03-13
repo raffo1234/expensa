@@ -13,6 +13,10 @@ const STATE_COLORS: Record<DicomStateEnum, string> = {
 
 const STATES = Object.values(DicomStateEnum);
 
+function toTitleCase(str: string): string {
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
+
 function getRoundedClass(index: number): string {
   if (index === 0) return "rounded-l-full";
   if (index === STATES.length - 1) return "rounded-r-full";
@@ -34,11 +38,10 @@ function toggleStateFilter(
 function TooltipContent({ label }: { label: string }) {
   return (
     <div className="pointer-events-none text-white px-3 py-2 max-w-48 bg-slate-800 rounded-lg">
-      {label}
+      {toTitleCase(label)}
     </div>
   );
 }
-
 
 interface FilterByStateProps {
   filteredByState: string;

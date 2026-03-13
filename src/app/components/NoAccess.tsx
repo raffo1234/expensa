@@ -41,7 +41,7 @@ export default function NoAccess() {
             </p>
 
             <h1 className="text-2xl font-semibold text-slate-700 mb-2 text-center">
-                You don't have permission to view this page
+                You don&apos;t have permission to view this page
             </h1>
 
             <p className="text-sm text-slate-400 text-center max-w-xs mb-8">

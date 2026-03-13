@@ -2,8 +2,8 @@
 
 import Pagination from "@/components/Pagination";
 import { adminActiveUsersKey } from "@/constants";
-import useCheckPermission from "@/hooks/useCheckPermission";
 import useScrollRestorationLocalStorage from "@/hooks/useScrollRestorationLocalStorage";
+import { checkPermissions } from "@/lib/checkPermissions";
 import { supabase } from "@/lib/supabase";
 import { Permissions } from "@/types/propertyState";
 import { UserType } from "@/types/userType";
@@ -11,15 +11,33 @@ import { Suspense, useState } from "react";
 import useSWR from "swr";
 import UsersSelector from "./UsersSelector";
 
+const REQUIRED_PERMISSIONS = [
+  Permissions.VIEW_DICOMS,
+  Permissions.VIEW_OTHER_DICOMS,
+  Permissions.VIEW_NEW_REPORTS,
+  Permissions.VIEW_VIEWED_REPORTS,
+  Permissions.VIEW_DRAFT_REPORTS,
+  Permissions.VIEW_COMPLETED_REPORTS,
+];
+
 const usersFetcher = async () => {
   const { data } = (await supabase
     .from("user")
     .select("id, first_name, image_url, role_id, last_name, email, role(name)")
     .is("archived_at", null)
     .order("first_name", { ascending: true })) as { data: UserType[] | null };
-
   return data;
 };
+
+function Skeleton() {
+  return (
+    <div className="animate-pulse space-y-2 p-4">
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div key={i} className="h-10 rounded-md bg-slate-200" />
+      ))}
+    </div>
+  );
+}
 
 export default function DicomsTable({
   userId,
@@ -32,49 +50,28 @@ export default function DicomsTable({
 
   const [activeUserId, setActiveUserId] = useState(userId);
 
-  const { data: users, isLoading: isLoadingUsers } = useSWR(adminActiveUsersKey, usersFetcher);
-
-  const { hasPermission: canOtherViewDicoms, isLoading: isLoadingCanSeeOtherDicoms } =
-    useCheckPermission(userRoleId, Permissions.VIEW_OTHER_DICOMS);
-
-  const { hasPermission: canViewDicoms, isLoading: isLoading } = useCheckPermission(
-    userRoleId,
-    Permissions.VIEW_DICOMS,
+  const { data: users, isLoading: isLoadingUsers } = useSWR(
+    adminActiveUsersKey,
+    usersFetcher
   );
 
-  const { hasPermission: canViewNew, isLoading: isLoadingCanViewNew } = useCheckPermission(
-    userRoleId,
-    Permissions.VIEW_NEW_REPORTS,
+  const { data: permissions, isLoading: isLoadingPermissions } = useSWR(
+    `role-permissions-${userRoleId}-${REQUIRED_PERMISSIONS.join(",")}`,
+    () => checkPermissions(userRoleId, REQUIRED_PERMISSIONS)
   );
 
-  const { hasPermission: canViewViewed, isLoading: isLoadingCanViewViewed } = useCheckPermission(
-    userRoleId,
-    Permissions.VIEW_VIEWED_REPORTS,
-  );
+  if (isLoadingUsers || isLoadingPermissions) return <Skeleton />;
+  if (!permissions?.[Permissions.VIEW_DICOMS]) return null;
 
-  const { hasPermission: canViewDraft, isLoading: isLoadingCanViewDraft } = useCheckPermission(
-    userRoleId,
-    Permissions.VIEW_DRAFT_REPORTS,
-  );
-  const { hasPermission: canViewCompleted, isLoading: isLoadingCanViewCompleted } =
-    useCheckPermission(userRoleId, Permissions.VIEW_COMPLETED_REPORTS);
-
-  if (
-    isLoadingUsers ||
-    isLoadingCanSeeOtherDicoms ||
-    isLoading ||
-    isLoadingCanViewNew ||
-    isLoadingCanViewViewed ||
-    isLoadingCanViewDraft ||
-    isLoadingCanViewCompleted
-  )
-    return null;
-
-  if (!canViewDicoms) return null;
+  const canViewOther = permissions[Permissions.VIEW_OTHER_DICOMS];
+  const canViewNew = permissions[Permissions.VIEW_NEW_REPORTS];
+  const canViewViewed = permissions[Permissions.VIEW_VIEWED_REPORTS];
+  const canViewDraft = permissions[Permissions.VIEW_DRAFT_REPORTS];
+  const canViewCompleted = permissions[Permissions.VIEW_COMPLETED_REPORTS];
 
   return (
     <>
-      {canOtherViewDicoms ? (
+      {canViewOther && (
         <Suspense>
           <UsersSelector
             users={users}
@@ -83,12 +80,12 @@ export default function DicomsTable({
             localStorageKey="activeUserIdSelected"
           />
         </Suspense>
-      ) : null}
+      )}
       <Suspense>
         <Pagination
           tableName="dicom"
           userRoleId={userRoleId}
-          userId={canOtherViewDicoms ? activeUserId : userId}
+          userId={canViewOther ? activeUserId : userId}
           canViewNew={canViewNew}
           canViewViewed={canViewViewed}
           canViewDraft={canViewDraft}

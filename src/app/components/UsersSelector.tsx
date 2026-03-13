@@ -66,9 +66,8 @@ export default function UsersSelector({
     () =>
       users?.map((user) => ({
         value: user.id,
-        label: `(${user.role?.name ?? "No role"}) - ${user.first_name} ${
-          user.last_name
-        } (${user.email})`,
+        label: `(${user.role?.name ?? "No role"}) - ${user.first_name} ${user.last_name
+          } (${user.email})`,
         roleName: user.role?.name ?? "No role",
         fullName: `${user.first_name ?? ""} ${user.last_name ?? ""}`,
         email: user.email,
@@ -96,7 +95,7 @@ export default function UsersSelector({
   };
 
   return (
-    <div className="relative max-w-120 mb-6 w-full">
+    <div className="relative max-w-120 mb-6 w-full bg-white">
       <Select<UserOption, false>
         unstyled
         value={currentOption}

@@ -10,7 +10,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getMessages, getLocale } from "next-intl/server";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 
-const title = "Encuentra la Claridad para tu Diagnóstico";
+const title = "Cadia - Encuentra la Claridad para tu Diagnóstico";
 const description =
   "Segunda Opinión Experta para Tomografía, Resonancia y Rayos X. Obtén la certeza que necesitas en menos de 24 horas";
 

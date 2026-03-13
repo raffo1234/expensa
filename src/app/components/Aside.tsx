@@ -7,6 +7,7 @@ import useSWR from "swr";
 import roleFetcher from "@/fetchers/roleFetcher";
 import AnimatedHamburgerButton from "./AnimatedHamburgerButton";
 import { useUpsertUserSetting } from "@/hooks/useUpsertUserSetting";
+import { useContractStore } from "@/store/contract";
 import { useTranslations } from "next-intl";
 
 export default function Aside({
@@ -23,8 +24,9 @@ export default function Aside({
   const t = useTranslations("Aside");
   const [isOpen, setIsOpen] = useState(false);
 
-  const { settingValue: isMenuContracted, isLoading: isLoadingSetting, upsertSetting } =
-    useUpsertUserSetting(userId, "is_menu_contrated");
+  const isMenuContracted = useContractStore((state) => state.isContracted);
+  const setIsContracted = useContractStore((state) => state.setIsContracted);
+  const { upsertSetting } = useUpsertUserSetting(userId, "is_menu_contrated");
 
   const { data: role } = useSWR("user-role", () => roleFetcher(userRoleId));
 
@@ -39,13 +41,13 @@ export default function Aside({
   };
 
   const handleToggle = () => (isOpen ? closeMenu() : handleOpen());
-  const toggleContracted = () => upsertSetting(!isMenuContracted);
-  const roleName = role?.[0]?.name ?? "...";
+  const toggleContracted = () => {
+    const next = !isMenuContracted;
+    setIsContracted(next);   // instant — updates Zustand + localStorage
+    upsertSetting(next);     // background — syncs to Supabase
+  };
 
-  // Prevent rendering until we know the contracted state to avoid blink
-  if (isLoadingSetting) return (
-    <div className="w-[286px] flex-shrink-0 border-r border-r-gray-200 bg-white" />
-  );
+  const roleName = role?.[0]?.name ?? "...";
 
   return (
     <div

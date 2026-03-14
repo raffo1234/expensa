@@ -1,5 +1,3 @@
-import Attachments from "./Attachments";
-
 export function GadgetReportSkeleton() {
   return (
     <div className="flex gap-2 mb-4 w-full">

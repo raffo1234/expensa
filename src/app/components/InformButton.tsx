@@ -6,6 +6,7 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import Link from "next/link";
 import { useState } from "react";
 import { Popover } from "react-tiny-popover";
+import { useRouter } from "next/navigation";
 
 export default function InformButton({
   dicomId,
@@ -16,7 +17,12 @@ export default function InformButton({
 }) {
   const title = dicomState !== DicomStateEnum.COMPLETED ? "Inform" : "Amend";
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-  const openPopover = () => setIsPopoverOpen(true);
+  const router = useRouter();
+
+  const openPopover = () => {
+    setIsPopoverOpen(true);
+    router.prefetch(`/admin/dicoms/${dicomId}`);
+  }
   const closePopover = () => setIsPopoverOpen(false);
 
   return (

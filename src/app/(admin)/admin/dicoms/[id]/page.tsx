@@ -1,14 +1,22 @@
-import { Suspense } from "react";
-import LoadingReportComponent from "@/components/LoadingReportComponent";
+import { supabase } from "@/lib/supabase";
+import Report from "@/components/Report";
+import { TemplateType } from "@/types/templateType";
+import { auth } from "@/lib/auth";
 import Link from "next/link";
-import ReportSection from "@/components/ReportSection";
+import CheckPermission from "@/components/CheckPermission";
+import { Permissions } from "@/types/propertyState";
+import FallbackPermission from "@/components/FallbackPermission";
+import LoadingReportComponent from "@/components/LoadingReportComponent";
+import { notFound } from "next/navigation";
+import { Suspense } from "react";
+import NoAccess from "@/components/NoAccess";
 
 type Params = Promise<{ id: string }>;
 
 export default async function Page({ params }: { params: Params }) {
   const { id } = await params;
 
-  if (!id) return null;
+  if (!id) notFound();
 
   return (
     <>
@@ -39,5 +47,50 @@ export default async function Page({ params }: { params: Params }) {
         <ReportSection dicomId={id} />
       </Suspense>
     </>
+  );
+}
+
+async function ReportSection({ dicomId }: { dicomId: string }) {
+  const session = await auth();
+  const user = session?.user;
+
+  if (!user?.id) return null;
+  const userId = user.id;
+
+  const [{ data: userData }, { data: templates }, { data: dicom }] =
+    await Promise.all([
+      supabase.from("user").select("role_id").eq("id", userId).single(),
+
+      supabase
+        .from("template")
+        .select(
+          "id, name, description, header_image_url, sign_image_url, footer_image_url"
+        )
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false }),
+
+      supabase
+        .from("dicom")
+        .select("*, template(*), user(*)")
+        .eq("id", dicomId)
+        .single(),
+    ]);
+
+  if (!userData?.role_id) return <NoAccess />;
+
+  return (
+    <CheckPermission
+      userRoleId={userData.role_id}
+      requiredPermission={Permissions.GENERATE_REPORT}
+      fallback={<FallbackPermission />}
+      loadingComponent={<LoadingReportComponent />}
+    >
+      <Report
+        dicomId={dicomId}
+        userRoleId={userData.role_id}
+        templates={(templates as TemplateType[]) || []}
+        fallbackDicom={dicom ?? undefined}
+      />
+    </CheckPermission>
   );
 }

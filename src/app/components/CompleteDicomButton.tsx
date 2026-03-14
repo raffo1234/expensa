@@ -7,7 +7,7 @@ export default function CompleteDicomButton({
   userRoleId,
   onClick,
 }: {
-  dicomState: DicomStateEnum;
+  dicomState: DicomStateEnum | undefined;
   userRoleId: string;
   onClick: () => void;
 }) {

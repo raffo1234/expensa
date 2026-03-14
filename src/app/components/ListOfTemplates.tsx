@@ -5,6 +5,7 @@ import { Permissions } from "@/types/propertyState";
 import useCheckPermission from "@/hooks/useCheckPermission";
 import { ICON_SIZE } from "@/constants";
 import OptionButton from "./OptionButton";
+import { ListTemplatesSkeleton } from "./LoadingReportComponent";
 
 function putFirst(array: TemplateType[], element: TemplateType | undefined) {
   if (element)
@@ -22,7 +23,7 @@ export default function ListOfTemplates({
   templates: TemplateType[];
   updateTemplate: (newTemplate: TemplateType) => void;
   activeTemplate: TemplateType | undefined;
-  dicom: DicomType;
+  dicom: DicomType | null | undefined;
   userRoleId: string;
 }) {
   const { hasPermission: canViewTemplates, isLoading: isLoading } =
@@ -38,7 +39,7 @@ export default function ListOfTemplates({
   };
   const sortedTemplates = putFirst(templates, activeTemplate);
 
-  if (!dicom || isLoading || isLoadingCanChangeTemplate) return null;
+  if (!dicom || isLoading || isLoadingCanChangeTemplate) return <ListTemplatesSkeleton />;
 
   return (
     <div
@@ -49,19 +50,19 @@ export default function ListOfTemplates({
     >
       {canChangeTemplates
         ? sortedTemplates.map((template) => {
-            const { id, name } = template;
-            return (
-              <OptionButton
-                key={id}
-                type="button"
-                title={name}
-                isActive={id === dicom.template_id}
-                onClick={() => handleTemplateActive(dicom.id, template)}
-              >
-                {name}
-              </OptionButton>
-            );
-          })
+          const { id, name } = template;
+          return (
+            <OptionButton
+              key={id}
+              type="button"
+              title={name}
+              isActive={id === dicom.template_id}
+              onClick={() => handleTemplateActive(dicom.id, template)}
+            >
+              {name}
+            </OptionButton>
+          );
+        })
         : null}
       {canViewTemplates ? (
         <Link

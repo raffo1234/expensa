@@ -10,7 +10,14 @@ import NoAccess from "@/components/NoAccess";
 
 function FallBack() {
   return (
-    <div className="animate-pulse w-full h-[266px] rounded-2xl border border-dashed border-gray-200" />
+    <>
+      <div className="flex gap-2 mb-4">
+        <div className="h-[38px] w-[96px] rounded-lg animate-pulse bg-gray-100"></div>
+        <div className="h-[38px] w-[82px] rounded-lg animate-pulse bg-gray-100"></div>
+        <div className="h-[38px] w-[73px] rounded-lg animate-pulse bg-gray-100"></div>
+      </div>
+      <div className="h-[320px] w-full rounded-2xl animate-pulse bg-gray-100" />
+    </>
   );
 }
 
@@ -66,14 +73,7 @@ async function UploaderSection() {
         userRoleId={data.role_id}
         requiredPermission={Permissions.UPLOAD_DICOM}
         fallback={<NoAccess />}
-        loadingComponent={<div>
-          <div className="flex gap-2 mb-4">
-            <div className="h-[38px] w-[96px] rounded-lg animate-pulse bg-gray-100"></div>
-            <div className="h-[38px] w-[82px] rounded-lg animate-pulse bg-gray-100"></div>
-            <div className="h-[38px] w-[73px] rounded-lg animate-pulse bg-gray-100"></div>
-          </div>
-          <div className="h-[320px] w-full rounded-2xl animate-pulse bg-gray-100" />
-        </div>}
+        loadingComponent={<FallBack />}
       >
         <UploaderPage
           userEmail={user.email}

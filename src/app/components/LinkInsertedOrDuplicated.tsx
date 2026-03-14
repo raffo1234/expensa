@@ -1,5 +1,8 @@
+"use client";
+
 import { Icon } from "@iconify/react/dist/iconify.js";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Permissions } from "@/types/propertyState";
 import useCheckPermission from "@/hooks/useCheckPermission";
 import AssignDicomToTrigger from "./AssignDicomToTrigger";
@@ -38,6 +41,7 @@ export default function LinkInsertedOrDuplicated({
   userRoleId: string;
   userId: string;
 }) {
+  const router = useRouter();
   const { hasPermission: canViewDicoms, isLoading } = useCheckPermission(
     userRoleId,
     Permissions.VIEW_DICOMS,
@@ -52,6 +56,7 @@ export default function LinkInsertedOrDuplicated({
           key={id}
           target="_blank"
           href={`/admin/dicoms/${id}`}
+          onMouseEnter={() => router.prefetch(`/admin/dicoms/${id}`)}
           className="text-sm hover:underline text-cyan-500 mt-0.5 first:mt-0 block underline-offset-4"
         >
           <LinkInsertedOrDuplicatedContent isDuplicated={isDuplicated} state={state} />

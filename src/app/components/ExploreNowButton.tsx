@@ -1,6 +1,6 @@
 "use client";
 
-import { ICON_SIZE } from "@/constants";
+import { ICON_SIZE, SWR_KEY_USER_ROLE } from "@/constants";
 import roleFetcher from "@/fetchers/roleFetcher";
 import Link from "next/link";
 import { preload } from "swr";
@@ -15,8 +15,8 @@ export default function ExploreNowButton({ userRoleId }: { userRoleId?: string }
   useEffect(() => {
     router.prefetch("/admin/dicom");
     router.prefetch("/admin/dicoms");
-    preload("currentUserRole", () => (userRoleId ? roleFetcher(userRoleId) : null));
-  }, []);
+    preload(SWR_KEY_USER_ROLE, () => (userRoleId ? roleFetcher(userRoleId) : null));
+  }, [userRoleId]);
 
   return (
     <Link

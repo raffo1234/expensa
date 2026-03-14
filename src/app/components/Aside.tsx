@@ -9,6 +9,7 @@ import AnimatedHamburgerButton from "./AnimatedHamburgerButton";
 import { useUpsertUserSetting } from "@/hooks/useUpsertUserSetting";
 import { useContractStore } from "@/store/contract";
 import { useTranslations } from "next-intl";
+import { SWR_KEY_USER_ROLE } from "@/constants";
 
 export default function Aside({
   userId,
@@ -28,7 +29,7 @@ export default function Aside({
   const setIsContracted = useContractStore((state) => state.setIsContracted);
   const { upsertSetting } = useUpsertUserSetting(userId, "is_menu_contrated");
 
-  const { data: role } = useSWR("user-role", () => roleFetcher(userRoleId));
+  const { data: role } = useSWR(SWR_KEY_USER_ROLE, () => roleFetcher(userRoleId));
 
   const closeMenu = () => {
     setIsOpen(false);
@@ -76,8 +77,8 @@ export default function Aside({
       <AnimatedHamburgerButton isOpen={isOpen} toggleMenu={handleToggle} />
       <aside
         className={`${isOpen
-            ? "opacity-100 visible translate-x-0"
-            : "invisible opacity-0 lg:visible lg:opacity-100 lg:translate-x-0 -translate-x-2"
+          ? "opacity-100 visible translate-x-0"
+          : "invisible opacity-0 lg:visible lg:opacity-100 lg:translate-x-0 -translate-x-2"
           } transition-all bg-white w-full h-full overflow-auto absolute left-0 top-0 lg:static pb-8 pt-8 lg:pt-0 px-5 z-30`}
       >
         <header className="mb-20">

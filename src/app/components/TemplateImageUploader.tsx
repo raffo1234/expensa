@@ -63,7 +63,7 @@ const UploaderTemplateImageUploader = memo(function UploaderTemplateImageUploade
 }) {
   const folderPath = `template_user_${userId}/${templateId}/${fileNamePrefix}`;
   const [isLoading, setIsLoading] = useState(false);
-
+  console.warn(previewImageHeight)
   const { getRootProps, getInputProps } = useDropzone({
     accept: { "image/*": [] },
     disabled: isLoading,

@@ -7,7 +7,6 @@ import UserCard from "./UserCard";
 import { supabase } from "@/lib/supabase";
 import { useGetUsers } from "@/actions/useGetUsers";
 import { useDebouncedCallback } from "use-debounce";
-import { Icon } from "@iconify/react/dist/iconify.js";
 import { ICON_SIZE } from "@/constants";
 
 const PAGE_SIZE = 9;
@@ -56,8 +55,6 @@ export default function UsersTable() {
 
   return (
     <>
-      <h1 className="mb-6 font-semibold text-lg block">Users</h1>
-
       <div className="mb-6 flex gap-2 items-center flex-wrap">
         {Object.values(UserStateEnum).map((value) => (
           <OptionButton
@@ -83,7 +80,8 @@ export default function UsersTable() {
           onClick={() => setPage((p) => p - 1)}
           className="px-4 py-1 bg-cyan-400 disabled:pointer-events-none text-white rounded-full disabled:opacity-50 cursor-pointer text-sm"
         >
-          <Icon icon="solar:arrow-left-linear" fontSize={ICON_SIZE} />
+          <svg xmlns="http://www.w3.org/2000/svg" width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 24 24">
+            <path fill="currentColor" fill-rule="evenodd" d="M15.488 4.43a.75.75 0 0 1 .081 1.058L9.988 12l5.581 6.512a.75.75 0 1 1-1.138.976l-6-7a.75.75 0 0 1 0-.976l6-7a.75.75 0 0 1 1.057-.081" clipRule="evenodd" /></svg>
         </button>
         <div className="text-xs uppercase font-semibold">
           {page + 1} of {totalPages}
@@ -93,7 +91,7 @@ export default function UsersTable() {
           onClick={() => setPage((p) => p + 1)}
           className="px-4 py-1 bg-cyan-400 disabled:pointer-events-none text-white rounded-full disabled:opacity-50 cursor-pointer text-sm"
         >
-          <Icon icon="solar:arrow-right-linear" fontSize={ICON_SIZE} />
+          <svg xmlns="http://www.w3.org/2000/svg" width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 24 24"><path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="m9 5l6 7l-6 7" /></svg>
         </button>
       </div>
 
@@ -104,7 +102,7 @@ export default function UsersTable() {
         {isLoading
           ?
           SKELETON_ITEMS.map((i) => (
-            <div key={i} className="bg-gray-100 h-[174px] rounded-2xl animate-pulse" />
+            <div key={i} className="bg-gray-100 h-[258px] rounded-2xl animate-pulse" />
           ))
           : data?.data?.map((user) => (
             <UserCard mutate={mutate} key={user.id} user={user} />

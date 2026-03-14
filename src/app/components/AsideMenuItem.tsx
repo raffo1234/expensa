@@ -5,7 +5,8 @@ import { ICON_SIZE } from "@/constants";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 type PageLink = {
   href: string;
@@ -26,11 +27,16 @@ const MenuItemLink = React.forwardRef<
 >(({ page, closeMenu, isContracted, openPopover, closePopover }, ref) => {
   const { href, title, iconName, onMouseEnter } = page;
   const currentPath = usePathname();
+  const router = useRouter();
 
   const handleMouseEnter = () => {
     openPopover();
     if (onMouseEnter) onMouseEnter();
   };
+
+  useEffect(() => {
+    router.prefetch(href);
+  }, [href]);
 
   return (
     <Link
@@ -38,9 +44,8 @@ const MenuItemLink = React.forwardRef<
       title={title}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={closePopover}
-      className={`${
-        href === currentPath ? "bg-gray-100 font-semibold" : "hover:bg-gray-50"
-      } rounded-xl py-3 px-4 gap-3.5 flex items-center transition-colors duration-300 `}
+      className={`${href === currentPath ? "bg-gray-100 font-semibold" : "hover:bg-gray-50"
+        } rounded-xl py-3 px-4 gap-3.5 flex items-center transition-colors duration-300 `}
       onClick={closeMenu}
       ref={ref}
     >

@@ -1,6 +1,6 @@
 import AddTemplate from "@/components/AddTemplate";
 import CheckPermission from "@/components/CheckPermission";
-import FallbackPermission from "@/components/FallbackPermission";
+import NoAccess from "@/components/NoAccess";
 import TemplatesTable from "@/components/TemplatesTable";
 import { auth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
@@ -27,18 +27,16 @@ export default async function Page() {
 
   return (
     <>
-      <h1 className="mb-6 font-semibold text-lg block">Locations</h1>
+      <h1 className="mb-6 font-semibold text-lg block">Template Locations</h1>
       <CheckPermission
         userRoleId={user.role_id}
         requiredPermission={Permissions.VIEW_TEMPLATES}
-        fallback={<FallbackPermission />}
+        fallback={<NoAccess />}
       >
-        <>
-          <div className="border border-gray-200 rounded-xl bg-white">
-            <TemplatesTable userId={userId} />
-            <AddTemplate userId={userId} />
-          </div>
-        </>
+        <div className="border border-gray-200 rounded-xl bg-white">
+          <TemplatesTable userId={userId} />
+          <AddTemplate userId={userId} />
+        </div>
       </CheckPermission>
     </>
   );

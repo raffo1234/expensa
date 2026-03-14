@@ -3,6 +3,7 @@
 import { supabase } from "@/lib/supabase";
 import useSWR from "swr";
 import TemplatesTableItem from "./TemplateTableItem";
+import FallbackTemplatesList from "./FallbackTemplatesList";
 
 const fetcher = async (userId: string) => {
   const { data, error } = await supabase
@@ -25,17 +26,7 @@ export default function TemplatesTable({ userId }: { userId: string }) {
 
   if (isLoading)
     return (
-      <>
-        <div className="px-6  transition-all duration-300 py-4 border-t  border-gray-200 first:border-0">
-          <div className="rounded-xl bg-gray-100 h-4 w-1/2"></div>
-        </div>
-        <div className="px-6  transition-all duration-300 py-4 border-t  border-gray-200 first:border-0">
-          <div className="rounded-xl bg-gray-100 h-4 w-1/2"></div>
-        </div>
-        <div className="px-6  transition-all duration-300 py-4 border-t  border-gray-200 first:border-0">
-          <div className="rounded-xl bg-gray-100 h-4 w-1/2"></div>
-        </div>
-      </>
+      <FallbackTemplatesList />
     );
 
   return templates?.map(({ id, name }) => (

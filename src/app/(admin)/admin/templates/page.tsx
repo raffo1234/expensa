@@ -6,24 +6,17 @@ import TemplatesTable from "@/components/TemplatesTable";
 import { auth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { Permissions } from "@/types/propertyState";
-
-function FallBack() {
-  return (
-    <div className="border border-gray-200 rounded-xl bg-white p-4 space-y-3">
-      <div className="h-8 w-full bg-gray-200 animate-pulse rounded" />
-      <div className="h-8 w-full bg-gray-200 animate-pulse rounded" />
-      <div className="h-8 w-3/4 bg-gray-200 animate-pulse rounded" />
-    </div>
-  )
-}
+import FallbackTemplatesList from "@/components/FallbackTemplatesList";
 
 export default async function Page() {
   return (
     <>
       <h1 className="mb-6 font-semibold text-lg block">Template Locations</h1>
-      <Suspense fallback={<FallBack />}>
-        <TemplatesSection />
-      </Suspense>
+      <div className="border border-gray-200 rounded-xl bg-white">
+        <Suspense fallback={<FallbackTemplatesList />}>
+          <TemplatesSection />
+        </Suspense>
+      </div>
     </>
   );
 }
@@ -43,15 +36,16 @@ async function TemplatesSection() {
   if (!data?.role_id) return <NoAccess />;
 
   return (
-    <CheckPermission
-      userRoleId={data.role_id}
-      requiredPermission={Permissions.VIEW_TEMPLATES}
-      fallback={<NoAccess />}
-    >
-      <div className="border border-gray-200 rounded-xl bg-white">
+    <>
+      <CheckPermission
+        userRoleId={data.role_id}
+        requiredPermission={Permissions.VIEW_TEMPLATES}
+        fallback={<NoAccess />}
+        loadingComponent={<FallbackTemplatesList />}
+      >
         <TemplatesTable userId={user.id} />
-        <AddTemplate userId={user.id} />
-      </div>
-    </CheckPermission>
+      </CheckPermission>
+      <AddTemplate userId={user.id} />
+    </>
   );
 }

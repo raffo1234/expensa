@@ -86,10 +86,10 @@ export default function AddTemplate({ userId }: { userId: string }) {
       ) : (
         <button
           onClick={() => setDisplayForm((prev) => !prev)}
-          className="w-full flex rounded-b-xl rounded-t-xl gap-3.5 items-center text-left hover:bg-gray-50 transition-colors duration-300 px-6 py-4"
+          className="cursor-pointer w-full flex rounded-b-xl rounded-t-xl gap-3.5 items-center text-left hover:bg-gray-50 transition-colors duration-300 px-6 py-4"
         >
-          <Icon icon="solar:add-square-broken" fontSize={ICON_SIZE} />
-          <span className="pb-1">Add</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 24 24"><path fill="none" stroke="currentColor" strokeLinecap="round" stroke-width="1.5" d="M15 12h-3m0 0H9m3 0V9m0 3v3m10-3c0 4.714 0 7.071-1.465 8.535C19.072 22 16.714 22 12 22s-7.071 0-8.536-1.465C2 19.072 2 16.714 2 12s0-7.071 1.464-8.536C4.93 2 7.286 2 12 2s7.071 0 8.535 1.464c.974.974 1.3 2.343 1.41 4.536" /></svg>
+          <span>Add</span>
         </button>
       )}
     </>

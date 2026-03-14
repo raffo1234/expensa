@@ -528,7 +528,7 @@ export default function Pagination({
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     d="m7 7l10 10M7 17L17 7"
-                    stroke-width="1"
+                    strokeWidth="1"
                   />
                 </svg>
               </button>

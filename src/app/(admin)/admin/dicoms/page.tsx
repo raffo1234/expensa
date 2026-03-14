@@ -3,6 +3,7 @@ import DicomsTable from "@/components/DicomsTable";
 import { supabase } from "@/lib/supabase";
 import { Suspense } from "react";
 import UploadLink from "@/components/UploadLink";
+import FallbackDicomsPage from "@/components/FallbackDicomsPage";
 
 async function DicomsTableLoader({ userId }: { userId: string }) {
   const { data } = await supabase
@@ -25,7 +26,7 @@ export default async function Page() {
       <div className="mb-6 w-fit">
         <UploadLink />
       </div>
-      <Suspense>
+      <Suspense fallback={<FallbackDicomsPage />}>
         {userId ? <DicomsTableLoader userId={userId} /> : null}
       </Suspense>
     </>

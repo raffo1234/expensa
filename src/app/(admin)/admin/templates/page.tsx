@@ -7,6 +7,7 @@ import { auth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { Permissions } from "@/types/propertyState";
 import FallbackTemplatesList from "@/components/FallbackTemplatesList";
+import { getCurrentUser } from "@/lib/getCurrentUser";
 
 export default async function Page() {
   return (
@@ -22,23 +23,13 @@ export default async function Page() {
 }
 
 async function TemplatesSection() {
-  const session = await auth();
-  const user = session?.user;
-
-  if (!user?.id) return null;
-
-  const { data } = await supabase
-    .from("user")
-    .select("role_id, template_id")
-    .eq("id", user.id)
-    .single();
-
-  if (!data?.role_id) return <NoAccess />;
+  const user = await getCurrentUser();
+  if (!user) return <NoAccess />;
 
   return (
     <>
       <CheckPermission
-        userRoleId={data.role_id}
+        userRoleId={user.roleId}
         requiredPermission={Permissions.VIEW_TEMPLATES}
         fallback={<NoAccess />}
         loadingComponent={<FallbackTemplatesList />}

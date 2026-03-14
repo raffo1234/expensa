@@ -5,6 +5,7 @@ import FallbackPermission from "@/components/FallbackPermission";
 import FallBackRolesList from "@/components/FallBackRolesList";
 import NoAccess from "@/components/NoAccess";
 import { auth } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/getCurrentUser";
 import { supabase } from "@/lib/supabase";
 import { Permissions } from "@/types/propertyState";
 import { Suspense } from "react";
@@ -23,22 +24,12 @@ export default async function Page() {
 }
 
 async function RolesSection() {
-  const session = await auth();
-  const user = session?.user;
-
-  if (!user?.id) return null;
-
-  const { data } = await supabase
-    .from("user")
-    .select("role_id")
-    .eq("id", user.id)
-    .single();
-
-  if (!data?.role_id) return <NoAccess />;
+  const user = await getCurrentUser();
+  if (!user) return <NoAccess />;
 
   return (
     <CheckPermission
-      userRoleId={data.role_id}
+      userRoleId={user.roleId}
       requiredPermission={Permissions.MANAGE_ROLES}
       fallback={<FallbackPermission />}
       loadingComponent={<FallBackRolesList />}

@@ -1,0 +1,24 @@
+import { auth } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
+import { cache } from "react";
+
+export const getCurrentUser = cache(async () => {
+    const session = await auth();
+    const user = session?.user;
+
+    if (!user?.id) return null;
+
+    const { data } = await supabase
+        .from("user")
+        .select("role_id")
+        .eq("id", user.id)
+        .single();
+
+    if (!data?.role_id) return null;
+
+    return {
+        id: user.id,
+        email: user.email,
+        roleId: data.role_id,
+    };
+});

@@ -5,6 +5,8 @@ import { Permissions } from "@/types/propertyState";
 import { checkPermissions } from "@/lib/checkPermissions";
 import FallbackPermission from "@/components/FallbackPermission";
 import UsersTable from "@/components/UsersTable";
+import NoAccess from "@/components/NoAccess";
+import { getCurrentUser } from "@/lib/getCurrentUser";
 
 export default async function Page() {
   return (
@@ -31,20 +33,10 @@ export default async function Page() {
 }
 
 async function UsersSection() {
-  const session = await auth();
-  const user = session?.user;
+  const user = await getCurrentUser();
+  if (!user) return <NoAccess />;
 
-  if (!user?.id) return null;
-
-  const { data } = await supabase
-    .from("user")
-    .select("role_id")
-    .eq("id", user.id)
-    .single();
-
-  if (!data?.role_id) return null;
-
-  const permissions = await checkPermissions(data.role_id, [
+  const permissions = await checkPermissions(user.roleId, [
     Permissions.MANAGE_USERS,
   ]);
 

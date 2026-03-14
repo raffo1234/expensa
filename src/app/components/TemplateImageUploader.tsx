@@ -5,50 +5,42 @@ import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { useDropzone } from "react-dropzone";
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, memo, useState } from "react";
 import { bucketName } from "@/constants";
 
 const removeFilesByFolderPath = async (
   templateImageUrl: string | null,
   bucketName: string,
-  folderPath: string,
-  setIsLoading: (isLoading: boolean) => void
+  folderPath: string
 ) => {
   if (!templateImageUrl) {
     console.warn("No image URL provided, skipping file removal.");
     return true;
   }
 
-  setIsLoading(true);
-  const { data: files } = await supabase.storage
-    .from(bucketName)
-    .list(folderPath);
+  const { data: files } = await supabase.storage.from(bucketName).list(folderPath);
 
   if (!files || files.length === 0) {
     console.warn("Folder is already empty or does not exist.");
-    setIsLoading(false);
     return false;
   }
 
-  const filesToRemove =
-    files?.map((file) => `${folderPath}/${file.name}`) || [];
+  const filesToRemove = files.map((file) => `${folderPath}/${file.name}`);
 
   const { data: removeData, error: removeError } = await supabase.storage
     .from(bucketName)
     .remove(filesToRemove);
 
   if (removeError) {
-    setIsLoading(false);
     console.error("Error removing files:", removeError.message);
     return false;
-  } else {
-    console.warn("Files removed successfully:", removeData);
-    setIsLoading(false);
-    return true;
   }
+
+  console.warn("Files removed successfully:", removeData);
+  return true;
 };
 
-export default function UploaderTemplateImageUploader({
+const UploaderTemplateImageUploader = memo(function UploaderTemplateImageUploader({
   templateImageUrl,
   templateId,
   userId,
@@ -69,14 +61,11 @@ export default function UploaderTemplateImageUploader({
   onUploadSuccess?: (publicUrl: string) => void;
   imageFileName: string;
 }) {
-  console.warn(previewImageHeight);
-
   const folderPath = `template_user_${userId}/${templateId}/${fileNamePrefix}`;
   const [isLoading, setIsLoading] = useState(false);
+
   const { getRootProps, getInputProps } = useDropzone({
-    accept: {
-      "image/*": [],
-    },
+    accept: { "image/*": [] },
     disabled: isLoading,
     maxFiles: 1,
   });
@@ -85,77 +74,56 @@ export default function UploaderTemplateImageUploader({
     event: ChangeEvent<HTMLInputElement>,
     templateId: string
   ) => {
-    setIsLoading(true);
     const selectedFile = event.target.files?.[0] || null;
-    const fileExt = selectedFile?.name.split(".").pop();
-    const fileName = `${fileNamePrefix}_${templateId}_${uuidv4()}.${fileExt}`;
-    const filePath = `${folderPath}/${fileName}`;
 
     if (!selectedFile) {
-      setIsLoading(false);
       throw new Error("Please select an image file.");
     }
 
-    await removeFilesByFolderPath(
-      templateImageUrl,
-      bucketName,
-      folderPath,
-      setIsLoading
-    );
+    setIsLoading(true);
 
-    const { data, error: uploadError } = await supabase.storage
-      .from(bucketName)
-      .upload(filePath, selectedFile, {
-        cacheControl: "3600",
-        upsert: false,
-      });
+    try {
+      const fileExt = selectedFile.name.split(".").pop();
+      const fileName = `${fileNamePrefix}_${templateId}_${uuidv4()}.${fileExt}`;
+      const filePath = `${folderPath}/${fileName}`;
 
-    if (data) console.warn("File uploaded successfully:", data);
+      // ✅ isLoading managed here only — no flash between removal and upload
+      await removeFilesByFolderPath(templateImageUrl, bucketName, folderPath);
 
-    if (uploadError) {
+      const { data, error: uploadError } = await supabase.storage
+        .from(bucketName)
+        .upload(filePath, selectedFile, { cacheControl: "3600", upsert: false });
+
+      if (uploadError) throw uploadError;
+      if (data) console.warn("File uploaded successfully:", data);
+
+      const { data: { publicUrl } } = supabase.storage.from(bucketName).getPublicUrl(filePath);
+
+      if (!publicUrl) throw new Error("Could not get public URL after upload.");
+
+      const { error: errorTemplate } = await supabase
+        .from("template")
+        .update({ [imageFileName]: publicUrl })
+        .eq("id", templateId);
+
+      if (errorTemplate) throw new Error("Could not sync image");
+
+      if (onUploadSuccess) onUploadSuccess(publicUrl);
+      mutate();
+    } catch (error) {
+      console.error("Error uploading file:", error);
+    } finally {
       setIsLoading(false);
-      throw uploadError;
     }
-
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from(bucketName).getPublicUrl(filePath);
-
-    if (!publicUrl) {
-      setIsLoading(false);
-      throw new Error("Could not get public URL after upload.");
-    }
-
-    console.warn(
-      "File Sync successfully with Database. Public URL:",
-      publicUrl
-    );
-
-    const { error: errorTemplate } = await supabase
-      .from("template")
-      .update({ [imageFileName]: publicUrl })
-      .eq("id", templateId);
-
-    if (errorTemplate) throw new Error("Could not sync image");
-
-    if (onUploadSuccess) onUploadSuccess(publicUrl);
-    mutate();
-    setIsLoading(false);
   };
 
   const deleteImage = async () => {
-    const confirmationMessage = confirm(
-      "Are you sure you want to delete this item?"
-    );
+    const confirmationMessage = confirm("Are you sure you want to delete this item?");
     if (!confirmationMessage) return;
 
+    setIsLoading(true);
     try {
-      await removeFilesByFolderPath(
-        templateImageUrl,
-        bucketName,
-        folderPath,
-        setIsLoading
-      );
+      await removeFilesByFolderPath(templateImageUrl, bucketName, folderPath);
 
       const { error: errorTemplate } = await supabase
         .from("template")
@@ -167,6 +135,7 @@ export default function UploaderTemplateImageUploader({
       console.error("Error deleting", error);
     } finally {
       mutate();
+      setIsLoading(false);
     }
   };
 
@@ -189,13 +158,9 @@ export default function UploaderTemplateImageUploader({
           />
         </div>
         {templateImageUrl ? (
-          <div className="text-green-600 text-sm mb-1">
-            Replace current image
-          </div>
+          <div className="text-green-600 text-sm mb-1">Replace current image</div>
         ) : null}
-        <h2 className="text-gray-400 text-sm mb-1">
-          Image file, less than 100KB
-        </h2>
+        <h2 className="text-gray-400 text-sm mb-1">Image file, less than 100KB</h2>
         <h4 className="font-semibold">Drag and Drop your file here</h4>
         <input
           id="dropzone-file"
@@ -228,4 +193,6 @@ export default function UploaderTemplateImageUploader({
       ) : null}
     </div>
   );
-}
+});
+
+export default UploaderTemplateImageUploader;

@@ -79,10 +79,10 @@ export default function AddRole() {
       ) : (
         <button
           onClick={() => setDisplayForm((prev) => !prev)}
-          className="w-full flex rounded-b-xl gap-3.5 items-center text-left hover:bg-gray-50 transition-colors duration-300 px-6 py-4 border-t border-gray-200"
+          className="w-full cursor-pointer flex rounded-b-xl gap-3.5 items-center text-left hover:bg-gray-50 transition-colors duration-300 px-6 py-4 border-t border-gray-200"
         >
           <Icon icon="solar:add-square-broken" fontSize={ICON_SIZE} />
-          <span className="pb-1">Add</span>
+          <span>Add</span>
         </button>
       )}
     </>

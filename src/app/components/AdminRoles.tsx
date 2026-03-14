@@ -3,13 +3,12 @@
 import { Icon } from "@iconify/react";
 import { Switch } from "antd";
 import { supabase } from "@/lib/supabase";
-import { Skeleton } from "antd";
 import { useState } from "react";
 import useSWR from "swr";
-import AddRole from "./AddRole";
 import DeleteRole from "./DeleteRole";
 import { adminRolesKey } from "@/constants";
 import toast from "react-hot-toast";
+import FallBackRolesList from "./FallBackRolesList";
 
 const permissionsFetcher = async () => {
   const { data, error } = await supabase
@@ -97,7 +96,7 @@ export function Permissions({ roleId }: { roleId: string }) {
   } = useSWR(`${roleId}-admin-permissions`, permissionsFetcher);
 
   if (error) return null;
-  if (isLoading) return <Skeleton />;
+  if (isLoading) return <FallBackRolesList />;
   return permissions?.map((permission) => {
     return (
       <Permission key={permission.id} roleId={roleId} permission={permission} />
@@ -105,7 +104,7 @@ export function Permissions({ roleId }: { roleId: string }) {
   });
 }
 
-export function Role({
+export function RoleItem({
   role,
 }: {
   role: { id: string; name: string; description: string };
@@ -119,17 +118,15 @@ export function Role({
         <button
           onClick={() => setIsOpen((prev) => !prev)}
           key={id}
-          className={`${
-            isOpen ? "bg-gray-50" : ""
-          } w-full flex gap-3.5 first:rounded-t-xl items-center justify-between text-left transition-colors duration-300 pl-6 pr-20 py-4`}
+          className={`${isOpen ? "bg-gray-50" : ""
+            } cursor-pointer w-full flex gap-3.5 first:rounded-t-xl items-center justify-between text-left transition-colors duration-300 pl-6 pr-20 py-4`}
         >
           <span className="flex gap-3.5 items-center">
             <Icon
               icon="solar:alt-arrow-down-linear"
               fontSize={20}
-              className={`${
-                isOpen ? "rotate-180" : ""
-              } transition-transform duration-500 flex-shrink-0`}
+              className={`${isOpen ? "rotate-180" : ""
+                } transition-transform duration-500 flex-shrink-0`}
             />
             <span>{name}</span>{" "}
             {description ? (
@@ -138,9 +135,9 @@ export function Role({
           </span>
         </button>
         {role.name === "Super" ||
-        role.name === "Secretary" ||
-        role.name === "Doctor" ||
-        role.name === "Patient" ? null : (
+          role.name === "Secretary" ||
+          role.name === "Doctor" ||
+          role.name === "Patient" ? null : (
           <DeleteRole roleId={role.id} />
         )}
       </div>
@@ -166,19 +163,7 @@ export default function AdminRoles() {
   const { data: roles, error, isLoading } = useSWR(adminRolesKey, rolesFetcher);
 
   if (error) return null;
-  if (isLoading)
-    return (
-      <div className="p-4">
-        <Skeleton />
-      </div>
-    );
+  if (isLoading) return <FallBackRolesList />
 
-  return (
-    <div className="border border-gray-200 rounded-xl bg-white">
-      {roles?.map((role) => {
-        return <Role key={role.id} role={role} />;
-      })}
-      <AddRole />
-    </div>
-  );
+  return roles?.map((role) => <RoleItem key={role.id} role={role} />)
 }

@@ -44,8 +44,8 @@ async function TemplatesSection() {
         loadingComponent={<FallbackTemplatesList />}
       >
         <TemplatesTable userId={user.id} />
+        <AddTemplate userId={user.id} />
       </CheckPermission>
-      <AddTemplate userId={user.id} />
     </>
   );
 }

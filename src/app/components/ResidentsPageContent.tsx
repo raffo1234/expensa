@@ -61,7 +61,6 @@ export default function ResidentsPageContent({
 
   return (
     <>
-      <h1 className="mb-6 font-semibold text-lg block">Residents</h1>
       {data?.residents?.length === 0 ? (
         <span className="text-sm text-gray-500">No residents assigned</span>
       ) : (

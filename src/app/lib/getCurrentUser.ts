@@ -6,11 +6,11 @@ export const getCurrentUser = cache(async () => {
     const session = await auth();
     const user = session?.user;
 
-    if (!user?.id) return null;
+    if (!user?.id || !user?.email) return null;
 
     const { data } = await supabase
         .from("user")
-        .select("role_id")
+        .select("role_id, template_id")
         .eq("id", user.id)
         .single();
 
@@ -20,5 +20,6 @@ export const getCurrentUser = cache(async () => {
         id: user.id,
         email: user.email,
         roleId: data.role_id,
+        templateId: user.template_id
     };
 });

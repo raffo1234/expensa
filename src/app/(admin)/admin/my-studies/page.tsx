@@ -1,18 +1,11 @@
 import MyStudiesPageContent from "@/components/MyStudiesPageContent";
-import { auth } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
+import NoAccess from "@/components/NoAccess";
+import { getCurrentUser } from "@/lib/getCurrentUser";
+
 
 export default async function Page() {
-  const session = await auth();
-  const user = session?.user;
+  const user = await getCurrentUser();
+  if (!user) return <NoAccess />;
 
-  const { data } = await supabase
-    .from("user")
-    .select("id, role_id")
-    .eq("id", user?.id)
-    .single();
-
-  if (!data?.id || !data?.role_id) return null;
-
-  return <MyStudiesPageContent userId={data.id} userRoleId={data.role_id} />;
+  return <MyStudiesPageContent userId={user.id} userRoleId={user.roleId} />;
 }

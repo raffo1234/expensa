@@ -1,12 +1,11 @@
 import UploaderPage from "@/components/UploaderPage";
 import ViewAllDicomsLink from "@/components/ViewAllDicomsLink";
 import CheckPermission from "@/components/CheckPermission";
-import { auth } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
 import { Permissions } from "@/types/propertyState";
 import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 import NoAccess from "@/components/NoAccess";
+import { getCurrentUser } from "@/lib/getCurrentUser";
 
 function FallBackUploader() {
   return (
@@ -42,26 +41,16 @@ export default async function Page() {
 }
 
 async function UploaderSection() {
-  const session = await auth();
-  const user = session?.user;
-
-  if (!user?.id || !user?.email) return null;
-
-  const { data } = await supabase
-    .from("user")
-    .select("role_id")
-    .eq("id", user.id)
-    .single();
-
-  if (!data?.role_id) return <NoAccess />;
+  const user = await getCurrentUser();
+  if (!user) return <NoAccess />;
 
   return (
     <>
       <div className="flex justify-end mb-6">
-        <ViewAllDicomsLink userRoleId={data.role_id} />
+        <ViewAllDicomsLink userRoleId={user.roleId} />
       </div>
       <CheckPermission
-        userRoleId={data.role_id}
+        userRoleId={user.roleId}
         requiredPermission={Permissions.UPLOAD_DICOM}
         fallback={<NoAccess />}
         loadingComponent={<FallBackUploader />}
@@ -69,7 +58,7 @@ async function UploaderSection() {
         <UploaderPage
           userEmail={user.email}
           userId={user.id}
-          userRoleId={data.role_id}
+          userRoleId={user.roleId}
         />
       </CheckPermission>
     </>

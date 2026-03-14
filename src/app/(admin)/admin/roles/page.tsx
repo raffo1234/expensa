@@ -4,9 +4,7 @@ import CheckPermission from "@/components/CheckPermission";
 import FallbackPermission from "@/components/FallbackPermission";
 import FallBackRolesList from "@/components/FallBackRolesList";
 import NoAccess from "@/components/NoAccess";
-import { auth } from "@/lib/auth";
 import { getCurrentUser } from "@/lib/getCurrentUser";
-import { supabase } from "@/lib/supabase";
 import { Permissions } from "@/types/propertyState";
 import { Suspense } from "react";
 

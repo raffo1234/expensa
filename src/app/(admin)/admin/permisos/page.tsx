@@ -1,33 +1,45 @@
+import NoAccess from "@/components/NoAccess";
 import PermissionsPage from "@/components/PermissionsPage";
-import { auth } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/getCurrentUser";
 import { supabase } from "@/lib/supabase";
 import { PermissionType } from "@/types/permissionType";
+import { Suspense } from "react";
+
+function FallBack() {
+  return (
+    <div className="space-y-3">
+      {Array.from({ length: 3 }, (_, i) => (
+        <div key={i} className="h-8 w-full bg-gray-200 animate-pulse rounded" />
+      ))}
+    </div>
+  );
+}
 
 export default async function Page() {
-  const { data: permissions } = (await supabase
+  return (
+    <Suspense fallback={<FallBack />}>
+      <PermissionsSection />
+    </Suspense>
+  );
+}
+
+async function PermissionsSection() {
+  const permissionsQuery = supabase
     .from("permission")
     .select("*")
-    .order("created_at", { ascending: false })) as {
-    data: PermissionType[] | null;
-  };
+    .order("created_at", { ascending: false });
 
-  const session = await auth();
-  const user = session?.user;
+  const [user, { data: permissions }] = await Promise.all([
+    getCurrentUser(),
+    permissionsQuery,
+  ]);
 
-  if (user?.id) {
-    const { data } = await supabase
-      .from("user")
-      .select("role_id, template_id")
-      .eq("id", user?.id)
-      .single();
-
-    user.role_id = data?.role_id;
-    user.template_id = data?.template_id;
-  }
-
-  if (!user?.id || !user.role_id) return null;
+  if (!user) return <NoAccess />;
 
   return (
-    <PermissionsPage userRoleId={user.role_id} permissions={permissions} />
+    <PermissionsPage
+      userRoleId={user.roleId}
+      permissions={permissions as PermissionType[] | null}
+    />
   );
 }

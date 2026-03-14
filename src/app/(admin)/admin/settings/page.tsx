@@ -1,25 +1,43 @@
+import NoAccess from "@/components/NoAccess";
 import SettingsContent from "@/components/SettingsContent";
-import { auth } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/getCurrentUser";
 import { supabase } from "@/lib/supabase";
 import { RoleType } from "@/types/roleType";
+import { Suspense } from "react";
+
+function FallBack() {
+  return (
+    <div className="space-y-3">
+      {Array.from({ length: 3 }, (_, i) => (
+        <div key={i} className="h-8 w-full bg-gray-200 animate-pulse rounded" />
+      ))}
+    </div>
+  );
+}
 
 export default async function Page() {
-  const session = await auth();
-  const user = session?.user;
-
-  const { data } = await supabase.from("user").select("role_id").eq("id", user?.id).single();
-
-  const { data: roles } = (await supabase
-    .from("role")
-    .select("id, name")
-    .order("name", { ascending: true })) as { data: RoleType[] | null };
-
-  if (!user || !data) return null;
-
   return (
     <div>
       <h1 className="mb-6 font-semibold text-lg block">Global Settings</h1>
-      <SettingsContent userRoleId={data.role_id} roles={roles} />
+      <Suspense fallback={<FallBack />}>
+        <SettingsSection />
+      </Suspense>
     </div>
+  );
+}
+
+async function SettingsSection() {
+  const [user, { data: roles }] = await Promise.all([
+    getCurrentUser(),
+    supabase.from("role").select("id, name").order("name", { ascending: true }),
+  ]);
+
+  if (!user) return <NoAccess />;
+
+  return (
+    <SettingsContent
+      userRoleId={user.roleId}
+      roles={roles as RoleType[] | null}
+    />
   );
 }

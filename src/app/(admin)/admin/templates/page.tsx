@@ -3,8 +3,6 @@ import AddTemplate from "@/components/AddTemplate";
 import CheckPermission from "@/components/CheckPermission";
 import NoAccess from "@/components/NoAccess";
 import TemplatesTable from "@/components/TemplatesTable";
-import { auth } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
 import { Permissions } from "@/types/propertyState";
 import FallbackTemplatesList from "@/components/FallbackTemplatesList";
 import { getCurrentUser } from "@/lib/getCurrentUser";

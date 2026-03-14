@@ -1,20 +1,16 @@
 import { auth } from "@/lib/auth";
 import DicomsTable from "@/components/DicomsTable";
-import { supabase } from "@/lib/supabase";
 import { Suspense } from "react";
 import UploadLink from "@/components/UploadLink";
 import FallbackDicomsPage from "@/components/FallbackDicomsPage";
+import NoAccess from "@/components/NoAccess";
+import { getCurrentUser } from "@/lib/getCurrentUser";
 
 async function DicomsTableLoader({ userId }: { userId: string }) {
-  const { data } = await supabase
-    .from("user")
-    .select("role_id, template_id")
-    .eq("id", userId)
-    .single();
+  const user = await getCurrentUser();
+  if (!user) return <NoAccess />;
 
-  if (!data?.role_id) return null;
-
-  return <DicomsTable userId={userId} userRoleId={data.role_id} />;
+  return <DicomsTable userId={userId} userRoleId={user.roleId} />;
 }
 
 export default async function Page() {

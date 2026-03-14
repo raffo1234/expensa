@@ -1,28 +1,28 @@
-import { auth } from "@/lib/auth";
 import DicomsTable from "@/components/DicomsTable";
-import { supabase } from "@/lib/supabase";
+import { getCurrentUser } from "@/lib/getCurrentUser";
 import { Suspense } from "react";
 
-export default async function Page() {
-  const session = await auth();
-  const user = session?.user;
-
-  if (user?.id) {
-    const { data } = await supabase
-      .from("user")
-      .select("role_id, template_id")
-      .eq("id", user?.id)
-      .single();
-
-    user.role_id = data?.role_id;
-    user.template_id = data?.template_id;
-  }
-
-  if (!user?.id || !user.role_id) return null;
-
+function FallBack() {
   return (
-    <Suspense>
-      <DicomsTable userId={user.id} userRoleId={user.role_id} />
+    <div className="space-y-3">
+      {Array.from({ length: 3 }, (_, i) => (
+        <div key={i} className="h-8 w-full bg-gray-200 animate-pulse rounded" />
+      ))}
+    </div>
+  );
+}
+
+export default async function Page() {
+  return (
+    <Suspense fallback={<FallBack />}>
+      <DicomsSection />
     </Suspense>
   );
+}
+
+async function DicomsSection() {
+  const user = await getCurrentUser();
+  if (!user) return null;
+
+  return <DicomsTable userId={user.id} userRoleId={user.roleId} />;
 }

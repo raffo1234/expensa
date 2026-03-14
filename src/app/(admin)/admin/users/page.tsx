@@ -1,6 +1,4 @@
 import { Suspense } from "react";
-import { auth } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
 import { Permissions } from "@/types/propertyState";
 import { checkPermissions } from "@/lib/checkPermissions";
 import FallbackPermission from "@/components/FallbackPermission";

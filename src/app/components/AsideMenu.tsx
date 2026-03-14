@@ -49,85 +49,85 @@ export default function AsideMenu({
 
     ...(checkPermission(Permissions.UPLOAD_DICOM)
       ? [
-          {
-            href: "/admin/dicom",
-            title: t("upload"),
-            iconName: "solar:cloud-upload-broken",
-          },
-        ]
+        {
+          href: "/admin/dicom",
+          title: t("upload"),
+          iconName: "solar:cloud-upload-broken",
+        },
+      ]
       : []),
     ...(checkPermission(Permissions.MANAGE_PACS)
       ? [
-          {
-            href: "/admin/pacs",
-            title: t("pacs"),
-            iconName: "solar:archive-down-minimlistic-linear",
-          },
-        ]
+        {
+          href: "/admin/pacs",
+          title: t("pacs"),
+          iconName: "solar:archive-down-minimlistic-linear",
+        },
+      ]
       : []),
     ...(checkPermission(Permissions.VIEW_DICOMS)
       ? [
-          {
-            href: "/admin/dicoms",
-            title: t("dicoms"),
-            iconName: "solar:bones-broken",
-          },
-        ]
+        {
+          href: "/admin/dicoms",
+          title: t("dicoms"),
+          iconName: "solar:bones-broken",
+        },
+      ]
       : []),
     ...(checkPermission(Permissions.VIEW_TEMPLATES)
       ? [
-          {
-            href: "/admin/templates",
-            title: t("templates"),
-            iconName: "solar:file-favourite-line-duotone",
-          },
-        ]
+        {
+          href: "/admin/templates",
+          title: t("templates"),
+          iconName: "solar:file-favourite-line-duotone",
+        },
+      ]
       : []),
     ...(checkPermission(Permissions.MANAGE_USERS)
       ? [
-          {
-            href: "/admin/users",
-            title: t("users"),
-            iconName: "solar:user-linear",
-            onMouseEnter: () => preload(adminUsersKey, userFetcher),
-          },
-        ]
+        {
+          href: "/admin/users",
+          title: t("users"),
+          iconName: "solar:user-linear",
+          onMouseEnter: () => preload(adminUsersKey, userFetcher),
+        },
+      ]
       : []),
     ...(checkPermission(Permissions.MANAGE_ROLES)
       ? [
-          {
-            href: "/admin/roles",
-            title: t("roles"),
-            iconName: "solar:user-check-broken",
-          },
-        ]
+        {
+          href: "/admin/roles",
+          title: t("roles"),
+          iconName: "solar:user-check-broken",
+        },
+      ]
       : []),
     ...(checkPermission(Permissions.MANAGE_PERMISSIONS)
       ? [
-          {
-            href: "/admin/permisos",
-            title: t("permissions"),
-            iconName: "solar:lock-keyhole-broken",
-          },
-        ]
+        {
+          href: "/admin/permisos",
+          title: t("permissions"),
+          iconName: "solar:lock-keyhole-broken",
+        },
+      ]
       : []),
     ...(checkPermission(Permissions.DOWNLOAD_REPORT)
       ? [
-          {
-            href: "/admin/reports",
-            title: t("reports"),
-            iconName: "solar:file-text-linear",
-          },
-        ]
+        {
+          href: "/admin/reports",
+          title: t("reports"),
+          iconName: "solar:file-text-linear",
+        },
+      ]
       : []),
     ...(checkPermission(Permissions.VIEW_RESIDENTS)
       ? [
-          {
-            href: "/admin/residents",
-            title: t("residents"),
-            iconName: "solar:shield-user-outline",
-          },
-        ]
+        {
+          href: "/admin/residents",
+          title: t("residents"),
+          iconName: "solar:shield-user-outline",
+        },
+      ]
       : []),
     {
       href: "/admin/my-studies",
@@ -136,12 +136,12 @@ export default function AsideMenu({
     },
     ...(checkPermission(Permissions.HANDLE_SETTINGS)
       ? [
-          {
-            href: "/admin/settings",
-            title: t("settings"),
-            iconName: "solar:settings-linear",
-          },
-        ]
+        {
+          href: "/admin/settings",
+          title: t("settings"),
+          iconName: "solar:settings-linear",
+        },
+      ]
       : []),
     {
       href: "/admin/my-settings",
@@ -153,10 +153,10 @@ export default function AsideMenu({
   if (isLoading)
     return (
       <div className="animate-pulse flex flex-col gap-1">
-        <div className="h-12 rounded-xl w-full bg-gray-100"></div>
-        <div className="h-12 rounded-xl w-full bg-gray-100"></div>
-        <div className="h-12 rounded-xl w-full bg-gray-100"></div>
-        <div className="h-12 rounded-xl w-full bg-gray-100"></div>
+        <div className="h-[43px] w-full lg:w-[51px] rounded-xl bg-gray-100"></div>
+        <div className="h-[43px] w-full lg:w-[51px] rounded-xl bg-gray-100"></div>
+        <div className="h-[43px] w-full lg:w-[51px] rounded-xl bg-gray-100"></div>
+        <div className="h-[43px] w-full lg:w-[51px] rounded-xl bg-gray-100"></div>
       </div>
     );
 

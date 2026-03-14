@@ -14,7 +14,7 @@ export default async function LogoLink() {
         className="flex-shrink-0"
         width={36}
         height={36}
-        style={{ width: "36px", height: "auto" }}
+        style={{ width: "36px", height: "45px" }}
       />
       <span className="hidden md:block">
         <span className="text-lg leading-5 block font-semibold">CADIA</span>

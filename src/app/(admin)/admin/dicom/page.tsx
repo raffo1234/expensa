@@ -8,7 +8,7 @@ import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 import NoAccess from "@/components/NoAccess";
 
-function FallBack() {
+function FallBackUploader() {
   return (
     <>
       <div className="flex gap-2 mb-4">
@@ -34,7 +34,7 @@ export default async function Page() {
           </span>
         </h1>
       </div>
-      <Suspense fallback={<FallBack />}>
+      <Suspense fallback={<FallBackUploader />}>
         <UploaderSection />
       </Suspense>
     </>
@@ -58,22 +58,13 @@ async function UploaderSection() {
   return (
     <>
       <div className="flex justify-end mb-6">
-        <CheckPermission
-          userRoleId={data.role_id}
-          requiredPermission={Permissions.VIEW_DICOMS}
-          fallback={null}
-          loadingComponent={
-            <div className="h-11 w-[110px] rounded-lg animate-pulse bg-gray-100" />
-          }
-        >
-          <ViewAllDicomsLink userRoleId={data.role_id} />
-        </CheckPermission>
+        <ViewAllDicomsLink userRoleId={data.role_id} />
       </div>
       <CheckPermission
         userRoleId={data.role_id}
         requiredPermission={Permissions.UPLOAD_DICOM}
         fallback={<NoAccess />}
-        loadingComponent={<FallBack />}
+        loadingComponent={<FallBackUploader />}
       >
         <UploaderPage
           userEmail={user.email}

@@ -10,60 +10,31 @@ export interface Env {
     STORAGE_DOMAIN: string;
 }
 
-// ✅ R2 Event Notification shape — comes through Cloudflare Queue
-interface R2EventNotification {
-    account: string;
-    bucket: string;
-    eventTime: string;
-    action: string;
-    object: {
-        key: string;
-        size: number;
-        etag: string;
-    };
-}
-
 export default {
-    // ✅ Queue handler — R2 Event Notifications are delivered via CF Queue, not fetch
-    async queue(
-        batch: MessageBatch<R2EventNotification>,
-        env: Env,
-        ctx: ExecutionContext
-    ): Promise<void> {
-        for (const message of batch.messages) {
-            const { object } = message.body;
-            const storagePath = object.key;
-
-            if (!storagePath.startsWith("incoming/")) {
-                message.ack();
-                continue;
-            }
-
-            // ✅ waitUntil — don't block queue consumer, process in background
-            ctx.waitUntil(
-                processZip(storagePath, env).then(() => message.ack()).catch(() => message.retry())
-            );
+    async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+        if (request.method !== "POST") {
+            return new Response("Method not allowed", { status: 405 });
         }
+
+        const { storagePath, userId, jobId } = await request.json() as {
+            storagePath: string;
+            userId: string;
+            jobId: string;
+        };
+
+        // ✅ Fire-and-forget — respond immediately, process in background
+        ctx.waitUntil(processZip(storagePath, userId, jobId, env));
+
+        return new Response("ok");
     },
 };
 
-async function processZip(storagePath: string, env: Env): Promise<void> {
+async function processZip(storagePath: string, userId: string, jobId: string, env: Env): Promise<void> {
     const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
-
-    const { data: job } = await supabase
-        .from("dicom_processing_job")
-        .select("id, user_id")
-        .eq("storage_path", storagePath)
-        .single();
-
-    // ✅ Narrow user_id to string before passing anywhere
-    if (!job?.id || !job?.user_id) return;
-    const userId: string = job.user_id;
-    const jobId: string = job.id;
 
     await supabase
         .from("dicom_processing_job")
-        .update({ status: "processing", updated_at: new Date().toISOString() }) // ✅ ISO string
+        .update({ status: "processing", updated_at: new Date().toISOString() })
         .eq("id", jobId);
 
     try {
@@ -73,8 +44,6 @@ async function processZip(storagePath: string, env: Env): Promise<void> {
         const zipBuffer = await zipObject.arrayBuffer();
         const zip = await new JSZip().loadAsync(zipBuffer);
 
-        // ✅ Fix race condition — collect results first, then build studiesMap
-        // Avoids concurrent has()/set() on the same sUID across parallel awaits
         const parsedResults: Array<{
             sUID: string;
             destPath: string;
@@ -105,7 +74,6 @@ async function processZip(storagePath: string, env: Env): Promise<void> {
                             httpMetadata: { contentType: "application/dicom" },
                         });
 
-                        // ✅ Push to array — no Map mutation inside parallel tasks
                         parsedResults.push({ sUID, destPath, buffer, metadata });
                     } catch (err) {
                         console.error(`[Worker] Error processing ${path}:`, err);
@@ -113,7 +81,6 @@ async function processZip(storagePath: string, env: Env): Promise<void> {
                 })
         );
 
-        // ✅ Build studiesMap sequentially after all parallel work is done — no race
         const studiesMap = new Map<string, DicomStudy>();
         for (const { sUID, destPath, metadata } of parsedResults) {
             if (!studiesMap.has(sUID)) {
@@ -128,13 +95,12 @@ async function processZip(storagePath: string, env: Env): Promise<void> {
 
         await env.DICOM_BUCKET.delete(storagePath);
 
-        // ✅ UPDATE triggers Supabase Realtime → client notified instantly
         await supabase
             .from("dicom_processing_job")
             .update({
                 status: "done",
                 studies: insertedStudies,
-                updated_at: new Date().toISOString(), // ✅ ISO string
+                updated_at: new Date().toISOString(),
             })
             .eq("id", jobId);
 
@@ -144,7 +110,7 @@ async function processZip(storagePath: string, env: Env): Promise<void> {
             .update({
                 status: "failed",
                 error: error instanceof Error ? error.message : String(error),
-                updated_at: new Date().toISOString(), // ✅ ISO string
+                updated_at: new Date().toISOString(),
             })
             .eq("id", jobId);
     }
@@ -153,7 +119,7 @@ async function processZip(storagePath: string, env: Env): Promise<void> {
 async function batchInsertStudies(
     studiesMap: Map<string, DicomStudy>,
     userId: string,
-    supabase: SupabaseClient // ✅ precise type
+    supabase: SupabaseClient
 ): Promise<{ id: string; state: string }[]> {
     const results: { id: string; state: string }[] = [];
     const sUIDs = Array.from(studiesMap.keys());

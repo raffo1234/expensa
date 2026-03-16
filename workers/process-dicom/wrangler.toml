@@ -7,10 +7,5 @@ account_id = "911c03faaa142adbd512d76e6042c0c9"
 binding = "DICOM_BUCKET"
 bucket_name = "dicoms"
 
-[[queues.consumers]]
-queue = "dicom-processing"
-max_batch_size = 10
-max_batch_timeout = 5
-
 [vars]
 STORAGE_DOMAIN = "https://storage.cadia.cc"

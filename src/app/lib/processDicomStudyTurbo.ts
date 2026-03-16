@@ -38,7 +38,7 @@ export const processDicomStudyTurbo = async (
   }).then((r) => r.json());
 
   // 4. Wait for Supabase Realtime push — no polling
-  const studies = await waitForJobCompletion(jobId, onStateChange);
+  const studies = await waitForJobCompletion(jobId, onProgress, onStateChange);
 
   onProgress?.(100);
   onStateChange?.(CustomFileStateType.inserted);
@@ -69,9 +69,21 @@ const uploadWithProgress = (
 // ✅ Supabase Realtime — instant push, no 2s polling delay
 const waitForJobCompletion = (
   jobId: string,
+  onProgress?: (percent: number) => void,
   onStateChange?: (state: CustomFileStateType) => void
 ): Promise<string[]> =>
   new Promise((resolve, reject) => {
+    let current = 90;
+    const ticker = setInterval(() => {
+      if (current < 99) onProgress?.(++current);
+    }, 2000);
+
+    const finish = (fn: () => void) => {
+      clearInterval(ticker);
+      channel.unsubscribe();
+      fn();
+    };
+
     const channel = supabase
       .channel(`job-${jobId}`)
       .on(
@@ -86,16 +98,36 @@ const waitForJobCompletion = (
           const { status, studies, error } = payload.new;
 
           if (status === "done") {
-            onStateChange?.(CustomFileStateType.inserted);
-            channel.unsubscribe();
-            resolve(studies.map((s: { id: string }) => s.id));
+            finish(() => {
+              onStateChange?.(CustomFileStateType.inserted);
+              resolve(studies.map((s: { id: string }) => s.id));
+            });
           }
 
           if (status === "failed") {
-            channel.unsubscribe();
-            reject(new Error(error));
+            finish(() => reject(new Error(error)));
           }
         }
       )
-      .subscribe();
+      .subscribe(async (status) => {
+        if (status === "SUBSCRIBED") {
+          // ✅ Race condition fix — check if job already completed before we subscribed
+          const { data } = await supabase
+            .from("dicom_processing_job")
+            .select("status, studies, error")
+            .eq("id", jobId)
+            .single();
+
+          if (data?.status === "done") {
+            finish(() => {
+              onStateChange?.(CustomFileStateType.inserted);
+              resolve(data.studies.map((s: { id: string }) => s.id));
+            });
+          }
+
+          if (data?.status === "failed") {
+            finish(() => reject(new Error(data.error)));
+          }
+        }
+      });
   });

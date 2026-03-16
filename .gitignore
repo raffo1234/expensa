@@ -74,3 +74,5 @@ logs
 .idea/
 
 
+workers/process-dicom/node_modules/
+workers/process-dicom/.wrangler/

@@ -1,0 +1,19 @@
+# workers/process-dicom/.gitignore
+
+# Dependencies
+node_modules/
+
+# Wrangler
+.wrangler/
+dist/
+
+# Environment
+.env
+.env.local
+.dev.vars
+
+# Logs
+*.log
+
+# OS
+.DS_Store

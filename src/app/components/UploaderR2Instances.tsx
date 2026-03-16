@@ -3,7 +3,7 @@
 import { Permissions } from "@/types/propertyState";
 import { fileTypeFromBuffer } from "file-type";
 import { Archive } from "libarchive.js";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { Icon } from "@iconify/react";
 import { useDropzone } from "react-dropzone";
 import { ExtractedFilesObject } from "@/lib/decompress";
@@ -52,6 +52,15 @@ const compressedExtensions: Record<string, string[]> = {
   "application/x-rar-compressed": [".rar"],
 };
 
+// ✅ Precomputed outside component — never recreated
+const compressedAcceptOptions = compressedMimeTypes.reduce(
+  (acc: Record<string, string[]>, mime) => {
+    acc[mime] = compressedExtensions[mime] || [];
+    return acc;
+  },
+  {}
+);
+
 const UploaderR2Instances: React.FC<UploaderR2Props> = ({
   option,
   setOption,
@@ -63,21 +72,20 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
   const t = useTranslations("Uploader");
   const tZip = useTranslations("UploaderZip");
   const tDcm = useTranslations("UploaderDcm");
-  console.log(userEmail)
+
   const { hasPermission: storeByDefault } = useCheckPermission(
     userRoleId,
-    Permissions.STORE_BY_DEFAULT,
+    Permissions.STORE_BY_DEFAULT
   );
   const { hasPermission: canSwitchStoreDicom } = useCheckPermission(
     userRoleId,
-    Permissions.SWITCH_STORE_DICOM,
+    Permissions.SWITCH_STORE_DICOM
   );
 
   const [uploading, setUploading] = useState(false);
   const [isDropping, setIsDropping] = useState(false);
   const [files, setFiles] = useState<CustomFileType[]>([]);
 
-  // ✅ Service Worker + IndexedDB queue — resumes pending uploads on mount
   const { pendingCount, failedCount, flushQueue, isResuming } = useDicomUploadSync(userId);
 
   const onDrop = useCallback(
@@ -123,7 +131,8 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
         }
       }
 
-      const studiesByInstanceUID = await findAllDicomFilesWithDifferentStudyUID(nonCompressedFiles);
+      const studiesByInstanceUID =
+        await findAllDicomFilesWithDifferentStudyUID(nonCompressedFiles);
       if (studiesByInstanceUID && studiesByInstanceUID.length > 0) {
         studiesByInstanceUID.forEach(({ file, metadata }) => {
           setFiles((prev) => [
@@ -162,17 +171,16 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
 
       setIsDropping(false);
     },
-    [storeByDefault, option],
+    [storeByDefault, option]
   );
 
-  const handleUpload = async () => {
+  const handleUpload = useCallback(async () => {
     const sortedFiles = sortFilesByName(files, "desc").filter(
-      (f) => f.state === CustomFileStateType.selected,
+      (f) => f.state === CustomFileStateType.selected
     );
 
     setUploading(true);
     let successCount = 0;
-
     const outerLimit = pLimit(2);
 
     await Promise.allSettled(
@@ -203,7 +211,7 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
               setFiles,
               updateProgress,
               handleStateChange,
-              fileEntity.isAvailableForR2Upload,
+              fileEntity.isAvailableForR2Upload
             );
 
             if (!studiesByInstanceUID || studiesByInstanceUID.length === 0) {
@@ -221,76 +229,88 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
               color: "rose-50",
             });
           }
-        }),
-      ),
+        })
+      )
     );
 
     if (successCount > 0 && onUploadSuccess) onUploadSuccess();
     setUploading(false);
-  };
+  }, [files, userId, onUploadSuccess]);
 
-  const acceptOptions = () => {
+  // ✅ Memoized — only recomputes when option changes
+  const acceptOptions = useMemo(() => {
     switch (option) {
       case UPLOAD_OPTION.DCM:
         return { "application/dicom": [".dcm"] };
       case UPLOAD_OPTION.FOLDER:
         return {};
       case UPLOAD_OPTION.COMPRESSED:
-        return compressedMimeTypes.reduce((acc: Record<string, string[]>, mime) => {
-          acc[mime] = compressedExtensions[mime] || [];
-          return acc;
-        }, {});
+        return compressedAcceptOptions;
       default:
         return {};
     }
-  };
+  }, [option]);
 
-  const onDragEnter = () => {
+  const onDragEnter = useCallback(() => {
     if (option === UPLOAD_OPTION.DCM || option === UPLOAD_OPTION.FOLDER) return;
     setOption(UPLOAD_OPTION.COMPRESSED);
-  };
+  }, [option, setOption]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDragEnter,
-    accept: acceptOptions(),
+    accept: acceptOptions,
     onDrop,
   });
 
-  const handleIsAvailableForR2 = (id: string, isAvailableForR2Upload: boolean) => {
+  const handleIsAvailableForR2 = useCallback((id: string, isAvailableForR2Upload: boolean) => {
     editCustomFileById(setFiles, id, { isAvailableForR2Upload: !isAvailableForR2Upload });
-  };
+  }, []);
 
-  const selectAllFiles = useCallback(
-    (shouldSelect: boolean): void => {
-      setFiles((prevFiles) =>
-        prevFiles.map((file) =>
-          file.state === CustomFileStateType.selected
-            ? { ...file, isAvailableForR2Upload: shouldSelect }
-            : file,
-        ),
-      );
+  const selectAllFiles = useCallback((shouldSelect: boolean): void => {
+    setFiles((prevFiles) =>
+      prevFiles.map((file) =>
+        file.state === CustomFileStateType.selected
+          ? { ...file, isAvailableForR2Upload: shouldSelect }
+          : file
+      )
+    );
+  }, []);
+
+  const handleSelectAllChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      selectAllFiles(event.target.checked);
     },
-    [setFiles],
+    [selectAllFiles]
   );
 
-  const handleSelectAllChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    selectAllFiles(event.target.checked);
-  };
-
-  const selectedFilesWithStateSelected = files.filter(
-    (file) => file.state === CustomFileStateType.selected,
+  // ✅ All derived values memoized — not recomputed on every render
+  const selectedFilesWithStateSelected = useMemo(
+    () => files.filter((file) => file.state === CustomFileStateType.selected),
+    [files]
   );
-  const isAllSelected =
-    selectedFilesWithStateSelected.length > 0 &&
-    selectedFilesWithStateSelected.every((file) => file.isAvailableForR2Upload);
+
+  const isAllSelected = useMemo(
+    () =>
+      selectedFilesWithStateSelected.length > 0 &&
+      selectedFilesWithStateSelected.every((file) => file.isAvailableForR2Upload),
+    [selectedFilesWithStateSelected]
+  );
+
   const hasSelectedItems = selectedFilesWithStateSelected.length > 0;
-  const selectedFileCount = files.filter(
-    (file) => file.state === CustomFileStateType.selected && file.isAvailableForR2Upload,
-  ).length;
+
+  const selectedFileCount = useMemo(
+    () =>
+      files.filter(
+        (file) =>
+          file.state === CustomFileStateType.selected && file.isAvailableForR2Upload
+      ).length,
+    [files]
+  );
+
+  const sortedFiles = useMemo(() => Array.from(sortFilesByName(files)), [files]);
 
   return (
     <>
-      {/* ✅ Pending resume banner */}
       {(pendingCount > 0 || isResuming) && (
         <div className="mb-4 flex items-center gap-3 bg-cyan-50 border border-cyan-200 rounded-xl px-4 py-3">
           <svg
@@ -328,7 +348,6 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
         </div>
       )}
 
-      {/* ✅ Failed uploads banner */}
       {failedCount > 0 && (
         <div className="mb-4 flex items-center gap-3 bg-rose-50 border border-rose-200 rounded-xl px-4 py-3">
           <Icon
@@ -418,7 +437,7 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
             </div>
             <div className="flex items-center">
               <h5 className="border-r border-gray-200 w-30 text-center text-sm text-gray-600 py-1 px-5">
-                {files.filter((file) => file.state === CustomFileStateType.selected).length}
+                {selectedFilesWithStateSelected.length}
               </h5>
               <h5 className="border-r border-gray-200 w-30 text-center text-sm text-gray-600 py-1 px-5">
                 {files.filter((file) => file.state !== CustomFileStateType.selected).length}
@@ -463,7 +482,7 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
           ) : null}
           <div className="w-full mx-auto max-w-3xl">
             <div className="flex flex-col gap-2">
-              {Array.from(sortFilesByName(files)).map(
+              {sortedFiles.map(
                 ({ id, patientName, state, color, studies, uploadPercentage }, index) => {
                   const showProgressBar =
                     files[index].isAvailableForR2Upload &&
@@ -489,7 +508,7 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
                   return (
                     <div
                       key={id}
-                      className={`${colorClassMap[color] ? colorClassMap[color] : "border bg-white border-gray-200"} p-4 rounded-2xl min-w-0 flex-1`}
+                      className={`${colorClassMap[color] ?? "border bg-white border-gray-200"} p-4 rounded-2xl min-w-0 flex-1`}
                     >
                       <div className="flex">
                         {canSwitchStoreDicom ? (
@@ -504,7 +523,7 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
                               onChange={() =>
                                 handleIsAvailableForR2(
                                   files[index].id,
-                                  files[index].isAvailableForR2Upload,
+                                  files[index].isAvailableForR2Upload
                                 )
                               }
                               className="sr-only peer"
@@ -526,23 +545,23 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
                         </div>
                         <div className="whitespace-nowrap pl-10 flex flex-col gap-2 justify-center flex-shrink-0">
                           {state === CustomFileStateType.duplicated ||
-                          state === CustomFileStateType.inserted
+                            state === CustomFileStateType.inserted
                             ? studies.map(({ id, state }) => (
-                                <div
-                                  key={id}
-                                  className="flex gap-3 items-center bg-slate-100 rounded-lg p-2"
-                                >
-                                  <LinkInsertedOrDuplicated
-                                    id={id}
-                                    userId={userId}
-                                    userRoleId={userRoleId}
-                                    state={state}
-                                    isDuplicated={state === CustomFileStateType.duplicated}
-                                  />
-                                  <ModalToAttachFilesToDicom dicomId={id} defaultPopoverOpen />
-                                  <ModalToCommentDicom dicomId={id} />
-                                </div>
-                              ))
+                              <div
+                                key={id}
+                                className="flex gap-3 items-center bg-slate-100 rounded-lg p-2"
+                              >
+                                <LinkInsertedOrDuplicated
+                                  id={id}
+                                  userId={userId}
+                                  userRoleId={userRoleId}
+                                  state={state}
+                                  isDuplicated={state === CustomFileStateType.duplicated}
+                                />
+                                <ModalToAttachFilesToDicom dicomId={id} defaultPopoverOpen />
+                                <ModalToCommentDicom dicomId={id} />
+                              </div>
+                            ))
                             : null}
                           {displayWarningIcon && (
                             <Icon
@@ -575,27 +594,23 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
                       ) : null}
                     </div>
                   );
-                },
+                }
               )}
             </div>
           </div>
         </div>
       ) : null}
 
-      {files.filter((file) => file.state === CustomFileStateType.selected).length ? (
+      {selectedFilesWithStateSelected.length > 0 ? (
         <UploadInputs
           handleUpload={handleUpload}
           isUploading={uploading}
-          isDisabled={
-            uploading ||
-            files.length === 0 ||
-            files.filter((file) => file.state === CustomFileStateType.selected).length === 0
-          }
-          count={files.filter((file) => file.state === CustomFileStateType.selected).length}
+          isDisabled={uploading || files.length === 0 || selectedFilesWithStateSelected.length === 0}
+          count={selectedFilesWithStateSelected.length}
         />
       ) : null}
 
-      {files.length ? (
+      {files.length > 0 ? (
         <div className="flex justify-center mt-3 w-full">
           <ViewAllDicomsLink userRoleId={userRoleId} />
         </div>

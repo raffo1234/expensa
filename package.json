@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "format": "prettier --write .",
-    "check-format": "prettier --check ."
+    "check-format": "prettier --check .",
+    "deploy:worker": "cd workers/process-dicom && npx wrangler deploy",
+    "deploy:all": "npx wrangler deploy --config workers/process-dicom/wrangler.toml && vercel deploy"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.828.0",
@@ -29,6 +31,7 @@
     "clsx": "^2.1.1",
     "date-fns-tz": "^3.2.0",
     "dcmjs-dimse": "^0.2.7",
+    "dicom-parser": "^1.8.21",
     "docx": "^9.5.0",
     "dompurify": "^3.2.7",
     "fflate": "^0.8.2",
@@ -65,7 +68,7 @@
     "swr": "^2.3.3",
     "text-mask-addons": "^3.8.0",
     "use-debounce": "^10.0.4",
-    "uuid": "^11.1.0",
+    "uuid": "^13.0.0",
     "webpack": "^5.105.2",
     "zod": "^3.24.2",
     "zustand": "^5.0.3"

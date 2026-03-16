@@ -31,11 +31,17 @@ export const processDicomStudyTurbo = async (
   onStateChange?.(CustomFileStateType.processing);
 
   // 3. Create job record — Worker reads this when R2 event fires
-  const { jobId } = await fetch("/api/create-dicom-job", {
+  const jobResponse = await fetch("/api/create-dicom-job", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ storagePath, userId, fileId }),
   }).then((r) => r.json());
+
+  console.log("[create-dicom-job] response:", jobResponse);
+
+  const { jobId } = jobResponse;
+
+  if (!jobId) throw new Error(`Failed to create job: ${JSON.stringify(jobResponse)}`);
 
   // 4. Wait for Supabase Realtime push — no polling
   const studies = await waitForJobCompletion(jobId, onProgress, onStateChange);

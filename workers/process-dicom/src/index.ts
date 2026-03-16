@@ -1,3 +1,4 @@
+/// <reference types="@cloudflare/workers-types" />
 import JSZip from "jszip";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { buildInstance, buildStudy, DicomStudy, parseDicomMetadata } from "./dicomWorkerUtils";

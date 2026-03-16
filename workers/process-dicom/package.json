@@ -16,8 +16,14 @@
         "uuid": "^11"
     },
     "devDependencies": {
-        "@cloudflare/workers-types": "^4",
+        "@cloudflare/workers-types": "^4.20260316.1",
         "typescript": "^5",
         "wrangler": "4"
-    }
+    },
+    "description": "",
+    "main": "index.js",
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "type": "commonjs"
 }

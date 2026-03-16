@@ -12,6 +12,7 @@
         "date-fns": "^4",
         "date-fns-tz": "^3",
         "dicom-parser": "^1.8.21",
+        "fflate": "^0.8.2",
         "jszip": "^3.10.1",
         "uuid": "^11"
     },

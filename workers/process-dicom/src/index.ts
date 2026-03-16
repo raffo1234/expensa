@@ -1,7 +1,7 @@
 /// <reference types="@cloudflare/workers-types" />
-import JSZip from "jszip";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { buildInstance, buildStudy, DicomStudy, parseDicomMetadata } from "./dicomWorkerUtils";
+import { Unzip, UnzipFile, UnzipInflate } from "fflate";
 
 export interface Env {
     DICOM_BUCKET: R2Bucket;
@@ -22,7 +22,6 @@ export default {
             jobId: string;
         };
 
-        // ✅ Fire-and-forget — respond immediately, process in background
         ctx.waitUntil(processZip(storagePath, userId, jobId, env));
 
         return new Response("ok");
@@ -38,11 +37,9 @@ async function processZip(storagePath: string, userId: string, jobId: string, en
         .eq("id", jobId);
 
     try {
+        console.log("[Worker] Fetching zip from R2:", storagePath);
         const zipObject = await env.DICOM_BUCKET.get(storagePath);
         if (!zipObject) throw new Error(`File not found in R2: ${storagePath}`);
-
-        const zipBuffer = await zipObject.arrayBuffer();
-        const zip = await new JSZip().loadAsync(zipBuffer);
 
         const parsedResults: Array<{
             sUID: string;
@@ -51,36 +48,70 @@ async function processZip(storagePath: string, userId: string, jobId: string, en
             metadata: NonNullable<ReturnType<typeof parseDicomMetadata>>;
         }> = [];
 
-        await Promise.allSettled(
-            Object.entries(zip.files)
-                .filter(
-                    ([path, file]) =>
-                        !file.dir &&
-                        !path.includes("__MACOSX") &&
-                        !path.toLowerCase().includes("dicomdir")
-                )
-                .map(async ([path, file]) => {
-                    try {
-                        const buffer = await file.async("uint8array");
-                        if (buffer.length === 0) return;
+        console.log("[Worker] Starting stream...");
+        await new Promise<void>((resolve, reject) => {
+            const unzip = new Unzip((file: UnzipFile) => {
+                const path = file.name;
+                console.log("[Worker] File in zip:", path);
+                if (
+                    path.includes("__MACOSX") ||
+                    path.toLowerCase().includes("dicomdir") ||
+                    path.endsWith("/")
+                ) {
+                    file.ondata = () => { };
+                    return;
+                }
+
+                const chunks: Uint8Array[] = [];
+                file.ondata = (err, chunk, final) => {
+                    if (err) { console.error("[Worker] ondata error:", err); return; }
+                    chunks.push(chunk);
+                    if (final) {
+                        console.log("[Worker] File complete:", path, "size:", chunks.reduce((a, c) => a + c.length, 0));
+                        const buffer = new Uint8Array(chunks.reduce((a, c) => a + c.length, 0));
+                        let offset = 0;
+                        for (const c of chunks) { buffer.set(c, offset); offset += c.length; }
 
                         const metadata = parseDicomMetadata(buffer);
-                        if (!metadata?.studyInstanceUID) return;
+                        if (!metadata?.studyInstanceUID) {
+                            console.warn("[Worker] No studyInstanceUID for:", path);
+                            return;
+                        }
 
                         const sUID = metadata.studyInstanceUID;
                         const destPath = `dicom/${userId}/${sUID}/${metadata.seriesInstanceUID}/${metadata.sopInstanceUID}.dcm`;
-
-                        await env.DICOM_BUCKET.put(destPath, buffer, {
-                            httpMetadata: { contentType: "application/dicom" },
-                        });
-
                         parsedResults.push({ sUID, destPath, buffer, metadata });
-                    } catch (err) {
-                        console.error(`[Worker] Error processing ${path}:`, err);
                     }
-                })
+                };
+                file.start();
+            });
+
+            unzip.register(UnzipInflate);
+
+            const reader = zipObject.body!.getReader();
+            const pump = (): Promise<void> =>
+                reader.read().then(({ done, value }) => {
+                    if (done) { unzip.push(new Uint8Array(0), true); resolve(); return; }
+                    unzip.push(value);
+                    return pump();
+                }).catch(reject);
+
+            pump();
+        });
+
+        console.log("[Worker] Stream done. Parsed files:", parsedResults.length);
+
+        // ✅ Upload to R2 after streaming is complete
+        console.log("[Worker] Uploading to R2...");
+        await Promise.allSettled(
+            parsedResults.map(async ({ destPath, buffer }) => {
+                await env.DICOM_BUCKET.put(destPath, buffer, {
+                    httpMetadata: { contentType: "application/dicom" },
+                });
+            })
         );
 
+        console.log("[Worker] Building studies map...");
         const studiesMap = new Map<string, DicomStudy>();
         for (const { sUID, destPath, metadata } of parsedResults) {
             if (!studiesMap.has(sUID)) {
@@ -91,10 +122,13 @@ async function processZip(storagePath: string, userId: string, jobId: string, en
             );
         }
 
+        console.log("[Worker] Inserting studies into Supabase...");
         const insertedStudies = await batchInsertStudies(studiesMap, userId, supabase);
 
+        console.log("[Worker] Deleting zip from R2...");
         await env.DICOM_BUCKET.delete(storagePath);
 
+        console.log("[Worker] Done. Studies:", insertedStudies.length);
         await supabase
             .from("dicom_processing_job")
             .update({
@@ -105,6 +139,7 @@ async function processZip(storagePath: string, userId: string, jobId: string, en
             .eq("id", jobId);
 
     } catch (error) {
+        console.error("[Worker] Error:", error);
         await supabase
             .from("dicom_processing_job")
             .update({

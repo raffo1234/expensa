@@ -1,7 +1,7 @@
-import { DicomInstance } from "@/lib/processDicomStudyTurbo";
 import { supabase } from "@/lib/supabase";
 import { DicomTableRow } from "@/types/Dicom";
 import { NextResponse } from "next/server";
+import { DicomInstance } from "../../../../../workers/process-dicom/src/dicomWorkerUtils";
 
 // Interfaces estrictas para el Schema de OHIF/Cornerstone
 interface OHIFInstance {

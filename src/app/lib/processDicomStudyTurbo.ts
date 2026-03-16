@@ -6,7 +6,7 @@ export const processDicomStudyTurbo = async (
   selectedFile: File,
   userId: string,
   fileId: string,
-  setFiles: React.Dispatch<React.SetStateAction<CustomFileType[]>>,
+  _setFiles: React.Dispatch<React.SetStateAction<CustomFileType[]>>,
   onProgress?: (percent: number) => void,
   onStateChange?: (state: CustomFileStateType) => void,
 ): Promise<string[]> => {
@@ -86,6 +86,7 @@ const waitForJobCompletion = (
           const { status, studies, error } = payload.new;
 
           if (status === "done") {
+            onStateChange?.(CustomFileStateType.inserted);
             channel.unsubscribe();
             resolve(studies.map((s: { id: string }) => s.id));
           }

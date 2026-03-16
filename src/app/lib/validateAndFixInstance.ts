@@ -1,4 +1,4 @@
-import { DicomInstance } from "./processDicomStudyTurbo";
+import { DicomInstance } from "../../../workers/process-dicom/src/dicomWorkerUtils";
 
 export function validateAndFixInstance(inst: DicomInstance): DicomInstance {
   // 1. Validar Dimensiones (Evita imágenes negras/crashes)

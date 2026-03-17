@@ -27,7 +27,7 @@ export interface DicomMetadata {
   pixelSpacing?: [number, number];
   imageOrientation?: [number, number, number, number, number, number];
   imagePosition?: [number, number, number];
-  sliceThickness?: number; // Añadido para reconstrucción 3D
+  sliceThickness?: number;
   windowCenter?: number;
   windowWidth?: number;
   rescaleIntercept?: number;
@@ -41,6 +41,56 @@ export interface DicomMetadata {
 const NAMESPACE = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
 const cleanString = (val: string | undefined) => val?.replace(/[\0\s]+$/g, "").trim();
 
+/**
+ * Converts WindowCenter/WindowWidth from physical units to pixel space.
+ *
+ * Some ADC series store window values in physical units (mm²/s, m²/s)
+ * instead of pixel values. The viewer needs pixel space values.
+ *
+ * Examples from ADC series:
+ *   eADC:        WC=0.48,           RescaleSlope=2.67e-7  → needs conversion
+ *   ADC (mm²/s): WC=0.002,          RescaleSlope=1e-6     → needs conversion
+ *   ADC (m²/s):  WC=0.000000002,    RescaleSlope=1e-12    → needs conversion
+ *   ADC (10^-6): WC=2046,           RescaleSlope=1        → already correct
+ *   MR standard: WC=500,            RescaleSlope=1        → already correct
+ *
+ * Detection: if |WindowCenter| < 1 and RescaleSlope is defined and != 1
+ * then values are in physical units and need to be converted.
+ */
+const normalizeWindowToPixelSpace = (
+  windowCenter: number | undefined,
+  windowWidth: number | undefined,
+  rescaleSlope: number | undefined,
+  rescaleIntercept: number | undefined,
+): { windowCenter: number | undefined; windowWidth: number | undefined } => {
+  if (windowCenter === undefined || windowWidth === undefined) {
+    return { windowCenter, windowWidth };
+  }
+
+  const slope = rescaleSlope ?? 1;
+  const intercept = rescaleIntercept ?? 0;
+
+  // If values are already in pixel space (>= 1), no conversion needed
+  if (Math.abs(windowCenter) >= 1) {
+    return { windowCenter, windowWidth };
+  }
+
+  // Values are in physical units — slope is effectively 0 or 1 with no rescale
+  if (slope === 0 || slope === 1) {
+    return { windowCenter, windowWidth };
+  }
+
+  // Convert physical → pixel space
+  // pixel = (physical - intercept) / slope
+  const normalizedCenter = Math.round((windowCenter - intercept) / slope);
+  const normalizedWidth = Math.round(windowWidth / slope);
+
+  return {
+    windowCenter: normalizedCenter,
+    windowWidth: normalizedWidth,
+  };
+};
+
 export async function getDICOMMetadata(file: Blob): Promise<DicomMetadata | null> {
   try {
     const buffer = await file.arrayBuffer();
@@ -49,7 +99,6 @@ export async function getDICOMMetadata(file: Blob): Promise<DicomMetadata | null
 
     const studyUID = cleanString(dataset.string("x0020000d")) || "unknown_study";
 
-    // Helper con normalización a 6 decimales para consistencia geométrica
     const parseTagToNumbers = (tag: string): number[] | undefined => {
       const val = dataset.string(tag);
       if (!val) return undefined;
@@ -57,7 +106,6 @@ export async function getDICOMMetadata(file: Blob): Promise<DicomMetadata | null
         .split("\\")
         .map((n) => {
           const parsed = parseFloat(n);
-          // Normalizamos a 6 decimales para que OHIF no vea "inconsistencias" por redondeo
           return Number(parsed.toFixed(6));
         })
         .filter((n) => !isNaN(n));
@@ -70,13 +118,27 @@ export async function getDICOMMetadata(file: Blob): Promise<DicomMetadata | null
       return isNaN(parsed) ? fallback : parsed;
     };
 
-    // Extraer datos geométricos primero
     const orientation = parseTagToNumbers("x00200037") as
       | [number, number, number, number, number, number]
       | undefined;
     const position = parseTagToNumbers("x00200032") as [number, number, number] | undefined;
     const spacing = parseTagToNumbers("x00280030") as [number, number] | undefined;
     const thickness = safeFloat("x00180050");
+
+    const rescaleSlope = safeFloat("x00281053");
+    const rescaleIntercept = safeFloat("x00281052");
+
+    // Extract raw window values from DICOM tags
+    const rawWindowCenter = safeFloat("x00281050");
+    const rawWindowWidth = safeFloat("x00281051");
+
+    // ✅ Normalize to pixel space — fixes ADC series appearing black
+    const { windowCenter, windowWidth } = normalizeWindowToPixelSpace(
+      rawWindowCenter,
+      rawWindowWidth,
+      rescaleSlope,
+      rescaleIntercept,
+    );
 
     return {
       studyInstanceUID: studyUID,
@@ -112,17 +174,16 @@ export async function getDICOMMetadata(file: Blob): Promise<DicomMetadata | null
       highBit: dataset.uint16("x00280102") || 15,
       pixelRepresentation: dataset.uint16("x00280103") || 0,
 
-      // Geometría normalizada
       pixelSpacing: spacing,
       imageOrientation: orientation,
       imagePosition: position,
       sliceThickness: thickness,
 
-      // Ventaneo y rescale
-      windowCenter: safeFloat("x00281050"),
-      windowWidth: safeFloat("x00281051"),
-      rescaleIntercept: safeFloat("x00281052"),
-      rescaleSlope: safeFloat("x00281053"),
+      // ✅ Normalized window values — correct for all ADC types
+      windowCenter,
+      windowWidth,
+      rescaleIntercept,
+      rescaleSlope,
       rescaleType: cleanString(dataset.string("x00281054")),
       samplesPerPixel: dataset.uint16("x00280002") ?? 1,
       photometricInterpretation: cleanString(dataset.string("x00280004")) ?? "MONOCHROME2",

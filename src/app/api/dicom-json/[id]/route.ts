@@ -3,7 +3,42 @@ import { DicomTableRow } from "@/types/Dicom";
 import { NextResponse } from "next/server";
 import { DicomInstance } from "../../../../../workers/process-dicom/src/dicomWorkerUtils";
 
-// Interfaces estrictas para el Schema de OHIF/Cornerstone
+// --- WINDOW NORMALIZATION ---
+// Fixes ADC series (eADC, ADC mm²/s, ADC m²/s) that store WindowCenter
+// in physical units instead of pixel space — causing black images in OHIF.
+//
+// Detection: |WindowCenter| < 1 AND RescaleSlope is defined and not 0 or 1
+// Conversion: pixel = (physical - RescaleIntercept) / RescaleSlope
+const normalizeWindow = (
+  windowCenter: number | undefined,
+  windowWidth: number | undefined,
+  rescaleSlope: number | undefined,
+  rescaleIntercept: number | undefined,
+): { windowCenter: number | undefined; windowWidth: number | undefined } => {
+  if (windowCenter === undefined || windowWidth === undefined) {
+    return { windowCenter, windowWidth };
+  }
+
+  // Already in pixel space
+  if (Math.abs(windowCenter) >= 1) {
+    return { windowCenter, windowWidth };
+  }
+
+  const slope = rescaleSlope ?? 1;
+  const intercept = rescaleIntercept ?? 0;
+
+  // Can't convert without a meaningful slope
+  if (slope === 0 || slope === 1) {
+    return { windowCenter, windowWidth };
+  }
+
+  return {
+    windowCenter: Math.round((windowCenter - intercept) / slope),
+    windowWidth: Math.round(windowWidth / slope),
+  };
+};
+
+// Interfaces
 interface OHIFInstance {
   metadata: {
     SOPInstanceUID: string;
@@ -60,8 +95,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       const sUID = inst.series_instance_uid;
 
       if (!seriesMap.has(sUID)) {
-        // Normalización estricta de Orientación (Warning #1 fix)
-        // Forzamos 6 decimales para que todos los vectores sean IDÉNTICOS
         const rawOri = inst.image_orientation || [1, 0, 0, 0, 1, 0];
         orientationCache.set(
           sUID,
@@ -82,6 +115,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       s.NumInstances++;
 
       if (!seriesUid || sUID === seriesUid) {
+        // ✅ Normalize window values — fixes ADC black image bug
+        const { windowCenter, windowWidth } = normalizeWindow(
+          typeof inst.window_center === "number" ? inst.window_center : undefined,
+          typeof inst.window_width === "number" ? inst.window_width : undefined,
+          typeof inst.rescale_slope === "number" ? inst.rescale_slope : undefined,
+          typeof inst.rescale_intercept === "number" ? inst.rescale_intercept : undefined,
+        );
+
         s.instances.push({
           metadata: {
             SOPInstanceUID: inst.sop_instance_uid,
@@ -104,8 +145,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
               : [0, 0, inst.instance_number],
             SliceThickness: inst.slice_thickness || 1,
             SpacingBetweenSlices: inst.slice_thickness || 1,
-            ...(typeof inst.window_center === "number" && { WindowCenter: inst.window_center }),
-            ...(typeof inst.window_width === "number" && { WindowWidth: inst.window_width }),
+            // ✅ Use normalized values
+            ...(typeof windowCenter === "number" && { WindowCenter: windowCenter }),
+            ...(typeof windowWidth === "number" && { WindowWidth: windowWidth }),
             ...(typeof inst.rescale_intercept === "number" && {
               RescaleIntercept: inst.rescale_intercept,
             }),
@@ -119,36 +161,27 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       }
     }
 
-    // --- NORMALIZACIÓN GEOMÉTRICA RADICAL ---
+    // --- GEOMETRIC NORMALIZATION ---
     seriesMap.forEach((series, sUID) => {
       const isMultiFrame =
         allInstances.find((i) => i.series_instance_uid === sUID)?.number_of_frames ?? 1;
       if (series.instances.length > 1 && isMultiFrame <= 1) {
-        // 1. Ordenar físicamente por Z
         series.instances.sort(
           (a, b) => a.metadata.ImagePositionPatient[2] - b.metadata.ImagePositionPatient[2],
         );
 
-        // 2. Determinar la dirección del stack (ascendente o descendente)
         const z0 = series.instances[0].metadata.ImagePositionPatient[2];
         const zLast =
           series.instances[series.instances.length - 1].metadata.ImagePositionPatient[2];
 
-        // Calcular el espaciado PROMEDIO para ignorar irregularidades locales (Fix Warning #2 y #3)
         const totalDistance = Math.abs(zLast - z0);
         const averageSpacing = Number((totalDistance / (series.instances.length - 1)).toFixed(4));
         const direction = zLast > z0 ? 1 : -1;
 
-        // 3. Forzar alineación perfecta
         series.instances.forEach((inst, index) => {
-          // Fix Warning #4 (InstanceNumber correlativo)
           inst.metadata.InstanceNumber = index + 1;
-
-          // Re-posicionamiento matemático exacto
           const forcedZ = Number((z0 + index * averageSpacing * direction).toFixed(4));
           inst.metadata.ImagePositionPatient[2] = forcedZ;
-
-          // Forzamos el espaciado para que el visor no detecte "gaps"
           inst.metadata.SliceThickness = averageSpacing;
           inst.metadata.SpacingBetweenSlices = averageSpacing;
         });

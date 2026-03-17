@@ -525,7 +525,7 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
                   return (
                     <div
                       key={id}
-                      className={`relative ${colorClassMap[color] ?? "border bg-white border-gray-200"} px-5 py-4 rounded-2xl min-w-0 flex-1`}
+                      className={`relative ${colorClassMap[color] ?? "border bg-white border-gray-200"} px-5 py-4 rounded-3xl min-w-0 flex-1`}
                     >
                       {canRemove && (
                         <button
@@ -590,7 +590,7 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
                             ? studies.map(({ id, state }) => (
                                 <div
                                   key={id}
-                                  className="flex gap-3 items-center bg-slate-100 rounded-lg p-2"
+                                  className="flex gap-2 items-center bg-slate-100 rounded-full p-2"
                                 >
                                   <LinkInsertedOrDuplicated
                                     id={id}

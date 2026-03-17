@@ -33,6 +33,8 @@ export const colorClassMap: Record<string, string> = {
   "green-50": "bg-green-50 border border-green-200",
   "yellow-50": "bg-yellow-50 border border-yellow-300",
   "cyan-50": "bg-cyan-50 border border-cyan-200",
+  "emerald-50": "bg-emerald-50 border border-emerald-200",
+  "gray-50": "bg-gray-50 border border-gray-200",
 };
 
 export const SWR_KEY_USER_ROLE = "user-role";

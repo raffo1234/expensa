@@ -7,7 +7,7 @@ export default function InnerCircularButton({
   isDisabled = false,
   children = "",
 }: {
-  title: string;
+  title?: string;
   isActive?: boolean;
   isDisabled?: boolean;
   children?: React.ReactNode;
@@ -15,6 +15,26 @@ export default function InnerCircularButton({
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const onMouseEnter = () => setIsPopoverOpen(true);
   const onMouseLeave = () => setIsPopoverOpen(false);
+
+  const button = (
+    <span
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      className={`p-2 flex transition-colors duration-300 border rounded-full ${
+        isDisabled
+          ? "cursor-not-allowed opacity-50 pointer-events-none border-cyan-200 text-cyan-200 bg-white"
+          : `cursor-pointer ${
+              isActive
+                ? "bg-cyan-300 border-cyan-300 hover:bg-cyan-400 text-white"
+                : "text-cyan-400 border-cyan-200 bg-white hover:bg-cyan-50"
+            }`
+      }`}
+    >
+      {children}
+    </span>
+  );
+
+  if (!title) return button;
 
   return (
     <Popover
@@ -24,22 +44,13 @@ export default function InnerCircularButton({
       content={
         <div
           className={`${isPopoverOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"}
-                  pointer-events-none text-white px-3 py-2 max-w-48 bg-slate-800 rounded-lg transition-all duration-300 ease-in-out`}
+          pointer-events-none text-white px-3 py-2 max-w-48 bg-slate-800 rounded-lg transition-all duration-300 ease-in-out`}
         >
           {title}
         </div>
       }
     >
-      <span
-        onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
-        className={`p-2 flex transition-colors duration-300 border rounded-full ${isDisabled
-          ? "cursor-not-allowed opacity-50 pointer-events-none border-cyan-200 text-cyan-200 bg-white"
-          : `cursor-pointer ${isActive ? "bg-cyan-300 border-cyan-300 hover:bg-cyan-400 text-white" : "text-cyan-400 border-cyan-200 bg-white hover:bg-cyan-50"}`
-          }`}
-      >
-        {children}
-      </span>
+      {button}
     </Popover>
   );
 }

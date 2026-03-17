@@ -7,6 +7,7 @@ import { Permissions } from "@/types/propertyState";
 import useCheckPermission from "@/hooks/useCheckPermission";
 import AssignDicomToTrigger from "./AssignDicomToTrigger";
 import { ICON_SIZE } from "@/constants";
+import InnerCircularButton from "./InnerCircularButton";
 
 function LinkInsertedOrDuplicatedContent({
   state,
@@ -16,15 +17,12 @@ function LinkInsertedOrDuplicatedContent({
   isDuplicated: boolean;
 }) {
   return (
-    <div className="flex gap-2">
-      <span>{state}</span>
-      <div className="rounded-sm w-5 h-5 flex items-center justify-center bg-cyan-400 text-white">
-        <Icon
-          icon={`${isDuplicated ? "akar-icons:double-check" : "akar-icons:check"}`}
-          fontSize={ICON_SIZE}
-        />
-      </div>
-    </div>
+    <InnerCircularButton title={`Go to ${state} study`}>
+      <Icon
+        icon={`${isDuplicated ? "sidekickicons:check-double-20-solid" : "akar-icons:check"}`}
+        fontSize={ICON_SIZE}
+      />
+    </InnerCircularButton>
   );
 }
 
@@ -57,7 +55,7 @@ export default function LinkInsertedOrDuplicated({
           target="_blank"
           href={`/admin/dicoms/${id}`}
           onMouseEnter={() => router.prefetch(`/admin/dicoms/${id}`)}
-          className="text-sm hover:underline text-cyan-500 mt-0.5 first:mt-0 block underline-offset-4"
+          className="hover:underline text-cyan-500 underline-offset-4"
         >
           <LinkInsertedOrDuplicatedContent isDuplicated={isDuplicated} state={state} />
         </Link>

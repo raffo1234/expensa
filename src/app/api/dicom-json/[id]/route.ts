@@ -5,36 +5,52 @@ import { DicomInstance } from "../../../../../workers/process-dicom/src/dicomWor
 
 // --- WINDOW NORMALIZATION ---
 // Fixes ADC series (eADC, ADC mm²/s, ADC m²/s) that store WindowCenter
-// in physical units instead of pixel space — causing black images in OHIF.
+// in physical units with tiny RescaleSlope — causing black images in OHIF.
 //
-// Detection: |WindowCenter| < 1 AND RescaleSlope is defined and not 0 or 1
-// Conversion: pixel = (physical - RescaleIntercept) / RescaleSlope
+// OHIF bug: when RescaleSlope < ~0.01, it ignores WindowCenter from JSON
+// and recalculates VOI from raw pixel data with wrong windowing.
+//
+// Fix: pre-apply the rescale into WindowCenter/WindowWidth, then
+// neutralize RescaleSlope=1 / RescaleIntercept=0 so OHIF doesn't double-apply.
 const normalizeWindow = (
   windowCenter: number | undefined,
   windowWidth: number | undefined,
   rescaleSlope: number | undefined,
   rescaleIntercept: number | undefined,
-): { windowCenter: number | undefined; windowWidth: number | undefined } => {
+): {
+  windowCenter: number | undefined;
+  windowWidth: number | undefined;
+  rescaleSlope: number | undefined;
+  rescaleIntercept: number | undefined;
+} => {
   if (windowCenter === undefined || windowWidth === undefined) {
-    return { windowCenter, windowWidth };
-  }
-
-  // Already in pixel space
-  if (Math.abs(windowCenter) >= 1) {
-    return { windowCenter, windowWidth };
+    return { windowCenter, windowWidth, rescaleSlope, rescaleIntercept };
   }
 
   const slope = rescaleSlope ?? 1;
   const intercept = rescaleIntercept ?? 0;
 
-  // Can't convert without a meaningful slope
+  // Slope is normal — pass through unchanged
   if (slope === 0 || slope === 1) {
-    return { windowCenter, windowWidth };
+    return { windowCenter, windowWidth, rescaleSlope, rescaleIntercept };
   }
 
+  // Values are in physical units (sub-pixel) — convert to pixel space
+  // OR slope is abnormally small — pre-apply to avoid OHIF double-apply bug
+  const normalizedCenter =
+    Math.abs(windowCenter) < 1
+      ? Math.round((windowCenter - intercept) / slope) // physical → pixel
+      : windowCenter; // already pixel space, keep as-is
+
+  const normalizedWidth =
+    Math.abs(windowCenter) < 1 ? Math.round(windowWidth / slope) : windowWidth;
+
   return {
-    windowCenter: Math.round((windowCenter - intercept) / slope),
-    windowWidth: Math.round(windowWidth / slope),
+    windowCenter: normalizedCenter,
+    windowWidth: normalizedWidth,
+    // ✅ Neutralize slope so OHIF doesn't rescale again
+    rescaleSlope: 1,
+    rescaleIntercept: 0,
   };
 };
 
@@ -115,8 +131,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       s.NumInstances++;
 
       if (!seriesUid || sUID === seriesUid) {
-        // ✅ Normalize window values — fixes ADC black image bug
-        const { windowCenter, windowWidth } = normalizeWindow(
+        // ✅ Normalize window — fixes ADC black image bug for all ADC variants
+        const { windowCenter, windowWidth, rescaleSlope, rescaleIntercept } = normalizeWindow(
           typeof inst.window_center === "number" ? inst.window_center : undefined,
           typeof inst.window_width === "number" ? inst.window_width : undefined,
           typeof inst.rescale_slope === "number" ? inst.rescale_slope : undefined,
@@ -145,13 +161,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
               : [0, 0, inst.instance_number],
             SliceThickness: inst.slice_thickness || 1,
             SpacingBetweenSlices: inst.slice_thickness || 1,
-            // ✅ Use normalized values
             ...(typeof windowCenter === "number" && { WindowCenter: windowCenter }),
             ...(typeof windowWidth === "number" && { WindowWidth: windowWidth }),
-            ...(typeof inst.rescale_intercept === "number" && {
-              RescaleIntercept: inst.rescale_intercept,
-            }),
-            ...(typeof inst.rescale_slope === "number" && { RescaleSlope: inst.rescale_slope }),
+            ...(typeof rescaleIntercept === "number" && { RescaleIntercept: rescaleIntercept }),
+            ...(typeof rescaleSlope === "number" && { RescaleSlope: rescaleSlope }),
             ...(inst.rescale_type && { RescaleType: inst.rescale_type }),
             ...(inst.number_of_frames &&
               inst.number_of_frames > 1 && { NumberOfFrames: inst.number_of_frames }),

@@ -42,7 +42,9 @@ const compressedMimeTypes = [
   "application/zip",
   "application/x-zip-compressed",
   "application/x-compressed",
-  "application/x-rar-compressed",
+  "application/x-rar-compressed", // RAR4
+  "application/vnd.rar", // ✅ RAR5 (WinRAR 5+)
+  "application/x-rar", // ✅ RAR fallback
 ];
 
 const compressedExtensions: Record<string, string[]> = {
@@ -50,6 +52,8 @@ const compressedExtensions: Record<string, string[]> = {
   "application/x-zip-compressed": [".zip"],
   "application/x-compressed": [".rar"],
   "application/x-rar-compressed": [".rar"],
+  "application/vnd.rar": [".rar"], // ✅ RAR5
+  "application/x-rar": [".rar"], // ✅ RAR fallback
 };
 
 // ✅ Precomputed outside component — never recreated
@@ -72,7 +76,7 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
   const t = useTranslations("Uploader");
   const tZip = useTranslations("UploaderZip");
   const tDcm = useTranslations("UploaderDcm");
-  console.log(userEmail);
+  console.log(userEmail)
   const { hasPermission: storeByDefault } = useCheckPermission(
     userRoleId,
     Permissions.STORE_BY_DEFAULT,
@@ -120,9 +124,12 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
       for (const file of acceptedFiles) {
         const fileBuffer = await file.arrayBuffer();
         const extensionFromBuffer = await fileTypeFromBuffer(fileBuffer);
+        const fileExt = file.name.split(".").pop()?.toLowerCase();
+
+        // ✅ Fallback to extension when mime detection fails (common with RAR5)
         const isCompressed = extensionFromBuffer
           ? compressedMimeTypes.includes(extensionFromBuffer.mime)
-          : false;
+          : fileExt === "zip" || fileExt === "rar";
 
         if (isCompressed) {
           compressedFilesList.push(file);
@@ -282,7 +289,6 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
     [selectAllFiles],
   );
 
-  // ✅ All derived values memoized — not recomputed on every render
   const selectedFilesWithStateSelected = useMemo(
     () => files.filter((file) => file.state === CustomFileStateType.selected),
     [files],

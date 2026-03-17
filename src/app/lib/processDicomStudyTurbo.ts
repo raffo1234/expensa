@@ -274,7 +274,7 @@ export const processDicomStudyTurbo = async (
         fileBuffers.push({ name: path, buffer });
       }
     }
-  } else if (mime.includes("rar") || ext === "rar") {
+  } else if (mime.includes("rar") || mime.includes("vnd.rar") || ext === "rar") {
     const archive = await Archive.open(selectedFile);
     const files = (await archive.extractFiles()) as Record<string, ArchiveFile>;
     for (const [path, fileContent] of Object.entries(files)) {

@@ -1,5 +1,6 @@
 "use client";
 
+import PopoverInnerButton from "@/components/PopoverInnerButton";
 import { Permissions } from "@/types/propertyState";
 import { fileTypeFromBuffer } from "file-type";
 import { Archive } from "libarchive.js";
@@ -18,7 +19,7 @@ import LinkInsertedOrDuplicated from "./LinkInsertedOrDuplicated";
 import { UPLOAD_OPTION } from "@/enums/uploadOption";
 import { compressFiles } from "@/lib/compressFiles";
 import { UploaderR2Props } from "@/types/Dicom";
-import { colorClassMap } from "@/constants";
+import { colorClassMap, ICON_SIZE } from "@/constants";
 import ModalToAttachFilesToDicom from "./ModalToAttachFilesToDicom";
 import ModalToCommentDicom from "./ModalToCommentDicom";
 import { useTranslations } from "next-intl";
@@ -76,7 +77,9 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
   const t = useTranslations("Uploader");
   const tZip = useTranslations("UploaderZip");
   const tDcm = useTranslations("UploaderDcm");
-  console.log(userEmail)
+  // userEmail will be used for email notifications after upload
+  void userEmail;
+
   const { hasPermission: storeByDefault } = useCheckPermission(
     userRoleId,
     Permissions.STORE_BY_DEFAULT,
@@ -270,6 +273,10 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
 
   const handleIsAvailableForR2 = useCallback((id: string, isAvailableForR2Upload: boolean) => {
     editCustomFileById(setFiles, id, { isAvailableForR2Upload: !isAvailableForR2Upload });
+  }, []);
+
+  const handleRemoveFile = useCallback((id: string) => {
+    setFiles((prev) => prev.filter((f) => f.id !== id));
   }, []);
 
   const selectAllFiles = useCallback((shouldSelect: boolean): void => {
@@ -485,7 +492,7 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
             </div>
           ) : null}
           <div className="w-full mx-auto max-w-3xl">
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-3">
               {sortedFiles.map(
                 ({ id, patientName, state, color, studies, uploadPercentage }, index) => {
                   const showProgressBar =
@@ -509,11 +516,41 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
                     CustomFileStateType.errorUploading,
                   ].includes(state);
 
+                  const canRemove = ![
+                    CustomFileStateType.processing,
+                    CustomFileStateType.uploading,
+                    CustomFileStateType.inserting,
+                  ].includes(state);
+
                   return (
                     <div
                       key={id}
-                      className={`${colorClassMap[color] ?? "border bg-white border-gray-200"} p-4 rounded-2xl min-w-0 flex-1`}
+                      className={`relative ${colorClassMap[color] ?? "border bg-white border-gray-200"} px-5 py-4 rounded-2xl min-w-0 flex-1`}
                     >
+                      {canRemove && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveFile(id);
+                          }}
+                          className="absolute -top-4 -right-3 h-8 w-8 rounded-full cursor-pointer hover:text-rose-500 border border-rose-200 text-rose-400 bg-rose-50 transition-colors duration-300"
+                          title="Quitar de la lista"
+                        >
+                          <PopoverInnerButton title="Quitar de la lista">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width={ICON_SIZE}
+                              height={ICON_SIZE}
+                              viewBox="0 0 1024 1024"
+                            >
+                              <path
+                                fill="currentColor"
+                                d="M764.3 214.6L512 466.9L259.7 214.6a32 32 0 0 0-45.1 45.1L466.8 512L214.5 764.2a32 32 0 1 0 45.1 45.2L512 557.2l252.3 252.3a32 32 0 0 0 45.1-45.1L557.1 512l252.3-252.4a32 32 0 1 0-45.1-45.2z"
+                              />
+                            </svg>
+                          </PopoverInnerButton>
+                        </button>
+                      )}
                       <div className="flex">
                         {canSwitchStoreDicom ? (
                           <label

@@ -559,7 +559,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                   return (
                     <div key={id} className="flex items-center gap-1">
                       <div
-                        className={`${colorClassMap[color] ? colorClassMap[color] : "border bg-white border-gray-200"} px-4 py-3 rounded-lg min-w-0`}
+                        className={`${colorClassMap[color] ? colorClassMap[color] : "border bg-white border-gray-200"} w-full px-4 py-3 rounded-lg min-w-0`}
                       >
                         <div className="flex">
                           {canSwitchStoreDicom ? (

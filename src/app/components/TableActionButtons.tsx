@@ -31,7 +31,7 @@ function DeleteLegacyButton({ dicom, mutate }: { dicom: DicomType; mutate: () =>
       className="aspect-square p-2 hover:bg-white flex-shrink-0 transition-colors duration-300 cursor-pointer bg-gray-100 rounded-full border-gray-200 border-dashed border text-rose-400 flex items-center justify-center"
     >
       {isDeleting ? (
-        <Icon icon="solar:record-broken" className="animate-spin" fontSize={24} />
+        <Icon icon="solar:record-broken" className="animate-spin" fontSize={ICON_SIZE} />
       ) : (
         <svg
           xmlns="http://www.w3.org/2000/svg"

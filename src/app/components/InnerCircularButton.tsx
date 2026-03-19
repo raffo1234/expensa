@@ -7,7 +7,7 @@ export default function InnerCircularButton({
   isDisabled = false,
   children = "",
 }: {
-  title?: string;
+  title?: React.ReactNode;
   isActive?: boolean;
   isDisabled?: boolean;
   children?: React.ReactNode;

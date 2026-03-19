@@ -31,6 +31,7 @@ import useCheckPermission from "@/hooks/useCheckPermission";
 import { AttachmentsSkeleton, GadgetReportSkeleton } from "./LoadingReportComponent";
 import DownloadStudyButton from "./DownloadStudyButton";
 import InnerCircularButton from "./InnerCircularButton";
+import VisorWebButton from "./VisorWebButton";
 
 export default function Report({
   templates,
@@ -281,12 +282,18 @@ export default function Report({
               }
             />
             <ModalToDisplayDicomComment comment={dicom.comment} />
+            {dicom.instances ? (
+              <VisorWebButton
+                isActiveButton={true}
+                dicomId={dicom.id}
+                instances={dicom.instances}
+              />
+            ) : null}
           </>
         ) : (
           <AttachmentsSkeleton />
         )}
       </div>
-
       <div className="z-20 relative">
         <Sticky>
           <div className="bg-gray-50/50 py-4">

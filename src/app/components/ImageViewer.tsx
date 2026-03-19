@@ -10,7 +10,7 @@ type Props = {
   title?: string;
 };
 
-export const ImageViewer = ({ src, alt = "", title }: Props) => {
+export const ImageViewer = ({ src, alt = "", title = "" }: Props) => {
   const [zoom, setZoom] = useState<number>(1.0);
   const [rotation, setRotation] = useState<number>(0);
 
@@ -38,8 +38,8 @@ export const ImageViewer = ({ src, alt = "", title }: Props) => {
           <Image
             priority
             src={src}
-            alt={alt}
-            title={title}
+            alt={alt ?? "image"}
+            title={title ?? "image"}
             fill
             className="object-contain"
             sizes="200vw"

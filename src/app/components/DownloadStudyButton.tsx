@@ -1,10 +1,7 @@
 import { DicomInstance } from "@/types/dicomType";
 import DownloadAllInstancesZipped from "./DownloadAllInstancesZipped";
 import DownloadZippedStudyButton from "./DownloadZippedStudyButton";
-
-const hasData = (instances?: DicomInstance[] | null): boolean => {
-  return Array.isArray(instances) && instances.length > 0;
-};
+import hasDicomInstances from "@/lib/hasDicomInstances";
 
 export default function DownloadStudyButton({
   dicomIds,
@@ -19,7 +16,7 @@ export default function DownloadStudyButton({
   dicomUrl?: string | null;
   instances?: DicomInstance[] | null;
 }) {
-  const hasInstances = hasData(instances);
+  const hasInstances = hasDicomInstances(instances);
 
   return (
     <>

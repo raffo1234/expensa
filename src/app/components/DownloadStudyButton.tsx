@@ -1,21 +1,38 @@
+import { DicomInstance } from "@/types/dicomType";
 import DownloadAllInstancesZipped from "./DownloadAllInstancesZipped";
 import DownloadZippedStudyButton from "./DownloadZippedStudyButton";
 
+const hasData = (instances?: DicomInstance[] | null): boolean => {
+  return Array.isArray(instances) && instances.length > 0;
+};
+
 export default function DownloadStudyButton({
   dicomIds,
-  dicomUrl,
-  hasInstances,
-  filename,
+  isButtonActive = false,
+  filename = "",
+  dicomUrl = null,
+  instances = [],
 }: {
   dicomIds: string[];
-  dicomUrl: string;
-  hasInstances: boolean;
+  isButtonActive?: boolean;
   filename?: string;
+  dicomUrl?: string | null;
+  instances?: DicomInstance[] | null;
 }) {
+  const hasInstances = hasData(instances);
+
   return (
     <>
-      {dicomUrl ? <DownloadZippedStudyButton zippedDicomUrl={dicomUrl} /> : null}
-      {hasInstances ? <DownloadAllInstancesZipped filename={filename} fileIds={dicomIds} /> : null}
+      {dicomUrl ? (
+        <DownloadZippedStudyButton isButtonActive={true} zippedDicomUrl={dicomUrl} />
+      ) : null}
+      {hasInstances ? (
+        <DownloadAllInstancesZipped
+          isButtonActive={isButtonActive}
+          filename={filename}
+          fileIds={dicomIds}
+        />
+      ) : null}
     </>
   );
 }

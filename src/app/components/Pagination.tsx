@@ -29,12 +29,9 @@ import { ICON_SIZE } from "@/constants";
 import FilterByState from "./FilterByState";
 import ClearButton from "./ClearButton";
 import { useRouter } from "next/navigation";
-import DownloadAllInstancesZipped from "./DownloadAllInstancesZipped";
 import DuplicateDicom from "./DuplicateDicom";
 import InformButton from "./InformButton";
 import InnerCircularButton from "./InnerCircularButton";
-import DownloadZippedStudyButton from "./DownloadZippedStudyButton";
-import { sanitize } from "@/lib/sanitize";
 import DownloadStudyButton from "./DownloadStudyButton";
 
 type SortDirection = "asc" | "desc" | null;
@@ -945,12 +942,6 @@ export default function Pagination({
                     },
                   );
 
-                  const hasData = (instances?: DicomInstance[] | null): boolean => {
-                    return Array.isArray(instances) && instances.length > 0;
-                  };
-
-                  const hasInstances = hasData(instances);
-
                   return (
                     <tr
                       key={id}
@@ -999,38 +990,7 @@ export default function Pagination({
                       <td>
                         <InformButton dicomId={id} dicomState={state} />
                       </td>
-                      <td className="py-5 px-2 truncate whitespace-nowrap ">
-                        <Link
-                          title={patient_id}
-                          href={`${hasInstances ? `https://viewers-xi.vercel.app/viewer/dicomjson?url=https://www.cadia.cc/api/dicom-json/${id}` : `/admin/dicoms/${id}`}`}
-                          className="text-sm flex items-center truncate relative"
-                          target="_blank"
-                        >
-                          {!hasInstances ? null : (
-                            <svg
-                              className="shrink-0"
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="24"
-                              height="24"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                fill="currentColor"
-                                d="M8.31 10.28a2.5 2.5 0 1 0 2.5 2.49a2.5 2.5 0 0 0-2.5-2.49m0 3.8a1.31 1.31 0 1 1 0-2.61a1.31 1.31 0 1 1 0 2.61m7.38-3.8a2.5 2.5 0 1 0 2.5 2.49a2.5 2.5 0 0 0-2.5-2.49M17 12.77a1.31 1.31 0 1 1-1.31-1.3a1.31 1.31 0 0 1 1.31 1.3"
-                              />
-                              <path
-                                fill="currentColor"
-                                d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2m7.38 10.77a3.69 3.69 0 0 1-6.2 2.71L12 16.77l-1.18-1.29a3.69 3.69 0 1 1-5-5.44l-1.2-1.3H7.3a8.33 8.33 0 0 1 9.41 0h2.67l-1.2 1.31a3.7 3.7 0 0 1 1.2 2.72"
-                              />
-                              <path
-                                fill="currentColor"
-                                d="M14.77 9.05a7.2 7.2 0 0 0-5.54 0A4.06 4.06 0 0 1 12 12.7a4.08 4.08 0 0 1 2.77-3.65"
-                              />
-                            </svg>
-                          )}
-                          <span>{patient_id}</span>
-                        </Link>
-                      </td>
+                      <td className="py-5 px-2 truncate whitespace-nowrap ">{patient_id}</td>
                       <td title={institution} className="truncate whitespace-nowrap py-5 px-2">
                         {institution}
                       </td>
@@ -1105,7 +1065,7 @@ export default function Pagination({
                         <DownloadStudyButton
                           dicomIds={[id]}
                           dicomUrl={dicom_url}
-                          hasInstances={hasInstances}
+                          instances={instances}
                         />
                       </td>
                       <td className="text-center">

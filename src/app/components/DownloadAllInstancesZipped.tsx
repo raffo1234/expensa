@@ -6,9 +6,11 @@ import InnerCircularButton from "./InnerCircularButton";
 export default function DownloadAllInstancesZipped({
   filename,
   fileIds,
+  isButtonActive = false,
 }: {
   filename?: string;
   fileIds: string[];
+  isButtonActive?: boolean;
 }) {
   const [isZipping, setIsZipping] = useState(false);
 
@@ -43,7 +45,7 @@ export default function DownloadAllInstancesZipped({
 
   return (
     <button onClick={handleDownload} title={title} disabled={isZipping || fileIds.length === 0}>
-      <InnerCircularButton isDisabled={isZipping} title={title}>
+      <InnerCircularButton isDisabled={isZipping} title={title} isActive={isButtonActive}>
         <Icon
           icon={isZipping ? "line-md:loading-twotone-loop" : "solar:arrow-down-linear"}
           fontSize={ICON_SIZE}

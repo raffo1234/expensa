@@ -29,6 +29,8 @@ import { useTranslations } from "next-intl";
 import { Permissions } from "@/types/propertyState";
 import useCheckPermission from "@/hooks/useCheckPermission";
 import { AttachmentsSkeleton, GadgetReportSkeleton } from "./LoadingReportComponent";
+import DownloadStudyButton from "./DownloadStudyButton";
+import InnerCircularButton from "./InnerCircularButton";
 
 export default function Report({
   templates,
@@ -57,7 +59,7 @@ export default function Report({
 
   const { hasPermission: canSendEmailAfterUploading } = useCheckPermission(
     dicom?.user?.role_id,
-    Permissions.SEND_EMAIL_AFTER_UPLOADING
+    Permissions.SEND_EMAIL_AFTER_UPLOADING,
   );
 
   const age = dicom ? extractAgeWidthUnit(dicom.patient_age ?? "") : null;
@@ -68,10 +70,7 @@ export default function Report({
 
       setIsSaving(true);
       try {
-        await supabase
-          .from("dicom")
-          .update({ report: value })
-          .eq("id", dicom.id);
+        await supabase.from("dicom").update({ report: value }).eq("id", dicom.id);
         toast.success("Report updated immediately!");
       } catch (error) {
         console.error("Error updating report immediately:", error);
@@ -81,7 +80,7 @@ export default function Report({
         setIsSaving(false);
       }
     },
-    [dicom?.id, mutate]
+    [dicom?.id, mutate],
   );
 
   const debouncedTextarea = useDebouncedCallback(async (value) => {
@@ -92,11 +91,7 @@ export default function Report({
     }
   }, 650);
 
-  const updateDicom = async (
-    id: string,
-    newData: Partial<DicomType>,
-    silent = false
-  ) => {
+  const updateDicom = async (id: string, newData: Partial<DicomType>, silent = false) => {
     setIsSaving(true);
 
     try {
@@ -163,9 +158,7 @@ export default function Report({
       .limit(1);
 
     if (templateError)
-      throw new Error(
-        `No template found for email ${email}: ${templateError.message}`
-      );
+      throw new Error(`No template found for email ${email}: ${templateError.message}`);
 
     const template = templates?.[0];
     if (!template) return;
@@ -217,11 +210,12 @@ export default function Report({
     run();
   }, [dicom]);
 
-  if (error) return (
-    <p className="text-red-500 text-sm mt-4">
-      Failed to load report. Please refresh the page.
-    </p>
-  );
+  if (error)
+    return (
+      <p className="text-red-500 text-sm mt-4">Failed to load report. Please refresh the page.</p>
+    );
+
+  console.log({ dicom });
 
   return (
     <>
@@ -256,31 +250,33 @@ export default function Report({
         activeTemplate={dicom?.template}
         userRoleId={userRoleId}
       />
-      <div className="flex gap-3 mt-4">
+      <div className="flex gap-2 mt-6">
         {dicom ? (
           <>
+            <DownloadStudyButton
+              isButtonActive={true}
+              dicomUrl={dicom.dicom_url}
+              dicomIds={[dicom.id]}
+            />
             <Attachments
               dicomId={dicom.id}
               Button={
-                <button
-                  title="Attachments"
-                  type="button"
-                  className="flex gap-2 outline-0 cursor-pointer text-white px-6 py-2 rounded-full bg-cyan-400"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width={ICON_SIZE}
-                    height={ICON_SIZE}
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      fill="currentColor"
-                      fillRule="evenodd"
-                      d="M8.886 3.363c2.942-2.817 7.7-2.817 10.643 0c2.961 2.834 2.961 7.444 0 10.279l-7.948 7.608c-2.09 2-5.466 2-7.556 0a5.03 5.03 0 0 1 0-7.324l7.834-7.498a3.253 3.253 0 0 1 4.468 0a3 3 0 0 1 0 4.367l-7.89 7.554a.75.75 0 1 1-1.038-1.084l7.89-7.553a1.503 1.503 0 0 0 0-2.2a1.753 1.753 0 0 0-2.393 0L5.062 15.01a3.53 3.53 0 0 0 0 5.156c1.51 1.445 3.972 1.445 5.482 0l7.948-7.608c2.344-2.244 2.344-5.868 0-8.112c-2.363-2.261-6.206-2.261-8.57 0l-6.403 6.13A.75.75 0 0 1 2.48 9.493z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  <span>Attachments</span>
+                <button title="Attachments" type="button">
+                  <InnerCircularButton title="Attachments" isActive={true}>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width={ICON_SIZE}
+                      height={ICON_SIZE}
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        fill="currentColor"
+                        fillRule="evenodd"
+                        d="M8.886 3.363c2.942-2.817 7.7-2.817 10.643 0c2.961 2.834 2.961 7.444 0 10.279l-7.948 7.608c-2.09 2-5.466 2-7.556 0a5.03 5.03 0 0 1 0-7.324l7.834-7.498a3.253 3.253 0 0 1 4.468 0a3 3 0 0 1 0 4.367l-7.89 7.554a.75.75 0 1 1-1.038-1.084l7.89-7.553a1.503 1.503 0 0 0 0-2.2a1.753 1.753 0 0 0-2.393 0L5.062 15.01a3.53 3.53 0 0 0 0 5.156c1.51 1.445 3.972 1.445 5.482 0l7.948-7.608c2.344-2.244 2.344-5.868 0-8.112c-2.363-2.261-6.206-2.261-8.57 0l-6.403 6.13A.75.75 0 0 1 2.48 9.493z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </InnerCircularButton>
                 </button>
               }
             />
@@ -295,11 +291,7 @@ export default function Report({
         <Sticky>
           <div className="bg-gray-50/50 py-4">
             <div className="flex justify-between mb-4">
-              <PreviewPDFButton
-                userRoleId={userRoleId}
-                isDownloadable={false}
-                dicomId={dicomId}
-              />
+              <PreviewPDFButton userRoleId={userRoleId} isDownloadable={false} dicomId={dicomId} />
               <DownloadButtons dicomId={dicomId} userRoleId={userRoleId} />
             </div>
             <div className="flex justify-end gap-2">

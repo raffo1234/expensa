@@ -121,7 +121,12 @@ export default function AttachFiles({
         state: CustomFileState.uploading,
       });
 
-      const urlSigned = await uploadSignedFile(customFile.file, now, updateProgress);
+      const urlSigned = await uploadSignedFile(
+        customFile.file,
+        now,
+        customFile.file.name,
+        updateProgress,
+      );
 
       if (!urlSigned) {
         editFileById(setFiles, customFile.id, {

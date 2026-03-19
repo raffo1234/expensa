@@ -4,9 +4,10 @@ import uploadFileToR2 from "./uploadFileToR2";
 export default async function uploadSignedFile(
   file: File,
   now: string,
-  onProgress: (progress: number) => void
+  patientName: string,
+  onProgress: (progress: number) => void,
 ) {
-  const filename = sanitize(`${now}_${file.name}`);
+  const filename = sanitize(`${now}_${patientName}`);
 
   try {
     const response = await fetch("/api/generate-r2-url", {

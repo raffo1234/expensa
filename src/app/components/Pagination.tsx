@@ -1100,7 +1100,7 @@ export default function Pagination({
                       <td className="text-center">
                         <>
                           {dicom_url ? (
-                            <Link target="_blank" href={dicom_url} download title="Download Zip">
+                            <Link target="_blank" href={dicom_url} download title="Download Zip" className="inline-block w-fit">
                               <InnerCircularButton title="Download Zip">
                                 <Icon icon="solar:cloud-download-outline" fontSize={ICON_SIZE} />
                               </InnerCircularButton>

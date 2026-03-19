@@ -153,15 +153,48 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
         });
       }
 
-      // Process compressed files, option === compressed
-      compressedFiles.map((file) => {
+      // Process compressed files — extract DICOM metadata to get real patientName
+      for (const file of compressedFiles) {
+        let extractedFiles: ExtractedFilesObject = {};
+
+        try {
+          const fileBuffer = await file.arrayBuffer();
+          const extensionFromBuffer = await fileTypeFromBuffer(fileBuffer);
+          const mime = extensionFromBuffer?.mime;
+
+          if (mime === "application/zip" || mime === "application/x-zip-compressed") {
+            extractedFiles = await processZipFile(file);
+          } else if (
+            mime === "application/x-compressed" ||
+            mime === "application/x-rar-compressed"
+          ) {
+            const archiveRar = await Archive.open(file);
+            extractedFiles = await archiveRar.extractFiles();
+          }
+        } catch {
+          // If extraction fails, fall back to file.name
+        }
+
+        // Read real patientName from DICOM metadata
+        let patientName = file.name;
+        if (Object.keys(extractedFiles).length > 0) {
+          try {
+            const studies = await findAllDicomFilesWithDifferentStudyUID(extractedFiles);
+            if (studies.length > 0 && studies[0].metadata.patientName) {
+              patientName = studies[0].metadata.patientName;
+            }
+          } catch {
+            // If metadata read fails, fall back to file.name
+          }
+        }
+
         setFiles((prev) => [
           ...prev,
           {
             id: uuidv4(),
             studies: [],
             file,
-            patientName: file.name,
+            patientName,
             state: CustomFileStateType.selected,
             isAvailableForR2Upload: storeByDefault,
             color: "gray-50",
@@ -169,7 +202,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
             imageUploadProgress: 0,
           },
         ]);
-      });
+      }
 
       setSiDropping(false);
     },
@@ -258,7 +291,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
 
           let publicUrl = undefined;
           const now = Date.now().toString();
-          const filename = sanitize(`${now}_${selectedFile.name}`);
+          const filename = sanitize(`${now}_${fileEntity.patientName}`);
 
           if (fileEntity.isAvailableForR2Upload) {
             editCustomFileById(setFiles, fileEntity.id, {
@@ -272,7 +305,12 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
               });
             };
 
-            const urlSigned = await uploadSignedFile(selectedFile, now, updateProgress);
+            const urlSigned = await uploadSignedFile(
+              selectedFile,
+              now,
+              fileEntity.patientName,
+              updateProgress,
+            );
 
             if (!urlSigned) {
               editCustomFileById(setFiles, fileEntity.id, {

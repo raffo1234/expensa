@@ -254,11 +254,6 @@ export default function Report({
       <div className="flex gap-2 mt-6">
         {dicom ? (
           <>
-            <DownloadStudyButton
-              isButtonActive={true}
-              dicomUrl={dicom.dicom_url}
-              dicomIds={[dicom.id]}
-            />
             <Attachments
               dicomId={dicom.id}
               Button={
@@ -289,6 +284,12 @@ export default function Report({
                 instances={dicom.instances}
               />
             ) : null}
+            <DownloadStudyButton
+              dicomIds={[dicom.id]}
+              dicomUrl={dicom.dicom_url}
+              instances={dicom.instances}
+              isButtonActive={true}
+            />
           </>
         ) : (
           <AttachmentsSkeleton />

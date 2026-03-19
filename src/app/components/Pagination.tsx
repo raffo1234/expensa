@@ -5,11 +5,10 @@ import { DicomStateEnum } from "@/enums/dicomStateEnum";
 import extractAgeWidthUnit from "@/lib/extractAgeWithUnit";
 import formatDateYYYYMMDD from "@/lib/formatDateYYYYMMDD";
 import { supabase } from "@/lib/supabase";
-import { DicomInstance, DicomType } from "@/types/dicomType";
+import { DicomType } from "@/types/dicomType";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { formatInTimeZone } from "date-fns-tz";
 import { es } from "date-fns/locale";
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
 import TableSkeleton from "@/components/FormSkeleton";
@@ -33,6 +32,7 @@ import DuplicateDicom from "./DuplicateDicom";
 import InformButton from "./InformButton";
 import InnerCircularButton from "./InnerCircularButton";
 import DownloadStudyButton from "./DownloadStudyButton";
+import VisorWebButton from "./VisorWebButton";
 
 type SortDirection = "asc" | "desc" | null;
 
@@ -871,6 +871,7 @@ export default function Pagination({
               <th className="w-10"></th>
               <th className="w-10"></th>
               <th className="w-10"></th>
+              <th className="w-10"></th>
               <th className="w-46"></th>
             </tr>
           </thead>
@@ -1060,6 +1061,9 @@ export default function Pagination({
                             </button>
                           }
                         />
+                      </td>
+                      <td className="text-center">
+                        {instances ? <VisorWebButton instances={instances} dicomId={id} /> : null}
                       </td>
                       <td className="text-center">
                         <DownloadStudyButton

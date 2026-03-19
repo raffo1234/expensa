@@ -10,16 +10,17 @@ export default function DownloadZippedStudyButton({
   zippedDicomUrl: string;
   isButtonActive?: boolean;
 }) {
+  const title = "Download Zip";
   return (
     <Link
       target="_blank"
       href={zippedDicomUrl}
       download
-      title="Download Zip"
+      title={title}
       className="inline-block w-fit"
     >
-      <InnerCircularButton title="Download Zip" isActive={isButtonActive}>
-        <Icon icon="solar:cloud-download-outline" fontSize={ICON_SIZE} />
+      <InnerCircularButton title={title} isActive={isButtonActive}>
+        <Icon icon="solar:arrow-down-linear" fontSize={ICON_SIZE} />
       </InnerCircularButton>
     </Link>
   );

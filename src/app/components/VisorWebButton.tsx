@@ -23,8 +23,8 @@ export default function VisorWebButton({
     <Link
       title={title}
       href={`https://viewers-xi.vercel.app/viewer/dicomjson?url=https://www.cadia.cc/api/dicom-json/${dicomId}`}
-      className="text-sm flex items-center truncate relative"
       target="_blank"
+      className="inline-block w-fit"
     >
       <InnerCircularButton
         title={

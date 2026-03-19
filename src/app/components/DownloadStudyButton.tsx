@@ -18,18 +18,17 @@ export default function DownloadStudyButton({
 }) {
   const hasInstances = hasDicomInstances(instances);
 
-  return (
-    <>
-      {dicomUrl ? (
-        <DownloadZippedStudyButton isButtonActive={true} zippedDicomUrl={dicomUrl} />
-      ) : null}
-      {hasInstances ? (
-        <DownloadAllInstancesZipped
-          isButtonActive={isButtonActive}
-          filename={filename}
-          fileIds={dicomIds}
-        />
-      ) : null}
-    </>
-  );
+  if (dicomUrl)
+    return <DownloadZippedStudyButton isButtonActive={isButtonActive} zippedDicomUrl={dicomUrl} />;
+
+  if (hasInstances)
+    return (
+      <DownloadAllInstancesZipped
+        isButtonActive={isButtonActive}
+        filename={filename}
+        fileIds={dicomIds}
+      />
+    );
+
+  return null;
 }

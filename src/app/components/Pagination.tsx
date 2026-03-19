@@ -29,10 +29,13 @@ import { ICON_SIZE } from "@/constants";
 import FilterByState from "./FilterByState";
 import ClearButton from "./ClearButton";
 import { useRouter } from "next/navigation";
-import DownloadAllZip from "./DownloadAllZip";
+import DownloadAllInstancesZipped from "./DownloadAllInstancesZipped";
 import DuplicateDicom from "./DuplicateDicom";
 import InformButton from "./InformButton";
 import InnerCircularButton from "./InnerCircularButton";
+import DownloadZippedStudyButton from "./DownloadZippedStudyButton";
+import { sanitize } from "@/lib/sanitize";
+import DownloadStudyButton from "./DownloadStudyButton";
 
 type SortDirection = "asc" | "desc" | null;
 
@@ -467,10 +470,10 @@ export default function Pagination({
 
   const items = result?.data
     ? result?.data?.map(({ id }) => {
-      return {
-        id,
-      };
-    })
+        return {
+          id,
+        };
+      })
     : [];
 
   const totalPages = Math.ceil(total / pageSize);
@@ -929,8 +932,8 @@ export default function Pagination({
 
                   const completedAtFormatted = completedAt
                     ? formatInTimeZone(completedAt, "America/Lima", "dd MMMM yyyy, hh:mm a", {
-                      locale: es,
-                    })
+                        locale: es,
+                      })
                     : "";
 
                   const createdAtFormatted = formatInTimeZone(
@@ -955,8 +958,9 @@ export default function Pagination({
                       ${state === DicomStateEnum.VIEWED ? "bg-yellow-100" : ""}
                       ${state === DicomStateEnum.DRAFT ? "bg-orange-100" : ""}
                       ${state === DicomStateEnum.COMPLETED ? "bg-cyan-100" : ""}
-                      ${index % 2 === 0 && !state ? "bg-gray-50" : ""} ${index === 0 ? " " : "border-t border-gray-200"
-                        }`}
+                      ${index % 2 === 0 && !state ? "bg-gray-50" : ""} ${
+                        index === 0 ? " " : "border-t border-gray-200"
+                      }`}
                     >
                       <td className="py-3 pl-2 pr-1 text-center">
                         <div className="relative w-fit cursor-pointer">
@@ -1098,16 +1102,11 @@ export default function Pagination({
                         />
                       </td>
                       <td className="text-center">
-                        <>
-                          {dicom_url ? (
-                            <Link target="_blank" href={dicom_url} download title="Download Zip" className="inline-block w-fit">
-                              <InnerCircularButton title="Download Zip">
-                                <Icon icon="solar:cloud-download-outline" fontSize={ICON_SIZE} />
-                              </InnerCircularButton>
-                            </Link>
-                          ) : null}
-                          {hasInstances ? <DownloadAllZip fileIds={[id]} /> : null}
-                        </>
+                        <DownloadStudyButton
+                          dicomIds={[id]}
+                          dicomUrl={dicom_url}
+                          hasInstances={hasInstances}
+                        />
                       </td>
                       <td className="text-center">
                         {!is_duplicated && result.data ? (

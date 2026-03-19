@@ -3,7 +3,13 @@ import { Icon } from "@iconify/react"; // Asumiendo que usas Iconify por tu cód
 import { ICON_SIZE } from "@/constants";
 import InnerCircularButton from "./InnerCircularButton";
 
-export default function DownloadAllZip({ fileIds }: { fileIds: string[] }) {
+export default function DownloadAllInstancesZipped({
+  filename,
+  fileIds,
+}: {
+  filename?: string;
+  fileIds: string[];
+}) {
   const [isZipping, setIsZipping] = useState(false);
 
   const handleDownload = async () => {
@@ -22,7 +28,7 @@ export default function DownloadAllZip({ fileIds }: { fileIds: string[] }) {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `studies_${new Date().getTime()}.zip`;
+      a.download = `${filename ? filename : `studies_${new Date().getTime()}.zip`}`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);

@@ -40,7 +40,7 @@ export default function UsersTable() {
         setPage((p) => (p > 0 ? p - 1 : 0));
       }
     },
-    [totalPages]
+    [totalPages],
   );
 
   useEffect(() => {
@@ -80,8 +80,19 @@ export default function UsersTable() {
           onClick={() => setPage((p) => p - 1)}
           className="px-4 py-1 bg-cyan-400 disabled:pointer-events-none text-white rounded-full disabled:opacity-50 cursor-pointer text-sm"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 24 24">
-            <path fill="currentColor" fill-rule="evenodd" d="M15.488 4.43a.75.75 0 0 1 .081 1.058L9.988 12l5.581 6.512a.75.75 0 1 1-1.138.976l-6-7a.75.75 0 0 1 0-.976l6-7a.75.75 0 0 1 1.057-.081" clipRule="evenodd" /></svg>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width={ICON_SIZE}
+            height={ICON_SIZE}
+            viewBox="0 0 24 24"
+          >
+            <path
+              fill="currentColor"
+              fillRule="evenodd"
+              d="M15.488 4.43a.75.75 0 0 1 .081 1.058L9.988 12l5.581 6.512a.75.75 0 1 1-1.138.976l-6-7a.75.75 0 0 1 0-.976l6-7a.75.75 0 0 1 1.057-.081"
+              clipRule="evenodd"
+            />
+          </svg>
         </button>
         <div className="text-xs uppercase font-semibold">
           {page + 1} of {totalPages}
@@ -91,7 +102,21 @@ export default function UsersTable() {
           onClick={() => setPage((p) => p + 1)}
           className="px-4 py-1 bg-cyan-400 disabled:pointer-events-none text-white rounded-full disabled:opacity-50 cursor-pointer text-sm"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 24 24"><path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="m9 5l6 7l-6 7" /></svg>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width={ICON_SIZE}
+            height={ICON_SIZE}
+            viewBox="0 0 24 24"
+          >
+            <path
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1.5"
+              d="m9 5l6 7l-6 7"
+            />
+          </svg>
         </button>
       </div>
 
@@ -100,13 +125,10 @@ export default function UsersTable() {
         style={{ gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))" }}
       >
         {isLoading
-          ?
-          SKELETON_ITEMS.map((i) => (
-            <div key={i} className="bg-gray-100 h-[258px] rounded-2xl animate-pulse" />
-          ))
-          : data?.data?.map((user) => (
-            <UserCard mutate={mutate} key={user.id} user={user} />
-          ))}
+          ? SKELETON_ITEMS.map((i) => (
+              <div key={i} className="bg-gray-100 h-[258px] rounded-2xl animate-pulse" />
+            ))
+          : data?.data?.map((user) => <UserCard mutate={mutate} key={user.id} user={user} />)}
       </div>
     </>
   );

@@ -12,8 +12,9 @@ import { useSession } from "next-auth/react";
 import { ICON_SIZE } from "@/constants";
 import { DeleteDicomWithInstancesButton } from "./DeleteDicomWithInstancesButton";
 import DeleteDuplicatedDicomButton from "./DeleteDuplicatedDicomButton";
-import { useState } from "react";
+import { Dispatch, SetStateAction, useState } from "react";
 import InformButton from "./InformButton";
+import { useConfirmModal } from "@/hooks/useConfirmModal";
 
 interface DeleteDicomButtonsProps {
   dicom: DicomType;
@@ -23,10 +24,26 @@ interface DeleteDicomButtonsProps {
 function DeleteLegacyButton({ dicom, mutate }: { dicom: DicomType; mutate: () => void }) {
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const { confirm } = useConfirmModal();
+  const handleDelete = (
+    id: string,
+    dicomUrl: string | null,
+    mutate: () => void,
+    setIsDeleting: Dispatch<SetStateAction<boolean>>,
+  ) => {
+    confirm({
+      title: "Delete study?",
+      description: "This action cannot be undone.",
+      confirmLabel: "Delete",
+      variant: "danger",
+      onConfirm: () => deleteDicom(id, dicomUrl, mutate, setIsDeleting),
+    });
+  };
+
   return (
     <button
       title="Delete Dicom"
-      onClick={() => deleteDicom(dicom.id, dicom.dicom_url || "", mutate, setIsDeleting)}
+      onClick={() => handleDelete(dicom.id, dicom.dicom_url || "", mutate, setIsDeleting)}
       type="button"
       className="aspect-square p-2 hover:bg-white flex-shrink-0 transition-colors duration-300 cursor-pointer bg-gray-100 rounded-full border-gray-200 border-dashed border text-rose-400 flex items-center justify-center"
     >

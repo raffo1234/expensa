@@ -6,10 +6,6 @@ const deleteDicom = async (
   mutate: () => void,
   setIsDeleting: React.Dispatch<React.SetStateAction<boolean>>
 ) => {
-  const confirmationMessage = confirm(
-    "Are you sure you want to delete this item?"
-  );
-  if (!confirmationMessage) return;
 
   setIsDeleting(true);
 

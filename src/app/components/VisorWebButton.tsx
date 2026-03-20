@@ -3,7 +3,7 @@ import hasDicomInstances from "@/lib/hasDicomInstances";
 import Link from "next/link";
 import InnerCircularButton from "./InnerCircularButton";
 import { ICON_SIZE } from "@/constants";
-import { Icon } from "@iconify/react/dist/iconify.js";
+import TargetBlankIcon from "./TargetBlankIcon";
 
 export default function VisorWebButton({
   dicomId,
@@ -26,15 +26,7 @@ export default function VisorWebButton({
       target="_blank"
       className="inline-block w-fit"
     >
-      <InnerCircularButton
-        title={
-          <>
-            {title}{" "}
-            <Icon className="inline" fontSize={ICON_SIZE} icon="eva:diagonal-arrow-right-up-fill" />
-          </>
-        }
-        isActive={isActiveButton}
-      >
+      <InnerCircularButton title={<>{title} <TargetBlankIcon /></>} isActive={isActiveButton}>
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width={ICON_SIZE}

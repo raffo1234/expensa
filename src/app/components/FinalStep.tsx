@@ -6,8 +6,9 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useState } from "react";
 import { Popover } from "react-tiny-popover";
+import TargetBlankIcon from "./TargetBlankIcon";
 
-export default function FinalStep({ label = ""}: { label?: string }) {
+export default function FinalStep({ label = "" }: { label?: string }) {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const t = useTranslations("FinalStep");
 

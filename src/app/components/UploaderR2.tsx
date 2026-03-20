@@ -130,12 +130,12 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
 
         const fileBuffer = await file.arrayBuffer();
 
-        // Guard: buffer too small for mime detection — treat as non-compressed
+        // Guard: buffer too small for mime detection
         if (fileBuffer.byteLength < MIN_BYTES_FOR_MIME_DETECTION) {
           console.warn(
             `File too small for mime detection, treating as non-compressed: ${file.name}`,
           );
-          nonCompressedFiles[file.name] = file;
+          toast.error(`"${file.name}" is too small or corrupt to be extracted.`);
           continue;
         }
 
@@ -204,22 +204,26 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
             extractedFiles = await archiveRar.extractFiles();
           }
         } catch {
-          // If extraction fails, fall back to file.name
           console.warn(`Extraction failed for: ${file.name}`);
-          toast.error(`Could not extract file: ${file.name}`);
+          toast.error(
+            `Could not extract file: ${file.name}. The file may be too small or corrupt.`,
+          );
+        }
+
+        // If extraction failed entirely, skip adding to the list
+        if (Object.keys(extractedFiles).length === 0) {
+          continue;
         }
 
         // Read real patientName from DICOM metadata
         let patientName = file.name;
-        if (Object.keys(extractedFiles).length > 0) {
-          try {
-            const studies = await findAllDicomFilesWithDifferentStudyUID(extractedFiles);
-            if (studies.length > 0 && studies[0].metadata.patientName) {
-              patientName = studies[0].metadata.patientName;
-            }
-          } catch {
-            // If metadata read fails, fall back to file.name
+        try {
+          const studies = await findAllDicomFilesWithDifferentStudyUID(extractedFiles);
+          if (studies.length > 0 && studies[0].metadata.patientName) {
+            patientName = studies[0].metadata.patientName;
           }
+        } catch {
+          // If metadata read fails, fall back to file.name
         }
 
         setFiles((prev) => [

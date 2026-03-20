@@ -24,7 +24,7 @@ export default async function Page({ params }: { params: Params }) {
         <h1 className="font-semibold text-lg block">Report Editor</h1>
         <Link
           href="/admin/dicoms"
-          title="Templates"
+          title="List of Studies"
           className="p-2 hover:text-cyan-400 transition-colors duration-300"
         >
           <svg

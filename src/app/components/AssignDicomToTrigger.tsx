@@ -43,18 +43,29 @@ export default function AssignDicomToTrigger({
     Permissions.ASSIGN_DICOM_TO_USERS,
   );
 
+  const { hasPermission: canViewDicoms, isLoading: isLoadingCanViewDicoms } = useCheckPermission(
+    userRoleId,
+    Permissions.VIEW_DICOMS,
+  );
+
   const onClick = () => {
     setModalContent(<AssignDicomTo dicomIds={dicomIds} userId={userId} />);
     setModalOpen(true);
   };
 
-  const { data: hasAssignments, isLoading } = useDicomHasAssignments(dicomIds[0] as string);
+  const { data: hasAssignments, isLoading: isLoadingHasAssignments } = useDicomHasAssignments(
+    dicomIds[0] as string,
+  );
 
-  if (isLoadingCanAssign || isLoading) return null;
-  if (!canAssign) return null;
+  if (isLoadingCanAssign || isLoadingCanViewDicoms || isLoadingHasAssignments) return null;
+  if (!canAssign || !canViewDicoms) return null;
 
   return (
-    <button type="button" onClick={onClick} className="inline-block text-sm underline underline-offset-3">
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-block text-sm underline underline-offset-3"
+    >
       {dicomIds.length === 1 ? (
         <InnerCircularButton
           title={hasAssignments ? "View Assignments" : "Assign"}

@@ -29,6 +29,7 @@ import FinalStep from "./FinalStep";
 import { processDicomStudyTurbo } from "@/lib/processDicomStudyTurbo";
 import { useDicomUploadSync } from "@/lib/useDicomUploadSync";
 import pLimit from "p-limit";
+import AssignDicomToTrigger from "./AssignDicomToTrigger";
 
 if (typeof window !== "undefined") {
   Archive.init({ workerUrl: "/libarchive.js/dist/worker-bundle.js" });
@@ -678,16 +679,17 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
                           {state === CustomFileStateType.duplicated ||
                           state === CustomFileStateType.inserted
                             ? studies.map(({ id, state }) => (
-                                <div
-                                  key={id}
-                                  className="flex gap-2 items-center rounded-full"
-                                >
+                                <div key={id} className="flex gap-2 items-center rounded-full">
                                   <LinkInsertedOrDuplicated
                                     id={id}
-                                    userId={userId}
                                     userRoleId={userRoleId}
                                     state={state}
                                     isDuplicated={state === CustomFileStateType.duplicated}
+                                  />
+                                  <AssignDicomToTrigger
+                                    userRoleId={userRoleId}
+                                    dicomIds={[id]}
+                                    userId={userId}
                                   />
                                   <ModalToAttachFilesToDicom dicomId={id} defaultPopoverOpen />
                                   <ModalToCommentDicom dicomId={id} />

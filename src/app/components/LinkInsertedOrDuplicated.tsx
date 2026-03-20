@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Permissions } from "@/types/propertyState";
 import useCheckPermission from "@/hooks/useCheckPermission";
-import AssignDicomToTrigger from "./AssignDicomToTrigger";
 import { ICON_SIZE } from "@/constants";
 import InnerCircularButton from "./InnerCircularButton";
 
@@ -31,13 +30,11 @@ export default function LinkInsertedOrDuplicated({
   id,
   state,
   userRoleId,
-  userId,
 }: {
   isDuplicated: boolean;
   id: string;
   state: string;
   userRoleId: string;
-  userId: string;
 }) {
   const router = useRouter();
   const { hasPermission: canViewDicoms, isLoading } = useCheckPermission(
@@ -59,7 +56,6 @@ export default function LinkInsertedOrDuplicated({
         >
           <LinkInsertedOrDuplicatedContent isDuplicated={isDuplicated} state={state} />
         </Link>
-        <AssignDicomToTrigger userRoleId={userRoleId} dicomIds={[id]} userId={userId} />
       </>
     );
   }

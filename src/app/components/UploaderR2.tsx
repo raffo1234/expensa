@@ -24,7 +24,7 @@ import { UPLOAD_OPTION } from "@/enums/uploadOption";
 import { compressFiles } from "@/lib/compressFiles";
 import { checkIfStudyExists, insertToDicom } from "@/lib/dicomDB";
 import { UploaderR2Props } from "@/types/Dicom";
-import { colorClassMap } from "@/constants";
+import { colorClassMap, ICON_SIZE } from "@/constants";
 import ModalToAttachFilesToDicom from "./ModalToAttachFilesToDicom";
 import ModalToCommentDicom from "./ModalToCommentDicom";
 import { useTranslations } from "next-intl";
@@ -583,7 +583,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
             {files.length} {t("file-label", { count: files.length })}
           </div>
           {canSwitchStoreDicom ? (
-            <div className="mx-auto max-w-xl mb-4 pl-4.5 flex items-center gap-2">
+            <div className="mx-auto max-w-3xl mb-4 pl-4.5 flex items-center gap-2">
               <label
                 className={`${!hasSelectedItems ? "opacity-50 pointer-events-none" : ""} inline-flex items-center cursor-pointer`}
               >
@@ -601,8 +601,8 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
               </span>
             </div>
           ) : null}
-          <div className="w-full mx-auto max-w-xl">
-            <div className="flex flex-col gap-2">
+          <div className="w-full mx-auto max-w-3xl">
+            <div className="flex flex-col gap-3">
               {Array.from(sortFilesByName(files)).map(
                 ({ id, patientName, state, color, studies, uploadPercentage }, index) => {
                   const showProgressBar =
@@ -629,7 +629,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                   return (
                     <div key={id} className="flex items-center gap-1">
                       <div
-                        className={`${colorClassMap[color] ? colorClassMap[color] : "border bg-white border-gray-200"} w-full px-4 py-3 rounded-lg min-w-0`}
+                        className={`${colorClassMap[color] ? colorClassMap[color] : "border bg-white border-gray-200"} w-full px-5 py-4 rounded-3xl min-w-0`}
                       >
                         <div className="flex">
                           {canSwitchStoreDicom ? (
@@ -657,17 +657,16 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                             </label>
                           ) : null}
                           <div className="flex-1 truncate pl-4">
-                            <div className="text-sm truncate font-semibold mb-0.5">
+                            <div className="text-sm truncate font-semibold mb-1">
                               {patientName}
                             </div>
                             <div className="text-sm text-gray-500">
                               {state === CustomFileStateType.selected || studies.length === 0 ? (
                                 state
                               ) : (
-                                <>
-                                  {studies.length} Stud
-                                  {studies.length === 1 ? "y" : "ies"}
-                                </>
+                                <FinalStep
+                                  label={`${studies.length} Stud${studies.length === 1 ? "y" : "ies"}`}
+                                />
                               )}
                             </div>
                           </div>
@@ -678,7 +677,6 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                                   <div key={id} className="flex gap-2 items-center">
                                     <LinkInsertedOrDuplicated
                                       id={id}
-                                      userId={userId}
                                       userRoleId={userRoleId}
                                       state={state}
                                       isDuplicated={state === CustomFileStateType.duplicated}
@@ -709,7 +707,6 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                           </div>
                         ) : null}
                       </div>
-                      <FinalStep />
                     </div>
                   );
                 },

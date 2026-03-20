@@ -60,6 +60,10 @@ const compressedExtensions: Record<string, string[]> = {
 // Minimum bytes file-type needs to detect mime reliably
 const MIN_BYTES_FOR_MIME_DETECTION = 4100;
 
+// Truncates long file names for toast messages
+const truncateFileName = (name: string, max = 40): string =>
+  name.length > max ? `${name.slice(0, max)}...` : name;
+
 // Safari-safe alternative to file.arrayBuffer() — works on all browser versions
 const toArrayBuffer = (file: File): Promise<ArrayBuffer> =>
   new Promise((resolve, reject) => {
@@ -145,7 +149,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
           console.warn(
             `File too small for mime detection, treating as non-compressed: ${file.name}`,
           );
-          toast.error(`"${file.name}" is too small or corrupt to be extracted.`);
+          toast.error(`"${truncateFileName(file.name)}" is too small or corrupt to be extracted.`);
           continue;
         }
 
@@ -157,7 +161,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
             : false;
         } catch {
           console.warn(`fileTypeFromBuffer failed for: ${file.name}, treating as non-compressed`);
-          toast.error(`Could not read file: ${file.name}`);
+          toast.error(`Could not read file: ${truncateFileName(file.name)}`);
         }
 
         if (isCompressed) {
@@ -216,7 +220,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
         } catch {
           console.warn(`Extraction failed for: ${file.name}`);
           toast.error(
-            `Could not extract file: ${file.name}. The file may be too small or corrupt.`,
+            `Could not extract file: ${truncateFileName(file.name)}. The file may be too small or corrupt.`,
           );
         }
 
@@ -294,7 +298,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
         mime = extensionFromBuffer?.mime;
       } catch {
         console.warn(`fileTypeFromBuffer failed for: ${selectedFile.name}`);
-        toast.error(`Could not read file: ${selectedFile.name}`);
+        toast.error(`Could not read file: ${truncateFileName(selectedFile.name)}`);
         editCustomFileById(setFiles, fileEntity.id, {
           state: CustomFileStateType.fileNotSupported,
           color: "rose-50",
@@ -434,7 +438,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
           }
         }
       } catch {
-        toast.error(`Error processing file: ${fileEntity.patientName}`);
+        toast.error(`Error processing file: ${truncateFileName(fileEntity.patientName)}`);
         editCustomFileById(setFiles, fileEntity.id, {
           state: CustomFileStateType.errorLoading,
           color: "rose-50",
@@ -608,142 +612,154 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
           ) : null}
           <div className="w-full mx-auto max-w-3xl">
             <div className="flex flex-col gap-3">
-              {Array.from(sortFilesByName(files)).map(
-                ({ id, patientName, state, color, studies, uploadPercentage }, index) => {
-                  const showProgressBar =
-                    files[index].isAvailableForR2Upload &&
-                    uploadPercentage !== 100 &&
-                    [
-                      CustomFileStateType.verifying,
-                      CustomFileStateType.selected,
-                      CustomFileStateType.inserting,
-                      CustomFileStateType.processing,
-                      CustomFileStateType.processed,
-                      CustomFileStateType.uploading,
-                    ].includes(state);
+              {Array.from(sortFilesByName(files)).map(({ id, patientName, color, studies }) => {
+                // Always read live values from files state — never use stale snapshot values
+                const fileInState = files.find((f) => f.id === id);
+                const state = fileInState?.state ?? CustomFileStateType.selected;
+                const uploadPercentage = fileInState?.uploadPercentage ?? 0;
 
-                  const displayWarningIcon = [
-                    CustomFileStateType.errorInserting,
-                    CustomFileStateType.fileNotSupported,
-                    CustomFileStateType.noDcimFile,
-                    CustomFileStateType.noTag,
-                    CustomFileStateType.errorLoading,
-                    CustomFileStateType.errorUploading,
-                  ].includes(state);
-
-                  const canRemove = ![
-                    CustomFileStateType.processing,
-                    CustomFileStateType.uploading,
+                const showProgressBar =
+                  (fileInState?.isAvailableForR2Upload ?? false) &&
+                  uploadPercentage !== 100 &&
+                  [
+                    CustomFileStateType.verifying,
+                    CustomFileStateType.selected,
                     CustomFileStateType.inserting,
+                    CustomFileStateType.processing,
+                    CustomFileStateType.processed,
+                    CustomFileStateType.uploading,
                   ].includes(state);
 
-                  return (
-                    <div key={id} className="relative flex items-center gap-1">
-                      {canRemove && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRemoveFile(id);
-                          }}
-                          className="absolute -top-4 -right-3 h-8 w-8 rounded-full cursor-pointer text-gray-300 border border-slate-200 bg-white hover:text-rose-400 hover:border-rose-200 hover:bg-rose-50 transition-colors duration-300"
-                          title="Quitar de la lista"
-                        >
-                          <PopoverInnerButton title="Quitar de la lista">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              width={ICON_SIZE}
-                              height={ICON_SIZE}
-                              viewBox="0 0 1024 1024"
-                            >
-                              <path
-                                fill="currentColor"
-                                d="M764.3 214.6L512 466.9L259.7 214.6a32 32 0 0 0-45.1 45.1L466.8 512L214.5 764.2a32 32 0 1 0 45.1 45.2L512 557.2l252.3 252.3a32 32 0 0 0 45.1-45.1L557.1 512l252.3-252.4a32 32 0 1 0-45.1-45.2z"
-                              />
-                            </svg>
-                          </PopoverInnerButton>
-                        </button>
-                      )}
-                      <div
-                        className={`${colorClassMap[color] ? colorClassMap[color] : "border bg-white border-gray-200"} w-full px-5 py-4 rounded-3xl min-w-0`}
+                const displayWarningIcon = [
+                  CustomFileStateType.errorInserting,
+                  CustomFileStateType.fileNotSupported,
+                  CustomFileStateType.noDcimFile,
+                  CustomFileStateType.noTag,
+                  CustomFileStateType.errorLoading,
+                  CustomFileStateType.errorUploading,
+                ].includes(state);
+
+                const canRemove = ![
+                  CustomFileStateType.processing,
+                  CustomFileStateType.uploading,
+                  CustomFileStateType.inserting,
+                ].includes(state);
+
+                return (
+                  <div key={id} className="relative flex items-center gap-1">
+                    {canRemove && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveFile(id);
+                        }}
+                        className="absolute -top-4 -right-3 h-8 w-8 rounded-full cursor-pointer text-gray-300 border border-slate-200 bg-white hover:text-rose-400 hover:border-rose-200 hover:bg-rose-50 transition-colors duration-300"
+                        title="Quitar de la lista"
                       >
-                        <div className="flex">
-                          {canSwitchStoreDicom ? (
-                            <label
-                              className={`${
-                                state !== CustomFileStateType.selected
-                                  ? "opacity-40 pointer-events-none"
-                                  : ""
-                              } inline-flex pt-1 cursor-pointer`}
-                            >
-                              <input
-                                type="checkbox"
-                                name={files[index].id}
-                                checked={files[index].isAvailableForR2Upload}
-                                disabled={state !== CustomFileStateType.selected}
-                                onChange={() =>
-                                  handleIsAvailableForR2(
-                                    files[index].id,
-                                    files[index].isAvailableForR2Upload,
-                                  )
-                                }
-                                className="sr-only peer"
-                              />
-                              <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-100 dark:peer-focus:ring-cyan-100 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-400 peer-checked:bg-cyan-400 dark:peer-checked:bg-cyan-400"></div>
-                            </label>
-                          ) : null}
-                          <div className="flex-1 truncate pl-4">
-                            <div className="text-sm truncate font-semibold mb-1">{patientName}</div>
-                            <div className="text-sm text-gray-500">
-                              {state === CustomFileStateType.selected || studies.length === 0 ? (
-                                state
-                              ) : (
-                                <FinalStep
-                                  label={`${studies.length} Stud${studies.length === 1 ? "y" : "ies"}`}
-                                />
-                              )}
-                            </div>
-                          </div>
-                          <div className="whitespace-nowrap pl-10 flex flex-col gap-2 justify-center flex-shrink-0">
-                            {state === CustomFileStateType.duplicated ||
-                            state === CustomFileStateType.inserted
-                              ? studies.map(({ id, state }) => (
-                                  <div key={id} className="flex gap-2 items-center">
-                                    <LinkInsertedOrDuplicated
-                                      id={id}
-                                      userRoleId={userRoleId}
-                                      state={state}
-                                      isDuplicated={state === CustomFileStateType.duplicated}
-                                    />
-                                    <ModalToAttachFilesToDicom dicomId={id} defaultPopoverOpen />
-                                    <ModalToCommentDicom dicomId={id} />
-                                  </div>
-                                ))
-                              : null}
-                            {displayWarningIcon && (
-                              <Icon
-                                icon="solar:shield-warning-outline"
-                                className="text-rose-300"
-                                fontSize="24"
+                        <PopoverInnerButton title="Quitar de la lista">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width={ICON_SIZE}
+                            height={ICON_SIZE}
+                            viewBox="0 0 1024 1024"
+                          >
+                            <path
+                              fill="currentColor"
+                              d="M764.3 214.6L512 466.9L259.7 214.6a32 32 0 0 0-45.1 45.1L466.8 512L214.5 764.2a32 32 0 1 0 45.1 45.2L512 557.2l252.3 252.3a32 32 0 0 0 45.1-45.1L557.1 512l252.3-252.4a32 32 0 1 0-45.1-45.2z"
+                            />
+                          </svg>
+                        </PopoverInnerButton>
+                      </button>
+                    )}
+                    <div
+                      className={`${colorClassMap[color] ? colorClassMap[color] : "border bg-white border-gray-200"} w-full px-5 py-4 rounded-3xl min-w-0`}
+                    >
+                      <div className="flex">
+                        {canSwitchStoreDicom ? (
+                          <label
+                            className={`${
+                              state !== CustomFileStateType.selected
+                                ? "opacity-40 pointer-events-none"
+                                : ""
+                            } inline-flex pt-1 cursor-pointer`}
+                          >
+                            <input
+                              type="checkbox"
+                              name={id}
+                              checked={fileInState?.isAvailableForR2Upload ?? false}
+                              disabled={state !== CustomFileStateType.selected}
+                              onChange={() =>
+                                handleIsAvailableForR2(
+                                  id,
+                                  fileInState?.isAvailableForR2Upload ?? false,
+                                )
+                              }
+                              className="sr-only peer"
+                            />
+                            <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-100 dark:peer-focus:ring-cyan-100 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-400 peer-checked:bg-cyan-400 dark:peer-checked:bg-cyan-400"></div>
+                          </label>
+                        ) : null}
+                        <div className="flex-1 truncate pl-4">
+                          <div className="text-sm truncate font-semibold mb-1">{patientName}</div>
+                          <div className="text-sm text-gray-500">
+                            {state === CustomFileStateType.selected || studies.length === 0 ? (
+                              state
+                            ) : (
+                              <FinalStep
+                                label={`${studies.length} Stud${studies.length === 1 ? "y" : "ies"}`}
                               />
                             )}
                           </div>
                         </div>
-                        {showProgressBar ? (
-                          <div className="mt-2 relative w-full bg-gray-300 h-1 rounded-full">
+                        <div className="whitespace-nowrap pl-10 flex flex-col gap-2 justify-center flex-shrink-0">
+                          {state === CustomFileStateType.duplicated ||
+                          state === CustomFileStateType.inserted
+                            ? studies.map(({ id, state }) => (
+                                <div key={id} className="flex gap-2 items-center">
+                                  <LinkInsertedOrDuplicated
+                                    id={id}
+                                    userRoleId={userRoleId}
+                                    state={state}
+                                    isDuplicated={state === CustomFileStateType.duplicated}
+                                  />
+                                  <ModalToAttachFilesToDicom dicomId={id} defaultPopoverOpen />
+                                  <ModalToCommentDicom dicomId={id} />
+                                </div>
+                              ))
+                            : null}
+                          {displayWarningIcon && (
+                            <Icon
+                              icon="solar:shield-warning-outline"
+                              className="text-rose-300"
+                              fontSize="24"
+                            />
+                          )}
+                        </div>
+                      </div>
+                      {showProgressBar ? (
+                        <div className="mt-2 relative w-full group">
+                          <div className="relative flex items-center w-full bg-gray-100 h-2.5 rounded-full">
                             <div
-                              style={{ width: `${uploadPercentage}%` }}
-                              className="absolute top-0 left-0 h-full bg-gradient-to-r from-cyan-100 animate-pulse to-cyan-400 rounded-full transition-all duration-300"
-                            ></div>
-                            <div className="absolute right-0 bottom-2.5 text-sm text-gray-400">
-                              {uploadPercentage}%
+                              style={{
+                                width: `${uploadPercentage}%`,
+                                transition: "width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                              }}
+                              className="relative h-full rounded-full bg-[length:200%_200%] animate-[liquid_4s_linear_infinite] bg-gradient-to-r from-cyan-400 via-blue-500 to-cyan-400"
+                            >
+                              <div className="absolute inset-0 opacity-40 animate-[bubble-rise_1.5s_linear_infinite] bg-[radial-gradient(circle,rgba(255,255,255,0.7)_1.2px,transparent_1.2px)] bg-[length:12px_12px]" />
+                              <div className="absolute top-0.5 left-1 right-1 h-[30%] bg-gradient-to-b from-white/50 to-transparent rounded-full" />
+                              <div className="absolute right-0 top-0 h-full w-4 bg-white/20 blur-[2px] rounded-r-full" />
                             </div>
                           </div>
-                        ) : null}
-                      </div>
+                          <div className="absolute right-0 -top-5 text-xs text-gray-500">
+                            {uploadPercentage}%
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
-                  );
-                },
-              )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

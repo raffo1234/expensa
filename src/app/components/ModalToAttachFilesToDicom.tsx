@@ -27,7 +27,7 @@ const fetcherDicom = async (id: string) => {
     .from("dicom")
     .select("id, comment, state")
     .eq("id", id)
-    .single()) as {
+    .maybeSingle()) as {
     data: DicomType | null;
   };
   return data;
@@ -81,13 +81,9 @@ export default function ModalToAttachFilesToDicom({
     };
   }, [isPopoverOpen, defaultPopoverOpen]);
 
-  if (fetchError) {
-    return <div className="text-rose-400">Error loading DICOM status.</div>;
-  }
+  if (fetchError || !dicom) return null;
 
-  if (isLoadingDicom || !dicom) {
-    return null;
-  }
+  if (isLoadingDicom) return null;
 
   if (dicom.state === DicomStateEnum.COMPLETED) return null;
 
@@ -98,7 +94,7 @@ export default function ModalToAttachFilesToDicom({
       padding={12}
       content={
         <div
-          className={`${isPopoverOpen ? "opacity-100 -translate-y-0" : "opacity-0 -translate-y-4"} 
+          className={`${isPopoverOpen ? "opacity-100 -translate-y-0" : "opacity-0 -translate-y-4"}
           pointer-events-none p-4 max-w-48 bg-slate-800 rounded-xl transition-all duration-500 ease-in-out`}
         >
           <div className="absolute bottom-[-4px] left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-800 rotate-45" />
@@ -115,7 +111,7 @@ export default function ModalToAttachFilesToDicom({
         type="button"
         title="Attach files"
       >
-        <InnerCircularButton isActive={files && files?.length > 0 || false}>
+        <InnerCircularButton isActive={!!(files && files?.length > 0)}>
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width={ICON_SIZE}

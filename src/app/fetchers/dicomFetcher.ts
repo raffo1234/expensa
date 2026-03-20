@@ -7,6 +7,6 @@ export default async function fetcherDicom(id: UUIDTypes) {
     .from("dicom")
     .select("*, template(*), user:user_id(*)")
     .eq("id", id)
-    .single()) as { data: DicomType | null };
+    .maybeSingle()) as { data: DicomType | null };
   return data;
 }

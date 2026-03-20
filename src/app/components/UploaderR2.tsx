@@ -735,6 +735,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                                     dicomIds={[id]}
                                     userId={userId}
                                   />
+
                                   <ModalToAttachFilesToDicom dicomId={id} defaultPopoverOpen />
                                   <ModalToCommentDicom dicomId={id} />
                                 </div>

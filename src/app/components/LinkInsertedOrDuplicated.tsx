@@ -42,21 +42,19 @@ export default function LinkInsertedOrDuplicated({
     Permissions.VIEW_DICOMS,
   );
 
-  if (isLoading) return null;
+  if (!id || isLoading) return null;
 
   if (canViewDicoms) {
     return (
-      <>
-        <Link
-          key={id}
-          target="_blank"
-          href={`/admin/dicoms/${id}`}
-          onMouseEnter={() => router.prefetch(`/admin/dicoms/${id}`)}
-          className="hover:underline text-cyan-500 underline-offset-4"
-        >
-          <LinkInsertedOrDuplicatedContent isDuplicated={isDuplicated} state={state} />
-        </Link>
-      </>
+      <Link
+        key={id}
+        target="_blank"
+        href={`/admin/dicoms/${id}`}
+        onMouseEnter={() => router.prefetch(`/admin/dicoms/${id}`)}
+        className="hover:underline text-cyan-500 underline-offset-4"
+      >
+        <LinkInsertedOrDuplicatedContent isDuplicated={isDuplicated} state={state} />
+      </Link>
     );
   }
 

@@ -674,13 +674,13 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
                             )}
                           </div>
                         </div>
-                        <div className="whitespace-nowrap pl-10 flex flex-col gap-2 justify-center flex-shrink-0">
+                        <div className="whitespace-nowrap pl-3 flex flex-col gap-2 justify-center flex-shrink-0">
                           {state === CustomFileStateType.duplicated ||
                           state === CustomFileStateType.inserted
                             ? studies.map(({ id, state }) => (
                                 <div
                                   key={id}
-                                  className="flex gap-2 items-center bg-slate-100 rounded-full p-2"
+                                  className="flex gap-2 items-center rounded-full"
                                 >
                                   <LinkInsertedOrDuplicated
                                     id={id}

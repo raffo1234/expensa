@@ -70,6 +70,10 @@ const compressedAcceptOptions = compressedMimeTypes.reduce(
 // Minimum bytes file-type needs to detect mime reliably
 const MIN_BYTES_FOR_MIME_DETECTION = 4100;
 
+// Truncates long file names for toast messages
+const truncateFileName = (name: string, max = 40): string =>
+  name.length > max ? `${name.slice(0, max)}...` : name;
+
 // Safari-safe alternative to file.arrayBuffer() — works on all browser versions
 const toArrayBuffer = (file: File): Promise<ArrayBuffer> =>
   new Promise((resolve, reject) => {
@@ -149,7 +153,7 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
         // Guard: buffer too small for mime detection
         if (fileBuffer.byteLength < MIN_BYTES_FOR_MIME_DETECTION) {
           console.warn(`File too small for mime detection: ${file.name}`);
-          toast.error(`"${file.name}" is too small or corrupt to be extracted.`);
+          toast.error(`"${truncateFileName(file.name)}" is too small or corrupt to be extracted.`);
           continue;
         }
 
@@ -164,7 +168,7 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
             : fileExt === "zip" || fileExt === "rar";
         } catch {
           console.warn(`fileTypeFromBuffer failed for: ${file.name}, treating as non-compressed`);
-          toast.error(`Could not read file: ${file.name}`);
+          toast.error(`Could not read file: ${truncateFileName(file.name)}`);
         }
 
         if (isCompressed) {
@@ -227,7 +231,7 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
         } catch {
           console.warn(`Extraction failed for: ${file.name}`);
           toast.error(
-            `Could not extract file: ${file.name}. The file may be too small or corrupt.`,
+            `Could not extract file: ${truncateFileName(file.name)}. The file may be too small or corrupt.`,
           );
         }
 
@@ -318,7 +322,7 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
             }
           } catch (error) {
             console.error(`[UploaderR2] Error uploading ${fileEntity.patientName}:`, error);
-            toast.error(`Error processing file: ${fileEntity.patientName}`);
+            toast.error(`Error processing file: ${truncateFileName(fileEntity.patientName)}`);
             editCustomFileById(setFiles, fileEntity.id, {
               state: CustomFileStateType.errorLoading,
               color: "rose-50",
@@ -619,7 +623,7 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
                             e.stopPropagation();
                             handleRemoveFile(id);
                           }}
-                          className="absolute -top-4 -right-3 h-8 w-8 rounded-full cursor-pointer hover:text-rose-500 border border-rose-200 text-rose-400 bg-rose-50 transition-colors duration-300"
+                          className="absolute -top-4 -right-3 h-8 w-8 rounded-full cursor-pointer text-gray-300 border border-slate-200 bg-white hover:text-rose-400 hover:border-rose-200 hover:bg-rose-50 transition-colors duration-300"
                           title="Quitar de la lista"
                         >
                           <PopoverInnerButton title="Quitar de la lista">

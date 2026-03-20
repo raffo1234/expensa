@@ -32,6 +32,7 @@ import toast from "react-hot-toast";
 import UploadInputs from "./UploadInputs";
 import FinalStep from "./FinalStep";
 import PopoverInnerButton from "./PopoverInnerButton";
+import AssignDicomToTrigger from "./AssignDicomToTrigger";
 
 declare module "react" {
   interface InputHTMLAttributes<T> extends HTMLAttributes<T> {
@@ -278,6 +279,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
       editCustomFileById(setFiles, fileEntity.id, {
         state: CustomFileStateType.processing,
         color: "cyan-50",
+        uploadPercentage: 5,
       });
 
       const fileBuffer = await toArrayBuffer(selectedFile);
@@ -346,6 +348,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
           editCustomFileById(setFiles, fileEntity.id, {
             state: CustomFileStateType.verifying,
             color: "cyan-50",
+            uploadPercentage: 15,
           });
 
           const { id } = await checkIfStudyExists(supabase, userId, study.metadata);
@@ -371,11 +374,15 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
             editCustomFileById(setFiles, fileEntity.id, {
               state: CustomFileStateType.uploading,
               color: "cyan-50",
+              uploadPercentage: 20,
             });
 
             const updateProgress = (progress: number) => {
+              // Map XHR progress (0-100) to uploading range (20-90)
+              // leaving room for processing (5), verifying (15) and inserting (90-100)
+              const mapped = Math.round(20 + (progress * 70) / 100);
               editCustomFileById(setFiles, fileEntity.id, {
-                uploadPercentage: progress,
+                uploadPercentage: mapped,
               });
             };
 
@@ -400,6 +407,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
           editCustomFileById(setFiles, fileEntity.id, {
             state: CustomFileStateType.inserting,
             color: "bg-cyan-50",
+            uploadPercentage: 90,
           });
 
           const { id: insertedDicomId } = await insertToDicom(
@@ -622,8 +630,8 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                   (fileInState?.isAvailableForR2Upload ?? false) &&
                   uploadPercentage !== 100 &&
                   [
-                    CustomFileStateType.verifying,
                     CustomFileStateType.selected,
+                    CustomFileStateType.verifying,
                     CustomFileStateType.inserting,
                     CustomFileStateType.processing,
                     CustomFileStateType.processed,
@@ -721,6 +729,11 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                                     userRoleId={userRoleId}
                                     state={state}
                                     isDuplicated={state === CustomFileStateType.duplicated}
+                                  />
+                                  <AssignDicomToTrigger
+                                    userRoleId={userRoleId}
+                                    dicomIds={[id]}
+                                    userId={userId}
                                   />
                                   <ModalToAttachFilesToDicom dicomId={id} defaultPopoverOpen />
                                   <ModalToCommentDicom dicomId={id} />

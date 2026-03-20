@@ -32,15 +32,15 @@ import toast from "react-hot-toast";
 import UploadInputs from "./UploadInputs";
 import FinalStep from "./FinalStep";
 
-Archive.init({
-  workerUrl: "/libarchive.js/dist/worker-bundle.js",
-});
-
 declare module "react" {
   interface InputHTMLAttributes<T> extends HTMLAttributes<T> {
     webkitdirectory?: string;
   }
 }
+
+Archive.init({
+  workerUrl: "/libarchive.js/dist/worker-bundle.js",
+});
 
 const compressedMimeTypes = [
   "application/zip",
@@ -58,6 +58,15 @@ const compressedExtensions: Record<string, string[]> = {
 
 // Minimum bytes file-type needs to detect mime reliably
 const MIN_BYTES_FOR_MIME_DETECTION = 4100;
+
+// Safari-safe alternative to file.arrayBuffer() — works on all browser versions
+const toArrayBuffer = (file: File): Promise<ArrayBuffer> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as ArrayBuffer);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsArrayBuffer(file);
+  });
 
 const UploaderR2: React.FC<UploaderR2Props> = ({
   option,
@@ -128,7 +137,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
           continue;
         }
 
-        const fileBuffer = await file.arrayBuffer();
+        const fileBuffer = await toArrayBuffer(file);
 
         // Guard: buffer too small for mime detection
         if (fileBuffer.byteLength < MIN_BYTES_FOR_MIME_DETECTION) {
@@ -183,7 +192,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
         let extractedFiles: ExtractedFilesObject = {};
 
         try {
-          const fileBuffer = await file.arrayBuffer();
+          const fileBuffer = await toArrayBuffer(file);
 
           // Guard: buffer too small for mime detection
           if (fileBuffer.byteLength < MIN_BYTES_FOR_MIME_DETECTION) {
@@ -266,7 +275,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
         color: "cyan-50",
       });
 
-      const fileBuffer = await selectedFile.arrayBuffer();
+      const fileBuffer = await toArrayBuffer(selectedFile);
 
       // Guard: buffer too small for mime detection
       if (fileBuffer.byteLength < MIN_BYTES_FOR_MIME_DETECTION) {

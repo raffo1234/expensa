@@ -55,9 +55,31 @@ interface DicomStudy {
   institution: string;
 }
 
-interface ArchiveFile {
-  arrayBuffer: () => Promise<ArrayBuffer>;
-}
+// --- SAFARI-SAFE ARRAY BUFFER READER ---
+// File.arrayBuffer() is not supported in Safari < 15.2
+const toArrayBuffer = (source: File | Blob): Promise<ArrayBuffer> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as ArrayBuffer);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsArrayBuffer(source);
+  });
+
+// libarchive.js extractFiles() returns a nested object:
+// { "file.dcm": File, "folder": { "nested.dcm": File } }
+// This flattens it recursively into a flat { "path/to/file.dcm": File } map
+const flattenArchiveFiles = (obj: Record<string, unknown>, prefix = ""): Record<string, File> => {
+  const result: Record<string, File> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    const fullPath = prefix ? `${prefix}/${key}` : key;
+    if (value instanceof File) {
+      result[fullPath] = value;
+    } else if (value !== null && typeof value === "object") {
+      Object.assign(result, flattenArchiveFiles(value as Record<string, unknown>, fullPath));
+    }
+  }
+  return result;
+};
 
 // --- DICOM DETECTION ---
 const DICOM_KNOWN_TAGS = [
@@ -257,13 +279,14 @@ export const processDicomStudyTurbo = async (
   const ext = selectedFile.name.split(".").pop()?.toLowerCase();
 
   if (mime === "application/dicom" || ext === "dcm") {
+    // Safari-safe: use FileReader instead of file.arrayBuffer()
     fileBuffers.push({
       name: selectedFile.name,
-      buffer: new Uint8Array(await selectedFile.arrayBuffer()),
+      buffer: new Uint8Array(await toArrayBuffer(selectedFile)),
     });
   } else if (mime.includes("zip") || ext === "zip") {
-    // fflate is 3x faster than JSZip for decompression
-    const zipBuffer = new Uint8Array(await selectedFile.arrayBuffer());
+    // Safari-safe: use FileReader instead of file.arrayBuffer()
+    const zipBuffer = new Uint8Array(await toArrayBuffer(selectedFile));
     const unzipped = unzipSync(zipBuffer);
     for (const [path, buffer] of Object.entries(unzipped)) {
       if (
@@ -276,10 +299,13 @@ export const processDicomStudyTurbo = async (
     }
   } else if (mime.includes("rar") || mime.includes("vnd.rar") || ext === "rar") {
     const archive = await Archive.open(selectedFile);
-    const files = (await archive.extractFiles()) as Record<string, ArchiveFile>;
-    for (const [path, fileContent] of Object.entries(files)) {
+    const rawFiles = (await archive.extractFiles()) as Record<string, unknown>;
+    // Flatten nested folder structure — libarchive returns { folder: { file: File } }
+    const flatFiles = flattenArchiveFiles(rawFiles);
+    for (const [path, file] of Object.entries(flatFiles)) {
       if (!path.includes("__MACOSX") && !path.toLowerCase().includes("dicomdir")) {
-        const buffer = new Uint8Array(await fileContent.arrayBuffer());
+        // file is a native File object — use Safari-safe toArrayBuffer
+        const buffer = new Uint8Array(await toArrayBuffer(file));
         if (buffer.length > 0) fileBuffers.push({ name: path, buffer });
       }
     }

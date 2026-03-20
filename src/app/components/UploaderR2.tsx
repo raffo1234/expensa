@@ -28,6 +28,7 @@ import { colorClassMap } from "@/constants";
 import ModalToAttachFilesToDicom from "./ModalToAttachFilesToDicom";
 import ModalToCommentDicom from "./ModalToCommentDicom";
 import { useTranslations } from "next-intl";
+import toast from "react-hot-toast";
 import UploadInputs from "./UploadInputs";
 import FinalStep from "./FinalStep";
 
@@ -54,6 +55,9 @@ const compressedExtensions: Record<string, string[]> = {
   "application/x-compressed": [".rar"],
   "application/x-rar-compressed": [".rar"],
 };
+
+// Minimum bytes file-type needs to detect mime reliably
+const MIN_BYTES_FOR_MIME_DETECTION = 4100;
 
 const UploaderR2: React.FC<UploaderR2Props> = ({
   option,
@@ -118,12 +122,33 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
       const compressedFiles: File[] = [];
 
       for (const file of acceptedFiles) {
-        const fileBuffer = await file.arrayBuffer();
-        const extensionFromBuffer = await fileTypeFromBuffer(fileBuffer);
+        // Guard: skip empty files
+        if (file.size === 0) {
+          console.warn(`Skipping empty file: ${file.name}`);
+          continue;
+        }
 
-        const isCompressed = extensionFromBuffer
-          ? compressedMimeTypes.includes(extensionFromBuffer.mime)
-          : false;
+        const fileBuffer = await file.arrayBuffer();
+
+        // Guard: buffer too small for mime detection — treat as non-compressed
+        if (fileBuffer.byteLength < MIN_BYTES_FOR_MIME_DETECTION) {
+          console.warn(
+            `File too small for mime detection, treating as non-compressed: ${file.name}`,
+          );
+          nonCompressedFiles[file.name] = file;
+          continue;
+        }
+
+        let isCompressed = false;
+        try {
+          const extensionFromBuffer = await fileTypeFromBuffer(fileBuffer);
+          isCompressed = extensionFromBuffer
+            ? compressedMimeTypes.includes(extensionFromBuffer.mime)
+            : false;
+        } catch {
+          console.warn(`fileTypeFromBuffer failed for: ${file.name}, treating as non-compressed`);
+          toast.error(`Could not read file: ${file.name}`);
+        }
 
         if (isCompressed) {
           compressedFiles.push(file);
@@ -159,6 +184,13 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
 
         try {
           const fileBuffer = await file.arrayBuffer();
+
+          // Guard: buffer too small for mime detection
+          if (fileBuffer.byteLength < MIN_BYTES_FOR_MIME_DETECTION) {
+            console.warn(`Compressed file too small for mime detection: ${file.name}`);
+            throw new Error("File too small for mime detection");
+          }
+
           const extensionFromBuffer = await fileTypeFromBuffer(fileBuffer);
           const mime = extensionFromBuffer?.mime;
 
@@ -173,6 +205,8 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
           }
         } catch {
           // If extraction fails, fall back to file.name
+          console.warn(`Extraction failed for: ${file.name}`);
+          toast.error(`Could not extract file: ${file.name}`);
         }
 
         // Read real patientName from DICOM metadata
@@ -214,7 +248,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
     setUploading(true);
 
     for (let index = 0; index < sortedFiles.length; index++) {
-      const fileEntity = files[index];
+      const fileEntity = sortedFiles[index];
 
       if (fileEntity.state !== CustomFileStateType.selected) {
         console.info(`Skipping file at index ${index} because it is not in the selected state.`);
@@ -229,8 +263,30 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
       });
 
       const fileBuffer = await selectedFile.arrayBuffer();
-      const extensionFromBuffer = await fileTypeFromBuffer(fileBuffer);
-      const mime = extensionFromBuffer?.mime;
+
+      // Guard: buffer too small for mime detection
+      if (fileBuffer.byteLength < MIN_BYTES_FOR_MIME_DETECTION) {
+        console.warn(`File too small for mime detection: ${selectedFile.name}`);
+        editCustomFileById(setFiles, fileEntity.id, {
+          state: CustomFileStateType.fileNotSupported,
+          color: "rose-50",
+        });
+        continue;
+      }
+
+      let mime: string | undefined;
+      try {
+        const extensionFromBuffer = await fileTypeFromBuffer(fileBuffer);
+        mime = extensionFromBuffer?.mime;
+      } catch {
+        console.warn(`fileTypeFromBuffer failed for: ${selectedFile.name}`);
+        toast.error(`Could not read file: ${selectedFile.name}`);
+        editCustomFileById(setFiles, fileEntity.id, {
+          state: CustomFileStateType.fileNotSupported,
+          color: "rose-50",
+        });
+        continue;
+      }
 
       console.warn(`Processing file at index ${index}: ${selectedFile.name}, type: ${mime}`);
 
@@ -364,6 +420,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
           }
         }
       } catch {
+        toast.error(`Error processing file: ${fileEntity.patientName}`);
         editCustomFileById(setFiles, fileEntity.id, {
           state: CustomFileStateType.errorLoading,
           color: "rose-50",

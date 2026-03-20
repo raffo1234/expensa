@@ -31,6 +31,7 @@ import { useTranslations } from "next-intl";
 import toast from "react-hot-toast";
 import UploadInputs from "./UploadInputs";
 import FinalStep from "./FinalStep";
+import PopoverInnerButton from "./PopoverInnerButton";
 
 declare module "react" {
   interface InputHTMLAttributes<T> extends HTMLAttributes<T> {
@@ -476,6 +477,10 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
     });
   };
 
+  const handleRemoveFile = useCallback((id: string) => {
+    setFiles((prev) => prev.filter((f) => f.id !== id));
+  }, []);
+
   const selectAllFiles = useCallback(
     (shouldSelect: boolean): void => {
       setFiles((prevFiles) =>
@@ -626,8 +631,38 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                     CustomFileStateType.errorUploading,
                   ].includes(state);
 
+                  const canRemove = ![
+                    CustomFileStateType.processing,
+                    CustomFileStateType.uploading,
+                    CustomFileStateType.inserting,
+                  ].includes(state);
+
                   return (
-                    <div key={id} className="flex items-center gap-1">
+                    <div key={id} className="relative flex items-center gap-1">
+                      {canRemove && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveFile(id);
+                          }}
+                          className="absolute -top-4 -right-3 h-8 w-8 rounded-full cursor-pointer text-gray-300 border border-slate-200 bg-white hover:text-rose-400 hover:border-rose-200 hover:bg-rose-50 transition-colors duration-300"
+                          title="Quitar de la lista"
+                        >
+                          <PopoverInnerButton title="Quitar de la lista">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width={ICON_SIZE}
+                              height={ICON_SIZE}
+                              viewBox="0 0 1024 1024"
+                            >
+                              <path
+                                fill="currentColor"
+                                d="M764.3 214.6L512 466.9L259.7 214.6a32 32 0 0 0-45.1 45.1L466.8 512L214.5 764.2a32 32 0 1 0 45.1 45.2L512 557.2l252.3 252.3a32 32 0 0 0 45.1-45.1L557.1 512l252.3-252.4a32 32 0 1 0-45.1-45.2z"
+                              />
+                            </svg>
+                          </PopoverInnerButton>
+                        </button>
+                      )}
                       <div
                         className={`${colorClassMap[color] ? colorClassMap[color] : "border bg-white border-gray-200"} w-full px-5 py-4 rounded-3xl min-w-0`}
                       >
@@ -657,9 +692,7 @@ const UploaderR2: React.FC<UploaderR2Props> = ({
                             </label>
                           ) : null}
                           <div className="flex-1 truncate pl-4">
-                            <div className="text-sm truncate font-semibold mb-1">
-                              {patientName}
-                            </div>
+                            <div className="text-sm truncate font-semibold mb-1">{patientName}</div>
                             <div className="text-sm text-gray-500">
                               {state === CustomFileStateType.selected || studies.length === 0 ? (
                                 state

@@ -6,7 +6,6 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useState } from "react";
 import { Popover } from "react-tiny-popover";
-import TargetBlankIcon from "./TargetBlankIcon";
 
 export default function FinalStep({ label = "" }: { label?: string }) {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
@@ -27,7 +26,7 @@ export default function FinalStep({ label = "" }: { label?: string }) {
       padding={12}
       content={
         <div
-          className={`${isPopoverOpen ? "opacity-100 -translate-y-0" : "opacity-0 -translate-y-4"} 
+          className={`${isPopoverOpen ? "opacity-100 -translate-y-0" : "opacity-0 -translate-y-4"}
                                             pointer-events-none p-4 max-w-56 bg-slate-800 rounded-xl transition-all duration-500 ease-in-out`}
         >
           <div className="absolute bottom-[-4px] left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-800 rotate-45" />

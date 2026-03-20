@@ -32,6 +32,7 @@ import { AttachmentsSkeleton, GadgetReportSkeleton } from "./LoadingReportCompon
 import DownloadStudyButton from "./DownloadStudyButton";
 import InnerCircularButton from "./InnerCircularButton";
 import VisorWebButton from "./VisorWebButton";
+import { Icon } from "@iconify/react/dist/iconify.js";
 
 export default function Report({
   templates,
@@ -241,7 +242,6 @@ export default function Report({
       ) : (
         <GadgetReportSkeleton />
       )}
-      <div className="text-gray-500 text-sm">{isSaving ? "Saving ..." : ""}</div>
       <ListOfTemplates
         templates={templates}
         updateTemplate={async (newTemplate) =>
@@ -331,8 +331,15 @@ export default function Report({
       <div className="bg-gray-200 overflow-auto relative z-10">
         <div
           style={{ width: "595pt", fontFamily: "Arial" }}
-          className="p-[60pt] pb-[120pt] relative mx-auto bg-white overflow-hidden"
+          className="p-[60pt] pb-[120pt] mx-auto bg-white overflow-hidden relative"
         >
+          <div className="absolute top-3 left-3 text-gray-500 text-sm">
+            <Icon
+              icon="solar:record-broken"
+              className={`${isSaving ? "opacity-100" : "opacity-0"} duration-300 transition-opacity text-slate-400 animate-spin`}
+              fontSize={ICON_SIZE}
+            />
+          </div>
           <div className="left-0 top-[842pt] px-[60pt] pb-[60pt] pointer-events-none absolute w-full border-b border-rose-400" />
           <div className="left-0 top-[1684pt] px-[60pt] pb-[60pt] absolute w-full border-b border-rose-400" />
 

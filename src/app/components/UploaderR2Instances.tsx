@@ -23,6 +23,7 @@ import { colorClassMap, ICON_SIZE } from "@/constants";
 import ModalToAttachFilesToDicom from "./ModalToAttachFilesToDicom";
 import ModalToCommentDicom from "./ModalToCommentDicom";
 import { useTranslations } from "next-intl";
+import toast from "react-hot-toast";
 import UploadInputs from "./UploadInputs";
 import FinalStep from "./FinalStep";
 import { processDicomStudyTurbo } from "@/lib/processDicomStudyTurbo";
@@ -65,6 +66,18 @@ const compressedAcceptOptions = compressedMimeTypes.reduce(
   },
   {},
 );
+
+// Minimum bytes file-type needs to detect mime reliably
+const MIN_BYTES_FOR_MIME_DETECTION = 4100;
+
+// Safari-safe alternative to file.arrayBuffer() — works on all browser versions
+const toArrayBuffer = (file: File): Promise<ArrayBuffer> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as ArrayBuffer);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsArrayBuffer(file);
+  });
 
 const UploaderR2Instances: React.FC<UploaderR2Props> = ({
   option,
@@ -125,14 +138,34 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
       const compressedFilesList: File[] = [];
 
       for (const file of acceptedFiles) {
-        const fileBuffer = await file.arrayBuffer();
-        const extensionFromBuffer = await fileTypeFromBuffer(fileBuffer);
-        const fileExt = file.name.split(".").pop()?.toLowerCase();
+        // Guard: skip empty files
+        if (file.size === 0) {
+          console.warn(`Skipping empty file: ${file.name}`);
+          continue;
+        }
 
-        // ✅ Fallback to extension when mime detection fails (common with RAR5)
-        const isCompressed = extensionFromBuffer
-          ? compressedMimeTypes.includes(extensionFromBuffer.mime)
-          : fileExt === "zip" || fileExt === "rar";
+        const fileBuffer = await toArrayBuffer(file);
+
+        // Guard: buffer too small for mime detection
+        if (fileBuffer.byteLength < MIN_BYTES_FOR_MIME_DETECTION) {
+          console.warn(`File too small for mime detection: ${file.name}`);
+          toast.error(`"${file.name}" is too small or corrupt to be extracted.`);
+          continue;
+        }
+
+        let isCompressed = false;
+        try {
+          const extensionFromBuffer = await fileTypeFromBuffer(fileBuffer);
+          const fileExt = file.name.split(".").pop()?.toLowerCase();
+
+          // ✅ Fallback to extension when mime detection fails (common with RAR5)
+          isCompressed = extensionFromBuffer
+            ? compressedMimeTypes.includes(extensionFromBuffer.mime)
+            : fileExt === "zip" || fileExt === "rar";
+        } catch {
+          console.warn(`fileTypeFromBuffer failed for: ${file.name}, treating as non-compressed`);
+          toast.error(`Could not read file: ${file.name}`);
+        }
 
         if (isCompressed) {
           compressedFilesList.push(file);
@@ -161,14 +194,66 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
         });
       }
 
-      compressedFilesList.forEach((file) => {
+      // Process compressed files — extract DICOM metadata to get real patientName
+      for (const file of compressedFilesList) {
+        let extractedFiles: ExtractedFilesObject = {};
+
+        try {
+          const fileBuffer = await toArrayBuffer(file);
+
+          // Guard: buffer too small for mime detection
+          if (fileBuffer.byteLength < MIN_BYTES_FOR_MIME_DETECTION) {
+            console.warn(`Compressed file too small for mime detection: ${file.name}`);
+            throw new Error("File too small for mime detection");
+          }
+
+          const extensionFromBuffer = await fileTypeFromBuffer(fileBuffer);
+          const mime = extensionFromBuffer?.mime;
+          const fileExt = file.name.split(".").pop()?.toLowerCase();
+
+          if (mime === "application/zip" || mime === "application/x-zip-compressed") {
+            const { processZipFile } = await import("@/lib/decompress");
+            extractedFiles = await processZipFile(file);
+          } else if (
+            mime === "application/x-compressed" ||
+            mime === "application/x-rar-compressed" ||
+            mime === "application/vnd.rar" ||
+            mime === "application/x-rar" ||
+            (!mime && fileExt === "rar")
+          ) {
+            const archiveRar = await Archive.open(file);
+            extractedFiles = await archiveRar.extractFiles();
+          }
+        } catch {
+          console.warn(`Extraction failed for: ${file.name}`);
+          toast.error(
+            `Could not extract file: ${file.name}. The file may be too small or corrupt.`,
+          );
+        }
+
+        // If extraction failed entirely, skip adding to the list
+        if (Object.keys(extractedFiles).length === 0) {
+          continue;
+        }
+
+        // Read real patientName from DICOM metadata
+        let patientName = file.name;
+        try {
+          const studies = await findAllDicomFilesWithDifferentStudyUID(extractedFiles);
+          if (studies.length > 0 && studies[0].metadata.patientName) {
+            patientName = studies[0].metadata.patientName;
+          }
+        } catch {
+          // If metadata read fails, fall back to file.name
+        }
+
         setFiles((prev) => [
           ...prev,
           {
             id: uuidv4(),
             studies: [],
             file,
-            patientName: file.name,
+            patientName,
             state: CustomFileStateType.selected,
             isAvailableForR2Upload: storeByDefault,
             color: "gray-50",
@@ -176,7 +261,7 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
             imageUploadProgress: 0,
           },
         ]);
-      });
+      }
 
       setIsDropping(false);
     },
@@ -233,6 +318,7 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
             }
           } catch (error) {
             console.error(`[UploaderR2] Error uploading ${fileEntity.patientName}:`, error);
+            toast.error(`Error processing file: ${fileEntity.patientName}`);
             editCustomFileById(setFiles, fileEntity.id, {
               state: CustomFileStateType.errorLoading,
               color: "rose-50",

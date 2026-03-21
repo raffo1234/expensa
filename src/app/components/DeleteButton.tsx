@@ -3,25 +3,49 @@
 import { Icon } from "@iconify/react";
 import { ICON_SIZE } from "@/constants";
 import PopoverInnerButton from "./PopoverInnerButton";
+import { useConfirmModal } from "@/hooks/useConfirmModal";
 
 interface DeleteButtonProps {
+  onClick: () => void;
   title?: string;
   isDeleting?: boolean;
-  onClick: () => void;
+  classNames?: string;
+  confirmTitle?: string;
+  confirmDescription?: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
 }
 
 export default function DeleteButton({
+  onClick,
+  classNames = "",
   title = "Delete",
   isDeleting = false,
-  onClick,
+  confirmTitle = "Are you sure?",
+  confirmDescription = "This action cannot be undone.",
+  confirmLabel = "Delete",
+  cancelLabel = "Cancel",
 }: DeleteButtonProps) {
+  const { confirm } = useConfirmModal();
+
+  const handleClick = () => {
+    confirm({
+      title: confirmTitle,
+      description: confirmDescription,
+      confirmLabel,
+      cancelLabel,
+      variant: "danger",
+      onConfirm: onClick,
+    });
+  };
+
   return (
     <button
       title={title}
-      onClick={onClick}
+      onClick={handleClick}
       type="button"
       disabled={isDeleting}
-      className="flex w-fit aspect-square cursor-pointer rounded-full bg-rose-50 border border-rose-200 text-rose-500 hover:bg-rose-100 hover:text-rose-600 hover:border-rose-300 active:bg-rose-200 active:text-rose-700 active:scale-95 disabled:opacity-50 disabled:pointer-events-none transition-colors duration-200"
+      className={`${classNames} flex w-fit aspect-square cursor-pointer rounded-full bg-rose-50 border border-rose-200 text-rose-400 hover:bg-rose-100 hover:text-rose-500 hover:border-rose-300 active:bg-rose-200 active:text-rose-600 active:scale-95 disabled:opacity-50 disabled:pointer-events-none transition-colors duration-200`}
     >
       <PopoverInnerButton title={title}>
         {isDeleting ? (

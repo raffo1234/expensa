@@ -3,7 +3,6 @@
 import { DicomStateEnum } from "@/enums/dicomStateEnum";
 import DOCXPreview from "./DOCXPreview";
 import GeneratePDFButton from "./GeneratePDFButton";
-import { Icon } from "@iconify/react/dist/iconify.js";
 import { DicomType } from "@/types/dicomType";
 import useCheckPermission from "@/hooks/useCheckPermission";
 import { Permissions } from "@/types/propertyState";

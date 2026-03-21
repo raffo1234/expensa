@@ -7,7 +7,7 @@ export default function PopoverInnerButton({
   children,
   positions = ["top", "bottom"],
 }: {
-  title: string;
+  title: React.ReactNode;
   isDisabled?: boolean;
   children?: React.ReactNode;
   positions?: ["top" | "bottom" | "left" | "right", ...("top" | "bottom" | "left" | "right")[]];

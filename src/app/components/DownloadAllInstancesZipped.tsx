@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Icon } from "@iconify/react"; // Asumiendo que usas Iconify por tu código previo
 import { ICON_SIZE } from "@/constants";
-import InnerCircularButton from "./InnerCircularButton";
+import CircularSecondaryButton from "./CircularSecondaryButton";
 
 export default function DownloadAllInstancesZipped({
   filename,
@@ -44,13 +44,16 @@ export default function DownloadAllInstancesZipped({
   const title = "Download Zip";
 
   return (
-    <button onClick={handleDownload} title={title} disabled={isZipping || fileIds.length === 0}>
-      <InnerCircularButton isDisabled={isZipping} title={title} isActive={isButtonActive}>
-        <Icon
-          icon={isZipping ? "line-md:loading-twotone-loop" : "solar:arrow-down-linear"}
-          fontSize={ICON_SIZE}
-        />
-      </InnerCircularButton>
-    </button>
+    <CircularSecondaryButton
+      onClick={handleDownload}
+      title={title}
+      isDisabled={isZipping || fileIds.length === 0}
+      isActive={isButtonActive}
+    >
+      <Icon
+        icon={isZipping ? "line-md:loading-twotone-loop" : "solar:arrow-down-linear"}
+        fontSize={ICON_SIZE}
+      />
+    </CircularSecondaryButton>
   );
 }

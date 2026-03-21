@@ -1,7 +1,6 @@
-import Link from "next/link";
-import InnerCircularButton from "./InnerCircularButton";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { ICON_SIZE } from "@/constants";
+import CircularSecondaryButton from "./CircularSecondaryButton";
 
 export default function DownloadZippedStudyButton({
   zippedDicomUrl,
@@ -11,17 +10,18 @@ export default function DownloadZippedStudyButton({
   isButtonActive?: boolean;
 }) {
   const title = "Download Zip";
+
   return (
-    <Link
+    <CircularSecondaryButton
+      as="a"
       target="_blank"
+      isActive={isButtonActive}
       href={zippedDicomUrl}
-      download
       title={title}
-      className="inline-block w-fit"
+      download
+      className="w-fit inline-block"
     >
-      <InnerCircularButton title={title} isActive={isButtonActive}>
-        <Icon icon="solar:arrow-down-linear" fontSize={ICON_SIZE} />
-      </InnerCircularButton>
-    </Link>
+      <Icon icon="solar:arrow-down-linear" fontSize={ICON_SIZE} />
+    </CircularSecondaryButton>
   );
 }

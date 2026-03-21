@@ -7,6 +7,7 @@ import { Permissions } from "@/types/propertyState";
 import { useDicomHasAssignments } from "@/hooks/useDicomHasAssignments";
 import { ICON_SIZE } from "@/constants";
 import InnerCircularButton from "./InnerCircularButton";
+import CircularSecondaryButton from "./CircularSecondaryButton";
 
 function AssignmentIcon() {
   return (
@@ -57,25 +58,14 @@ export default function AssignDicomToTrigger({
     dicomIds[0] as string,
   );
 
+  const title = hasAssignments ? "View Assignments" : "Assign";
+
   if (isLoadingCanAssign || isLoadingCanViewDicoms || isLoadingHasAssignments) return null;
   if (!canAssign || !canViewDicoms) return null;
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="inline-block text-sm underline underline-offset-3"
-    >
-      {dicomIds.length === 1 ? (
-        <InnerCircularButton
-          title={hasAssignments ? "View Assignments" : "Assign"}
-          isActive={!!hasAssignments}
-        >
-          <AssignmentIcon />
-        </InnerCircularButton>
-      ) : (
-        "Assignments"
-      )}
-    </button>
+    <CircularSecondaryButton title={title} onClick={onClick} isActive={!!hasAssignments}>
+      {dicomIds.length === 1 ? <AssignmentIcon /> : "Assignments"}
+    </CircularSecondaryButton>
   );
 }

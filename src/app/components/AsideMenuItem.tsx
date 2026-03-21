@@ -44,8 +44,9 @@ const MenuItemLink = React.forwardRef<
       title={title}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={closePopover}
-      className={`${href === currentPath ? "bg-gray-100 font-semibold" : "hover:bg-gray-50"
-        } rounded-xl lg:w-[51px] w-full h-auto lg:h-[43px] py-3 px-4 gap-3.5 flex items-center transition-colors duration-300`}
+      className={`${
+        href === currentPath ? "bg-gray-100 font-semibold" : "hover:bg-gray-50"
+      } rounded-xl ${isContracted ? "lg:w-[51px]" : ""} w-full h-auto lg:h-[43px] py-3 px-4 gap-3.5 flex items-center transition-colors duration-300`}
       onClick={closeMenu}
       ref={ref}
     >
@@ -79,7 +80,7 @@ export default function AsideMenuItem({
       padding={12}
       content={
         <div
-          className={`${isPopoverOpen ? "opacity-100 -translate-x-2" : "opacity-0 -translate-x-4"} pointer-events-none px-4 py-1 bg-slate-800 text-white rounded-lg transition-all duration-300 ease-in-out`}
+          className={`${isPopoverOpen ? "opacity-100 -translate-x-2" : "opacity-0 -translate-x-4"} pointer-events-none px-4 py-1 bg-slate-800 text-white rounded-lg hidden lg:block transition-all duration-300 ease-in-out`}
         >
           {page.title}
         </div>

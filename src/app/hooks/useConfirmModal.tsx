@@ -26,14 +26,14 @@ function ConfirmModalContent({
   };
 
   const confirmColors = {
-    danger: "bg-rose-500 hover:bg-rose-600 text-white",
+    danger: "bg-rose-600 hover:bg-rose-700 text-white",
     warning: "bg-amber-500 hover:bg-amber-600 text-white",
-    default: "bg-cyan-500 hover:bg-cyan-600 text-white",
+    default: "bg-cyan-400 hover:bg-cyan-500 text-white",
   };
 
   const iconColors = {
-    danger: "text-rose-400 bg-rose-50",
-    warning: "text-amber-400 bg-amber-50",
+    danger: "text-rose-600 bg-rose-100",
+    warning: "text-amber-600 bg-amber-100",
     default: "text-cyan-400 bg-cyan-50",
   };
 
@@ -65,22 +65,22 @@ function ConfirmModalContent({
   };
 
   return (
-    <div className="flex flex-col items-center text-center">
+    <div className="flex bg-white rounded-xl flex-col items-center text-center py-4">
       <div className={`${iconColors[variant]} p-4 rounded-full mb-5`}>{icons[variant]}</div>
       <h2 className="text-xl font-semibold mb-2">{title}</h2>
-      {description && <p className="text-gray-400 mb-8 max-w-sm">{description}</p>}
+      {description && <p className="text-slate-500 text-sm mb-8 max-w-sm">{description}</p>}
       <div className="flex gap-3 mt-2">
         <button
           type="button"
           onClick={onClose}
-          className="cursor-pointer px-6 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-colors duration-200"
+          className="px-6 py-2 cursor-pointer rounded-full border border-slate-200 hover:bg-slate-100 active:bg-slate-200 transition-colors duration-200"
         >
           {cancelLabel}
         </button>
         <button
           type="button"
           onClick={handleConfirm}
-          className={`cursor-pointer px-6 py-2.5 rounded-xl font-medium transition-colors duration-200 ${confirmColors[variant]}`}
+          className={`px-6 py-2 rounded-full cursor-pointer transition-colors duration-200 ${confirmColors[variant]}`}
         >
           {confirmLabel}
         </button>

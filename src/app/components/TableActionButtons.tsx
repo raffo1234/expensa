@@ -35,7 +35,7 @@ function DeleteLegacyButton({ dicom, mutate }: { dicom: DicomType; mutate: () =>
       title: "Delete study?",
       description: "This action cannot be undone.",
       confirmLabel: "Delete",
-      variant: "danger",
+      variant: "default",
       onConfirm: () => deleteDicom(id, dicomUrl, mutate, setIsDeleting),
     });
   };

@@ -13,7 +13,6 @@ export default function DownloadZippedStudyButton({
 
   return (
     <CircularSecondaryButton
-      as="a"
       target="_blank"
       isActive={isButtonActive}
       href={zippedDicomUrl}

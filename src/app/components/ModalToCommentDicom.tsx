@@ -11,7 +11,7 @@ import { UUIDTypes } from "uuid";
 import { DicomStateEnum } from "@/enums/dicomStateEnum";
 import { Popover } from "react-tiny-popover";
 import { useTranslations } from "next-intl";
-import InnerCircularButton from "./InnerCircularButton";
+import CircularSecondaryButton from "./CircularSecondaryButton";
 
 function DicomCommentEditor({
   dicomId,
@@ -59,7 +59,7 @@ function DicomCommentEditor({
         <button
           onClick={handleUpdate}
           disabled={isUpdating || isCommentUnchanged}
-          className={`px-4 py-2 rounded-lg text-white font-semibold transition-colors 
+          className={`px-4 py-2 rounded-lg text-white font-semibold transition-colors
                         ${
                           isUpdating || isCommentUnchanged
                             ? "bg-gray-400 cursor-not-allowed"
@@ -119,7 +119,7 @@ export default function ModalToCommentDicom({ dicomId }: { dicomId: UUIDTypes })
       padding={12}
       content={
         <div
-          className={`${isPopoverOpen ? "opacity-100 -translate-y-0" : "opacity-0 -translate-y-4"} 
+          className={`${isPopoverOpen ? "opacity-100 -translate-y-0" : "opacity-0 -translate-y-4"}
               pointer-events-none p-4 max-w-48 bg-slate-800 rounded-xl transition-all duration-500 ease-in-out`}
         >
           <div className="absolute bottom-[-4px] left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-800 rotate-45" />
@@ -128,28 +128,27 @@ export default function ModalToCommentDicom({ dicomId }: { dicomId: UUIDTypes })
         </div>
       }
     >
-      <button
+      <CircularSecondaryButton
         onClick={onClick}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        disabled={isLoadingDicom}
+        isDisabled={isLoadingDicom}
         type="button"
         title="Add/Edit Study Comment"
+        isActive={!!dicom?.comment?.trim()}
       >
-        <InnerCircularButton isActive={!!dicom?.comment?.trim()}>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width={ICON_SIZE}
-            height={ICON_SIZE}
-            viewBox="0 0 24 24"
-          >
-            <g fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.5">
-              <path strokeLinejoin="round" d="M8 13.5h8m-8-5h4" />
-              <path d="M6.099 19q-1.949-.192-2.927-1.172C2 16.657 2 14.771 2 11v-.5c0-3.771 0-5.657 1.172-6.828S6.229 2.5 10 2.5h4c3.771 0 5.657 0 6.828 1.172S22 6.729 22 10.5v.5c0 3.771 0 5.657-1.172 6.828S17.771 19 14 19c-.56.012-1.007.055-1.445.155c-1.199.276-2.309.89-3.405 1.424c-1.563.762-2.344 1.143-2.834.786c-.938-.698-.021-2.863.184-3.865" />
-            </g>
-          </svg>
-        </InnerCircularButton>
-      </button>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width={ICON_SIZE}
+          height={ICON_SIZE}
+          viewBox="0 0 24 24"
+        >
+          <g fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.5">
+            <path strokeLinejoin="round" d="M8 13.5h8m-8-5h4" />
+            <path d="M6.099 19q-1.949-.192-2.927-1.172C2 16.657 2 14.771 2 11v-.5c0-3.771 0-5.657 1.172-6.828S6.229 2.5 10 2.5h4c3.771 0 5.657 0 6.828 1.172S22 6.729 22 10.5v.5c0 3.771 0 5.657-1.172 6.828S17.771 19 14 19c-.56.012-1.007.055-1.445.155c-1.199.276-2.309.89-3.405 1.424c-1.563.762-2.344 1.143-2.834.786c-.938-.698-.021-2.863.184-3.865" />
+          </g>
+        </svg>
+      </CircularSecondaryButton>
     </Popover>
   );
 }

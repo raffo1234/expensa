@@ -7,12 +7,24 @@ export default function PopoverInnerButton({
   children,
   positions = ["top", "bottom"],
 }: {
-  title: React.ReactNode;
+  title?: React.ReactNode;
   isDisabled?: boolean;
   children?: React.ReactNode;
   positions?: ["top" | "bottom" | "left" | "right", ...("top" | "bottom" | "left" | "right")[]];
 }) {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+
+  const inner = (
+    <span
+      onMouseEnter={() => !isDisabled && setIsPopoverOpen(true)}
+      onMouseLeave={() => setIsPopoverOpen(false)}
+      className={`flex p-2 items-center justify-center w-full h-full ${isDisabled ? "pointer-events-none" : ""}`}
+    >
+      {children}
+    </span>
+  );
+
+  if (!title) return inner;
 
   return (
     <Popover
@@ -28,13 +40,7 @@ export default function PopoverInnerButton({
         </div>
       }
     >
-      <span
-        onMouseEnter={() => !isDisabled && setIsPopoverOpen(true)}
-        onMouseLeave={() => setIsPopoverOpen(false)}
-        className={`flex p-2 items-center justify-center w-full h-full ${isDisabled ? "pointer-events-none" : ""}`}
-      >
-        {children}
-      </span>
+      {inner}
     </Popover>
   );
 }

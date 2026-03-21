@@ -3,7 +3,6 @@
 import { useGlobalState } from "@/lib/globalState";
 import ShareReport from "./ShareReport";
 import { ICON_SIZE } from "@/constants";
-import InnerCircularButton from "./InnerCircularButton";
 import CircularSecondaryButton from "./CircularSecondaryButton";
 
 export default function ShareReportButton({ id, userId }: { id: string; userId: string }) {

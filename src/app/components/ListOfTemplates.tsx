@@ -1,16 +1,14 @@
 import { DicomType } from "@/types/dicomType";
 import { TemplateType } from "@/types/templateType";
-import Link from "next/link";
 import { Permissions } from "@/types/propertyState";
 import useCheckPermission from "@/hooks/useCheckPermission";
 import { ICON_SIZE } from "@/constants";
 import OptionButton from "./OptionButton";
 import { ListTemplatesSkeleton } from "./LoadingReportComponent";
-import PopoverInnerButton from "./PopoverInnerButton";
+import CircularSecondaryButton from "./CircularSecondaryButton";
 
 function putFirst(array: TemplateType[], element: TemplateType | undefined) {
-  if (element)
-    return [element, ...array.filter((item) => item.id !== element.id)];
+  if (element) return [element, ...array.filter((item) => item.id !== element.id)];
   return array;
 }
 
@@ -27,19 +25,19 @@ export default function ListOfTemplates({
   dicom: DicomType | null | undefined;
   userRoleId: string;
 }) {
-  const { hasPermission: canViewTemplates, isLoading: isLoading } =
-    useCheckPermission(userRoleId, Permissions.VIEW_TEMPLATES);
+  const { hasPermission: canViewTemplates, isLoading: isLoading } = useCheckPermission(
+    userRoleId,
+    Permissions.VIEW_TEMPLATES,
+  );
 
-  const {
-    hasPermission: canChangeTemplates,
-    isLoading: isLoadingCanChangeTemplate,
-  } = useCheckPermission(userRoleId, Permissions.CHANGE_TEMPLATE);
+  const { hasPermission: canChangeTemplates, isLoading: isLoadingCanChangeTemplate } =
+    useCheckPermission(userRoleId, Permissions.CHANGE_TEMPLATE);
 
   const handleTemplateActive = (dicomId: string, newTemplate: TemplateType) => {
     updateTemplate(newTemplate);
   };
   const sortedTemplates = putFirst(templates, activeTemplate);
-  const title = "View all templates"
+  const title = "View all templates";
 
   if (!dicom || isLoading || isLoadingCanChangeTemplate) return <ListTemplatesSkeleton />;
 
@@ -52,28 +50,23 @@ export default function ListOfTemplates({
     >
       {canChangeTemplates
         ? sortedTemplates.map((template) => {
-          const { id, name } = template;
-          return (
-            <OptionButton
-              key={id}
-              type="button"
-              title={name}
-              isActive={id === dicom.template_id}
-              onClick={() => handleTemplateActive(dicom.id, template)}
-            >
-              {name}
-            </OptionButton>
-          );
-        })
+            const { id, name } = template;
+            return (
+              <OptionButton
+                key={id}
+                type="button"
+                title={name}
+                isActive={id === dicom.template_id}
+                onClick={() => handleTemplateActive(dicom.id, template)}
+              >
+                {name}
+              </OptionButton>
+            );
+          })
         : null}
       {canViewTemplates ? (
-        <Link
-          href="/admin/templates"
-          target="_blank"
-          className="flex items-center cursor-pointer text-center p-1 transition-colors duration-300 text-gray-500 hover:text-cyan-400 group"
-          title={title}
-        >
-          <PopoverInnerButton title={title}>
+        <div>
+          <CircularSecondaryButton href="/admin/templates" target="_blank" title={title}>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width={ICON_SIZE}
@@ -93,8 +86,8 @@ export default function ListOfTemplates({
                 />
               </g>
             </svg>
-          </PopoverInnerButton>
-        </Link>
+          </CircularSecondaryButton>
+        </div>
       ) : null}
     </div>
   );

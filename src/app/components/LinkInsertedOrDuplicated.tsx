@@ -1,27 +1,18 @@
 "use client";
 
 import { Icon } from "@iconify/react/dist/iconify.js";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Permissions } from "@/types/propertyState";
 import useCheckPermission from "@/hooks/useCheckPermission";
 import { ICON_SIZE } from "@/constants";
-import InnerCircularButton from "./InnerCircularButton";
+import CircularSecondaryButton from "./CircularSecondaryButton";
 
-function LinkInsertedOrDuplicatedContent({
-  state,
-  isDuplicated,
-}: {
-  state: string;
-  isDuplicated: boolean;
-}) {
+function LinkInsertedOrDuplicatedContent({ isDuplicated }: { isDuplicated: boolean }) {
   return (
-    <InnerCircularButton title={`Go to ${state} study`}>
-      <Icon
-        icon={`${isDuplicated ? "sidekickicons:check-double-20-solid" : "akar-icons:check"}`}
-        fontSize={ICON_SIZE}
-      />
-    </InnerCircularButton>
+    <Icon
+      icon={`${isDuplicated ? "sidekickicons:check-double-20-solid" : "akar-icons:check"}`}
+      fontSize={ICON_SIZE}
+    />
   );
 }
 
@@ -46,17 +37,18 @@ export default function LinkInsertedOrDuplicated({
 
   if (canViewDicoms) {
     return (
-      <Link
+      <CircularSecondaryButton
         key={id}
+        title={`Go to ${state} study`}
         target="_blank"
         href={`/admin/dicoms/${id}`}
         onMouseEnter={() => router.prefetch(`/admin/dicoms/${id}`)}
         className="hover:underline text-cyan-500 underline-offset-4"
       >
-        <LinkInsertedOrDuplicatedContent isDuplicated={isDuplicated} state={state} />
-      </Link>
+        <LinkInsertedOrDuplicatedContent isDuplicated={isDuplicated} />
+      </CircularSecondaryButton>
     );
   }
 
-  return <LinkInsertedOrDuplicatedContent isDuplicated={isDuplicated} state={state} />;
+  return <LinkInsertedOrDuplicatedContent isDuplicated={isDuplicated} />;
 }

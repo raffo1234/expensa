@@ -30,9 +30,9 @@ import ClearButton from "./ClearButton";
 import { useRouter } from "next/navigation";
 import DuplicateDicom from "./DuplicateDicom";
 import InformButton from "./InformButton";
-import InnerCircularButton from "./InnerCircularButton";
 import DownloadStudyButton from "./DownloadStudyButton";
 import VisorWebButton from "./VisorWebButton";
+import CircularSecondaryButton from "./CircularSecondaryButton";
 
 type SortDirection = "asc" | "desc" | null;
 
@@ -1043,7 +1043,7 @@ export default function Pagination({
                           dicomId={id}
                           Button={
                             <button title="Attachments" type="button">
-                              <InnerCircularButton title="Attachments">
+                              <CircularSecondaryButton title="Attachments">
                                 <svg
                                   xmlns="http://www.w3.org/2000/svg"
                                   width={ICON_SIZE}
@@ -1057,7 +1057,7 @@ export default function Pagination({
                                     clipRule="evenodd"
                                   />
                                 </svg>
-                              </InnerCircularButton>
+                              </CircularSecondaryButton>
                             </button>
                           }
                         />

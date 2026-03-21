@@ -6,7 +6,6 @@ import useCheckPermission from "@/hooks/useCheckPermission";
 import { Permissions } from "@/types/propertyState";
 import { useDicomHasAssignments } from "@/hooks/useDicomHasAssignments";
 import { ICON_SIZE } from "@/constants";
-import InnerCircularButton from "./InnerCircularButton";
 import CircularSecondaryButton from "./CircularSecondaryButton";
 
 function AssignmentIcon() {

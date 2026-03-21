@@ -28,9 +28,7 @@ export default async function Page() {
       <div className="flex justify-between">
         <h1 className="font-semibold text-lg block">
           {t("title")}
-          <span className="text-sm text-gray-500 font-normal block pt-1">
-            {t("description")}
-          </span>
+          <span className="text-sm text-gray-500 font-normal block pt-1">{t("description")}</span>
         </h1>
       </div>
       <Suspense fallback={<FallBackUploader />}>
@@ -55,11 +53,7 @@ async function UploaderSection() {
         fallback={<NoAccess />}
         loadingComponent={<FallBackUploader />}
       >
-        <UploaderPage
-          userEmail={user.email}
-          userId={user.id}
-          userRoleId={user.roleId}
-        />
+        <UploaderPage userEmail={user.email} userId={user.id} userRoleId={user.roleId} />
       </CheckPermission>
     </>
   );

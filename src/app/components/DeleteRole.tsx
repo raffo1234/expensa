@@ -10,9 +10,7 @@ export default function DeleteRole({ roleId }: { roleId: string }) {
   const title = "Delete";
 
   const deleteItem = async (roleId: string) => {
-    const confirmationMessage = confirm(
-      "Are you sure you want to delete this item?"
-    );
+    const confirmationMessage = confirm("Are you sure you want to delete this item?");
     if (!confirmationMessage) return;
 
     setIsDeleting(true);
@@ -38,11 +36,7 @@ export default function DeleteRole({ roleId }: { roleId: string }) {
     >
       <PopoverInnerButton title={title} isDisabled={isDeleting}>
         {isDeleting ? (
-          <Icon
-            icon="solar:record-broken"
-            className="animate-spin"
-            fontSize={ICON_SIZE}
-          />
+          <Icon icon="solar:record-broken" className="animate-spin" fontSize={ICON_SIZE} />
         ) : (
           <Icon icon="solar:trash-bin-minimalistic-broken" fontSize={ICON_SIZE} />
         )}

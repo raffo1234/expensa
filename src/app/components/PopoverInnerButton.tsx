@@ -20,7 +20,8 @@ export default function PopoverInnerButton({
       positions={positions}
       padding={12}
       content={
-        <div className={`${isPopoverOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"}
+        <div
+          className={`${isPopoverOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"}
           pointer-events-none text-white px-3 py-2 max-w-48 bg-slate-800 rounded-lg transition-all duration-300 ease-in-out`}
         >
           {title}
@@ -30,7 +31,7 @@ export default function PopoverInnerButton({
       <span
         onMouseEnter={() => !isDisabled && setIsPopoverOpen(true)}
         onMouseLeave={() => setIsPopoverOpen(false)}
-        className={`flex items-center justify-center w-full h-full ${isDisabled ? "pointer-events-none" : ""}`}
+        className={`flex p-2 items-center justify-center w-full h-full ${isDisabled ? "pointer-events-none" : ""}`}
       >
         {children}
       </span>

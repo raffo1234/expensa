@@ -10,12 +10,7 @@ import FieldLabel from "./FieldLabel";
 import DotsLoading from "./DotsLoading";
 import { useDebouncedCallback } from "use-debounce";
 import toast from "react-hot-toast";
-
-const fetcher = async (id: string) => {
-  const { data, error } = await supabase.from("template").select("*").eq("id", id).single();
-  if (error) throw error;
-  return data;
-};
+import templateFetcher from "@/lib/templateFetcher";
 
 export default function EditTemplate({
   id,
@@ -30,7 +25,7 @@ export default function EditTemplate({
     data: template,
     isLoading,
     mutate: swrMutate,
-  } = useSWR(id, () => fetcher(id), { fallbackData: fallbackTemplate });
+  } = useSWR(id, () => templateFetcher(id), { fallbackData: fallbackTemplate });
 
   const mutateTemplate = useCallback(async () => {
     await swrMutate();

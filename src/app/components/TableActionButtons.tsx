@@ -10,9 +10,8 @@ import deleteDicom from "@/lib/deleteDicom";
 import { useSession } from "next-auth/react";
 import { DeleteDicomWithInstancesButton } from "./DeleteDicomWithInstancesButton";
 import DeleteDuplicatedDicomButton from "./DeleteDuplicatedDicomButton";
-import { Dispatch, SetStateAction, useState } from "react";
+import { useState } from "react";
 import InformButton from "./InformButton";
-import { useConfirmModal } from "@/hooks/useConfirmModal";
 import DeleteButton from "./DeleteButton";
 
 interface DeleteDicomButtonsProps {
@@ -22,29 +21,12 @@ interface DeleteDicomButtonsProps {
 
 function DeleteLegacyButton({ dicom, mutate }: { dicom: DicomType; mutate: () => void }) {
   const [isDeleting, setIsDeleting] = useState(false);
-  const title = "Delete";
-
-  const { confirm } = useConfirmModal();
-  const handleDelete = (
-    id: string,
-    dicomUrl: string | null,
-    mutate: () => void,
-    setIsDeleting: Dispatch<SetStateAction<boolean>>,
-  ) => {
-    confirm({
-      title: title,
-      description: "This action cannot be undone.",
-      confirmLabel: "Delete",
-      variant: "default",
-      onConfirm: () => deleteDicom(id, dicomUrl, mutate, setIsDeleting),
-    });
-  };
 
   return (
     <DeleteButton
-      title="Delete study"
+      title="Delete"
       isDeleting={isDeleting}
-      onClick={() => handleDelete(dicom.id, dicom.dicom_url || "", mutate, setIsDeleting)}
+      onClick={() => deleteDicom(dicom.id, dicom.dicom_url || "", mutate, setIsDeleting)}
     />
   );
 }

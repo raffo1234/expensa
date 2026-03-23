@@ -5,9 +5,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { updateUser } from "@/actions/updateUser";
 import { formatTimestamp } from "@/utils/formatTimestamp";
+import { useRouter } from "next/navigation";
+import { preload } from "swr";
+import { useEffect } from "react";
+import userFetcher from "@/lib/userFetcher";
 
 export default function UserCard({ user, mutate }: { user: UserType; mutate: () => void }) {
   const { first_name, last_name, created_at, email, archived_at, id, role, image_url } = user;
+  const router = useRouter();
 
   const archive = async () => {
     await updateUser(user.id, { archived_at: new Date() });
@@ -18,6 +23,13 @@ export default function UserCard({ user, mutate }: { user: UserType; mutate: () 
     await updateUser(user.id, { archived_at: null });
     mutate();
   };
+
+  const href = `/admin/users/edit/${id}`;
+
+  useEffect(() => {
+    router.prefetch(href);
+    preload(id, userFetcher);
+  }, [id, router, href]);
 
   return (
     <div className="border bg-white border-gray-200 hover:bg-gray-50 rounded-2xl p-4">
@@ -47,7 +59,7 @@ export default function UserCard({ user, mutate }: { user: UserType; mutate: () 
       <div className="flex gap-2 items-center justify-center">
         <Link
           type="button"
-          href={`/admin/users/edit/${id}`}
+          href={href}
           className="rounded-full w-11 h-11 border-gray-100 hover:border-gray-200 transition-colors duration-500 border flex items-center justify-center"
         >
           <Icon icon="solar:clapperboard-edit-broken" fontSize={ICON_SIZE} />

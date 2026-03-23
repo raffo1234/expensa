@@ -9,7 +9,7 @@ import AnimatedHamburgerButton from "./AnimatedHamburgerButton";
 import { useUpsertUserSetting } from "@/hooks/useUpsertUserSetting";
 import { useContractStore } from "@/store/contract";
 import { useTranslations } from "next-intl";
-import { SWR_KEY_USER_ROLE } from "@/constants";
+import { ICON_SIZE, SWR_KEY_USER_ROLE } from "@/constants";
 
 export default function Aside({
   userId,
@@ -44,8 +44,8 @@ export default function Aside({
   const handleToggle = () => (isOpen ? closeMenu() : handleOpen());
   const toggleContracted = () => {
     const next = !isMenuContracted;
-    setIsContracted(next);   // instant — updates Zustand + localStorage
-    upsertSetting(next);     // background — syncs to Supabase
+    setIsContracted(next); // instant — updates Zustand + localStorage
+    upsertSetting(next); // background — syncs to Supabase
   };
 
   const roleName = role?.[0]?.name ?? "...";
@@ -54,32 +54,31 @@ export default function Aside({
     <div
       className={`${isMenuContracted ? "w-auto" : "lg:w-[286px]"} bg-white transition-all duration-300 flex-shrink-0 border-r border-r-gray-200`}
     >
-      <div className="flex justify-end lg:p-2">
+      <div className={`flex justify-end lg:p-2 ${!isMenuContracted ? "lg:pr-5": "lg:pr-6"}`}>
         <button
           onClick={toggleContracted}
-          className="p-3 hidden lg:block bg-slate-100 rounded-lg"
+          className="p-3 cursor-pointer hidden lg:block bg-slate-100 rounded-lg"
           type="button"
         >
-          <svg
-            className={isMenuContracted ? "rotate-180" : ""}
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-          >
+          <svg xmlns="http://www.w3.org/2000/svg" width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 24 24">
             <path
-              fill="currentColor"
-              d="M19 11H7.14l3.63-4.36a1 1 0 1 0-1.54-1.28l-5 6a1 1 0 0 0-.09.15c0 .05 0 .08-.07.13A1 1 0 0 0 4 12a1 1 0 0 0 .07.36c0 .05 0 .08.07.13a1 1 0 0 0 .09.15l5 6A1 1 0 0 0 10 19a1 1 0 0 0 .64-.23a1 1 0 0 0 .13-1.41L7.14 13H19a1 1 0 0 0 0-2"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.5"
+              d="M9 3.5v17M3 9.4c0-2.24 0-3.36.436-4.216a4 4 0 0 1 1.748-1.748C6.04 3 7.16 3 9.4 3h5.2c2.24 0 3.36 0 4.216.436a4 4 0 0 1 1.748 1.748C21 6.04 21 7.16 21 9.4v5.2c0 2.24 0 3.36-.436 4.216a4 4 0 0 1-1.748 1.748C17.96 21 16.84 21 14.6 21H9.4c-2.24 0-3.36 0-4.216-.436a4 4 0 0 1-1.748-1.748C3 17.96 3 16.84 3 14.6z"
             />
           </svg>
         </button>
       </div>
       <AnimatedHamburgerButton isOpen={isOpen} toggleMenu={handleToggle} />
       <aside
-        className={`${isOpen
-          ? "opacity-100 visible translate-x-0"
-          : "invisible opacity-0 lg:visible lg:opacity-100 lg:translate-x-0 -translate-x-2"
-          } transition-all bg-white w-full h-full overflow-auto absolute left-0 top-0 lg:static pb-8 pt-8 lg:pt-0 px-5 z-30`}
+        className={`${
+          isOpen
+            ? "opacity-100 visible translate-x-0"
+            : "invisible opacity-0 lg:visible lg:opacity-100 lg:translate-x-0 -translate-x-2"
+        } transition-all bg-white w-full h-full overflow-auto absolute left-0 top-0 lg:static pb-8 pt-8 lg:pt-0 px-5 z-30`}
       >
         <header className="mb-20">
           <div className="flex gap-4 items-center">

@@ -180,37 +180,43 @@ export default function Report({
   useControlEnter(completeDicom, document, false, isSaving);
 
   useEffect(() => {
+    if (!dicom?.state) {
+      updateDicom(dicomId, { state: DicomStateEnum.VIEWED }, true);
+    }
+  }, [dicomId, dicom]);
+
+  useEffect(() => {
     if (!dicom || initRan.current) return;
+    if (!dicom.template_id && templates.length === 0) return;
+
     initRan.current = true;
 
-    const run = async () => {
-      const isNotCompleted = dicom.state !== DicomStateEnum.COMPLETED;
+    const initDicom = async () => {
+      const isCompleted = dicom.state === DicomStateEnum.COMPLETED;
+      if (isCompleted) return;
 
-      if (isNotCompleted && !dicom.state) {
-        await updateDicom(dicomId, { state: DicomStateEnum.VIEWED }, true);
-      }
-
-      if (isNotCompleted && !dicom.template_id) {
-        if (dicom.institution) {
-          const fuse = new Fuse(templates, {
-            useExtendedSearch: true,
-            threshold: 0.4,
-            keys: ["name", "description"],
-          });
-
-          const result = fuse.search(dicom.institution.split(" ").join(" | "));
-
-          if (result.length > 0) {
-            await updateDicom(dicomId, { template_id: result[0].item.id }, true);
-          }
-        } else {
-          await assignDicomTemplateByEmail(dicomId);
-        }
+      if (!dicom.template_id) {
+        await assignTemplate();
       }
     };
 
-    run();
-  }, [dicom]);
+    const assignTemplate = async () => {
+      if (dicom.institution) {
+        const fuse = new Fuse(templates, {
+          keys: ["name", "description"],
+          useExtendedSearch: true,
+          threshold: 0.4,
+        });
+        const query = dicom.institution.split(" ").join(" | ");
+        const match = fuse.search(query)[0]?.item;
+        if (match) await updateDicom(dicomId, { template_id: match.id }, true);
+      } else {
+        await assignDicomTemplateByEmail(dicomId);
+      }
+    };
+
+    initDicom();
+  }, [dicom, templates]);
 
   if (error)
     return (
@@ -332,7 +338,7 @@ export default function Report({
           <div className="absolute top-3 left-3 text-gray-500 text-sm">
             <Icon
               icon="solar:record-broken"
-              className={`${isSaving ? "opacity-100" : "opacity-0"} duration-300 transition-opacity text-slate-400 animate-spin`}
+              className={`${isSaving ? "opacity-100" : "opacity-0"} duration-150 transition-opacity text-slate-400 animate-spin`}
               fontSize={ICON_SIZE}
             />
           </div>

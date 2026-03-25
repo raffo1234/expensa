@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
 import NavigationInstructions from "./NavigationInstructions";
 import { useTranslations } from "next-intl";
+import NoData from "./NoData";
 
 async function fetcher(userId: string, page: number, pageSize: number, search: string) {
   const from = page * pageSize;
@@ -188,18 +189,22 @@ export default function MyStudiesPageContent({
         </div>
       ) : (
         <>
-          {dicoms?.map((dicom) => {
-            return (
-              <MyStudy
-                userRoleId={userRoleId}
-                key={dicom.id}
-                dicom={dicom}
-                userId={userId}
-                isItemSelected={isItemSelected}
-                toggleItemSelected={toggleItemSelected}
-              />
-            );
-          })}
+          {dicoms.length === 0 ? (
+            <NoData />
+          ) : (
+            dicoms?.map((dicom) => {
+              return (
+                <MyStudy
+                  userRoleId={userRoleId}
+                  key={dicom.id}
+                  dicom={dicom}
+                  userId={userId}
+                  isItemSelected={isItemSelected}
+                  toggleItemSelected={toggleItemSelected}
+                />
+              );
+            })
+          )}
         </>
       )}
     </>

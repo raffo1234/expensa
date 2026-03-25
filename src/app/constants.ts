@@ -38,3 +38,4 @@ export const colorClassMap: Record<string, string> = {
 };
 
 export const SWR_KEY_USER_ROLE = "user-role";
+export const SWR_KEY_PERMISSIONS = "admin-permissions";

@@ -29,17 +29,17 @@ async function PermissionsSection() {
     .select("*")
     .order("created_at", { ascending: false });
 
-  const [user, { data: permissions }] = await Promise.all([
-    getCurrentUser(),
-    permissionsQuery,
-  ]);
+  const [user, { data: permissions }] = await Promise.all([getCurrentUser(), permissionsQuery]);
 
   if (!user) return <NoAccess />;
 
   return (
-    <PermissionsPage
-      userRoleId={user.roleId}
-      permissions={permissions as PermissionType[] | null}
-    />
+    <>
+      <h1 className="mb-6 font-semibold text-lg block">Permissions</h1>
+      <PermissionsPage
+        userRoleId={user.roleId}
+        permissions={permissions as PermissionType[] | null}
+      />
+    </>
   );
 }

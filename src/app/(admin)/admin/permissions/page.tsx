@@ -8,9 +8,12 @@ import { Suspense } from "react";
 
 export default async function Page() {
   return (
-    <Suspense fallback={<SkeletonPermissionsPage />}>
-      <PermissionsSection />
-    </Suspense>
+    <>
+      <h1 className="mb-6 font-semibold text-lg block">Permissions</h1>
+      <Suspense fallback={<SkeletonPermissionsPage />}>
+        <PermissionsSection />
+      </Suspense>
+    </>
   );
 }
 
@@ -25,12 +28,9 @@ async function PermissionsSection() {
   if (!user) return <NoAccess />;
 
   return (
-    <>
-      <h1 className="mb-6 font-semibold text-lg block">Permissions</h1>
-      <PermissionsPage
-        userRoleId={user.roleId}
-        permissions={permissions as PermissionType[] | null}
-      />
-    </>
+    <PermissionsPage
+      userRoleId={user.roleId}
+      permissions={permissions as PermissionType[] | null}
+    />
   );
 }

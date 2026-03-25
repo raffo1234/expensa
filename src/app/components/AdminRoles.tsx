@@ -9,6 +9,7 @@ import DeleteRole from "./DeleteRole";
 import { adminRolesKey } from "@/constants";
 import toast from "react-hot-toast";
 import FallBackRolesList from "./FallBackRolesList";
+import { RoleType } from "@/types/roleType";
 
 const permissionsFetcher = async () => {
   const { data, error } = await supabase
@@ -44,24 +45,18 @@ export function Permission({
     isLoading,
     mutate,
   } = useSWR(`${roleId}-${permission.id}-admin-role-permission`, () =>
-    rolePermissionFetcher(roleId, permission.id)
+    rolePermissionFetcher(roleId, permission.id),
   );
 
   const onChange = async (checked: boolean) => {
     setIsUpdating(true);
     if (checked) {
-      await supabase
-        .from("role_permission")
-        .insert([{ role_id: roleId, permission_id: id }]);
+      await supabase.from("role_permission").insert([{ role_id: roleId, permission_id: id }]);
       await mutate();
       setIsUpdating(false);
       toast.success("Role updated successfully!");
     } else {
-      await supabase
-        .from("role_permission")
-        .delete()
-        .eq("role_id", roleId)
-        .eq("permission_id", id);
+      await supabase.from("role_permission").delete().eq("role_id", roleId).eq("permission_id", id);
       await mutate();
       setIsUpdating(false);
       toast.success("Role updated successfully!");
@@ -98,17 +93,11 @@ export function Permissions({ roleId }: { roleId: string }) {
   if (error) return null;
   if (isLoading) return <FallBackRolesList />;
   return permissions?.map((permission) => {
-    return (
-      <Permission key={permission.id} roleId={roleId} permission={permission} />
-    );
+    return <Permission key={permission.id} roleId={roleId} permission={permission} />;
   });
 }
 
-export function RoleItem({
-  role,
-}: {
-  role: { id: string; name: string; description: string };
-}) {
+export function RoleItem({ role }: { role: { id: string; name: string; description: string } }) {
   const [isOpen, setIsOpen] = useState(false);
   const { id, name, description } = role;
 
@@ -118,26 +107,26 @@ export function RoleItem({
         <button
           onClick={() => setIsOpen((prev) => !prev)}
           key={id}
-          className={`${isOpen ? "bg-gray-50" : ""
-            } cursor-pointer w-full flex gap-3.5 first:rounded-t-xl items-center justify-between text-left transition-colors duration-300 pl-6 pr-20 py-4`}
+          className={`${
+            isOpen ? "bg-gray-50" : ""
+          } cursor-pointer w-full flex gap-3.5 first:rounded-t-xl items-center justify-between text-left transition-colors duration-300 pl-6 pr-20 py-4`}
         >
           <span className="flex gap-3.5 items-center">
             <Icon
               icon="solar:alt-arrow-down-linear"
               fontSize={20}
-              className={`${isOpen ? "rotate-180" : ""
-                } transition-transform duration-500 flex-shrink-0`}
+              className={`${
+                isOpen ? "rotate-180" : ""
+              } transition-transform duration-500 flex-shrink-0`}
             />
             <span>{name}</span>{" "}
-            {description ? (
-              <span className="text-sm text-gray-500">{description}</span>
-            ) : null}
+            {description ? <span className="text-sm text-gray-500">{description}</span> : null}
           </span>
         </button>
         {role.name === "Super" ||
-          role.name === "Secretary" ||
-          role.name === "Doctor" ||
-          role.name === "Patient" ? null : (
+        role.name === "Secretary" ||
+        role.name === "Doctor" ||
+        role.name === "Patient" ? null : (
           <DeleteRole roleId={role.id} />
         )}
       </div>
@@ -159,11 +148,16 @@ const rolesFetcher = async () => {
   return data;
 };
 
-export default function AdminRoles() {
-  const { data: roles, error, isLoading } = useSWR(adminRolesKey, rolesFetcher);
+export default function AdminRoles({ rolesFallBack }: { rolesFallBack: RoleType[] | null }) {
+  const {
+    data: roles,
+    error,
+    isLoading,
+  } = useSWR(adminRolesKey, rolesFetcher, { fallbackData: rolesFallBack ?? undefined });
 
   if (error) return null;
-  if (isLoading) return <FallBackRolesList />
 
-  return roles?.map((role) => <RoleItem key={role.id} role={role} />)
+  if (isLoading) return <FallBackRolesList />;
+
+  return roles?.map((role) => <RoleItem key={role.id} role={role} />);
 }

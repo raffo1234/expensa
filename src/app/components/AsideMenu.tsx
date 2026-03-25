@@ -105,7 +105,7 @@ export default function AsideMenu({
     ...(checkPermission(Permissions.MANAGE_PERMISSIONS)
       ? [
           {
-            href: "/admin/permisos",
+            href: "/admin/permissions",
             title: t("permissions"),
             iconName: "solar:lock-keyhole-broken",
           },

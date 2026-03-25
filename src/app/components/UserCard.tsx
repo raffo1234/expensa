@@ -13,6 +13,7 @@ import userFetcher from "@/lib/userFetcher";
 export default function UserCard({ user, mutate }: { user: UserType; mutate: () => void }) {
   const { first_name, last_name, created_at, email, archived_at, id, role, image_url } = user;
   const router = useRouter();
+  const imageBaseClassName = "w-11 h-11 rounded-full mb-3 mx-auto bg-slate-100";
 
   const archive = async () => {
     await updateUser(user.id, { archived_at: new Date() });
@@ -33,14 +34,18 @@ export default function UserCard({ user, mutate }: { user: UserType; mutate: () 
 
   return (
     <div className="border bg-white border-gray-200 hover:bg-gray-50 rounded-2xl p-4">
-      <Image
-        src={image_url}
-        className="rounded-full mb-3 mx-auto bg-gray-100"
-        alt={`${first_name} ${last_name ?? ""}`}
-        width={44}
-        height={44}
-        title={`${first_name} ${last_name ?? ""}`}
-      />
+      {image_url ? (
+        <Image
+          src={image_url}
+          className={imageBaseClassName}
+          alt={`${first_name} ${last_name ?? ""}`}
+          width={44}
+          height={44}
+          title={`${first_name} ${last_name ?? ""}`}
+        />
+      ) : (
+        <div className={imageBaseClassName} />
+      )}
       <div
         className="font-semibold w-full mb-1 text-center truncate"
         title={`${first_name} ${last_name ?? ""}`}

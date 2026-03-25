@@ -47,7 +47,7 @@ export default function UserCard({ user, mutate }: { user: UserType; mutate: () 
       >
         {first_name} {last_name ?? ""}
       </div>
-      <div title={email} className="truncate text-xs text-slate-500 mb-3">
+      <div title={email} className="truncate text-xs text-slate-500 mb-3 text-center">
         {email}
       </div>
       <div className="text-xs text-cyan-700 px-2 py-0.5 bg-cyan-100 rounded-full w-fit mx-auto mb-4">

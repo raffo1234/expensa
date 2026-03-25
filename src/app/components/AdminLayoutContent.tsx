@@ -12,7 +12,7 @@ export default function AdminLayoutContent({
   return (
     <section
       style={{
-        minHeight: "calc(100vh - 81px)",
+        minHeight: "calc(100vh - 80px)",
         width: `${isContracted ? "calc(100% - 91px)" : "calc(100% - 286px)"}`,
         marginLeft: "-1px",
       }}

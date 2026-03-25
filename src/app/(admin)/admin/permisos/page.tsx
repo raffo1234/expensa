@@ -4,7 +4,6 @@ import SkeletonPermissionsPage from "@/components/SkeletonPermissionsPage";
 import { getCurrentUser } from "@/lib/getCurrentUser";
 import { supabase } from "@/lib/supabase";
 import { PermissionType } from "@/types/permissionType";
-import SkeletonNode from "antd/es/skeleton/Node";
 import { Suspense } from "react";
 
 export default async function Page() {

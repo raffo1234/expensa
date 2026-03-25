@@ -53,6 +53,7 @@ export default function Aside({
 
   return (
     <div
+      style={{ minHeight: "calc(100vh - 80px)" }}
       className={`${isMenuContracted ? "w-[91px]" : "lg:w-[286px]"} bg-white transition-all duration-300 flex-shrink-0 border-r border-r-gray-200`}
     >
       <div className={`flex justify-end lg:p-2 ${!isMenuContracted ? "lg:pr-5" : "lg:pr-6"}`}>
@@ -97,7 +98,7 @@ export default function Aside({
                 width={48}
               />
             ) : (
-              <div className="w-12 h-12 rounded-full bg-gray-100" />
+              <div className="w-12 h-12 rounded-full bg-slate-100" />
             )}
             <div className={`${isMenuContracted ? "lg:hidden" : ""} truncate`}>
               <p className="text-sm leading-3 mb-1 text-gray-500">{t("welcome")}</p>

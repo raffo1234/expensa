@@ -152,11 +152,13 @@ export default function AsideMenu({
 
   if (isLoading)
     return (
-      <div className="animate-pulse flex flex-col gap-1">
-        <div className="h-[43px] w-full lg:w-[51px] rounded-xl bg-gray-100"></div>
-        <div className="h-[43px] w-full lg:w-[51px] rounded-xl bg-gray-100"></div>
-        <div className="h-[43px] w-full lg:w-[51px] rounded-xl bg-gray-100"></div>
-        <div className="h-[43px] w-full lg:w-[51px] rounded-xl bg-gray-100"></div>
+      <div className="flex flex-col gap-1">
+        {Array.from({ length: 4 }, (_, i) => (
+          <div
+            key={i}
+            className={`h-[43px] w-full ${isContracted ? "lg:w-[51px]" : "w-auto"} rounded-xl bg-gray-100 animate-pulse`}
+          />
+        ))}
       </div>
     );
 

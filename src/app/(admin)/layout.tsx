@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import { supabase } from "@/lib/supabase";
 import { SessionProvider } from "next-auth/react";
 import AdminLayoutContent from "@/components/AdminLayoutContent";
+import { getCurrentUser } from "@/lib/getCurrentUser";
 import { Suspense } from "react";
 
 interface AdminLayoutProps {
@@ -15,8 +16,8 @@ export default async function AdminLayout({ children }: Readonly<AdminLayoutProp
   const session = await auth();
   const user = session?.user;
 
-  const [{ data: userData }, { data: settingData }] = await Promise.all([
-    supabase.from("user").select("role_id").eq("id", user?.id).single(),
+  const [currentUser, { data: settingData }] = await Promise.all([
+    getCurrentUser(),
     supabase
       .from("user_setting")
       .select("setting_value")
@@ -37,10 +38,10 @@ export default async function AdminLayout({ children }: Readonly<AdminLayoutProp
       <div className="border-t border-gray-200">
         <main className="flex items-start w-full z-10 bg-slate-50">
           <Suspense>
-            {user && userData?.role_id && user.name ? (
+            {currentUser && user?.name ? (
               <Aside
-                userId={user?.id}
-                userRoleId={userData.role_id}
+                userId={currentUser.id}
+                userRoleId={currentUser.roleId}
                 userImage={user.image}
                 userName={user.name}
                 isMenuContracted={isMenuContracted}

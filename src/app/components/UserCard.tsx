@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { preload } from "swr";
 import { useEffect } from "react";
 import userFetcher from "@/lib/userFetcher";
+import CircularSecondaryButton from "./CircularSecondaryButton";
 
 export default function UserCard({ user, mutate }: { user: UserType; mutate: () => void }) {
   const { first_name, last_name, created_at, email, archived_at, id, role, image_url } = user;
@@ -62,17 +63,11 @@ export default function UserCard({ user, mutate }: { user: UserType; mutate: () 
         Creado: {formatTimestamp(created_at, "short")}
       </p>
       <div className="flex gap-2 items-center justify-center">
-        <Link
-          type="button"
-          href={href}
-          className="rounded-full w-11 h-11 border-gray-100 hover:border-gray-200 transition-colors duration-500 border flex items-center justify-center"
-        >
+        <CircularSecondaryButton href={href} title="Edit">
           <Icon icon="solar:clapperboard-edit-broken" fontSize={ICON_SIZE} />
-        </Link>
-        <button
-          className="rounded-full w-11 h-11 border-gray-100 hover:border-gray-200 transition-colors duration-500 border flex items-center justify-center"
+        </CircularSecondaryButton>
+        <CircularSecondaryButton
           title={archived_at ? "Unarchive" : "Archive"}
-          type="button"
           onClick={archived_at ? unarchive : archive}
         >
           {archived_at ? (
@@ -80,7 +75,7 @@ export default function UserCard({ user, mutate }: { user: UserType; mutate: () 
           ) : (
             <Icon icon="solar:archive-down-minimlistic-linear" fontSize={ICON_SIZE} />
           )}
-        </button>
+        </CircularSecondaryButton>
         {/* <DeleteUser userId={id} /> */}
       </div>
     </div>

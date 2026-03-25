@@ -46,16 +46,20 @@ const MenuItemLink = React.forwardRef<
       onMouseLeave={closePopover}
       className={`${
         href === currentPath ? "bg-gray-100 font-semibold" : "hover:bg-gray-50"
-      } rounded-xl ${isContracted ? "lg:w-[51px]" : ""} w-full h-auto lg:h-[43px] py-3 px-4 gap-3.5 flex items-center transition-colors duration-300`}
+      } truncate rounded-xl w-full h-auto lg:h-[43px] py-3 px-4 gap-3.5 flex items-center transition-colors duration-300`}
       onClick={closeMenu}
       ref={ref}
     >
       <Icon
         icon={iconName}
         fontSize={ICON_SIZE}
-        className={`${href === currentPath ? "text-rose-400" : ""}`}
+        className={`${href === currentPath ? "text-rose-400" : ""} flex-shrink-0`}
       />
-      <span className={isContracted ? "lg:hidden" : ""}>{title}</span>
+      <span
+        className={`${isContracted ? "lg:invisible lg:opacity-0 lg:w-0" : "lg:visible lg:opacity-100"} transition-all duration-400 overflow-hidden truncate`}
+      >
+        {title}
+      </span>
     </Link>
   );
 });
@@ -73,9 +77,9 @@ export default function AsideMenuItem({
 }) {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
-  return isContracted ? (
+  return (
     <Popover
-      isOpen={true}
+      isOpen={isContracted && isPopoverOpen}
       positions={["right"]}
       padding={12}
       content={
@@ -94,13 +98,5 @@ export default function AsideMenuItem({
         isContracted={isContracted}
       />
     </Popover>
-  ) : (
-    <MenuItemLink
-      openPopover={() => setIsPopoverOpen(true)}
-      closePopover={() => setIsPopoverOpen(false)}
-      closeMenu={closeMenu}
-      page={page}
-      isContracted={isContracted}
-    />
   );
 }

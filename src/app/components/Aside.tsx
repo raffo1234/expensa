@@ -53,7 +53,7 @@ export default function Aside({
 
   return (
     <div
-      className={`${isMenuContracted ? "w-auto" : "lg:w-[286px]"} bg-white transition-all duration-300 flex-shrink-0 border-r border-r-gray-200`}
+      className={`${isMenuContracted ? "w-[91px]" : "lg:w-[286px]"} bg-white transition-all duration-300 flex-shrink-0 border-r border-r-gray-200`}
     >
       <div className={`flex justify-end lg:p-2 ${!isMenuContracted ? "lg:pr-5" : "lg:pr-6"}`}>
         <button
@@ -87,7 +87,7 @@ export default function Aside({
         } transition-all bg-white w-full h-full overflow-auto absolute left-0 top-0 lg:static pb-8 pt-8 lg:pt-0 px-5 z-30`}
       >
         <header className="mb-20">
-          <div className="flex gap-4 items-center">
+          <div className="flex min-h-[60px] gap-4 items-center">
             {userImage ? (
               <Image
                 src={userImage}
@@ -99,9 +99,9 @@ export default function Aside({
             ) : (
               <div className="w-12 h-12 rounded-full bg-gray-100" />
             )}
-            <div className={isMenuContracted ? "lg:hidden" : ""}>
+            <div className={`${isMenuContracted ? "lg:hidden" : ""} truncate`}>
               <p className="text-sm leading-3 mb-1 text-gray-500">{t("welcome")}</p>
-              <h3 className="font-semibold text-gray-700 text-lg">{userName}</h3>
+              <h3 className="font-semibold text-gray-700 truncate text-lg">{userName}</h3>
               <p className="text-xs text-gray-500">{roleName}</p>
             </div>
           </div>

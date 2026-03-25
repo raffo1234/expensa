@@ -4,6 +4,7 @@ import CheckPermission from "./CheckPermission";
 import { Permissions } from "@/types/propertyState";
 import { PermissionType } from "@/types/permissionType";
 import NoAccess from "./NoAccess";
+import SkeletonPermissionsPage from "./SkeletonPermissionsPage";
 
 export default function PermissionsPage({
   userRoleId,
@@ -13,23 +14,22 @@ export default function PermissionsPage({
   permissions: PermissionType[] | null;
 }) {
   return (
-    <>
-      <CheckPermission
-        userRoleId={userRoleId}
-        requiredPermission={Permissions.MANAGE_PERMISSIONS}
-        fallback={<NoAccess />}
-      >
-        <div className="border-x border-b border-gray-200 bg-white rounded-xl">
-          {permissions?.map(({ id, description, slug }) => {
-            return (
-              <div className="px-6 py-5 first:rounded-t-xl border-t border-gray-200" key={id}>
-                <div className="mb-1 text-xs">{slug}</div>
-                <div className="text-sm text-gray-400">{description}</div>
-              </div>
-            );
-          })}
-        </div>
-      </CheckPermission>
-    </>
+    <CheckPermission
+      userRoleId={userRoleId}
+      requiredPermission={Permissions.MANAGE_PERMISSIONS}
+      fallback={<NoAccess />}
+      loadingComponent={<SkeletonPermissionsPage />}
+    >
+      <div className="border-x border-b border-gray-200 bg-white rounded-xl">
+        {permissions?.map(({ id, description, slug }) => {
+          return (
+            <div className="px-6 py-5 first:rounded-t-xl border-t border-gray-200" key={id}>
+              <div className="mb-1 text-xs">{slug}</div>
+              <div className="text-sm text-gray-400">{description}</div>
+            </div>
+          );
+        })}
+      </div>
+    </CheckPermission>
   );
 }

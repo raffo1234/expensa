@@ -7,7 +7,6 @@ import useSWR from "swr";
 import roleFetcher from "@/fetchers/roleFetcher";
 import AnimatedHamburgerButton from "./AnimatedHamburgerButton";
 import { useUpsertUserSetting } from "@/hooks/useUpsertUserSetting";
-import { useContractStore } from "@/store/contract";
 import { useTranslations } from "next-intl";
 import { ICON_SIZE, SWR_KEY_USER_ROLE } from "@/constants";
 
@@ -16,17 +15,18 @@ export default function Aside({
   userRoleId,
   userName,
   userImage,
+  isMenuContracted: initialIsMenuContracted,
 }: {
   userId: string;
   userRoleId: string;
   userName: string;
   userImage: string | undefined | null;
+  isMenuContracted: boolean;
 }) {
   const t = useTranslations("Aside");
   const [isOpen, setIsOpen] = useState(false);
+  const [isMenuContracted, setIsMenuContracted] = useState(initialIsMenuContracted);
 
-  const isMenuContracted = useContractStore((state) => state.isContracted);
-  const setIsContracted = useContractStore((state) => state.setIsContracted);
   const { upsertSetting } = useUpsertUserSetting(userId, "is_menu_contrated");
 
   const { data: role } = useSWR(SWR_KEY_USER_ROLE, () => roleFetcher(userRoleId));
@@ -42,10 +42,11 @@ export default function Aside({
   };
 
   const handleToggle = () => (isOpen ? closeMenu() : handleOpen());
+
   const toggleContracted = () => {
     const next = !isMenuContracted;
-    setIsContracted(next); // instant — updates Zustand + localStorage
-    upsertSetting(next); // background — syncs to Supabase
+    setIsMenuContracted(next);
+    upsertSetting(next);
   };
 
   const roleName = role?.[0]?.name ?? "...";
@@ -54,13 +55,18 @@ export default function Aside({
     <div
       className={`${isMenuContracted ? "w-auto" : "lg:w-[286px]"} bg-white transition-all duration-300 flex-shrink-0 border-r border-r-gray-200`}
     >
-      <div className={`flex justify-end lg:p-2 ${!isMenuContracted ? "lg:pr-5": "lg:pr-6"}`}>
+      <div className={`flex justify-end lg:p-2 ${!isMenuContracted ? "lg:pr-5" : "lg:pr-6"}`}>
         <button
           onClick={toggleContracted}
           className="p-3 cursor-pointer hidden lg:block bg-slate-100 rounded-lg"
           type="button"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 24 24">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width={ICON_SIZE}
+            height={ICON_SIZE}
+            viewBox="0 0 24 24"
+          >
             <path
               fill="none"
               stroke="currentColor"

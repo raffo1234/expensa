@@ -1,11 +1,14 @@
 "use client";
 
-import { useContractStore } from "@/store/contract";
 import React from "react";
 
-export default function AdminLayoutContent({ children }: { children: React.ReactNode }) {
-  const isContracted = useContractStore((state) => state.isContracted);
-
+export default function AdminLayoutContent({
+  children,
+  isContracted,
+}: {
+  children: React.ReactNode;
+  isContracted: boolean;
+}) {
   return (
     <section
       style={{

@@ -15,7 +15,17 @@ export default async function AdminLayout({ children }: Readonly<AdminLayoutProp
   const session = await auth();
   const user = session?.user;
 
-  const { data } = await supabase.from("user").select("role_id").eq("id", user?.id).single();
+  const [{ data: userData }, { data: settingData }] = await Promise.all([
+    supabase.from("user").select("role_id").eq("id", user?.id).single(),
+    supabase
+      .from("user_setting")
+      .select("setting_value")
+      .eq("user_id", user?.id)
+      .eq("setting_key", "is_menu_contrated")
+      .maybeSingle(),
+  ]);
+
+  const isMenuContracted = settingData?.setting_value === "true";
 
   return (
     <SessionProvider session={session}>
@@ -27,17 +37,18 @@ export default async function AdminLayout({ children }: Readonly<AdminLayoutProp
       <div className="border-t border-gray-200">
         <main className="flex items-start w-full z-10 bg-slate-50">
           <Suspense>
-            {user && data?.role_id && user.name ? (
+            {user && userData?.role_id && user.name ? (
               <Aside
                 userId={user?.id}
-                userRoleId={data.role_id}
+                userRoleId={userData.role_id}
                 userImage={user.image}
                 userName={user.name}
+                isMenuContracted={isMenuContracted}
               />
             ) : null}
           </Suspense>
           <Suspense>
-            <AdminLayoutContent>{children}</AdminLayoutContent>
+            <AdminLayoutContent isContracted={isMenuContracted}>{children}</AdminLayoutContent>
           </Suspense>
         </main>
       </div>

@@ -134,7 +134,6 @@ export default function ModalToCommentDicom({ dicomId }: { dicomId: UUIDTypes })
         onMouseLeave={handleMouseLeave}
         isDisabled={isLoadingDicom}
         type="button"
-        title="Add/Edit Study Comment"
         isActive={!!dicom?.comment?.trim()}
       >
         <svg

@@ -109,7 +109,6 @@ export default function ModalToAttachFilesToDicom({
         onMouseLeave={handleMouseLeave}
         isDisabled={isLoadingDicom}
         type="button"
-        title="Attach files"
         isActive={!!(files && files?.length > 0)}
       >
         <svg

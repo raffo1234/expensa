@@ -61,7 +61,8 @@
     "home": "Home",
     "sign-in": "Sign In",
     "sign-out": "Sign Out",
-    "upload": "Upload Studies"
+    "upload": "Upload Studies",
+    "profile": "Profile"
   },
   "Uploader": {
     "containing": "containing",
@@ -144,5 +145,13 @@
   "FinalStep": {
     "title": "Ver my studies",
     "description": "The report will be available on this platform in less than 24 hours. You will receive an email notification when it is ready. If you have any questions, you can contact us via WhatsApp."
+  },
+  "Profile": {
+    "title": "Profile",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "email": "Email",
+    "createdAt": "Member since",
+    "role": "Role"
   }
 }

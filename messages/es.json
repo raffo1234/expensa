@@ -61,7 +61,8 @@
     "home": "Inicio",
     "sign-in": "Login",
     "sign-out": "Salir",
-    "upload": "Subir Estudios"
+    "upload": "Subir Estudios",
+    "profile": "Perfil"
   },
   "Uploader": {
     "containing": "conteniendo",
@@ -144,5 +145,13 @@
   "FinalStep": {
     "title": "Ver mis estudios",
     "description": "El informe estará disponible en esta plataforma en menos de 24 horas. Recibirás una notificación por correo electrónico cuando esté listo. Si tienes alguna duda, puedes comunicarte con nosotros a través de WhatsApp."
+  },
+  "Profile": {
+    "title": "Perfil",
+    "firstName": "Nombres",
+    "lastName": "Apellidos",
+    "email": "Correo electrónico",
+    "createdAt": "Miembro desde",
+    "role": "Rol"
   }
 }

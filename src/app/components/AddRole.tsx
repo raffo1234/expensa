@@ -50,10 +50,7 @@ export default function AddRole() {
               />
             </div>
             <div>
-              <label
-                htmlFor="description"
-                className="inline-block mb-2 text-sm"
-              >
+              <label htmlFor="description" className="inline-block mb-2 text-sm">
                 Description
               </label>
               <input

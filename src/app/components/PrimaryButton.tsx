@@ -10,7 +10,7 @@ type PrimaryButtonProps = Omit<BaseButtonProps, "children" | "className"> & {
   type?: "button" | "submit" | "reset";
 };
 
-export function PrimaryButton({ icon, ...props }: PrimaryButtonProps) {
+export default function PrimaryButton({ icon, ...props }: PrimaryButtonProps) {
   return (
     <BaseButton className={primaryClassName} {...(props as BaseButtonProps)}>
       <span

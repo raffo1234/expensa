@@ -10,7 +10,7 @@ type SecondaryButtonProps = Omit<BaseButtonProps, "children" | "className"> & {
   type?: "button" | "submit" | "reset";
 };
 
-export function SecondaryButton({ icon, ...props }: SecondaryButtonProps) {
+export default function SecondaryButton({ icon, ...props }: SecondaryButtonProps) {
   return (
     <BaseButton className={secondaryClassName} {...(props as BaseButtonProps)}>
       {icon && (

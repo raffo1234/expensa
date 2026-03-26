@@ -7,7 +7,7 @@ import { format } from "date-fns";
 import { ICON_SIZE } from "@/constants";
 import RoleName from "@/components/RoleName";
 import UploadLink from "@/components/UploadLink";
-import { SecondaryButton } from "@/components/SecondaryButton";
+import SecondaryButton from "@/components/SecondaryButton";
 
 type ProfileData = {
   first_name: string | null;
@@ -95,7 +95,6 @@ export default async function Page() {
             href="/admin/my-studies"
             icon="solar:hand-heart-linear"
             label={t("myStudies")}
-            title={t("myStudies")}
           />
         </div>
       </div>

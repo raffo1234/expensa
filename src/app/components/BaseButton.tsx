@@ -30,7 +30,7 @@ type AsLink = BaseButtonBaseProps & {
 export type BaseButtonProps = AsButton | AsExternalLink | AsLink;
 
 export function BaseButton(props: BaseButtonProps) {
-  const { label, ariaLabel, isLoading, className, children } = props;
+  const { label, ariaLabel, isLoading, target, href, className, children } = props;
 
   const a11y = {
     title: label,
@@ -42,11 +42,12 @@ export function BaseButton(props: BaseButtonProps) {
   const disabledClassName = isLoading ? "opacity-70 pointer-events-none" : "";
   const resolvedClassName = `${className} ${disabledClassName}`;
 
-  if (props.href === undefined) {
+  if (href === undefined) {
+    const { type, onClick } = props;
     return (
       <button
-        onClick={props.onClick}
-        type={(props.type ?? "button") as const}
+        onClick={onClick}
+        type={type ?? "button"}
         disabled={isLoading}
         className={resolvedClassName}
         {...a11y}
@@ -56,10 +57,10 @@ export function BaseButton(props: BaseButtonProps) {
     );
   }
 
-  if (props.target === "_blank") {
+  if (target === "_blank") {
     return (
       <a
-        href={props.href}
+        href={href}
         target="_blank"
         rel="noopener noreferrer"
         className={resolvedClassName}
@@ -71,7 +72,7 @@ export function BaseButton(props: BaseButtonProps) {
   }
 
   return (
-    <Link href={props.href} className={resolvedClassName} {...a11y}>
+    <Link href={href} className={resolvedClassName} {...a11y}>
       {children}
     </Link>
   );

@@ -8,7 +8,7 @@ import roleFetcher from "@/fetchers/roleFetcher";
 import AnimatedHamburgerButton from "./AnimatedHamburgerButton";
 import { useUpsertUserSetting } from "@/hooks/useUpsertUserSetting";
 import { useTranslations } from "next-intl";
-import { ICON_SIZE, SWR_KEY_USER_ROLE } from "@/constants";
+import { SWR_KEY_USER_ROLE } from "@/constants";
 
 const SETTING_KEY = "is_menu_contrated";
 
@@ -65,21 +65,11 @@ export default function Aside({
           className="p-3 cursor-pointer hidden lg:block bg-slate-100 rounded-lg"
           type="button"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width={ICON_SIZE}
-            height={ICON_SIZE}
-            viewBox="0 0 24 24"
-          >
-            <path
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="1.5"
-              d="M9 3.5v17M3 9.4c0-2.24 0-3.36.436-4.216a4 4 0 0 1 1.748-1.748C6.04 3 7.16 3 9.4 3h5.2c2.24 0 3.36 0 4.216.436a4 4 0 0 1 1.748 1.748C21 6.04 21 7.16 21 9.4v5.2c0 2.24 0 3.36-.436 4.216a4 4 0 0 1-1.748 1.748C17.96 21 16.84 21 14.6 21H9.4c-2.24 0-3.36 0-4.216-.436a4 4 0 0 1-1.748-1.748C3 17.96 3 16.84 3 14.6z"
+          <div className="w-[19px] relative h-[19px] rounded-md border-[1.5px] border-slate-800">
+            <div
+              className={`absolute top-0 ${isMenuContracted ? "translate-x-2.5" : "translate-x-1.5"} transition-transform duration-300 h-full border-r border-slate-800`}
             />
-          </svg>
+          </div>
         </button>
       </div>
       <AnimatedHamburgerButton isOpen={isOpen} toggleMenu={handleToggle} />

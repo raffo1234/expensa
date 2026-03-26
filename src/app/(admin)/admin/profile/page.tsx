@@ -6,6 +6,7 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import { format } from "date-fns";
 import { ICON_SIZE } from "@/constants";
 import RoleName from "@/components/RoleName";
+import Link from "next/link";
 
 type ProfileData = {
   first_name: string | null;
@@ -85,6 +86,23 @@ export default async function Page() {
           />
           <ProfileField icon="solar:calendar-linear" label={t("createdAt")} value={createdAt} />
         </div>
+
+        <div className="px-8 py-6 bg-slate-50 border-t border-gray-200 flex gap-3">
+          <Link
+            href="/admin/dicom"
+            className="flex items-center active:scale-95 gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-200"
+          >
+            <Icon icon="solar:cloud-upload-broken" fontSize={ICON_SIZE} className="text-gray-400" />
+            {t("uploadStudy")}
+          </Link>
+          <Link
+            href="/admin/my-studies"
+            className="flex items-center active:scale-95 gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-200"
+          >
+            <Icon icon="solar:hand-heart-linear" fontSize={ICON_SIZE} className="text-gray-400" />
+            {t("myStudies")}
+          </Link>
+        </div>
       </div>
     </div>
   );
@@ -98,7 +116,7 @@ function ProfileField({ icon, label, value }: { icon: string; label: string; val
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-xs text-gray-400 mb-0.5">{label}</p>
-        <p className="text-sm font-medium text-gray-700 truncate">{value}</p>
+        <p className="text-sm text-gray-700 truncate">{value}</p>
       </div>
     </div>
   );

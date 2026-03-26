@@ -87,7 +87,7 @@
   },
   "Menu": {
     "home": "Inicio",
-    "upload": "Subir Archivos",
+    "upload": "Subir Estudios",
     "pacs": "Pacs",
     "dicoms": "Dicoms",
     "templates": "Plantillas",
@@ -152,6 +152,8 @@
     "lastName": "Apellidos",
     "email": "Correo electrónico",
     "createdAt": "Miembro desde",
-    "role": "Rol"
+    "role": "Rol",
+    "uploadStudy": "Subir estudio",
+    "myStudies": "Mis estudios"
   }
 }

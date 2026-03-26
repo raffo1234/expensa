@@ -87,7 +87,7 @@
   },
   "Menu": {
     "home": "Home",
-    "upload": "Upload Files",
+    "upload": "Upload Studies",
     "pacs": "Pacs",
     "dicoms": "Dicoms",
     "templates": "Templates",
@@ -152,6 +152,8 @@
     "lastName": "Last name",
     "email": "Email",
     "createdAt": "Member since",
-    "role": "Role"
+    "role": "Role",
+    "uploadStudy": "Upload study",
+    "myStudies": "My studies"
   }
 }

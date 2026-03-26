@@ -54,7 +54,7 @@ export default function Aside({
   return (
     <div
       style={{ minHeight: "calc(100vh - 80px)" }}
-      className={`${isMenuContracted ? "w-[91px]" : "lg:w-[286px]"} bg-white transition-all duration-300 flex-shrink-0 border-r border-r-gray-200`}
+      className={`${isMenuContracted ? "lg:w-[91px]" : "lg:w-[286px]"} bg-white transition-all duration-300 flex-shrink-0 border-r border-r-gray-200`}
     >
       <div className={`flex justify-end lg:p-2 ${!isMenuContracted ? "lg:pr-5" : "lg:pr-6"}`}>
         <button

@@ -6,8 +6,8 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import { format } from "date-fns";
 import { ICON_SIZE } from "@/constants";
 import RoleName from "@/components/RoleName";
-import Link from "next/link";
 import UploadLink from "@/components/UploadLink";
+import { SecondaryButton } from "@/components/SecondaryButton";
 
 type ProfileData = {
   first_name: string | null;
@@ -91,13 +91,12 @@ export default async function Page() {
           <div className="w-fit">
             <UploadLink label={t("uploadStudy")} />
           </div>
-          <Link
+          <SecondaryButton
             href="/admin/my-studies"
-            className="flex items-center active:scale-95 gap-2 px-6 py-2 bg-white border border-gray-200 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-200"
-          >
-            <Icon icon="solar:hand-heart-linear" fontSize={ICON_SIZE} className="text-gray-400" />
-            {t("myStudies")}
-          </Link>
+            icon="solar:hand-heart-linear"
+            label={t("myStudies")}
+            title={t("myStudies")}
+          />
         </div>
       </div>
     </div>

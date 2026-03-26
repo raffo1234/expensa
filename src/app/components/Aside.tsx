@@ -10,6 +10,8 @@ import { useUpsertUserSetting } from "@/hooks/useUpsertUserSetting";
 import { useTranslations } from "next-intl";
 import { ICON_SIZE, SWR_KEY_USER_ROLE } from "@/constants";
 
+const SETTING_KEY = "is_menu_contrated";
+
 export default function Aside({
   userId,
   userRoleId,
@@ -25,9 +27,12 @@ export default function Aside({
 }) {
   const t = useTranslations("Aside");
   const [isOpen, setIsOpen] = useState(false);
-  const [isMenuContracted, setIsMenuContracted] = useState(initialIsMenuContracted);
 
-  const { upsertSetting } = useUpsertUserSetting(userId, "is_menu_contrated");
+  const { settingValue: isMenuContracted, upsertSetting } = useUpsertUserSetting(
+    userId,
+    SETTING_KEY,
+    initialIsMenuContracted,
+  );
 
   const { data: role } = useSWR(SWR_KEY_USER_ROLE, () => roleFetcher(userRoleId));
 
@@ -44,9 +49,7 @@ export default function Aside({
   const handleToggle = () => (isOpen ? closeMenu() : handleOpen());
 
   const toggleContracted = () => {
-    const next = !isMenuContracted;
-    setIsMenuContracted(next);
-    upsertSetting(next);
+    upsertSetting(!isMenuContracted);
   };
 
   const roleName = role?.[0]?.name ?? "...";

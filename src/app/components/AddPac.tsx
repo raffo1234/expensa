@@ -5,8 +5,10 @@ import { supabase } from "@/lib/supabase";
 import { useState } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { mutate } from "swr";
-import PrimaryButton from "./PrimaryButton";
+
 import { adminPacsKey } from "@/constants";
+import { PrimaryButton } from "./PrimaryButton";
+import { SecondaryButton } from "./SecondaryButton";
 
 type Inputs = {
   ip: string;
@@ -107,15 +109,13 @@ export default function AddPac({ userId }: { userId: string }) {
             </div>
           </fieldset>
           <div className="flex items-center gap-2 border-t border-gray-200 mt-6 pt-6">
-            <button
+            <SecondaryButton
               onClick={() => setDisplayForm(false)}
+              label="Cancel"
               type="button"
               title="Cancel"
-              className="cursor-pointer font-semibold disabled:border-gray-100 disabled:bg-gray-100 inline-block py-3 px-10 bg-white text-sm border border-gray-100 rounded-lg transition-colors hover:border-gray-200 duration-500 active:border-gray-300"
-            >
-              Cancel
-            </button>
-            <PrimaryButton type="submit" label="Add" isLoading={isLoading} />
+            />
+            <PrimaryButton type="submit" title="Add" label="Add" isLoading={isLoading} />
           </div>
         </form>
       ) : (

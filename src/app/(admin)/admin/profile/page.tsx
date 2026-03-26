@@ -5,7 +5,6 @@ import Image from "next/image";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { format } from "date-fns";
 import { ICON_SIZE } from "@/constants";
-import NoAccess from "@/components/NoAccess";
 import RoleName from "@/components/RoleName";
 
 type ProfileData = {
@@ -22,12 +21,10 @@ export default async function Page() {
   const session = await auth();
   const user = session?.user;
 
-  if (!user) return <NoAccess />;
-
   const { data: profile } = await supabase
     .from("user")
     .select("first_name, last_name, email, image_url, created_at, role(name)")
-    .eq("id", user.id)
+    .eq("id", user?.id)
     .single<ProfileData>();
 
   const fullName =

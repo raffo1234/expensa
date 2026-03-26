@@ -2,7 +2,6 @@ import { UserType } from "@/types/userType";
 import { ICON_SIZE } from "@/constants";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import Image from "next/image";
-import Link from "next/link";
 import { updateUser } from "@/actions/updateUser";
 import { formatTimestamp } from "@/utils/formatTimestamp";
 import { useRouter } from "next/navigation";

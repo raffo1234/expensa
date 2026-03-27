@@ -42,13 +42,9 @@ export default function DateRangeButtonCalendar({
   };
 
   const timeZone = "America/Lima";
-  const zonedStart = dateRange?.startDate
-    ? toZonedTime(dateRange?.startDate, timeZone)
-    : null;
+  const zonedStart = dateRange?.startDate ? toZonedTime(dateRange?.startDate, timeZone) : null;
 
-  const zonedEnd = dateRange?.endDate
-    ? toZonedTime(dateRange?.endDate, timeZone)
-    : null;
+  const zonedEnd = dateRange?.endDate ? toZonedTime(dateRange?.endDate, timeZone) : null;
 
   const start = zonedStart ? formatISO(zonedStart) : null;
   const formattedStart = start ? format(new Date(start), "dd-MM-yyyy") : null;
@@ -72,7 +68,7 @@ export default function DateRangeButtonCalendar({
         <button
           onClick={toggle}
           type="button"
-          className={`${dateRange ? "px-3" : "pl-6 pr-2"} cursor-pointer text-white text-sm py-2 rounded-full bg-cyan-400`}
+          className={`${dateRange ? "px-3" : "pl-6 pr-2"} font-semibold cursor-pointer text-white text-sm py-2 rounded-full bg-cyan-400`}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -102,19 +98,15 @@ export default function DateRangeButtonCalendar({
         <button
           onClick={toggle}
           type="button"
-          className={`${dateRange ? "" : "pr-6"} py-1 cursor-pointer h-full flex-grow-1 text-left`}
+          className={`${dateRange ? "" : "pr-6"} py-1 font-semibold cursor-pointer h-full flex-grow-1 text-left`}
         >
           {dateRange ? (
             <div className="flex items-center gap-1 px-1 text-xs">
-              <div className="py-1 px-2 rounded-full bg-gray-200">
-                {formattedStart}
-              </div>
+              <div className="py-1 px-2 rounded-full bg-gray-200">{formattedStart}</div>
               {formattedStart !== formattedEnd ? (
                 <>
                   <span>-</span>
-                  <div className="py-1 px-2 rounded-full bg-gray-200">
-                    {formattedEnd}
-                  </div>
+                  <div className="py-1 px-2 rounded-full bg-gray-200">{formattedEnd}</div>
                 </>
               ) : null}
             </div>
@@ -135,12 +127,9 @@ export default function DateRangeButtonCalendar({
               ]);
               handleDateRangeChange(null);
             }}
-            className="cursor-pointer bg-cyan-400 p-2 rounded-full text-white right-0 absolute top-1/2 -translate-y-1/2"
+            className="cursor-pointer font-semibold bg-cyan-400 p-2 rounded-full text-white right-0 absolute top-1/2 -translate-y-1/2"
           >
-            <Icon
-              icon="material-symbols-light:close-rounded"
-              fontSize={ICON_SIZE}
-            ></Icon>
+            <Icon icon="material-symbols-light:close-rounded" fontSize={ICON_SIZE}></Icon>
           </button>
         ) : null}
       </div>

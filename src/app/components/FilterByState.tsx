@@ -26,7 +26,7 @@ function getRoundedClass(index: number): string {
 function toggleStateFilter(
   state: DicomStateEnum,
   current: string,
-  setter: React.Dispatch<React.SetStateAction<DicomStateEnum | null>>
+  setter: React.Dispatch<React.SetStateAction<DicomStateEnum | null>>,
 ) {
   const isActive = current === state;
   setter(isActive ? null : state);
@@ -70,7 +70,7 @@ export default function FilterByState({ filteredByState, setFilteredByState }: F
               onMouseLeave={() => setHoveredState(null)}
               onClick={() => toggleStateFilter(state, filteredByState, setFilteredByState)}
               className={[
-                "cursor-pointer h-[36px] min-w-10 flex-grow-1",
+                "cursor-pointer active:scale-95 h-[36px] min-w-10 flex-grow-1",
                 STATE_COLORS[state],
                 getRoundedClass(index),
                 isActive ? "border-3 border-slate-50" : "",

@@ -1,11 +1,11 @@
-import useCheckPermission from "@/hooks/useCheckPermission";
+// ResidentItem.tsx
 import Image from "next/image";
-import { Permissions } from "@/types/propertyState";
 import { UserType } from "@/types/userType";
 import { supabase } from "@/lib/supabase";
+import { adminUsersKey } from "@/constants";
 import toast from "react-hot-toast";
 import { mutate } from "swr";
-import { adminUsersKey } from "@/constants";
+import PopoverInnerButton from "./PopoverInnerButton";
 
 export default function ResidentItem({
   user,
@@ -16,56 +16,46 @@ export default function ResidentItem({
   isEditable: boolean;
   currentUserId: string;
 }) {
-  const { id, image_url, first_name, last_name, role_id } = user;
+  const { id, image_url, first_name, last_name } = user;
 
-  const { hasPermission: canBeAssigned, isLoading } = useCheckPermission(
-    role_id as string,
-    Permissions.AVAILABLE_TO_BE_ASSIGNED
-  );
+  const isAssigned = !!user.supervisor_user_id;
+  const isNotCurrentResident = isAssigned && user.supervisor_user_id !== currentUserId;
 
-  const handleSelection = () => {
-    updateUser(
-      "supervisor_user_id",
-      user.supervisor_user_id ? null : currentUserId
-    );
-  };
-
-  const updateUser = async (fieldName: string, value: string | null) => {
+  const handleSelection = async () => {
     try {
       await supabase
         .from("user")
-        .update({ [fieldName]: value })
-        .eq("id", user.id);
+        .update({ supervisor_user_id: isAssigned ? null : currentUserId })
+        .eq("id", id);
+      toast.success("User was assigned successfully!");
     } catch (error) {
       console.error(error);
     } finally {
       mutate(adminUsersKey);
-      toast.success("User was assigned successfully!");
     }
   };
-
-  if (isLoading) return "loading...";
-  if (!canBeAssigned) return null;
-
-  const isNotCurrentResident =
-    !!user.supervisor_user_id && user.supervisor_user_id !== currentUserId;
 
   return (
     <button
       type="button"
+      title={`${first_name} ${last_name}`}
+      onClick={handleSelection}
       disabled={!isEditable || isNotCurrentResident}
-      className={`${isEditable ? "cursor-pointer" : ""} ${user.supervisor_user_id ? "border-cyan-100" : "border-transparent"} border-5 rounded-full disabled:opacity-50 disabled:pointer-events-none`}
+      className={`
+        ${isEditable ? "cursor-pointer" : ""}
+        ${isAssigned ? "border-cyan-100" : "border-transparent"}
+        border-5 rounded-full disabled:opacity-50 disabled:pointer-events-none
+      `}
     >
-      <Image
-        key={id}
-        src={image_url}
-        onClick={handleSelection}
-        width={52}
-        height={52}
-        className={`${user.supervisor_user_id ? "border-cyan-500" : "border-transparent"} rounded-full border`}
-        alt={`${first_name} ${last_name}`}
-        title={`${first_name} ${last_name}`}
-      />
+      <PopoverInnerButton title={isAssigned ? "Unassign" : "Assign"}>
+        <Image
+          src={image_url}
+          width={52}
+          height={52}
+          className={`${isAssigned ? "border-cyan-500" : "border-transparent"} rounded-full border`}
+          alt={`${first_name} ${last_name}`}
+        />
+      </PopoverInnerButton>
     </button>
   );
 }

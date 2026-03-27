@@ -8,9 +8,7 @@ import { ICON_SIZE } from "@/constants";
 import { useTranslations } from "next-intl";
 
 function FallBackLink() {
-  return (
-    <div className="h-11 w-[110px] rounded-lg animate-pulse bg-gray-100" />
-  )
+  return <div className="h-11 w-[110px] rounded-lg animate-pulse bg-slate-100" />;
 }
 
 export default function ViewAllDicomsLink({ userRoleId }: { userRoleId: string }) {
@@ -20,7 +18,7 @@ export default function ViewAllDicomsLink({ userRoleId }: { userRoleId: string }
   );
   const t = useTranslations("DicomPage");
 
-  if (isLoading) return <FallBackLink />
+  if (isLoading) return <FallBackLink />;
   if (!canViewAllDicoms) return null;
 
   return (

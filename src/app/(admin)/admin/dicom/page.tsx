@@ -6,6 +6,7 @@ import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 import NoAccess from "@/components/NoAccess";
 import { getCurrentUser } from "@/lib/getCurrentUser";
+import { checkPermissions } from "@/lib/checkPermissions";
 
 function FallBackUploader() {
   return (
@@ -41,20 +42,17 @@ export default async function Page() {
 async function UploaderSection() {
   const user = await getCurrentUser();
   if (!user) return <NoAccess />;
+  const [permissions] = await Promise.all([
+    checkPermissions(user.roleId, [Permissions.UPLOAD_DICOM]),
+  ]);
+  if (!permissions) return <NoAccess />;
 
   return (
     <>
       <div className="flex justify-end mb-6">
         <ViewAllDicomsLink userRoleId={user.roleId} />
       </div>
-      <CheckPermission
-        userRoleId={user.roleId}
-        requiredPermission={Permissions.UPLOAD_DICOM}
-        fallback={<NoAccess />}
-        loadingComponent={<FallBackUploader />}
-      >
-        <UploaderPage userEmail={user.email} userId={user.id} userRoleId={user.roleId} />
-      </CheckPermission>
+      <UploaderPage userEmail={user.email} userId={user.id} userRoleId={user.roleId} />
     </>
   );
 }

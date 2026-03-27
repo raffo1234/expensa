@@ -5,17 +5,15 @@ import useSWR from "swr";
 
 function useCheckPermission(
   userRoleId: string | null | undefined,
-  requiredPermissionSlugs: string | string[]
+  requiredPermissionSlugs: string | string[],
 ) {
   const slugs = Array.isArray(requiredPermissionSlugs)
     ? requiredPermissionSlugs
     : [requiredPermissionSlugs];
 
   const { data, isLoading } = useSWR(
-    userRoleId && slugs.length > 0
-      ? `role-permissions-${userRoleId}-${slugs.join(",")}`
-      : null,
-    () => checkPermissions(userRoleId!, slugs)
+    userRoleId && slugs.length > 0 ? `role-permissions-${userRoleId}-${slugs.join(",")}` : null,
+    () => checkPermissions(userRoleId!, slugs),
   );
 
   return {

@@ -1,7 +1,9 @@
+// ResidentList.tsx
 import { UserType } from "@/types/userType";
 import FieldsSection from "./FieldsSection";
 import ResidentItem from "./ResidentItem";
 import useCheckPermission from "@/hooks/useCheckPermission";
+import { useCheckPermissionsMap } from "@/hooks/useCheckPermissionsMap";
 import { Permissions } from "@/types/propertyState";
 
 export default function ResidentList({
@@ -15,35 +17,39 @@ export default function ResidentList({
   userRoleId: string;
   users: UserType[];
 }) {
-  const {
-    hasPermission: canAssignResident,
-    isLoading: isLoadingCanAssignResident,
-  } = useCheckPermission(currentUserRoleId, Permissions.ASSIGN_RESIDENT);
+  const { hasPermission: canAssignResident, isLoading: isLoadingCanAssign } = useCheckPermission(
+    currentUserRoleId,
+    Permissions.ASSIGN_RESIDENT,
+  );
 
-  const {
-    hasPermission: canHaveResident,
-    isLoading: isLoadingCanHaveResident,
-  } = useCheckPermission(userRoleId, Permissions.CAN_HAVE_RESIDENT);
+  const { hasPermission: canHaveResident, isLoading: isLoadingCanHaveResident } =
+    useCheckPermission(userRoleId, Permissions.CAN_HAVE_RESIDENT);
 
-  if (isLoadingCanHaveResident || isLoadingCanAssignResident)
-    return "loading...";
+  const uniqueRoleIds = [...new Set(users.map((u) => u.role_id).filter(Boolean))] as string[];
+
+  const { permissionsMap, isLoading: isLoadingAssignable } = useCheckPermissionsMap(
+    uniqueRoleIds,
+    Permissions.AVAILABLE_TO_BE_ASSIGNED,
+  );
+
+  if (isLoadingCanHaveResident || isLoadingCanAssign || isLoadingAssignable) return "loading...";
 
   if (!canHaveResident) return null;
+
+  const assignableUsers = users.filter((u) => u.role_id && permissionsMap[u.role_id]);
 
   return (
     <FieldsSection>
       <h2 className="font-semibold">Residents</h2>
       <div className="flex gap-1 items-center">
-        {users?.map((user) => {
-          return user.role_id ? (
-            <ResidentItem
-              isEditable={canAssignResident}
-              key={user.id}
-              user={user}
-              currentUserId={currentUserId}
-            />
-          ) : null;
-        })}
+        {assignableUsers.map((user) => (
+          <ResidentItem
+            key={user.id}
+            isEditable={canAssignResident}
+            user={user}
+            currentUserId={currentUserId}
+          />
+        ))}
       </div>
     </FieldsSection>
   );

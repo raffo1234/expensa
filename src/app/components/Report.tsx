@@ -48,7 +48,6 @@ export default function Report({
   const t = useTranslations("EmailToUserWhenUPloadingDicom");
   const [isSaving, setIsSaving] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const initRan = useRef(false);
 
   const router = useRouter();
   const {
@@ -186,10 +185,9 @@ export default function Report({
   }, [dicomId, dicom]);
 
   useEffect(() => {
-    if (!dicom || initRan.current) return;
-    if (!dicom.template_id && templates.length === 0) return;
+    if (!dicom) return;
 
-    initRan.current = true;
+    if (!dicom.template_id && templates.length === 0) return;
 
     const initDicom = async () => {
       const isCompleted = dicom.state === DicomStateEnum.COMPLETED;
@@ -209,6 +207,7 @@ export default function Report({
         });
         const query = dicom.institution.split(" ").join(" | ");
         const match = fuse.search(query)[0]?.item;
+
         if (match) await updateDicom(dicomId, { template_id: match.id }, true);
       } else {
         await assignDicomTemplateByEmail(dicomId);
@@ -216,7 +215,7 @@ export default function Report({
     };
 
     initDicom();
-  }, [dicom, templates]);
+  }, [dicom, dicomId, templates]);
 
   if (error)
     return (

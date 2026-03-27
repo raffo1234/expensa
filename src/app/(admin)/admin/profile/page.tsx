@@ -87,8 +87,8 @@ export default async function Page() {
           />
           <ProfileField icon="solar:calendar-linear" label={t("createdAt")} value={createdAt} />
         </div>
-        <div className="px-8 py-6 bg-slate-50 border-t border-gray-200 flex gap-3">
-          <div className="w-fit">
+        <div className="px-4 sm:px-8 py-6 bg-slate-50 border-t border-gray-200 flex flex-col sm:flex-row gap-3">
+          <div className="w-full sm:w-fit">
             <UploadLink label={t("uploadStudy")} />
           </div>
           <SecondaryButton
@@ -104,7 +104,7 @@ export default async function Page() {
 
 function ProfileField({ icon, label, value }: { icon: string; label: string; value: string }) {
   return (
-    <div className="px-8 py-5 flex items-center gap-4">
+    <div className="px-4 sm:px-8 py-5 flex items-center gap-4">
       <div className="p-2 rounded-lg bg-gray-50 flex-shrink-0">
         <Icon icon={icon} fontSize={ICON_SIZE} className="text-gray-400" />
       </div>

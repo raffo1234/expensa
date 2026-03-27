@@ -18,7 +18,7 @@ const OptionButton: React.FC<OptionButtonProps> = ({
       type={type}
       disabled={disabled}
       className={clsx(
-        "px-5 py-2 truncate rounded-lg border transition-colors duration-300 cursor-pointer",
+        "px-5 py-2 truncate active:scale-95 rounded-lg border transition-colors duration-300 cursor-pointer",
         isActive
           ? "bg-cyan-50 border-cyan-200"
           : "hover:bg-gray-100 border-transparent hover:border-gray-300 bg-gray-100",

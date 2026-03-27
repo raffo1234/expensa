@@ -32,7 +32,12 @@ export default function ResidentList({
     Permissions.AVAILABLE_TO_BE_ASSIGNED,
   );
 
-  if (isLoadingCanHaveResident || isLoadingCanAssign || isLoadingAssignable) return "loading...";
+  if (isLoadingCanHaveResident || isLoadingCanAssign || isLoadingAssignable)
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="w-full rounded-xl bg-slate-100 animate-pulse h-[164px]"></div>
+      </div>
+    );
 
   if (!canHaveResident) return null;
 

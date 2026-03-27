@@ -9,7 +9,6 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import toast from "react-hot-toast";
 import ResidentList from "./ResidentList";
 import EditUserHeader from "./EditUserHeader";
-import Link from "next/link";
 import usersFetcher from "@/lib/usersFetcher";
 import userFetcher from "@/lib/userFetcher";
 import NoAccess from "./NoAccess";

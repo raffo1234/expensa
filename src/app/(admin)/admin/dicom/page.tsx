@@ -1,6 +1,5 @@
 import UploaderPage from "@/components/UploaderPage";
 import ViewAllDicomsLink from "@/components/ViewAllDicomsLink";
-import CheckPermission from "@/components/CheckPermission";
 import { Permissions } from "@/types/propertyState";
 import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";

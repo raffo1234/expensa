@@ -20,6 +20,6 @@ export const getCurrentUser = cache(async () => {
     id: user.id,
     email: user.email,
     roleId: data.role_id,
-    templateId: user.template_id,
+    templateId: data.template_id,
   };
 });

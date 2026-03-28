@@ -118,7 +118,7 @@ export default function EditUserContent({
             <div className="relative">
               <select
                 id="role_id"
-                defaultValue={user.role_id}
+                value={user.role_id ?? ""}
                 onChange={(e) => updateUser("role_id", e.target.value)}
                 disabled={!roles}
                 className={selectClassName}
@@ -143,7 +143,7 @@ export default function EditUserContent({
             <div className="relative">
               <select
                 id="template_id"
-                defaultValue={user.template_id as string}
+                value={(user.template_id as string) ?? ""}
                 onChange={(e) => updateUser("template_id", e.target.value)}
                 disabled={!templates}
                 className={selectClassName}

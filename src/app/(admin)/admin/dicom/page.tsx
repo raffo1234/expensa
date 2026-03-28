@@ -6,10 +6,14 @@ import { Suspense } from "react";
 import NoAccess from "@/components/NoAccess";
 import { getCurrentUser } from "@/lib/getCurrentUser";
 import { checkPermissions } from "@/lib/checkPermissions";
+import FallBackSeeDicomsLink from "@/components/FallBackSeeDicomsLink";
 
 function FallBackUploader() {
   return (
     <>
+      <div className="mb-6 flex justify-end">
+        <FallBackSeeDicomsLink />
+      </div>
       <div className="flex gap-2 mb-4">
         <div className="h-[38px] w-[96px] rounded-lg animate-pulse bg-gray-100"></div>
         <div className="h-[38px] w-[82px] rounded-lg animate-pulse bg-gray-100"></div>

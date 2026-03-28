@@ -6,10 +6,7 @@ import { Permissions } from "@/types/propertyState";
 import useCheckPermission from "@/hooks/useCheckPermission";
 import { ICON_SIZE } from "@/constants";
 import { useTranslations } from "next-intl";
-
-function FallBackLink() {
-  return <div className="h-11 w-[110px] rounded-lg animate-pulse bg-slate-100" />;
-}
+import FallBackSeeDicomsLink from "./FallBackSeeDicomsLink";
 
 export default function ViewAllDicomsLink({ userRoleId }: { userRoleId: string }) {
   const { hasPermission: canViewAllDicoms, isLoading } = useCheckPermission(
@@ -18,7 +15,7 @@ export default function ViewAllDicomsLink({ userRoleId }: { userRoleId: string }
   );
   const t = useTranslations("DicomPage");
 
-  if (isLoading) return <FallBackLink />;
+  if (isLoading) return <FallBackSeeDicomsLink />;
   if (!canViewAllDicoms) return null;
 
   return (

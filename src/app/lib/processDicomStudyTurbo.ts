@@ -38,6 +38,10 @@ export interface DicomInstance {
   window_width?: number;
   rescale_intercept?: number;
   rescale_slope?: number;
+  rescale_type?: string; // ← add
+  samples_per_pixel?: number; // ← add
+  photometric_interpretation?: string; // ← add
+  number_of_frames?: number;
 }
 
 interface DicomStudy {
@@ -457,6 +461,10 @@ export const processDicomStudyTurbo = async (
               window_width: metadata.windowWidth,
               rescale_intercept: metadata.rescaleIntercept,
               rescale_slope: metadata.rescaleSlope,
+              rescale_type: metadata.rescaleType, // ← add
+              samples_per_pixel: metadata.samplesPerPixel, // ← add
+              photometric_interpretation: metadata.photometricInterpretation,
+              number_of_frames: metadata.numberOfFrames,
             });
             uploadedCount++;
             onProgress?.(Math.round(50 + (uploadedCount / parsedFiles.length) * 45));

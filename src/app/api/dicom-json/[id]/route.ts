@@ -17,12 +17,7 @@ const normalizeWindow = (
   windowWidth: number | undefined,
   rescaleSlope: number | undefined,
   rescaleIntercept: number | undefined,
-): {
-  windowCenter: number | undefined;
-  windowWidth: number | undefined;
-  rescaleSlope: number | undefined;
-  rescaleIntercept: number | undefined;
-} => {
+) => {
   if (windowCenter === undefined || windowWidth === undefined) {
     return { windowCenter, windowWidth, rescaleSlope, rescaleIntercept };
   }
@@ -30,25 +25,19 @@ const normalizeWindow = (
   const slope = rescaleSlope ?? 1;
   const intercept = rescaleIntercept ?? 0;
 
-  // Slope is normal — pass through unchanged
+  // Slope is identity — no conversion needed
   if (slope === 0 || slope === 1) {
     return { windowCenter, windowWidth, rescaleSlope, rescaleIntercept };
   }
 
-  // Values are in physical units (sub-pixel) — convert to pixel space
-  // OR slope is abnormally small — pre-apply to avoid OHIF double-apply bug
-  const normalizedCenter =
-    Math.abs(windowCenter) < 1
-      ? Math.round((windowCenter - intercept) / slope) // physical → pixel
-      : windowCenter; // already pixel space, keep as-is
-
-  const normalizedWidth =
-    Math.abs(windowCenter) < 1 ? Math.round(windowWidth / slope) : windowWidth;
+  // Window values are in physical space (post-rescale) — convert to raw pixel space
+  // so OHIF custom JSON reads them correctly, then neutralize slope/intercept
+  const normalizedCenter = Math.round((windowCenter - intercept) / slope);
+  const normalizedWidth = Math.round(windowWidth / slope);
 
   return {
     windowCenter: normalizedCenter,
     windowWidth: normalizedWidth,
-    // ✅ Neutralize slope so OHIF doesn't rescale again
     rescaleSlope: 1,
     rescaleIntercept: 0,
   };
@@ -163,6 +152,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
             SpacingBetweenSlices: inst.slice_thickness || 1,
             ...(typeof windowCenter === "number" && { WindowCenter: windowCenter }),
             ...(typeof windowWidth === "number" && { WindowWidth: windowWidth }),
+            ...(typeof windowCenter === "number" && { VOILUTFunction: "LINEAR" }),
             ...(typeof rescaleIntercept === "number" && { RescaleIntercept: rescaleIntercept }),
             ...(typeof rescaleSlope === "number" && { RescaleSlope: rescaleSlope }),
             ...(inst.rescale_type && { RescaleType: inst.rescale_type }),

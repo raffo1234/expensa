@@ -45,7 +45,7 @@ export default function ResidentItem({
   return (
     <div
       className={`
-        ${isAssigned ? "bg-cyan-50/80 border-cyan-300" : "hover:bg-slate-50 border-slate-200"}
+        ${isAssigned ? "bg-cyan-50/80 border-cyan-300" : "border-slate-200"}
         border text-center rounded-xl w-full truncate p-4
       `}
     >

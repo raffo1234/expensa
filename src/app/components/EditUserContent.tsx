@@ -1,4 +1,3 @@
-// components/EditUserContent.tsx
 "use client";
 
 import { supabase } from "@/lib/supabase";
@@ -14,6 +13,7 @@ import usersFetcher from "@/lib/usersFetcher";
 import userFetcher from "@/lib/userFetcher";
 import NoAccess from "./NoAccess";
 import FallbackEditUser from "./FallbackEditUser";
+import { UserType } from "@/types/userType";
 
 const rolesFetcher = async () => {
   const { data, error } = await supabase
@@ -40,15 +40,17 @@ const selectClassName =
 export default function EditUserContent({
   userId,
   currentUserId,
-  currentUserRoleId,
   canAssignResident,
   canHaveResident,
+  assignableRoleIds,
+  initialUsers,
 }: {
   userId: string;
   currentUserId: string;
-  currentUserRoleId: string;
   canAssignResident: boolean;
   canHaveResident: boolean;
+  assignableRoleIds: string[];
+  initialUsers: UserType[] | null;
 }) {
   const {
     data: user,
@@ -56,8 +58,12 @@ export default function EditUserContent({
     isLoading: isLoadingUser,
   } = useSWR(`admin-${userId}`, () => userFetcher(userId));
 
-  const { data: users } = useSWR(adminUsersKey, usersFetcher);
+  const { data: users } = useSWR(adminUsersKey, usersFetcher, {
+    fallbackData: initialUsers ?? undefined,
+  });
+
   const { data: roles } = useSWR(adminRolesKey, rolesFetcher);
+
   const { data: templates } = useSWR(`admin-templates-by-user-${currentUserId}`, () =>
     templatesByUserFetcher(currentUserId),
   );
@@ -160,9 +166,11 @@ export default function EditUserContent({
       {users && user.role_id && (
         <ResidentList
           currentUserId={user.id}
+          userRoleId={user.role_id}
           users={users}
           canAssignResident={canAssignResident}
           canHaveResident={canHaveResident}
+          assignableRoleIds={assignableRoleIds}
         />
       )}
     </fieldset>

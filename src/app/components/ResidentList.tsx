@@ -1,38 +1,24 @@
-// components/ResidentList.tsx
 import { UserType } from "@/types/userType";
 import FieldsSection from "./FieldsSection";
 import ResidentItem from "./ResidentItem";
-import { useCheckPermissionsMap } from "@/hooks/useCheckPermissionsMap";
-import { Permissions } from "@/types/propertyState";
 
 export default function ResidentList({
   users,
   currentUserId,
   canAssignResident,
   canHaveResident,
+  assignableRoleIds,
 }: {
   currentUserId: string;
+  userRoleId: string;
   users: UserType[];
   canAssignResident: boolean;
   canHaveResident: boolean;
+  assignableRoleIds: string[];
 }) {
-  const uniqueRoleIds = [...new Set(users.map((u) => u.role_id).filter(Boolean))] as string[];
-
-  const { permissionsMap, isLoading: isLoadingAssignable } = useCheckPermissionsMap(
-    uniqueRoleIds,
-    Permissions.AVAILABLE_TO_BE_ASSIGNED,
-  );
-
   if (!canHaveResident) return null;
 
-  if (isLoadingAssignable)
-    return (
-      <div className="flex flex-col gap-4">
-        <div className="w-full rounded-xl bg-slate-100 animate-pulse h-[164px]" />
-      </div>
-    );
-
-  const assignableUsers = users.filter((u) => u.role_id && permissionsMap[u.role_id]);
+  const assignableUsers = users.filter((u) => u.role_id && assignableRoleIds.includes(u.role_id));
 
   return (
     <FieldsSection>

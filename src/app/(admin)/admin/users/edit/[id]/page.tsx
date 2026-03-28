@@ -1,10 +1,10 @@
-// app/admin/users/[id]/page.tsx
 import EditUserContent from "@/components/EditUserContent";
 import NoAccess from "@/components/NoAccess";
 import { getCurrentUser } from "@/lib/getCurrentUser";
 import { checkPermissions } from "@/lib/checkPermissions";
 import { Permissions } from "@/types/propertyState";
 import userFetcher from "@/lib/userFetcher";
+import usersFetcher from "@/lib/usersFetcher";
 import Link from "next/link";
 
 type Params = Promise<{ id: string }>;
@@ -15,14 +15,25 @@ export default async function Page({ params }: { params: Params }) {
   if (!id) return null;
   if (!currentUser) return <NoAccess />;
 
-  const targetUser = await userFetcher(id);
+  const [targetUser, allUsers] = await Promise.all([userFetcher(id), usersFetcher()]);
+
   if (!targetUser) return <NoAccess />;
 
-  const [canAssignResident, canHaveResident] = await Promise.all([
+  const uniqueRoleIds = [...new Set(allUsers?.map((u) => u.role_id).filter(Boolean))] as string[];
+
+  const [canAssignResident, canHaveResident, assignableRoleIds] = await Promise.all([
     checkPermissions(currentUser.roleId, [Permissions.ASSIGN_RESIDENT]),
     targetUser.role_id
       ? checkPermissions(targetUser.role_id, [Permissions.CAN_HAVE_RESIDENT])
       : Promise.resolve({ [Permissions.CAN_HAVE_RESIDENT]: false }),
+    Promise.all(
+      uniqueRoleIds.map((roleId) =>
+        checkPermissions(roleId, [Permissions.AVAILABLE_TO_BE_ASSIGNED]).then((result) => ({
+          roleId,
+          hasPermission: result?.[Permissions.AVAILABLE_TO_BE_ASSIGNED] === true,
+        })),
+      ),
+    ).then((results) => results.filter((r) => r.hasPermission).map((r) => r.roleId)),
   ]);
 
   return (
@@ -48,9 +59,10 @@ export default async function Page({ params }: { params: Params }) {
       <EditUserContent
         userId={id}
         currentUserId={currentUser.id}
-        currentUserRoleId={currentUser.roleId}
         canAssignResident={canAssignResident[Permissions.ASSIGN_RESIDENT] ?? false}
         canHaveResident={canHaveResident[Permissions.CAN_HAVE_RESIDENT] ?? false}
+        assignableRoleIds={assignableRoleIds}
+        initialUsers={allUsers}
       />
     </>
   );

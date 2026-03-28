@@ -119,7 +119,6 @@ export default function UsersTable() {
           </svg>
         </button>
       </div>
-
       <div
         className="grid gap-3"
         style={{ gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))" }}

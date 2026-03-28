@@ -1,4 +1,3 @@
-// ResidentList.tsx
 import { UserType } from "@/types/userType";
 import FieldsSection from "./FieldsSection";
 import ResidentItem from "./ResidentItem";
@@ -46,7 +45,12 @@ export default function ResidentList({
   return (
     <FieldsSection>
       <h2 className="font-semibold">Residents</h2>
-      <div className="flex gap-1 items-center">
+      <div
+        className="grid gap-3"
+        style={{
+          gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))",
+        }}
+      >
         {assignableUsers.map((user) => (
           <ResidentItem
             key={user.id}

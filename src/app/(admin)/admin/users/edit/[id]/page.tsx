@@ -1,23 +1,29 @@
+// app/admin/users/[id]/page.tsx
 import EditUserContent from "@/components/EditUserContent";
 import NoAccess from "@/components/NoAccess";
-import { auth } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
+import { getCurrentUser } from "@/lib/getCurrentUser";
+import { checkPermissions } from "@/lib/checkPermissions";
+import { Permissions } from "@/types/propertyState";
+import userFetcher from "@/lib/userFetcher";
 import Link from "next/link";
 
 type Params = Promise<{ id: string }>;
 
 export default async function Page({ params }: { params: Params }) {
-  const { id } = await params;
-  const session = await auth();
-
-  const { data: currentUser } = await supabase
-    .from("user")
-    .select("id, role_id, template_id")
-    .eq("id", session?.user?.id)
-    .maybeSingle();
+  const [{ id }, currentUser] = await Promise.all([params, getCurrentUser()]);
 
   if (!id) return null;
   if (!currentUser) return <NoAccess />;
+
+  const targetUser = await userFetcher(id);
+  if (!targetUser) return <NoAccess />;
+
+  const [canAssignResident, canHaveResident] = await Promise.all([
+    checkPermissions(currentUser.roleId, [Permissions.ASSIGN_RESIDENT]),
+    targetUser.role_id
+      ? checkPermissions(targetUser.role_id, [Permissions.CAN_HAVE_RESIDENT])
+      : Promise.resolve({ [Permissions.CAN_HAVE_RESIDENT]: false }),
+  ]);
 
   return (
     <>
@@ -41,8 +47,10 @@ export default async function Page({ params }: { params: Params }) {
       </div>
       <EditUserContent
         userId={id}
-        currentUserId={currentUser?.id}
-        currentUserRoleId={currentUser?.role_id}
+        currentUserId={currentUser.id}
+        currentUserRoleId={currentUser.roleId}
+        canAssignResident={canAssignResident[Permissions.ASSIGN_RESIDENT] ?? false}
+        canHaveResident={canHaveResident[Permissions.CAN_HAVE_RESIDENT] ?? false}
       />
     </>
   );

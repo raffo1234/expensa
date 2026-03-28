@@ -39,7 +39,8 @@ const BASE = "inline-flex active:scale-95 transition-colors duration-300 border 
 
 const DISABLED =
   "cursor-not-allowed opacity-50 pointer-events-none border-cyan-200 text-cyan-200 bg-white";
-const ACTIVE = "cursor-pointer bg-cyan-300 border-cyan-300 hover:border-cyan-400 hover:bg-cyan-400 text-white";
+const ACTIVE =
+  "cursor-pointer bg-cyan-300 border-cyan-300 hover:border-cyan-400 hover:bg-cyan-400 text-white";
 const DEFAULT = "cursor-pointer text-cyan-400 border-cyan-200 bg-white hover:bg-cyan-50";
 
 function buildClassName(isDisabled: boolean, isActive: boolean, custom?: string): string {

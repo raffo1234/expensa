@@ -7,6 +7,7 @@ import { mutate } from "swr";
 import { formatTimestamp } from "@/utils/formatTimestamp";
 import CircularSecondaryButton from "./CircularSecondaryButton";
 import { Icon } from "@iconify/react/dist/iconify.js";
+import { useState } from "react";
 
 export default function ResidentItem({
   user,
@@ -18,20 +19,25 @@ export default function ResidentItem({
   currentUserId: string;
 }) {
   const { id, image_url, first_name, last_name, created_at, email, role } = user;
+  const [isLoading, setIsLoading] = useState(false);
+
   const href = `/admin/users/edit/${user.id}`;
   const isAssigned = !!user.supervisor_user_id;
   const isNotCurrentResident = isAssigned && user.supervisor_user_id !== currentUserId;
 
   const handleSelection = async () => {
+    setIsLoading(true);
     try {
       await supabase
         .from("user")
         .update({ supervisor_user_id: isAssigned ? null : currentUserId })
         .eq("id", id);
-      toast.success("User was assigned successfully!");
+      toast.success(`User was ${isAssigned ? "unassigned" : "assigned"} successfully!`);
     } catch (error) {
       console.error(error);
+      toast.error("Something went wrong. Please try again.");
     } finally {
+      setIsLoading(false);
       mutate(adminUsersKey);
     }
   };
@@ -69,16 +75,18 @@ export default function ResidentItem({
         <CircularSecondaryButton
           title={isAssigned ? "Unassign" : "Assign"}
           onClick={handleSelection}
-          isDisabled={!isEditable || isNotCurrentResident}
+          isDisabled={!isEditable || isNotCurrentResident || isLoading}
           isActive={isAssigned}
         >
-          {isAssigned ? (
+          {isLoading ? (
+            <Icon icon="solar:record-broken" className="animate-spin" fontSize={ICON_SIZE} />
+          ) : isAssigned ? (
             <Icon icon="codicon:close" fontSize={ICON_SIZE} />
           ) : (
             <Icon icon="uil:check" fontSize={ICON_SIZE} />
           )}
         </CircularSecondaryButton>
-        <CircularSecondaryButton href={href} title="View resident">
+        <CircularSecondaryButton href={href} title="View resident" isDisabled={isLoading}>
           <Icon icon="eva:diagonal-arrow-right-up-outline" fontSize={ICON_SIZE} />
         </CircularSecondaryButton>
       </div>

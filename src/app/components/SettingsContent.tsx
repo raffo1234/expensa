@@ -9,8 +9,9 @@ import toast from "react-hot-toast";
 import { supabase } from "@/lib/supabase";
 import useCheckPermission from "@/hooks/useCheckPermission";
 import { Permissions } from "@/types/propertyState";
-import FallbackPermission from "./FallbackPermission";
 import { useSettingValueBySlug } from "@/hooks/useSettingValueBySlug";
+import NoAccess from "./NoAccess";
+import SettingsPageFallBack from "./SettingsPageFallBack";
 
 export default function SettingsContent({
   roles,
@@ -21,13 +22,11 @@ export default function SettingsContent({
 }) {
   const [isSaving, setIsSaving] = useState(false);
 
-  const [defaultSignupRole, loading] = useSettingValueBySlug(
-    "default_signup_role"
-  );
-  
+  const [defaultSignupRole, loading] = useSettingValueBySlug("default_signup_role");
+
   const { hasPermission: canViewSettings, isLoading } = useCheckPermission(
     userRoleId,
-    Permissions.HANDLE_SETTINGS
+    Permissions.HANDLE_SETTINGS,
   );
 
   const updateDefaultSignupRole = async (value: string) => {
@@ -56,8 +55,8 @@ export default function SettingsContent({
     updateDefaultSignupRole(event.target.value);
   };
 
-  if (!defaultSignupRole || isLoading || loading) return null;
-  if (!canViewSettings) return <FallbackPermission />;
+  if (!defaultSignupRole || isLoading || loading) return <SettingsPageFallBack />;
+  if (!canViewSettings) return <NoAccess />;
 
   return (
     <FieldsSection>

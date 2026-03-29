@@ -1,28 +1,19 @@
 import NoAccess from "@/components/NoAccess";
 import SettingsContent from "@/components/SettingsContent";
+import SettingsPageFallBack from "@/components/SettingsPageFallBack";
 import { getCurrentUser } from "@/lib/getCurrentUser";
 import { supabase } from "@/lib/supabase";
 import { RoleType } from "@/types/roleType";
 import { Suspense } from "react";
 
-function FallBack() {
-  return (
-    <div className="space-y-3">
-      {Array.from({ length: 3 }, (_, i) => (
-        <div key={i} className="h-8 w-full bg-gray-200 animate-pulse rounded" />
-      ))}
-    </div>
-  );
-}
-
 export default async function Page() {
   return (
-    <div>
+    <>
       <h1 className="mb-6 font-semibold text-lg block">Global Settings</h1>
-      <Suspense fallback={<FallBack />}>
+      <Suspense fallback={<SettingsPageFallBack />}>
         <SettingsSection />
       </Suspense>
-    </div>
+    </>
   );
 }
 
@@ -34,10 +25,5 @@ async function SettingsSection() {
 
   if (!user) return <NoAccess />;
 
-  return (
-    <SettingsContent
-      userRoleId={user.roleId}
-      roles={roles as RoleType[] | null}
-    />
-  );
+  return <SettingsContent userRoleId={user.roleId} roles={roles as RoleType[] | null} />;
 }

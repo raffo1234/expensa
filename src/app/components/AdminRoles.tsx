@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { useState } from "react";
 import useSWR from "swr";
 import DeleteRole from "./DeleteRole";
-import { adminRolesKey } from "@/constants";
+import { adminRolesKey, ICON_SIZE } from "@/constants";
 import toast from "react-hot-toast";
 import FallBackRolesList from "./FallBackRolesList";
 import { RoleType } from "@/types/roleType";
@@ -112,13 +112,24 @@ export function RoleItem({ role }: { role: { id: string; name: string; descripti
           } cursor-pointer w-full flex gap-3.5 first:rounded-t-xl items-center justify-between text-left transition-colors duration-300 pl-6 pr-20 py-4`}
         >
           <span className="flex gap-3.5 items-center">
-            <Icon
-              icon="solar:alt-arrow-down-linear"
-              fontSize={20}
+            <svg
               className={`${
                 isOpen ? "rotate-180" : ""
               } transition-transform duration-500 flex-shrink-0`}
-            />
+              xmlns="http://www.w3.org/2000/svg"
+              width={ICON_SIZE}
+              height={ICON_SIZE}
+              viewBox="0 0 24 24"
+            >
+              <path
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.5"
+                d="m19 9l-7 6l-7-6"
+              />
+            </svg>
             <span>{name}</span>{" "}
             {description ? <span className="text-sm text-gray-500">{description}</span> : null}
           </span>

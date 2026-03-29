@@ -1,6 +1,5 @@
 "use client";
 
-import { Icon } from "@iconify/react";
 import { Switch } from "antd";
 import { supabase } from "@/lib/supabase";
 import { useState } from "react";

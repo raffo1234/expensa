@@ -312,7 +312,10 @@ const UploaderR2Instances: React.FC<UploaderR2Props> = ({
               handleStateChange,
               fileEntity.isAvailableForR2Upload,
             );
-
+            const extensionFromBuffer = await fileTypeFromBuffer(
+              await fileEntity.file.arrayBuffer(),
+            );
+            console.log("[turbo] detected mime:", extensionFromBuffer?.mime, fileEntity.file.name);
             if (!studiesByInstanceUID || studiesByInstanceUID.length === 0) {
               editCustomFileById(setFiles, fileEntity.id, {
                 state: CustomFileStateType.noDcimFile,

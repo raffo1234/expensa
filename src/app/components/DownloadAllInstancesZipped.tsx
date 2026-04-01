@@ -2,17 +2,26 @@ import { useState } from "react";
 import { Icon } from "@iconify/react"; // Asumiendo que usas Iconify por tu código previo
 import { ICON_SIZE } from "@/constants";
 import CircularSecondaryButton from "./CircularSecondaryButton";
+import { sanitize } from "@/lib/sanitize";
 
 export default function DownloadAllInstancesZipped({
   filename,
   fileIds,
   isButtonActive = false,
+  patientName = "",
 }: {
   filename?: string;
   fileIds: string[];
   isButtonActive?: boolean;
+  patientName?: string;
 }) {
+  const date = new Date().toISOString().split("T")[0];
   const [isZipping, setIsZipping] = useState(false);
+  const safeName = patientName
+    ? `${sanitize(patientName)}_${date}.zip`
+    : filename
+      ? `${sanitize(filename.replace(/\.zip$/i, ""))}_${date}.zip`
+      : `studies_${date}.zip`;
 
   const handleDownload = async () => {
     if (fileIds.length === 0) return;
@@ -30,7 +39,8 @@ export default function DownloadAllInstancesZipped({
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${filename ? filename : `studies_${new Date().getTime()}.zip`}`;
+
+      a.download = safeName;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);

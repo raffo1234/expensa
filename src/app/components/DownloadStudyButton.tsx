@@ -9,12 +9,14 @@ export default function DownloadStudyButton({
   filename = "",
   dicomUrl = null,
   instances = [],
+  patientName = "",
 }: {
   dicomIds: string[];
   isButtonActive?: boolean;
   filename?: string;
   dicomUrl?: string | null;
   instances?: DicomInstance[] | null;
+  patientName?: string;
 }) {
   const hasInstances = hasDicomInstances(instances);
 
@@ -27,6 +29,7 @@ export default function DownloadStudyButton({
         isButtonActive={isButtonActive}
         filename={filename}
         fileIds={dicomIds}
+        patientName={patientName}
       />
     );
 

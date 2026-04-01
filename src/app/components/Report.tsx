@@ -290,6 +290,7 @@ export default function Report({
               dicomUrl={dicom.dicom_url}
               instances={dicom.instances}
               isButtonActive={true}
+              patientName={dicom.patient_name}
             />
           </>
         ) : (

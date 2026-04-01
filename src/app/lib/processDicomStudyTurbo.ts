@@ -279,19 +279,22 @@ export const processDicomStudyTurbo = async (
   const fileBuffers: { name: string; buffer: Uint8Array }[] = [];
 
   // --- 1. EXTRACTION ---
-  const mime = selectedFile.type || "";
+  // Read buffer ONCE and reconstruct a rereadable file
+  const rawBuffer = new Uint8Array(await toArrayBuffer(selectedFile));
+  const rereadableFile = new File([rawBuffer], selectedFile.name, { type: selectedFile.type });
+
+  // Detect MIME from buffer content, not from browser-assigned type
+  const detectedMime = await fileTypeFromBuffer(rawBuffer);
+  const mime = detectedMime?.mime || selectedFile.type || "";
   const ext = selectedFile.name.split(".").pop()?.toLowerCase();
 
   if (mime === "application/dicom" || ext === "dcm") {
-    // Safari-safe: use FileReader instead of file.arrayBuffer()
     fileBuffers.push({
-      name: selectedFile.name,
-      buffer: new Uint8Array(await toArrayBuffer(selectedFile)),
+      name: rereadableFile.name,
+      buffer: rawBuffer,
     });
-  } else if (mime.includes("zip") || ext === "zip") {
-    // Safari-safe: use FileReader instead of file.arrayBuffer()
-    const zipBuffer = new Uint8Array(await toArrayBuffer(selectedFile));
-    const unzipped = unzipSync(zipBuffer);
+  } else if (mime.includes("zip") || mime === "application/x-zip-compressed" || ext === "zip") {
+    const unzipped = unzipSync(rawBuffer);
     for (const [path, buffer] of Object.entries(unzipped)) {
       if (
         !path.includes("__MACOSX") &&
@@ -302,13 +305,11 @@ export const processDicomStudyTurbo = async (
       }
     }
   } else if (mime.includes("rar") || mime.includes("vnd.rar") || ext === "rar") {
-    const archive = await Archive.open(selectedFile);
+    const archive = await Archive.open(rereadableFile); // ✅ use rereadableFile, not selectedFile
     const rawFiles = (await archive.extractFiles()) as Record<string, unknown>;
-    // Flatten nested folder structure — libarchive returns { folder: { file: File } }
     const flatFiles = flattenArchiveFiles(rawFiles);
     for (const [path, file] of Object.entries(flatFiles)) {
       if (!path.includes("__MACOSX") && !path.toLowerCase().includes("dicomdir")) {
-        // file is a native File object — use Safari-safe toArrayBuffer
         const buffer = new Uint8Array(await toArrayBuffer(file));
         if (buffer.length > 0) fileBuffers.push({ name: path, buffer });
       }

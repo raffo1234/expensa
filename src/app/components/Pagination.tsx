@@ -1068,6 +1068,7 @@ export default function Pagination({
                       <td className="text-center">
                         <DownloadStudyButton
                           dicomIds={[id]}
+                          patientName={patient_name}
                           dicomUrl={dicom_url}
                           instances={instances}
                         />

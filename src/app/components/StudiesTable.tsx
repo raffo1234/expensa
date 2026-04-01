@@ -8,27 +8,31 @@ import { es } from "date-fns/locale";
 import { useDebouncedCallback } from "use-debounce";
 import { useRef, useState } from "react";
 import useSWR from "swr";
-import { format } from "date-fns";
+
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const PAGE_SIZE = 20;
-const OHIF_BASE = "https://viewer.ohif.org/viewer";
+const VIEWER_BASE = "https://viewers-xi.vercel.app/viewer/dicomjson";
+const DICOM_JSON_API = "https://www.cadia.cc/api/dicom-json";
 const ICON_SIZE = 16;
 
 type SortDirection = "asc" | "desc" | null;
 type ReceiveStatus = "receiving" | "complete" | "failed" | "";
 
-// ─── Fetcher ─────────────────────────────────────────────────────────────────
+type HospitalOption = { id: string; name: string; ae_title: string };
+
+// ─── Fetchers ─────────────────────────────────────────────────────────────────
 
 type FetcherKey = [
-  string, // key prefix
-  number, // page
-  number, // pageSize
-  string | null, // search
-  string | null, // sortColumn
-  SortDirection, // sortDirection
-  ReceiveStatus, // statusFilter
+  string,           // key prefix
+  number,           // page
+  number,           // pageSize
+  string | null,    // search
+  string | null,    // sortColumn
+  SortDirection,    // sortDirection
+  ReceiveStatus,    // statusFilter
+  string | null,    // hospitalId
 ];
 
 type FetchResult = {
@@ -37,7 +41,7 @@ type FetchResult = {
 };
 
 const fetcher = async (key: FetcherKey): Promise<FetchResult> => {
-  const [, page, pageSize, search, sortColumn, sortDirection, statusFilter] = key;
+  const [, page, pageSize, search, sortColumn, sortDirection, statusFilter, hospitalId] = key;
 
   const start = page * pageSize;
   const end = start + pageSize - 1;
@@ -47,7 +51,9 @@ const fetcher = async (key: FetcherKey): Promise<FetchResult> => {
     .select("*, hospital(id, name, ae_title)")
     .range(start, end);
 
-  let countQuery = supabase.from("dicom_study").select("id", { count: "exact", head: true });
+  let countQuery = supabase
+    .from("dicom_study")
+    .select("id", { count: "exact", head: true });
 
   if (search && search.trim().length > 0) {
     const s = search.trim();
@@ -59,6 +65,11 @@ const fetcher = async (key: FetcherKey): Promise<FetchResult> => {
   if (statusFilter) {
     dataQuery = dataQuery.eq("receive_status", statusFilter);
     countQuery = countQuery.eq("receive_status", statusFilter);
+  }
+
+  if (hospitalId) {
+    dataQuery = dataQuery.eq("hospital_id", hospitalId);
+    countQuery = countQuery.eq("hospital_id", hospitalId);
   }
 
   if (sortColumn && sortDirection) {
@@ -78,6 +89,16 @@ const fetcher = async (key: FetcherKey): Promise<FetchResult> => {
   };
 };
 
+const hospitalsFetcher = async (): Promise<HospitalOption[]> => {
+  const { data, error } = await supabase
+    .from("hospital")
+    .select("id, name, ae_title")
+    .eq("is_active", true)
+    .order("name", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as HospitalOption[];
+};
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function formatStudyDate(raw: string | null): string {
@@ -90,20 +111,17 @@ function formatReceivedAt(raw: string): string {
   return formatInTimeZone(new Date(raw), "America/Lima", "dd MMM yyyy, hh:mm a", { locale: es });
 }
 
-function buildOHIFUrl(uid: string): string {
-  return `${OHIF_BASE}?StudyInstanceUIDs=${uid}`;
+function buildViewerUrl(studyId: string): string {
+  return `${VIEWER_BASE}?url=${DICOM_JSON_API}/${studyId}`;
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: DicomStudyType["receive_status"] }) {
   const map: Record<string, { label: string; className: string }> = {
-    complete: { label: "Complete", className: "bg-cyan-50 text-cyan-700 border border-cyan-200" },
-    receiving: {
-      label: "Receiving",
-      className: "bg-yellow-50 text-yellow-700 border border-yellow-200",
-    },
-    failed: { label: "Failed", className: "bg-rose-50 text-rose-700 border border-rose-200" },
+    complete:  { label: "Complete",  className: "bg-cyan-50 text-cyan-700 border border-cyan-200" },
+    receiving: { label: "Receiving", className: "bg-yellow-50 text-yellow-700 border border-yellow-200" },
+    failed:    { label: "Failed",    className: "bg-rose-50 text-rose-700 border border-rose-200" },
   };
   const cfg = map[status] ?? map.receiving;
   return (
@@ -123,9 +141,7 @@ function ModalityBadge({ modality }: { modality: string | null }) {
     PT: "bg-orange-50 text-orange-700",
   };
   return (
-    <span
-      className={`inline-block text-xs font-semibold px-2 py-0.5 rounded ${colors[modality] ?? "bg-gray-100 text-gray-600"}`}
-    >
+    <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded ${colors[modality] ?? "bg-gray-100 text-gray-600"}`}>
       {modality}
     </span>
   );
@@ -167,13 +183,13 @@ function SortableHeader({
   );
 }
 
-function OHIFButton({ uid }: { uid: string }) {
+function ViewerButton({ id }: { id: string }) {
   return (
     <a
-      href={buildOHIFUrl(uid)}
+      href={buildViewerUrl(id)}
       target="_blank"
       rel="noopener noreferrer"
-      title="Open in OHIF Viewer"
+      title="Open in Viewer"
       className="inline-flex items-center gap-1 text-xs font-medium text-cyan-600 hover:text-cyan-800 border border-cyan-200 hover:border-cyan-400 bg-cyan-50 hover:bg-cyan-100 px-2.5 py-1 rounded-full transition-colors duration-200 whitespace-nowrap"
     >
       <Icon icon="solar:monitor-smartphone-linear" fontSize={13} />
@@ -192,6 +208,9 @@ export default function StudiesTable() {
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [statusFilter, setStatusFilter] = useState<ReceiveStatus>("");
+  const [hospitalId, setHospitalId] = useState<string | null>(null);
+
+  const { data: hospitals } = useSWR<HospitalOption[]>("hospitals-list", hospitalsFetcher);
 
   const swrKey: FetcherKey = [
     "dicom_study",
@@ -201,6 +220,7 @@ export default function StudiesTable() {
     sortColumn,
     sortDirection,
     statusFilter,
+    hospitalId,
   ];
 
   const { data: result, error, isLoading } = useSWR<FetchResult>(swrKey, fetcher);
@@ -238,6 +258,7 @@ export default function StudiesTable() {
     setSortColumn(null);
     setSortDirection(null);
     setStatusFilter("");
+    setHospitalId(null);
     if (searchInputRef.current) searchInputRef.current.value = "";
   };
 
@@ -268,11 +289,7 @@ export default function StudiesTable() {
               }}
               className="absolute top-1/2 -translate-y-1/2 right-2 hover:bg-slate-100 transition-colors p-1.5 cursor-pointer rounded-full"
             >
-              <Icon
-                icon="solar:close-circle-broken"
-                fontSize={ICON_SIZE}
-                className="text-gray-400"
-              />
+              <Icon icon="solar:close-circle-broken" fontSize={ICON_SIZE} className="text-gray-400" />
             </button>
           )}
         </div>
@@ -280,16 +297,27 @@ export default function StudiesTable() {
         {/* Status filter */}
         <select
           value={statusFilter}
-          onChange={(e) => {
-            setStatusFilter(e.target.value as ReceiveStatus);
-            setPage(0);
-          }}
+          onChange={(e) => { setStatusFilter(e.target.value as ReceiveStatus); setPage(0); }}
           className="bg-white border border-gray-200 rounded-full px-4 py-2 text-sm outline-0 focus:ring-4 focus:ring-cyan-100 focus:border-cyan-500 cursor-pointer"
         >
           <option value="">All statuses</option>
           <option value="complete">Complete</option>
           <option value="receiving">Receiving</option>
           <option value="failed">Failed</option>
+        </select>
+
+        {/* Hospital filter */}
+        <select
+          value={hospitalId ?? ""}
+          onChange={(e) => { setHospitalId(e.target.value || null); setPage(0); }}
+          className="bg-white border border-gray-200 rounded-full px-4 py-2 text-sm outline-0 focus:ring-4 focus:ring-cyan-100 focus:border-cyan-500 cursor-pointer"
+        >
+          <option value="">All hospitals</option>
+          {hospitals?.map((h) => (
+            <option key={h.id} value={h.id}>
+              {h.name}
+            </option>
+          ))}
         </select>
 
         {/* Clear */}
@@ -345,66 +373,17 @@ export default function StudiesTable() {
           <thead>
             <tr className="border-b border-gray-200">
               <th className="w-8 py-4 text-center text-xs font-semibold text-gray-400">#</th>
-              <SortableHeader
-                label="Patient ID"
-                column="patient_id"
-                sortColumn={sortColumn}
-                sortDirection={sortDirection}
-                onSort={handleSort}
-                className="w-28"
-              />
-              <SortableHeader
-                label="Patient Name"
-                column="patient_name"
-                sortColumn={sortColumn}
-                sortDirection={sortDirection}
-                onSort={handleSort}
-                className="w-36"
-              />
+              <SortableHeader label="Patient ID"    column="patient_id"        sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleSort} className="w-28" />
+              <SortableHeader label="Patient Name"  column="patient_name"      sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleSort} className="w-36" />
               <th className="w-10 px-2 uppercase text-xs font-semibold text-left py-4">Sex</th>
               <th className="w-12 px-2 uppercase text-xs font-semibold text-left py-4">Age</th>
-              <SortableHeader
-                label="Description"
-                column="study_description"
-                sortColumn={sortColumn}
-                sortDirection={sortDirection}
-                onSort={handleSort}
-                className="w-40"
-              />
-              <SortableHeader
-                label="Modality"
-                column="modality"
-                sortColumn={sortColumn}
-                sortDirection={sortDirection}
-                onSort={handleSort}
-                className="w-20"
-              />
-              <SortableHeader
-                label="Study Date"
-                column="study_date"
-                sortColumn={sortColumn}
-                sortDirection={sortDirection}
-                onSort={handleSort}
-                className="w-28"
-              />
+              <SortableHeader label="Description"   column="study_description" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleSort} className="w-40" />
+              <SortableHeader label="Modality"      column="modality"          sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleSort} className="w-20" />
+              <SortableHeader label="Study Date"    column="study_date"        sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleSort} className="w-28" />
               <th className="w-28 px-2 uppercase text-xs font-semibold text-left py-4">Hospital</th>
               <th className="w-16 px-2 uppercase text-xs font-semibold text-left py-4">Inst.</th>
-              <SortableHeader
-                label="Status"
-                column="receive_status"
-                sortColumn={sortColumn}
-                sortDirection={sortDirection}
-                onSort={handleSort}
-                className="w-28"
-              />
-              <SortableHeader
-                label="Received At"
-                column="received_at"
-                sortColumn={sortColumn}
-                sortDirection={sortDirection}
-                onSort={handleSort}
-                className="w-40"
-              />
+              <SortableHeader label="Status"        column="receive_status"    sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleSort} className="w-28" />
+              <SortableHeader label="Received At"   column="received_at"       sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleSort} className="w-40" />
               <th className="w-24 py-4"></th>
             </tr>
           </thead>
@@ -433,8 +412,7 @@ export default function StudiesTable() {
                   <p className="text-sm">No studies found</p>
                   {search && (
                     <p className="text-xs mt-1">
-                      No results for{" "}
-                      <span className="font-semibold text-gray-600">&quot;{search}&quot;</span>
+                      No results for <span className="font-semibold text-gray-600">&quot;{search}&quot;</span>
                     </p>
                   )}
                 </td>
@@ -473,7 +451,9 @@ export default function StudiesTable() {
                   </td>
 
                   {/* Age */}
-                  <td className="py-4 px-2 text-gray-600">{study.patient_age ?? "—"}</td>
+                  <td className="py-4 px-2 text-gray-600">
+                    {study.patient_age ?? "—"}
+                  </td>
 
                   {/* Study Description */}
                   <td
@@ -489,7 +469,9 @@ export default function StudiesTable() {
                   </td>
 
                   {/* Study Date */}
-                  <td className="py-4 px-2 text-gray-600">{formatStudyDate(study.study_date)}</td>
+                  <td className="py-4 px-2 text-gray-600">
+                    {formatStudyDate(study.study_date)}
+                  </td>
 
                   {/* Hospital */}
                   <td className="py-4 px-2 truncate text-gray-600" title={study.hospital?.name}>
@@ -510,17 +492,14 @@ export default function StudiesTable() {
                   </td>
 
                   {/* Received At */}
-                  <td
-                    className="py-4 px-2 text-xs text-gray-500 truncate"
-                    title={formatReceivedAt(study.received_at)}
-                  >
+                  <td className="py-4 px-2 text-xs text-gray-500 truncate" title={formatReceivedAt(study.received_at)}>
                     {formatReceivedAt(study.received_at)}
                   </td>
 
                   {/* OHIF Viewer */}
                   <td className="py-4 px-2 text-center">
                     {study.receive_status === "complete" ? (
-                      <OHIFButton uid={study.study_instance_uid} />
+                      <ViewerButton id={study.id} />
                     ) : (
                       <span className="text-xs text-gray-300">—</span>
                     )}

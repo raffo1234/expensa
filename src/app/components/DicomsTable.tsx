@@ -42,14 +42,11 @@ export default function DicomsTable({
 
   const [activeUserId, setActiveUserId] = useState(userId);
 
-  const { data: users, isLoading: isLoadingUsers } = useSWR(
-    adminActiveUsersKey,
-    usersFetcher
-  );
+  const { data: users, isLoading: isLoadingUsers } = useSWR(adminActiveUsersKey, usersFetcher);
 
   const { data: permissions, isLoading: isLoadingPermissions } = useSWR(
     `role-permissions-${userRoleId}-${REQUIRED_PERMISSIONS.join(",")}`,
-    () => checkPermissions(userRoleId, REQUIRED_PERMISSIONS)
+    () => checkPermissions(userRoleId, REQUIRED_PERMISSIONS),
   );
 
   if (isLoadingUsers || isLoadingPermissions) return <FallbackDicomsPage />;

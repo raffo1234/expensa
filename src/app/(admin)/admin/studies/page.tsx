@@ -16,7 +16,7 @@ function StudiesTableFallback() {
 
 export default async function StudiesPage() {
   const session = await auth();
-  const userId = session?.user?.id;
+  const userRoleId = session?.user?.role_id;
 
   return (
     <div className="p-6">
@@ -27,7 +27,9 @@ export default async function StudiesPage() {
         </p>
       </div>
 
-      <Suspense fallback={<StudiesTableFallback />}>{userId ? <StudiesTable /> : null}</Suspense>
+      <Suspense fallback={<StudiesTableFallback />}>
+        {userRoleId ? <StudiesTable userRoleId={userRoleId} /> : null}
+      </Suspense>
     </div>
   );
 }

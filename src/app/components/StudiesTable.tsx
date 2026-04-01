@@ -1,5 +1,6 @@
 "use client";
 
+import { checkPermissions } from "@/lib/checkPermissions";
 import { supabase } from "@/lib/supabase";
 import { DicomStudyType } from "@/types/dicomStudyType";
 import { Icon } from "@iconify/react";
@@ -8,6 +9,18 @@ import { es } from "date-fns/locale";
 import { useDebouncedCallback } from "use-debounce";
 import { useRef, useState } from "react";
 import useSWR from "swr";
+import { Permissions } from "@/types/propertyState";
+import NoAccess from "./NoAccess";
+import FallbackDicomsPage from "./FallbackDicomsPage";
+
+const REQUIRED_PERMISSIONS = [
+  Permissions.VIEW_DICOMS,
+  Permissions.VIEW_OTHER_DICOMS,
+  Permissions.VIEW_NEW_REPORTS,
+  Permissions.VIEW_VIEWED_REPORTS,
+  Permissions.VIEW_DRAFT_REPORTS,
+  Permissions.VIEW_COMPLETED_REPORTS,
+];
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -202,7 +215,7 @@ function ViewerButton({ id }: { id: string }) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function StudiesTable() {
+export default function StudiesTable({ userRoleId }: { userRoleId: string }) {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const [page, setPage] = useState(0);
@@ -211,6 +224,11 @@ export default function StudiesTable() {
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [statusFilter, setStatusFilter] = useState<ReceiveStatus>("");
   const [hospitalId, setHospitalId] = useState<string | null>(null);
+
+  const { data: permissions, isLoading: isLoadingPermissions } = useSWR(
+    `role-permissions-${userRoleId}-${REQUIRED_PERMISSIONS.join(",")}`,
+    () => checkPermissions(userRoleId, REQUIRED_PERMISSIONS),
+  );
 
   const { data: hospitals } = useSWR<HospitalOption[]>("hospitals-list", hospitalsFetcher);
 
@@ -266,6 +284,9 @@ export default function StudiesTable() {
 
   const noData = !isLoading && !error && result?.data?.length === 0;
   const startItemNumber = page * PAGE_SIZE + 1;
+
+  if (isLoadingPermissions) return <FallbackDicomsPage />;
+  if (!permissions?.[Permissions.VIEW_DICOMS]) return <NoAccess />;
 
   return (
     <>

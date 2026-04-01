@@ -87,10 +87,22 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const { searchParams } = new URL(request.url);
     const seriesUid = searchParams.get("seriesUid");
 
-    const { data, error } = await supabase.from("dicom").select("*").eq("id", id).single();
-    const study = data as unknown as DicomTableRow | null;
+    let study: DicomTableRow | null = null;
 
-    if (error || !study) return NextResponse.json({ error: "Study not found" }, { status: 404 });
+    const { data: newStudy } = await supabase.from("dicom_study").select("*").eq("id", id).single();
+
+    if (newStudy) {
+      study = newStudy as unknown as DicomTableRow;
+    } else {
+      const { data: legacyStudy, error } = await supabase
+        .from("dicom")
+        .select("*")
+        .eq("id", id)
+        .single();
+      if (error || !legacyStudy)
+        return NextResponse.json({ error: "Study not found" }, { status: 404 });
+      study = legacyStudy as unknown as DicomTableRow;
+    }
 
     const allInstances: DicomInstance[] = study.instances || [];
     const seriesMap = new Map<string, OHIFSeries>();

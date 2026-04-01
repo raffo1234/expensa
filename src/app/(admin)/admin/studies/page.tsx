@@ -1,28 +1,33 @@
-import DicomsTable from "@/components/DicomsTable";
-import { getCurrentUser } from "@/lib/getCurrentUser";
+import { auth } from "@/lib/auth";
 import { Suspense } from "react";
+import StudiesTable from "@/components/StudiesTable";
 
-function FallBack() {
+function StudiesTableFallback() {
   return (
-    <div className="space-y-3">
-      {Array.from({ length: 3 }, (_, i) => (
-        <div key={i} className="h-8 w-full bg-gray-200 animate-pulse rounded" />
-      ))}
+    <div className="bg-white shadow rounded-xl overflow-hidden">
+      <div className="p-4 flex flex-col gap-3">
+        {Array.from({ length: 10 }, (_, i) => (
+          <div key={i} className="h-10 bg-gray-100 rounded-lg animate-pulse" />
+        ))}
+      </div>
     </div>
   );
 }
 
-export default async function Page() {
+export default async function StudiesPage() {
+  const session = await auth();
+  const userId = session?.user?.id;
+
   return (
-    <Suspense fallback={<FallBack />}>
-      <DicomsSection />
-    </Suspense>
+    <div className="p-6">
+      <div className="mb-6">
+        <h1 className="text-xl font-semibold text-gray-800">Studies</h1>
+        <p className="text-sm text-gray-500 mt-1">
+          DICOM studies received via SCP · 137.66.1.186:104
+        </p>
+      </div>
+
+      <Suspense fallback={<StudiesTableFallback />}>{userId ? <StudiesTable /> : null}</Suspense>
+    </div>
   );
-}
-
-async function DicomsSection() {
-  const user = await getCurrentUser();
-  if (!user) return null;
-
-  return <DicomsTable userId={user.id} userRoleId={user.roleId} />;
 }

@@ -1,36 +1,36 @@
 import { useState } from "react";
-import { Icon } from "@iconify/react"; // Asumiendo que usas Iconify por tu código previo
+import { Icon } from "@iconify/react";
 import { ICON_SIZE } from "@/constants";
 import CircularSecondaryButton from "./CircularSecondaryButton";
 import { sanitize } from "@/lib/sanitize";
 
 export default function DownloadAllInstancesZipped({
-  filename,
   fileIds,
   isButtonActive = false,
-  patientName = "",
+  patientName,
 }: {
-  filename?: string;
   fileIds: string[];
   isButtonActive?: boolean;
   patientName?: string;
 }) {
-  const date = new Date().toISOString().split("T")[0];
   const [isZipping, setIsZipping] = useState(false);
-  const safeName = patientName
-    ? `${sanitize(patientName)}_${date}.zip`
-    : filename
-      ? `${sanitize(filename.replace(/\.zip$/i, ""))}_${date}.zip`
-      : `studies_${date}.zip`;
+
+  const buildFileName = () => {
+    const date = new Date().toISOString().split("T")[0];
+    return patientName ? `${sanitize(patientName)}_${date}` : `studies_${date}`;
+  };
 
   const handleDownload = async () => {
     if (fileIds.length === 0) return;
     setIsZipping(true);
 
     try {
+      const zipName = buildFileName();
+
       const response = await fetch("/api/download-zip", {
         method: "POST",
-        body: JSON.stringify({ fileIds }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileIds, zipName }),
       });
 
       if (!response.ok) throw new Error("Zip generation failed");
@@ -39,8 +39,7 @@ export default function DownloadAllInstancesZipped({
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-
-      a.download = safeName;
+      a.download = `${zipName}.zip`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -51,12 +50,10 @@ export default function DownloadAllInstancesZipped({
     }
   };
 
-  const title = "Download Zip";
-
   return (
     <CircularSecondaryButton
       onClick={handleDownload}
-      title={title}
+      title="Download Zip"
       isDisabled={isZipping || fileIds.length === 0}
       isActive={isButtonActive}
     >

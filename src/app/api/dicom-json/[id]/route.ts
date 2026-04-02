@@ -2,6 +2,7 @@ import { supabase } from "@/lib/supabase";
 import { DicomTableRow } from "@/types/Dicom";
 import { NextResponse } from "next/server";
 import { DicomInstance } from "../../../../../workers/process-dicom/src/dicomWorkerUtils";
+import { buildDicomUrl } from "@/utils/buildDicomUrl";
 
 // --- WINDOW NORMALIZATION ---
 // Fixes ADC series (eADC, ADC mm²/s, ADC m²/s) that store WindowCenter
@@ -171,7 +172,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
             ...(inst.number_of_frames &&
               inst.number_of_frames > 1 && { NumberOfFrames: inst.number_of_frames }),
           },
-          url: `dicomweb:${inst.storage_url}`,
+          url: `dicomweb:${buildDicomUrl(inst.storage_url)}`,
         });
       }
     }

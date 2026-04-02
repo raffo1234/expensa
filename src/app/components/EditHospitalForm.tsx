@@ -128,7 +128,7 @@ export default function EditHospitalForm({ hospitalId }: { hospitalId: string })
       {/* R2 Bucket — immutable */}
       <div>
         <label className={labelClass}>
-          R2 Bucket
+          R2 Folder
           <span className="ml-2 text-xs text-gray-400 font-normal">(immutable)</span>
         </label>
         <input type="text" className={disabledClass} value={hospital.r2_bucket} disabled readOnly />
@@ -141,11 +141,10 @@ export default function EditHospitalForm({ hospitalId }: { hospitalId: string })
           <p className="font-semibold mb-1">Technician configuration:</p>
           <ul className="list-disc list-inside space-y-0.5 text-xs">
             <li>
-              IP: <span className="font-mono">dicom.cadia.pe</span>
+              IP: <span className="font-mono">137.66.1.186</span>
             </li>
             <li>
-              Port: <span className="font-mono">2762</span> (TLS) or{" "}
-              <span className="font-mono">104</span>
+              PORT: <span className="font-mono">104</span>
             </li>
             <li>
               AE Title: <span className="font-mono">{hospital.ae_title}</span>

@@ -13,7 +13,7 @@ export default function DownloadButtons({
 }) {
   const { hasPermission: canDownload, isLoading: isLoadingCanDownload } =
     useCheckPermission(userRoleId, Permissions.DOWNLOAD_REPORT);
-
+  console.log(canDownload)
   if (isLoadingCanDownload) return null;
 
   return canDownload ? (

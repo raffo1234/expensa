@@ -36,9 +36,6 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import CircularSecondaryButton from "./CircularSecondaryButton";
 import ViewerButton from "./ViewerButton";
 
-const VIEWER_BASE = "https://viewers-xi.vercel.app/viewer/dicomjson";
-const DICOM_JSON_API = "https://www.cadia.cc/api/dicom-json";
-
 type AnyDicom = DicomType & DicomStudyType;
 
 export default function Report({

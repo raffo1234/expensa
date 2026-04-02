@@ -13,6 +13,7 @@ import { Permissions } from "@/types/propertyState";
 import NoAccess from "./NoAccess";
 import FallbackDicomsPage from "./FallbackDicomsPage";
 import DownloadStudyZipButton from "@/components/DownloadStudyZipButton";
+import InformButton from "./InformButton";
 
 const REQUIRED_PERMISSIONS = [
   Permissions.VIEW_DICOMS,
@@ -469,6 +470,7 @@ export default function StudiesTable({ userRoleId }: { userRoleId: string }) {
               />
               <th className="w-24 py-4"></th>
               <th className="w-24 py-4"></th>
+              <th className="w-24 py-4"></th>
             </tr>
           </thead>
 
@@ -586,6 +588,11 @@ export default function StudiesTable({ userRoleId }: { userRoleId: string }) {
                       <div className="flex items-center gap-1.5 justify-center">
                         <ViewerButton id={study.id} />
                         <DownloadStudyZipButton study={study} />
+                        <InformButton
+                          href={`/admin/studies/${study.id}`}
+                          dicomId={study.id}
+                          dicomState=""
+                        />
                       </div>
                     ) : (
                       <span className="text-xs text-gray-300">—</span>

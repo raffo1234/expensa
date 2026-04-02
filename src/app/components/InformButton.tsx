@@ -9,17 +9,20 @@ import CircularSecondaryButton from "./CircularSecondaryButton";
 export default function InformButton({
   dicomId,
   dicomState,
+  href,
 }: {
   dicomId: string;
   dicomState: string;
+  href?: string; 
 }) {
   const title = dicomState !== DicomStateEnum.COMPLETED ? "Inform" : "Amend";
   const router = useRouter();
+  const resolvedHref = href ?? `/admin/dicoms/${dicomId}`;
 
   return (
     <CircularSecondaryButton
-      onMouseEnter={() => router.prefetch(`/admin/dicoms/${dicomId}`)}
-      href={`/admin/dicoms/${dicomId}`}
+      onMouseEnter={() => router.prefetch(resolvedHref)}
+      href={resolvedHref}
       title={title}
       isActive={true}
     >

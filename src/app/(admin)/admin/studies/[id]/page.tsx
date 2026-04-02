@@ -1,40 +1,26 @@
+import { auth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import Report from "@/components/Report";
 import { TemplateType } from "@/types/templateType";
-import { auth } from "@/lib/auth";
 import Link from "next/link";
-import CheckPermission from "@/components/CheckPermission";
-import { Permissions } from "@/types/propertyState";
-import FallbackPermission from "@/components/FallbackPermission";
-import LoadingReportComponent from "@/components/LoadingReportComponent";
 
-type Params = Promise<{ id: string }>;
-
-export default async function Page({ params }: { params: Params }) {
+export default async function StudyReportPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await auth();
-  const user = session?.user;
+  const userRoleId = session?.user?.role_id ?? "";
 
-  const { data } = await supabase
-    .from("user")
-    .select("role_id")
-    .eq("id", user?.id)
-    .single();
-
-  if (!user?.id || !data?.role_id) return null;
-  const userId = user?.id;
-
-  const { data: templates } = (await supabase
-    .from("template")
-    .select(
-      "id, name, description, header_image_url, sign_image_url, footer_image_url"
-    )
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false })) as {
-    data: TemplateType[] | null;
-  };
-
-  if (!user) return null;
+  const [{ data: study }, { data: templates }] = await Promise.all([
+    supabase
+      .from("dicom_study")
+      .select("*, hospital(id, name, ae_title), template:template_id(*)")
+      .eq("id", id)
+      .single(),
+    supabase
+      .from("template")
+      .select("*")
+      .eq("user_id", session?.user?.id)
+      .order("name", { ascending: true }),
+  ]);
 
   return (
     <>
@@ -42,7 +28,7 @@ export default async function Page({ params }: { params: Params }) {
         <h1 className="font-semibold text-lg block">Report Editor</h1>
         <Link
           href="/admin/dicoms"
-          title="Templates"
+          title="List of Studies"
           className="p-2 hover:text-cyan-400 transition-colors duration-300"
         >
           <svg
@@ -61,18 +47,13 @@ export default async function Page({ params }: { params: Params }) {
           </svg>
         </Link>
       </div>
-      <CheckPermission
-        userRoleId={data.role_id}
-        requiredPermission={Permissions.GENERATE_REPORT}
-        fallback={<FallbackPermission />}
-        loadingComponent={<LoadingReportComponent />}
-      >
-        <Report
-          dicomId={id}
-          userRoleId={data.role_id}
-          templates={templates || []}
-        />
-      </CheckPermission>
+      <Report
+        dicomId={id}
+        userRoleId={userRoleId}
+        templates={(templates as TemplateType[]) ?? []}
+        fallbackDicom={study ?? undefined}
+        table="dicom_study"
+      />
     </>
   );
 }

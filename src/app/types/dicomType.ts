@@ -32,8 +32,8 @@ export type DicomType = {
   modality: string;
   study_date: string;
   series_description: string;
-  created_at: Date;
-  completed_at: Date;
+  created_at: string;
+  completed_at: string | null;
   state: DicomStateEnum;
   template_id?: string;
   report: string;

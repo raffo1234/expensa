@@ -9,8 +9,10 @@ import toast from "react-hot-toast";
 import { sanitize } from "@/lib/sanitize";
 import { ICON_SIZE } from "@/constants";
 import fetcherDicom from "@/fetchers/dicomFetcher";
+import { supabase } from "@/lib/supabase";
 import useSWR from "swr";
 import CircularSecondaryButton from "./CircularSecondaryButton";
+import { usePathname } from "next/navigation";
 
 const IconLoading = () => {
   return (
@@ -33,36 +35,49 @@ const IconLoading = () => {
 
 export default function DOCXPreview({ dicomId }: { dicomId: DicomType["id"] }) {
   const [isLoading, setIsLoading] = useState(false);
+  const pathname = usePathname();
+  const table = pathname.includes("/studies/") ? "dicom_study" : "dicom";
+
+  const fetchData = async () => {
+    if (table === "dicom_study") {
+      const { data, error } = await supabase
+        .from("dicom_study")
+        .select("*, hospital(id, name, ae_title), template:template_id(*)")
+        .eq("id", dicomId)
+        .single();
+      if (error) throw error;
+      return data as unknown as DicomType;
+    }
+    return fetcherDicom(dicomId);
+  };
 
   const {
     data: dicom,
     error,
     isLoading: isLoadingDicom,
-  } = useSWR(`admin-${dicomId}`, () => fetcherDicom(dicomId));
+  } = useSWR(`${table}-${dicomId}`, fetchData);
 
   const generateDocx = async (dicom: DicomType) => {
     setIsLoading(true);
-
     try {
       const doc = await createDocxDocument(dicom);
       const blob = await Packer.toBlob(doc);
       const filename = sanitize(
         `${dicom.patient_name}-${dicom.study_description}-${dicom.study_date}.docx`,
       );
-      setIsLoading(false);
       toast.success("Download completed successfully!");
       saveAs(blob, filename);
     } catch (error) {
       console.error("Error creating document:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
-
-  const title = "DOCX Preview";
 
   if (!dicom || error) return null;
 
   return (
-    <CircularSecondaryButton title={title} onClick={() => generateDocx(dicom)}>
+    <CircularSecondaryButton title="DOCX Preview" onClick={() => generateDocx(dicom)}>
       {isLoading || isLoadingDicom ? (
         <IconLoading />
       ) : (

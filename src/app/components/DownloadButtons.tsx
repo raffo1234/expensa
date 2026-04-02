@@ -11,9 +11,11 @@ export default function DownloadButtons({
   dicomId: DicomType["id"];
   userRoleId: string;
 }) {
-  const { hasPermission: canDownload, isLoading: isLoadingCanDownload } =
-    useCheckPermission(userRoleId, Permissions.DOWNLOAD_REPORT);
-  console.log(canDownload)
+  const { hasPermission: canDownload, isLoading: isLoadingCanDownload } = useCheckPermission(
+    userRoleId,
+    Permissions.DOWNLOAD_REPORT,
+  );
+
   if (isLoadingCanDownload) return null;
 
   return canDownload ? (

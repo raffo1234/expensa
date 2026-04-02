@@ -1,12 +1,13 @@
 "use client";
-
 import { useState } from "react";
 import { DicomType } from "@/types/dicomType";
 import fetcherDicom from "@/fetchers/dicomFetcher";
+import { supabase } from "@/lib/supabase";
 import useSWR from "swr";
 import GeneratePDFButtonInner from "./GeneratePDFButtonInner";
 import { ICON_SIZE } from "@/constants";
 import CircularSecondaryButton from "./CircularSecondaryButton";
+import { usePathname } from "next/navigation";
 
 export default function GeneratePDFButton({
   dicomId,
@@ -17,13 +18,25 @@ export default function GeneratePDFButton({
   label?: string;
   isDownloadable?: boolean;
 }) {
-  const {
-    data: dicom,
-    error,
-    isLoading,
-  } = useSWR(`admin-${dicomId}-download`, () => fetcherDicom(dicomId));
-  const [showPDFButton, setShowPDFButton] = useState(false);
+  const pathname = usePathname();
+  const table = pathname.includes("/studies/") ? "dicom_study" : "dicom";
 
+  const fetchData = async () => {
+    if (table === "dicom_study") {
+      const { data, error } = await supabase
+        .from("dicom_study")
+        .select("*, hospital(id, name, ae_title), template:template_id(*)")
+        .eq("id", dicomId)
+        .single();
+      if (error) throw error;
+      return data as unknown as DicomType;
+    }
+    return fetcherDicom(dicomId);
+  };
+
+  const { data: dicom, error, isLoading } = useSWR(`${table}-${dicomId}-download`, fetchData);
+
+  const [showPDFButton, setShowPDFButton] = useState(false);
   const title = `${isDownloadable ? "Download" : "Preview"} ${label}`;
 
   if (!dicom || isLoading || error) return null;

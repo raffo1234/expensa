@@ -129,15 +129,6 @@ export default function AsideMenu({
           },
         ]
       : []),
-    ...(checkPermission(Permissions.MANAGE_HOSPITALS)
-      ? [
-          {
-            href: "/admin/hospitals",
-            title: t("hospitals"),
-            iconName: "streamline-ultimate:medical-hospital-1",
-          },
-        ]
-      : []),
     {
       href: "/admin/my-studies",
       title: t("my-studies"),

@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import { Permissions } from "@/types/propertyState";
 import { checkPermissions } from "@/lib/checkPermissions";
-import FallbackPermission from "@/components/FallbackPermission";
 import NoAccess from "@/components/NoAccess";
 import { getCurrentUser } from "@/lib/getCurrentUser";
 import HospitalsTable from "@/components/HospitalsTable";
@@ -34,7 +33,7 @@ async function HospitalsSection() {
   if (!user) return <NoAccess />;
 
   const permissions = await checkPermissions(user.roleId, [Permissions.MANAGE_HOSPITALS]);
-  if (!permissions[Permissions.MANAGE_HOSPITALS]) return <FallbackPermission />;
+  if (!permissions[Permissions.MANAGE_HOSPITALS]) return <NoAccess />;
 
   return <HospitalsTable />;
 }

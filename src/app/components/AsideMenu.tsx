@@ -59,7 +59,7 @@ export default function AsideMenu({
     ...(checkPermission(Permissions.MANAGE_PACS)
       ? [
           {
-            href: "/admin/pacs",
+            href: "/admin/studies",
             title: t("pacs"),
             iconName: "solar:archive-down-minimlistic-linear",
           },

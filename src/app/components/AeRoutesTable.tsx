@@ -6,8 +6,9 @@ import { useState } from "react";
 import useSWR from "swr";
 import toast from "react-hot-toast";
 import { supabase } from "@/lib/supabase";
-
-const ICON_SIZE = 16;
+import CircularSecondaryButton from "./CircularSecondaryButton";
+import DeleteButton from "./DeleteButton";
+import { ICON_SIZE } from "@/constants";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -96,7 +97,9 @@ function RouteModal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden">
         {/* Header */}
@@ -126,7 +129,9 @@ function RouteModal({
               className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-0 focus:ring-4 focus:ring-cyan-100 focus:border-cyan-500 disabled:bg-gray-50 disabled:text-gray-400"
             >
               {hospitals.map((h) => (
-                <option key={h.id} value={h.id}>{h.name}</option>
+                <option key={h.id} value={h.id}>
+                  {h.name}
+                </option>
               ))}
             </select>
           </div>
@@ -201,9 +206,7 @@ function RouteModal({
                 }`}
               />
             </button>
-            <span className="text-sm text-gray-600">
-              {form.is_active ? "Active" : "Inactive"}
-            </span>
+            <span className="text-sm text-gray-600">{form.is_active ? "Active" : "Inactive"}</span>
           </div>
         </div>
 
@@ -220,7 +223,9 @@ function RouteModal({
             disabled={saving}
             className="px-4 py-2 text-sm bg-cyan-400 text-white rounded-full hover:bg-cyan-500 transition-colors cursor-pointer disabled:opacity-50 disabled:pointer-events-none flex items-center gap-2"
           >
-            {saving && <Icon icon="solar:spinner-bold" className="animate-spin" fontSize={14} />}
+            {saving && (
+              <Icon icon="solar:spinner-bold" className="animate-spin" fontSize={ICON_SIZE} />
+            )}
             {initial ? "Save changes" : "Create"}
           </button>
         </div>
@@ -319,12 +324,17 @@ export default function AeRoutesTable() {
         >
           <option value="">All hospitals</option>
           {(hospitals ?? []).map((h) => (
-            <option key={h.id} value={h.id}>{h.name}</option>
+            <option key={h.id} value={h.id}>
+              {h.name}
+            </option>
           ))}
         </select>
 
         <button
-          onClick={() => { setEditing(null); setModalOpen(true); }}
+          onClick={() => {
+            setEditing(null);
+            setModalOpen(true);
+          }}
           className="flex items-center gap-2 bg-cyan-400 hover:bg-cyan-500 text-white text-sm px-4 py-2 rounded-full transition-colors cursor-pointer"
         >
           <Icon icon="solar:add-circle-linear" fontSize={ICON_SIZE} />
@@ -337,12 +347,24 @@ export default function AeRoutesTable() {
         <table className="text-sm w-full table-fixed">
           <thead>
             <tr className="border-b border-gray-200">
-              <th className="py-3 px-3 text-left uppercase text-xs font-semibold text-gray-500 w-36">Hospital</th>
-              <th className="py-3 px-3 text-left uppercase text-xs font-semibold text-gray-500 w-32">AE Title</th>
-              <th className="py-3 px-3 text-left uppercase text-xs font-semibold text-gray-500 w-36">Host</th>
-              <th className="py-3 px-3 text-left uppercase text-xs font-semibold text-gray-500 w-16">Port</th>
-              <th className="py-3 px-3 text-left uppercase text-xs font-semibold text-gray-500">Description</th>
-              <th className="py-3 px-3 text-center uppercase text-xs font-semibold text-gray-500 w-20">Status</th>
+              <th className="py-3 px-3 text-left uppercase text-xs font-semibold text-gray-500 w-36">
+                Hospital
+              </th>
+              <th className="py-3 px-3 text-left uppercase text-xs font-semibold text-gray-500 w-32">
+                AE Title
+              </th>
+              <th className="py-3 px-3 text-left uppercase text-xs font-semibold text-gray-500 w-36">
+                Host
+              </th>
+              <th className="py-3 px-3 text-left uppercase text-xs font-semibold text-gray-500 w-16">
+                Port
+              </th>
+              <th className="py-3 px-3 text-left uppercase text-xs font-semibold text-gray-500">
+                Description
+              </th>
+              <th className="py-3 px-3 text-center uppercase text-xs font-semibold text-gray-500 w-20">
+                Status
+              </th>
               <th className="py-3 px-3 w-20"></th>
             </tr>
           </thead>
@@ -367,7 +389,11 @@ export default function AeRoutesTable() {
             <tbody>
               <tr>
                 <td colSpan={7} className="text-center py-16 text-gray-400">
-                  <Icon icon="solar:server-minimalistic-linear" fontSize={40} className="mx-auto mb-3" />
+                  <Icon
+                    icon="solar:server-minimalistic-linear"
+                    fontSize={40}
+                    className="mx-auto mb-3"
+                  />
                   <p className="text-sm">No AE routes found</p>
                   <p className="text-xs mt-1">Add a PACS connection to get started</p>
                 </td>
@@ -385,19 +411,21 @@ export default function AeRoutesTable() {
                     index % 2 === 0 ? "bg-gray-50/50" : "bg-white"
                   }`}
                 >
-                  <td className="py-4 px-3 truncate font-medium text-gray-700" title={route.hospital?.name}>
+                  <td
+                    className="py-4 px-3 truncate font-medium text-gray-700"
+                    title={route.hospital?.name}
+                  >
                     {route.hospital?.name ?? "—"}
                   </td>
-                  <td className="py-4 px-3 font-mono text-xs text-gray-700">
-                    {route.ae_title}
-                  </td>
+                  <td className="py-4 px-3 font-mono text-xs text-gray-700">{route.ae_title}</td>
                   <td className="py-4 px-3 font-mono text-xs text-gray-600 truncate">
                     {route.host}
                   </td>
-                  <td className="py-4 px-3 font-mono text-xs text-gray-600">
-                    {route.port}
-                  </td>
-                  <td className="py-4 px-3 text-gray-500 truncate text-xs" title={route.description ?? ""}>
+                  <td className="py-4 px-3 font-mono text-xs text-gray-600">{route.port}</td>
+                  <td
+                    className="py-4 px-3 text-gray-500 truncate text-xs"
+                    title={route.description ?? ""}
+                  >
                     {route.description ?? "—"}
                   </td>
                   <td className="py-4 px-3 text-center">
@@ -406,35 +434,33 @@ export default function AeRoutesTable() {
                       className="cursor-pointer"
                       title={route.is_active ? "Deactivate" : "Activate"}
                     >
-                      <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full border ${
-                        route.is_active
-                          ? "bg-cyan-50 text-cyan-700 border-cyan-200"
-                          : "bg-gray-100 text-gray-500 border-gray-200"
-                      }`}>
+                      <span
+                        className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full border ${
+                          route.is_active
+                            ? "bg-cyan-50 text-cyan-700 border-cyan-200"
+                            : "bg-gray-100 text-gray-500 border-gray-200"
+                        }`}
+                      >
                         {route.is_active ? "Active" : "Inactive"}
                       </span>
                     </button>
                   </td>
                   <td className="py-4 px-3">
                     <div className="flex items-center justify-end gap-1">
-                      <button
-                        onClick={() => { setEditing(route); setModalOpen(true); }}
+                      <CircularSecondaryButton
+                        onClick={() => {
+                          setEditing(route);
+                          setModalOpen(true);
+                        }}
                         title="Edit"
-                        className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer text-gray-400 hover:text-gray-600"
                       >
-                        <Icon icon="solar:pen-linear" fontSize={ICON_SIZE} />
-                      </button>
-                      <button
+                        <Icon icon="solar:pen-linear" width={ICON_SIZE} height={ICON_SIZE} />
+                      </CircularSecondaryButton>
+                      <DeleteButton
                         onClick={() => handleDelete(route.id)}
-                        disabled={deletingId === route.id}
                         title="Delete"
-                        className="p-1.5 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer text-gray-400 hover:text-rose-500 disabled:opacity-40"
-                      >
-                        {deletingId === route.id
-                          ? <Icon icon="solar:spinner-bold" className="animate-spin" fontSize={ICON_SIZE} />
-                          : <Icon icon="solar:trash-bin-minimalistic-linear" fontSize={ICON_SIZE} />
-                        }
-                      </button>
+                        isDeleting={deletingId === route.id}
+                      ></DeleteButton>
                     </div>
                   </td>
                 </tr>
@@ -449,7 +475,10 @@ export default function AeRoutesTable() {
         <RouteModal
           hospitals={hospitals ?? []}
           initial={editing}
-          onClose={() => { setModalOpen(false); setEditing(null); }}
+          onClose={() => {
+            setModalOpen(false);
+            setEditing(null);
+          }}
           onSave={editing ? handleUpdate : handleCreate}
         />
       )}

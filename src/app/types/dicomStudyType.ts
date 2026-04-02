@@ -1,3 +1,5 @@
+import { DicomInstance } from "@/lib/processDicomStudyTurbo";
+
 export type DicomStudyType = {
   id: string;
   study_instance_uid: string;
@@ -11,7 +13,7 @@ export type DicomStudyType = {
   study_description: string | null;
   study_date: string | null;
   modality: string | null;
-  instances: object[];
+  instances: DicomInstance[];
   receive_status: "receiving" | "complete" | "failed";
   received_at: string;
   completed_at: string | null;

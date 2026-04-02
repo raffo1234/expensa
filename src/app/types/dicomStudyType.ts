@@ -1,4 +1,6 @@
 import { DicomInstance } from "@/lib/processDicomStudyTurbo";
+import { DicomStateEnum } from "@/enums/dicomStateEnum";
+import { TemplateType } from "./templateType";
 
 export type DicomStudyType = {
   id: string;
@@ -13,12 +15,14 @@ export type DicomStudyType = {
   study_description: string | null;
   study_date: string | null;
   modality: string | null;
+  state: DicomStateEnum;
   instances: DicomInstance[];
   receive_status: "receiving" | "complete" | "failed";
   received_at: string;
   completed_at: string | null;
   total_instances: number;
   received_instances: number;
+  template?: TemplateType | undefined;
   created_at: string;
   updated_at: string;
   hospital?: {

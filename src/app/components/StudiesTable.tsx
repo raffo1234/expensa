@@ -14,6 +14,7 @@ import NoAccess from "./NoAccess";
 import FallbackDicomsPage from "./FallbackDicomsPage";
 import DownloadStudyZipButton from "@/components/DownloadStudyZipButton";
 import InformButton from "./InformButton";
+import { DicomStateEnum } from "@/enums/dicomStateEnum";
 
 const REQUIRED_PERMISSIONS = [
   Permissions.VIEW_DICOMS,
@@ -468,9 +469,7 @@ export default function StudiesTable({ userRoleId }: { userRoleId: string }) {
                 onSort={handleSort}
                 className="w-40"
               />
-              <th className="w-24 py-4"></th>
-              <th className="w-24 py-4"></th>
-              <th className="w-24 py-4"></th>
+              <th className="py-4 w-50"></th>
             </tr>
           </thead>
 
@@ -513,9 +512,13 @@ export default function StudiesTable({ userRoleId }: { userRoleId: string }) {
               {result?.data?.map((study, index) => (
                 <tr
                   key={study.id}
-                  className={`border-t border-gray-100 hover:bg-cyan-50/30 transition-colors ${
-                    index % 2 === 0 ? "bg-gray-50/50" : "bg-white"
-                  }`}
+                  className={`border-t border-gray-100
+                    ${study.state === DicomStateEnum.VIEWED ? "bg-yellow-100" : ""}
+                    ${study.state === DicomStateEnum.DRAFT ? "bg-orange-100" : ""}
+                    ${study.state === DicomStateEnum.COMPLETED ? "bg-cyan-100" : ""}
+                    ${!study.state && index % 2 === 0 ? "bg-gray-50/50" : ""}
+                    ${!study.state && index % 2 !== 0 ? "bg-white" : ""}
+                  `}
                 >
                   {/* # */}
                   <td className="py-4 text-center text-xs text-gray-400">

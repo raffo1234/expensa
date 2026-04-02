@@ -15,6 +15,8 @@ import FallbackDicomsPage from "./FallbackDicomsPage";
 import DownloadStudyZipButton from "@/components/DownloadStudyZipButton";
 import InformButton from "./InformButton";
 import { DicomStateEnum } from "@/enums/dicomStateEnum";
+import { ICON_SIZE } from "@/constants";
+import ViewerButton from "./ViewerButton";
 
 const REQUIRED_PERMISSIONS = [
   Permissions.VIEW_DICOMS,
@@ -28,9 +30,6 @@ const REQUIRED_PERMISSIONS = [
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const PAGE_SIZE = 20;
-const VIEWER_BASE = "https://viewers-xi.vercel.app/viewer/dicomjson";
-const DICOM_JSON_API = "https://www.cadia.cc/api/dicom-json";
-const ICON_SIZE = 16;
 
 type SortDirection = "asc" | "desc" | null;
 type ReceiveStatus = "receiving" | "complete" | "failed" | "";
@@ -124,10 +123,6 @@ function formatReceivedAt(raw: string): string {
   return formatInTimeZone(new Date(raw), "America/Lima", "dd MMM yyyy, hh:mm a", { locale: es });
 }
 
-function buildViewerUrl(studyId: string): string {
-  return `${VIEWER_BASE}?url=${DICOM_JSON_API}/${studyId}`;
-}
-
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: DicomStudyType["receive_status"] }) {
@@ -198,21 +193,6 @@ function SortableHeader({
         )}
       </button>
     </th>
-  );
-}
-
-function ViewerButton({ id }: { id: string }) {
-  return (
-    <a
-      href={buildViewerUrl(id)}
-      target="_blank"
-      rel="noopener noreferrer"
-      title="Open in Viewer"
-      className="inline-flex items-center gap-1 text-xs font-medium text-cyan-600 hover:text-cyan-800 border border-cyan-200 hover:border-cyan-400 bg-cyan-50 hover:bg-cyan-100 px-2.5 py-1 rounded-full transition-colors duration-200 whitespace-nowrap"
-    >
-      <Icon icon="solar:monitor-smartphone-linear" fontSize={13} />
-      Viewer
-    </a>
   );
 }
 

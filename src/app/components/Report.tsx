@@ -34,6 +34,7 @@ import DownloadStudyButton from "./DownloadStudyButton";
 import VisorWebButton from "./VisorWebButton";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import CircularSecondaryButton from "./CircularSecondaryButton";
+import ViewerButton from "./ViewerButton";
 
 const VIEWER_BASE = "https://viewers-xi.vercel.app/viewer/dicomjson";
 const DICOM_JSON_API = "https://www.cadia.cc/api/dicom-json";
@@ -309,18 +310,7 @@ export default function Report({
             )}
 
             {/* Viewer link for dicom_study */}
-            {isDicomStudy && (
-              <a
-                href={`${VIEWER_BASE}?url=${DICOM_JSON_API}/${dicom.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Open in Viewer"
-                className="inline-flex items-center gap-1 text-xs font-medium text-cyan-600 hover:text-cyan-800 border border-cyan-200 hover:border-cyan-400 bg-cyan-50 hover:bg-cyan-100 px-2.5 py-1 rounded-full transition-colors duration-200"
-              >
-                <Icon icon="solar:monitor-smartphone-linear" fontSize={13} />
-                Viewer
-              </a>
-            )}
+            {isDicomStudy && <ViewerButton id={dicom.id} />}
           </>
         ) : (
           <AttachmentsSkeleton />

@@ -5,6 +5,8 @@ import JSZip from "jszip";
 import { useState } from "react";
 import { DicomStudyType } from "@/types/dicomStudyType";
 import { DicomInstance } from "@/lib/processDicomStudyTurbo";
+import CircularSecondaryButton from "./CircularSecondaryButton";
+import { ICON_SIZE } from "@/constants";
 
 const STORAGE_DOMAIN = process.env.NEXT_PUBLIC_STORAGE_DOMAIN?.replace(/\/$/, "") ?? "";
 
@@ -55,12 +57,11 @@ export default function DownloadDicomZipButton({ study }: { study: DicomStudyTyp
   };
 
   return (
-    <button
+    <CircularSecondaryButton
       type="button"
       onClick={handleDownload}
-      disabled={loading}
+      isDisabled={loading}
       title="Download DICOM ZIP"
-      className="inline-flex items-center gap-1 text-xs font-medium text-gray-600 hover:text-gray-800 border border-gray-200 hover:border-gray-400 bg-gray-50 hover:bg-gray-100 px-2.5 py-1 rounded-full transition-colors duration-200 whitespace-nowrap disabled:opacity-50 disabled:pointer-events-none"
     >
       {loading ? (
         <>
@@ -68,11 +69,8 @@ export default function DownloadDicomZipButton({ study }: { study: DicomStudyTyp
           {progress}%
         </>
       ) : (
-        <>
-          <Icon icon="solar:download-linear" fontSize={13} />
-          ZIP
-        </>
+        <Icon icon="solar:arrow-down-linear" fontSize={ICON_SIZE} />
       )}
-    </button>
+    </CircularSecondaryButton>
   );
 }

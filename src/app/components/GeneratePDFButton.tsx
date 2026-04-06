@@ -13,7 +13,7 @@ export default function GeneratePDFButton({
   dicomId,
   label = "PDF",
   isDownloadable = true,
-  liveReport = "",
+  liveReport,
 }: {
   dicomId: DicomType["id"];
   label?: string;
@@ -49,7 +49,7 @@ export default function GeneratePDFButton({
       label={label}
       isDownloadable={isDownloadable}
       handleLeave={() => setShowPDFButton(false)}
-      liveReport={liveReport} 
+      liveReport={liveReport}
     />
   ) : (
     <CircularSecondaryButton title={title} onClick={() => setShowPDFButton(true)}>

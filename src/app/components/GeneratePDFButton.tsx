@@ -34,7 +34,7 @@ export default function GeneratePDFButton({
     return fetcherDicom(dicomId);
   };
 
-  const { data: dicom, error, isLoading } = useSWR(`${table}-${dicomId}-download`, fetchData);
+  const { data: dicom, error, isLoading } = useSWR(`${table}-${dicomId}`, fetchData);
 
   const [showPDFButton, setShowPDFButton] = useState(false);
   const title = `${isDownloadable ? "Download" : "Preview"} ${label}`;

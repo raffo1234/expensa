@@ -112,7 +112,7 @@ export default function AddPac({ userId }: { userId: string }) {
               onClick={() => setDisplayForm(false)}
               label="Cancel"
               type="button"
-            ></SecondaryButton>
+            />
             <PrimaryButton type="submit" label="Add" isLoading={isLoading} />
           </div>
         </form>

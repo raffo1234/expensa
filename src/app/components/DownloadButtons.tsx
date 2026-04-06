@@ -7,9 +7,11 @@ import { Permissions } from "@/types/propertyState";
 export default function DownloadButtons({
   dicomId,
   userRoleId,
+  liveReport,
 }: {
   dicomId: DicomType["id"];
   userRoleId: string;
+  liveReport?: string;
 }) {
   const { hasPermission: canDownload, isLoading: isLoadingCanDownload } = useCheckPermission(
     userRoleId,
@@ -20,8 +22,8 @@ export default function DownloadButtons({
 
   return canDownload ? (
     <div className="flex items-center gap-2">
-      <GeneratePDFButton dicomId={dicomId} />
-      <DOCXPreview dicomId={dicomId} />
+      <GeneratePDFButton dicomId={dicomId} liveReport={liveReport} />
+      <DOCXPreview dicomId={dicomId} liveReport={liveReport} />
     </div>
   ) : null;
 }

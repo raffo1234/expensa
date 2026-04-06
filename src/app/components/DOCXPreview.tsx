@@ -33,7 +33,13 @@ const IconLoading = () => {
   );
 };
 
-export default function DOCXPreview({ dicomId }: { dicomId: DicomType["id"] }) {
+export default function DOCXPreview({
+  dicomId,
+  liveReport,
+}: {
+  dicomId: DicomType["id"];
+  liveReport?: string;
+}) {
   const [isLoading, setIsLoading] = useState(false);
   const pathname = usePathname();
   const table = pathname.includes("/studies/") ? "dicom_study" : "dicom";
@@ -77,7 +83,10 @@ export default function DOCXPreview({ dicomId }: { dicomId: DicomType["id"] }) {
   if (!dicom || error) return null;
 
   return (
-    <CircularSecondaryButton title="DOCX Preview" onClick={() => generateDocx(dicom)}>
+    <CircularSecondaryButton
+      title="DOCX Preview"
+      onClick={() => generateDocx({ ...dicom, report: liveReport ?? dicom.report })}
+    >
       {isLoading || isLoadingDicom ? (
         <IconLoading />
       ) : (

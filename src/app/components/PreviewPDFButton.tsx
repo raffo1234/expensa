@@ -7,17 +7,21 @@ export default function PreviewPDFButton({
   dicomId,
   isDownloadable,
   userRoleId,
+  liveReport = "",
 }: {
   dicomId: DicomType["id"];
   userRoleId: string;
   isDownloadable: boolean;
+  liveReport?: string;
 }) {
-  const { hasPermission: canDownload, isLoading: isLoadingCanDownload } =
-    useCheckPermission(userRoleId, Permissions.DOWNLOAD_REPORT);
+  const { hasPermission: canDownload, isLoading: isLoadingCanDownload } = useCheckPermission(
+    userRoleId,
+    Permissions.DOWNLOAD_REPORT,
+  );
 
   if (isLoadingCanDownload) return null;
 
   return canDownload ? (
-    <GeneratePDFButton isDownloadable={isDownloadable} dicomId={dicomId} />
+    <GeneratePDFButton liveReport={liveReport} isDownloadable={isDownloadable} dicomId={dicomId} />
   ) : null;
 }

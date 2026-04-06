@@ -34,14 +34,21 @@ export default function GeneratePDFButtonInner({
   dicom,
   isDownloadable = true,
   handleLeave,
+  liveReport,
 }: {
   handleLeave: () => void;
   label: string;
   dicom: DicomType;
   isDownloadable?: boolean;
+  liveReport?: string;
 }) {
+  const dicomWithLiveReport = {
+    ...dicom,
+    report: liveReport ?? dicom.report,
+  };
+
   const [instance] = usePDF({
-    document: <ContentPDFDocument dicom={dicom} />,
+    document: <ContentPDFDocument dicom={dicomWithLiveReport} />,
   });
 
   const filename = sanitize(

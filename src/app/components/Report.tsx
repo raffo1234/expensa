@@ -57,6 +57,7 @@ export default function Report({
   const router = useRouter();
   const isDicomStudy = table === "dicom_study";
   const redirectPath = isDicomStudy ? "/admin/studies" : "/admin/dicoms";
+  const [liveReport, setLiveReport] = useState<string | undefined>(undefined);
 
   const fetchData = async () => {
     if (isDicomStudy) {
@@ -189,6 +190,14 @@ export default function Report({
     await updateDicom({ template_id: template.id }, true);
   };
 
+  const handleReportChange = useCallback(
+    (value: string) => {
+      setLiveReport(value);
+      debouncedTextarea(value);
+    },
+    [debouncedTextarea],
+  );
+
   useControlEnter(completeDicom, document, false, isSaving);
 
   useEffect(() => {
@@ -318,7 +327,12 @@ export default function Report({
         <Sticky>
           <div className="bg-gray-50/50 py-4">
             <div className="flex justify-between mb-4">
-              <PreviewPDFButton userRoleId={userRoleId} isDownloadable={false} dicomId={dicomId} />
+              <PreviewPDFButton
+                liveReport={liveReport ?? dicom?.report ?? ""}
+                userRoleId={userRoleId}
+                isDownloadable={false}
+                dicomId={dicomId}
+              />
               <DownloadButtons dicomId={dicomId} userRoleId={userRoleId} />
             </div>
             <div className="flex justify-end gap-2">
@@ -414,7 +428,14 @@ export default function Report({
                   key={dicom.id}
                   autoFocus
                   defaultValue={dicom.report ?? ""}
-                  onChange={(e) => debouncedTextarea(e.target.value)}
+                  onChange={(e) => handleReportChange(e.target.value)}
+                  onBlur={async (e) => {
+                    debouncedTextarea.cancel();
+                    setLiveReport(e.target.value);
+                    if (e.target.value !== dicom?.report) {
+                      await updateDicomImmediately(e.target.value);
+                    }
+                  }}
                   ref={textareaRef}
                   minRows={2}
                   placeholder="Radiologist's report"

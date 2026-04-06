@@ -13,10 +13,12 @@ export default function GeneratePDFButton({
   dicomId,
   label = "PDF",
   isDownloadable = true,
+  liveReport = "",
 }: {
   dicomId: DicomType["id"];
   label?: string;
   isDownloadable?: boolean;
+  liveReport?: string;
 }) {
   const pathname = usePathname();
   const table = pathname.includes("/studies/") ? "dicom_study" : "dicom";
@@ -47,6 +49,7 @@ export default function GeneratePDFButton({
       label={label}
       isDownloadable={isDownloadable}
       handleLeave={() => setShowPDFButton(false)}
+      liveReport={liveReport} 
     />
   ) : (
     <CircularSecondaryButton title={title} onClick={() => setShowPDFButton(true)}>

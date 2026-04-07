@@ -113,7 +113,6 @@ export default function PullStudies() {
     }
   };
 
-  // ── C-MOVE ────────────────────────────────────────────────────────────────
   const handlePull = async (study: StudyResult) => {
     if (!selectedRoute) return;
 
@@ -124,8 +123,6 @@ export default function PullStudies() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          host: selectedRoute.host,
-          port: selectedRoute.port,
           aeTitle: selectedRoute.ae_title,
           studyInstanceUID: study.StudyInstanceUID,
           hospitalId: selectedRoute.hospital?.id,

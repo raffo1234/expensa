@@ -60,10 +60,7 @@ const fetcher = async (key: FetcherKey): Promise<FetchResult> => {
   const start = page * pageSize;
   const end = start + pageSize - 1;
 
-  let dataQuery = supabase
-    .from("dicom_study")
-    .select("*, hospital(id, name, ae_title)")
-    .range(start, end);
+  let dataQuery = supabase.from("dicom_study").select("*, hospital(id, name)").range(start, end);
 
   let countQuery = supabase.from("dicom_study").select("id", { count: "exact", head: true });
 
@@ -104,7 +101,7 @@ const fetcher = async (key: FetcherKey): Promise<FetchResult> => {
 const hospitalsFetcher = async (): Promise<HospitalOption[]> => {
   const { data, error } = await supabase
     .from("hospital")
-    .select("id, name, ae_title")
+    .select("id, name")
     .eq("is_active", true)
     .order("name", { ascending: true });
   if (error) throw error;

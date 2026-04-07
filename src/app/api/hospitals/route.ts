@@ -18,7 +18,7 @@ const r2 = new S3Client({
 });
 
 // AE title must be 1-16 uppercase alphanumeric chars or hyphens — DICOM standard
-const AE_TITLE_REGEX = /^[A-Z0-9\-]{1,16}$/;
+// const AE_TITLE_REGEX = /^[A-Z0-9\-]{1,16}$/;
 
 // R2 bucket names: 3-63 chars, lowercase alphanumeric and hyphens
 const BUCKET_NAME_REGEX = /^[a-z0-9][a-z0-9\-]{1,61}[a-z0-9]$/;
@@ -42,22 +42,22 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, ae_title, r2_bucket } = body;
+    const { name, r2_bucket } = body;
 
     // --- Validation ---
     if (!name || typeof name !== "string" || name.trim().length === 0) {
       return NextResponse.json({ error: "name is required" }, { status: 400 });
     }
 
-    if (!ae_title || !AE_TITLE_REGEX.test(ae_title)) {
-      return NextResponse.json(
-        {
-          error:
-            "ae_title must be 1-16 uppercase alphanumeric characters or hyphens (DICOM standard)",
-        },
-        { status: 400 },
-      );
-    }
+    // if (!ae_title || !AE_TITLE_REGEX.test(ae_title)) {
+    //   return NextResponse.json(
+    //     {
+    //       error:
+    //         "ae_title must be 1-16 uppercase alphanumeric characters or hyphens (DICOM standard)",
+    //     },
+    //     { status: 400 },
+    //   );
+    // }
 
     if (!r2_bucket || !BUCKET_NAME_REGEX.test(r2_bucket)) {
       return NextResponse.json(
@@ -69,15 +69,15 @@ export async function POST(req: NextRequest) {
     }
 
     // --- Check AE title uniqueness ---
-    const { data: existing } = await supabase
-      .from("hospital")
-      .select("id")
-      .eq("ae_title", ae_title)
-      .maybeSingle();
+    // const { data: existing } = await supabase
+    //   .from("hospital")
+    //   .select("id")
+    //   .eq("ae_title", ae_title)
+    //   .maybeSingle();
 
-    if (existing) {
-      return NextResponse.json({ error: "AE title already exists" }, { status: 409 });
-    }
+    // if (existing) {
+    //   return NextResponse.json({ error: "AE title already exists" }, { status: 409 });
+    // }
 
     // --- Provision R2 bucket ---
     try {
@@ -113,12 +113,11 @@ export async function POST(req: NextRequest) {
       .from("hospital")
       .insert({
         name: name.trim(),
-        ae_title: ae_title.trim(),
         r2_bucket: r2_bucket.trim(),
         is_active: true,
       })
-      .select("id, name, ae_title, is_active, r2_bucket, created_at")
-      .single();
+      .select("id, name, is_active, r2_bucket, created_at")
+      .maybeSingle();
 
     if (error) throw error;
 

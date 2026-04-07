@@ -1,9 +1,3 @@
-/**
- * POST /api/pull/move
- * Calls the SCP HTTP API to execute a C-MOVE against an external PACS
- * Body: { host, port, aeTitle, studyInstanceUID, hospitalId }
- */
-
 import { NextRequest, NextResponse } from "next/server";
 
 const SCP_HTTP_URL = process.env.SCP_HTTP_URL ?? "http://localhost:3001";
@@ -13,9 +7,9 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { host, port, aeTitle, studyInstanceUID, hospitalId } = body;
 
-    if (!host || !port || !aeTitle || !studyInstanceUID) {
+    if (!host || !port || !aeTitle || !studyInstanceUID || !hospitalId) {
       return NextResponse.json(
-        { error: "host, port, aeTitle and studyInstanceUID are required" },
+        { error: "host, port, aeTitle, studyInstanceUID and hospitalId are required" },
         { status: 400 },
       );
     }
@@ -23,7 +17,13 @@ export async function POST(req: NextRequest) {
     const res = await fetch(`${SCP_HTTP_URL}/move`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ host, port, aeTitle, studyInstanceUID, hospitalId }),
+      body: JSON.stringify({
+        host,
+        port,
+        aeTitle,
+        studyInstanceUID,
+        hospitalId,
+      }),
     });
 
     const data = await res.json();

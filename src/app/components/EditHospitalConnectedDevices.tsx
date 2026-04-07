@@ -1,6 +1,5 @@
 "use client";
 
-import { AeRouteType } from "@/types/aeRouteType";
 import { Icon } from "@iconify/react";
 import { useState } from "react";
 import useSWR from "swr";
@@ -9,80 +8,75 @@ import { supabase } from "@/lib/supabase";
 import CircularSecondaryButton from "./CircularSecondaryButton";
 import DeleteButton from "./DeleteButton";
 import { ICON_SIZE } from "@/constants";
+import AETitleInfo from "./AETitleInfo";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type HospitalOption = { id: string; name: string; ae_title: string };
+interface HospitalAccess {
+  id: string;
+  hospital_id: string;
+  name: string;
+  ae_title: string;
+  allowed_ip: string | null;
+  is_active: boolean;
+  created_at: string;
+}
 
 type FormState = {
-  hospital_id: string;
+  name: string;
   ae_title: string;
-  host: string;
-  port: number;
-  description: string;
+  allowed_ip: string;
   is_active: boolean;
 };
 
 const EMPTY_FORM: FormState = {
-  hospital_id: "",
+  name: "",
   ae_title: "",
-  host: "",
-  port: 104,
-  description: "",
+  allowed_ip: "",
   is_active: true,
 };
 
-// ─── Fetchers ─────────────────────────────────────────────────────────────────
+// ─── Fetcher ──────────────────────────────────────────────────────────────────
 
-const fetchRoutes = async (): Promise<AeRouteType[]> => {
-  const res = await fetch("/api/ae-routes");
-  if (!res.ok) throw new Error("Failed to fetch ae_routes");
-  return res.json();
-};
-
-const fetchHospitals = async (): Promise<HospitalOption[]> => {
+const fetchAccess = async (hospitalId: string): Promise<HospitalAccess[]> => {
   const { data, error } = await supabase
-    .from("hospital")
-    .select("id, name")
-    .eq("is_active", true)
-    .order("name", { ascending: true });
+    .from("hospital_access")
+    .select("*")
+    .eq("hospital_id", hospitalId)
+    .order("created_at", { ascending: false });
   if (error) throw error;
-  return (data ?? []) as HospitalOption[];
+  return (data ?? []) as HospitalAccess[];
 };
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
 
-function RouteModal({
-  hospitals,
+function AccessModal({
   initial,
   onClose,
   onSave,
 }: {
-  hospitals: HospitalOption[];
-  initial?: AeRouteType | null;
+  initial?: HospitalAccess | null;
   onClose: () => void;
   onSave: (form: FormState) => Promise<void>;
 }) {
   const [form, setForm] = useState<FormState>(
     initial
       ? {
-          hospital_id: initial.hospital_id,
+          name: initial.name,
           ae_title: initial.ae_title,
-          host: initial.host,
-          port: initial.port,
-          description: initial.description ?? "",
+          allowed_ip: initial.allowed_ip ?? "",
           is_active: initial.is_active,
         }
-      : { ...EMPTY_FORM, hospital_id: hospitals[0]?.id ?? "" },
+      : { ...EMPTY_FORM },
   );
   const [saving, setSaving] = useState(false);
 
-  const set = (key: keyof FormState, value: string | number | boolean) =>
+  const set = (key: keyof FormState, value: string | boolean) =>
     setForm((f) => ({ ...f, [key]: value }));
 
   const handleSubmit = async () => {
-    if (!form.hospital_id || !form.ae_title || !form.host || !form.port) {
-      toast.error("Complete all required fields");
+    if (!form.name || !form.ae_title) {
+      toast.error("Name and AE Title are required");
       return;
     }
     setSaving(true);
@@ -105,7 +99,7 @@ function RouteModal({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h2 className="text-base font-semibold text-gray-800">
-            {initial ? "Edit AE Route" : "New AE Route"}
+            {initial ? "Edit Device" : "New Device"}
           </h2>
           <button
             onClick={onClose}
@@ -117,23 +111,18 @@ function RouteModal({
 
         {/* Body */}
         <div className="px-6 py-5 flex flex-col gap-4">
-          {/* Hospital */}
+          {/* Name */}
           <div>
             <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">
-              Hospital <span className="text-rose-400">*</span>
+              Device Name <span className="text-rose-400">*</span>
             </label>
-            <select
-              value={form.hospital_id}
-              onChange={(e) => set("hospital_id", e.target.value)}
-              disabled={!!initial}
-              className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-0 focus:ring-4 focus:ring-cyan-100 focus:border-cyan-500 disabled:bg-gray-50 disabled:text-gray-400"
-            >
-              {hospitals.map((h) => (
-                <option key={h.id} value={h.id}>
-                  {h.name}
-                </option>
-              ))}
-            </select>
+            <input
+              type="text"
+              value={form.name}
+              onChange={(e) => set("name", e.target.value)}
+              placeholder="Siemens MAGNETOM — Room 3"
+              className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-0 focus:ring-4 focus:ring-cyan-100 focus:border-cyan-500"
+            />
           </div>
 
           {/* AE Title */}
@@ -145,50 +134,30 @@ function RouteModal({
               type="text"
               value={form.ae_title}
               onChange={(e) => set("ae_title", e.target.value.toUpperCase())}
-              placeholder="PACS-HOSP"
+              placeholder="SCANNER-HOSP1"
               className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono outline-0 focus:ring-4 focus:ring-cyan-100 focus:border-cyan-500"
             />
+            <p className="text-xs text-gray-400 mt-1">
+              The AE title configured on the device. Must be unique.
+            </p>
           </div>
 
-          {/* Host + Port */}
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">
-                Host / IP <span className="text-rose-400">*</span>
-              </label>
-              <input
-                type="text"
-                value={form.host}
-                onChange={(e) => set("host", e.target.value)}
-                placeholder="192.168.1.10"
-                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono outline-0 focus:ring-4 focus:ring-cyan-100 focus:border-cyan-500"
-              />
-            </div>
-            <div className="w-24">
-              <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">
-                Port <span className="text-rose-400">*</span>
-              </label>
-              <input
-                type="number"
-                value={form.port}
-                onChange={(e) => set("port", parseInt(e.target.value) || 104)}
-                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono outline-0 focus:ring-4 focus:ring-cyan-100 focus:border-cyan-500"
-              />
-            </div>
-          </div>
-
-          {/* Description */}
+          {/* Allowed IP */}
           <div>
             <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">
-              Description
+              Allowed IP
+              <span className="ml-1.5 text-gray-400 font-normal normal-case">(optional)</span>
             </label>
             <input
               type="text"
-              value={form.description}
-              onChange={(e) => set("description", e.target.value)}
-              placeholder="Philips PACS — Radiology dept"
-              className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-0 focus:ring-4 focus:ring-cyan-100 focus:border-cyan-500"
+              value={form.allowed_ip}
+              onChange={(e) => set("allowed_ip", e.target.value)}
+              placeholder="192.168.1.50"
+              className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono outline-0 focus:ring-4 focus:ring-cyan-100 focus:border-cyan-500"
             />
+            <p className="text-xs text-gray-400 mt-1">
+              Restrict connections to this IP only. Leave empty to allow any IP.
+            </p>
           </div>
 
           {/* Active toggle */}
@@ -202,12 +171,14 @@ function RouteModal({
             >
               <span
                 className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${
-                  form.is_active ? "translate-x-5" : "translate-x-1"
+                  form.is_active ? "translate-x-0" : "-translate-x-4"
                 }`}
               />
             </button>
             <span className="text-sm text-gray-600">{form.is_active ? "Active" : "Inactive"}</span>
           </div>
+
+          <AETitleInfo aeTitle={form.ae_title} />
         </div>
 
         {/* Footer */}
@@ -236,49 +207,51 @@ function RouteModal({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function AeRoutesTable() {
-  const { data: routes, isLoading, mutate } = useSWR<AeRouteType[]>("ae-routes", fetchRoutes);
-  const { data: hospitals } = useSWR<HospitalOption[]>("hospitals-list", fetchHospitals);
+export default function EditHospitalConnectedDevices({ hospitalId }: { hospitalId: string }) {
+  const {
+    data: access,
+    isLoading,
+    mutate,
+  } = useSWR<HospitalAccess[]>(`${hospitalId}-hospital-access`, () => fetchAccess(hospitalId));
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState<AeRouteType | null>(null);
+  const [editing, setEditing] = useState<HospitalAccess | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [hospitalFilter, setHospitalFilter] = useState<string>("");
-
-  const filtered = (routes ?? []).filter((r) =>
-    hospitalFilter ? r.hospital_id === hospitalFilter : true,
-  );
 
   // ── Create ────────────────────────────────────────────────────────────────
   const handleCreate = async (form: FormState) => {
-    const res = await fetch("/api/ae-routes", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+    const { error } = await supabase.from("hospital_access").insert({
+      hospital_id: hospitalId,
+      name: form.name,
+      ae_title: form.ae_title,
+      allowed_ip: form.allowed_ip || null,
+      is_active: form.is_active,
     });
-    if (!res.ok) {
-      const err = await res.json();
-      toast.error(err.message ?? "Failed to create");
-      throw new Error(err.message);
+    if (error) {
+      toast.error(error.message);
+      throw error;
     }
-    toast.success("AE Route created");
+    toast.success("Device added");
     mutate();
   };
 
   // ── Update ────────────────────────────────────────────────────────────────
   const handleUpdate = async (form: FormState) => {
     if (!editing) return;
-    const res = await fetch(`/api/ae-routes/${editing.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    if (!res.ok) {
-      const err = await res.json();
-      toast.error(err.message ?? "Failed to update");
-      throw new Error(err.message);
+    const { error } = await supabase
+      .from("hospital_access")
+      .update({
+        name: form.name,
+        ae_title: form.ae_title,
+        allowed_ip: form.allowed_ip || null,
+        is_active: form.is_active,
+      })
+      .eq("id", editing.id);
+    if (error) {
+      toast.error(error.message);
+      throw error;
     }
-    toast.success("AE Route updated");
+    toast.success("Device updated");
     mutate();
   };
 
@@ -286,13 +259,12 @@ export default function AeRoutesTable() {
   const handleDelete = async (id: string) => {
     setDeletingId(id);
     try {
-      const res = await fetch(`/api/ae-routes/${id}`, { method: "DELETE" });
-      if (!res.ok) {
-        const err = await res.json();
-        toast.error(err.message ?? "Failed to delete");
+      const { error } = await supabase.from("hospital_access").delete().eq("id", id);
+      if (error) {
+        toast.error(error.message);
         return;
       }
-      toast.success("AE Route deleted");
+      toast.success("Device removed");
       mutate();
     } finally {
       setDeletingId(null);
@@ -300,13 +272,12 @@ export default function AeRoutesTable() {
   };
 
   // ── Toggle active ─────────────────────────────────────────────────────────
-  const handleToggleActive = async (route: AeRouteType) => {
-    const res = await fetch(`/api/ae-routes/${route.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...route, is_active: !route.is_active }),
-    });
-    if (!res.ok) {
+  const handleToggleActive = async (device: HospitalAccess) => {
+    const { error } = await supabase
+      .from("hospital_access")
+      .update({ is_active: !device.is_active })
+      .eq("id", device.id);
+    if (error) {
       toast.error("Failed to update status");
       return;
     }
@@ -315,21 +286,13 @@ export default function AeRoutesTable() {
 
   return (
     <>
-      {/* ── Toolbar ── */}
-      <div className="flex flex-col sm:flex-row gap-2 mb-4 items-start sm:items-center justify-between">
-        <select
-          value={hospitalFilter}
-          onChange={(e) => setHospitalFilter(e.target.value)}
-          className="bg-white border border-gray-200 rounded-full px-4 py-2 text-sm outline-0 focus:ring-4 focus:ring-cyan-100 focus:border-cyan-500 cursor-pointer"
-        >
-          <option value="">All hospitals</option>
-          {(hospitals ?? []).map((h) => (
-            <option key={h.id} value={h.id}>
-              {h.name}
-            </option>
-          ))}
-        </select>
-
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h3 className="font-semibold text-sm">Connected Devices</h3>
+          <p className="text-xs text-gray-400 mt-0.5">
+            Devices and PACS that can push studies to your SCP
+          </p>
+        </div>
         <button
           onClick={() => {
             setEditing(null);
@@ -338,43 +301,35 @@ export default function AeRoutesTable() {
           className="flex items-center gap-2 bg-cyan-400 hover:bg-cyan-500 text-white text-sm px-4 py-2 rounded-full transition-colors cursor-pointer"
         >
           <Icon icon="solar:add-circle-linear" fontSize={ICON_SIZE} />
-          New AE Route
+          Add Device
         </button>
       </div>
 
-      {/* ── Table ── */}
       <div className="bg-white shadow rounded-xl overflow-auto">
         <table className="text-sm w-full table-fixed">
           <thead>
             <tr className="border-b border-gray-200">
-              <th className="py-3 px-3 text-left uppercase text-xs font-semibold text-gray-500 w-36">
-                Hospital
+              <th className="py-3 px-3 text-left uppercase text-xs font-semibold text-gray-500">
+                Name
               </th>
-              <th className="py-3 px-3 text-left uppercase text-xs font-semibold text-gray-500 w-32">
+              <th className="py-3 px-3 text-left uppercase text-xs font-semibold text-gray-500 w-36">
                 AE Title
               </th>
-              <th className="py-3 px-3 text-left uppercase text-xs font-semibold text-gray-500 w-36">
-                Host
-              </th>
-              <th className="py-3 px-3 text-left uppercase text-xs font-semibold text-gray-500 w-16">
-                Port
-              </th>
-              <th className="py-3 px-3 text-left uppercase text-xs font-semibold text-gray-500">
-                Description
+              <th className="py-3 px-3 text-left uppercase text-xs font-semibold text-gray-500 w-32">
+                Allowed IP
               </th>
               <th className="py-3 px-3 text-center uppercase text-xs font-semibold text-gray-500 w-20">
                 Status
               </th>
-              <th className="py-3 px-3 w-20"></th>
+              <th className="py-3 px-3 w-20" />
             </tr>
           </thead>
 
-          {/* Skeleton */}
           {isLoading && (
             <tbody>
-              {Array.from({ length: 5 }, (_, i) => (
+              {Array.from({ length: 3 }, (_, i) => (
                 <tr key={i} className={i % 2 === 0 ? "bg-gray-50" : ""}>
-                  {Array.from({ length: 7 }, (__, j) => (
+                  {Array.from({ length: 5 }, (__, j) => (
                     <td key={j} className="py-4 px-3">
                       <div className="h-4 bg-gray-200 rounded animate-pulse" />
                     </td>
@@ -384,64 +339,48 @@ export default function AeRoutesTable() {
             </tbody>
           )}
 
-          {/* Empty */}
-          {!isLoading && filtered.length === 0 && (
+          {!isLoading && access?.length === 0 && (
             <tbody>
               <tr>
-                <td colSpan={7} className="text-center py-16 text-gray-400">
-                  <Icon
-                    icon="solar:server-minimalistic-linear"
-                    fontSize={40}
-                    className="mx-auto mb-3"
-                  />
-                  <p className="text-sm">No AE routes found</p>
-                  <p className="text-xs mt-1">Add a PACS connection to get started</p>
+                <td colSpan={5} className="text-center py-12 text-gray-400">
+                  <Icon icon="solar:scanner-linear" fontSize={36} className="mx-auto mb-3" />
+                  <p className="text-sm">No devices connected</p>
+                  <p className="text-xs mt-1">Add a scanner or PACS to allow push</p>
                 </td>
               </tr>
             </tbody>
           )}
 
-          {/* Rows */}
-          {!isLoading && filtered.length > 0 && (
+          {!isLoading && access && access.length > 0 && (
             <tbody>
-              {filtered.map((route, index) => (
+              {access.map((device, index) => (
                 <tr
-                  key={route.id}
+                  key={device.id}
                   className={`border-t border-gray-100 hover:bg-cyan-50/30 transition-colors ${
                     index % 2 === 0 ? "bg-gray-50/50" : "bg-white"
                   }`}
                 >
-                  <td
-                    className="py-4 px-3 truncate font-medium text-gray-700"
-                    title={route.hospital?.name}
-                  >
-                    {route.hospital?.name ?? "—"}
+                  <td className="py-4 px-3 font-medium text-gray-700 truncate" title={device.name}>
+                    {device.name}
                   </td>
-                  <td className="py-4 px-3 font-mono text-xs text-gray-700">{route.ae_title}</td>
-                  <td className="py-4 px-3 font-mono text-xs text-gray-600 truncate">
-                    {route.host}
-                  </td>
-                  <td className="py-4 px-3 font-mono text-xs text-gray-600">{route.port}</td>
-                  <td
-                    className="py-4 px-3 text-gray-500 truncate text-xs"
-                    title={route.description ?? ""}
-                  >
-                    {route.description ?? "—"}
+                  <td className="py-4 px-3 font-mono text-xs text-gray-700">{device.ae_title}</td>
+                  <td className="py-4 px-3 font-mono text-xs text-gray-500">
+                    {device.allowed_ip ?? <span className="text-gray-300">any</span>}
                   </td>
                   <td className="py-4 px-3 text-center">
                     <button
-                      onClick={() => handleToggleActive(route)}
+                      onClick={() => handleToggleActive(device)}
                       className="cursor-pointer"
-                      title={route.is_active ? "Deactivate" : "Activate"}
+                      title={device.is_active ? "Deactivate" : "Activate"}
                     >
                       <span
                         className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full border ${
-                          route.is_active
+                          device.is_active
                             ? "bg-cyan-50 text-cyan-700 border-cyan-200"
                             : "bg-gray-100 text-gray-500 border-gray-200"
                         }`}
                       >
-                        {route.is_active ? "Active" : "Inactive"}
+                        {device.is_active ? "Active" : "Inactive"}
                       </span>
                     </button>
                   </td>
@@ -449,7 +388,7 @@ export default function AeRoutesTable() {
                     <div className="flex items-center justify-end gap-1">
                       <CircularSecondaryButton
                         onClick={() => {
-                          setEditing(route);
+                          setEditing(device);
                           setModalOpen(true);
                         }}
                         title="Edit"
@@ -457,10 +396,10 @@ export default function AeRoutesTable() {
                         <Icon icon="solar:pen-linear" width={ICON_SIZE} height={ICON_SIZE} />
                       </CircularSecondaryButton>
                       <DeleteButton
-                        onClick={() => handleDelete(route.id)}
-                        title="Delete"
-                        isDeleting={deletingId === route.id}
-                      ></DeleteButton>
+                        onClick={() => handleDelete(device.id)}
+                        title="Remove"
+                        isDeleting={deletingId === device.id}
+                      />
                     </div>
                   </td>
                 </tr>
@@ -470,10 +409,8 @@ export default function AeRoutesTable() {
         </table>
       </div>
 
-      {/* ── Modal ── */}
       {modalOpen && (
-        <RouteModal
-          hospitals={hospitals ?? []}
+        <AccessModal
           initial={editing}
           onClose={() => {
             setModalOpen(false);

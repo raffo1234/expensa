@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/getCurrentUser";
 import Link from "next/link";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import EditHospitalForm from "@/components/EditHospitalForm";
+import { ICON_SIZE } from "@/constants";
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -15,9 +16,9 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       <div className="flex items-center gap-3 mb-6">
         <Link
           href="/admin/hospitals"
-          className="text-gray-400 hover:text-gray-700 transition-colors duration-300"
+          className="text-gray-400 hover:text-gray-700 hover:bg-slate-100 rounded transition-colors duration-300 p-2"
         >
-          <Icon icon="solar:arrow-left-outline" fontSize={20} />
+          <Icon icon="solar:arrow-left-outline" fontSize={ICON_SIZE} />
         </Link>
         <h1 className="font-semibold text-lg">Edit Hospital</h1>
       </div>

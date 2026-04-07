@@ -39,3 +39,10 @@ export const colorClassMap: Record<string, string> = {
 
 export const SWR_KEY_USER_ROLE = "user-role";
 export const SWR_KEY_PERMISSIONS = "admin-permissions";
+
+export const INPUT_CLASS =
+  "w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100 focus:border-cyan-500";
+export const DISABLED_INPUT_CLASS =
+  "w-full px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50 text-gray-400 font-mono cursor-not-allowed";
+export const SELECT_CLASS =
+  "w-full pl-4 pr-7 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100 focus:border-cyan-500 bg-white";

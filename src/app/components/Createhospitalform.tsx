@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { Icon } from "@iconify/react/dist/iconify.js";
 import FieldsSection from "./FieldsSection";
 import PrimaryButton from "./PrimaryButton";
+import { DISABLED_INPUT_CLASS } from "@/constants";
 
 const inputClass =
   "w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100 focus:border-cyan-500 font-mono";
@@ -13,12 +13,12 @@ const inputClass =
 const labelClass = "inline-block mb-2 text-sm font-medium";
 
 // Auto-generate AE title and bucket name from hospital name
-const toAeTitle = (name: string) =>
-  `CADIA-${name
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, "-")
-    .replace(/-+/g, "-")
-    .slice(0, 9)}`;
+// const toAeTitle = (name: string) =>
+//   `CADIA-${name
+//     .toUpperCase()
+//     .replace(/[^A-Z0-9]/g, "-")
+//     .replace(/-+/g, "-")
+//     .slice(0, 9)}`;
 
 const toBucketName = (name: string) =>
   `cadia-${name
@@ -33,20 +33,18 @@ export default function CreateHospitalForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState({
     name: "",
-    ae_title: "",
     r2_bucket: "",
   });
 
   const handleNameChange = (value: string) => {
     setForm({
       name: value,
-      ae_title: toAeTitle(value),
       r2_bucket: toBucketName(value),
     });
   };
 
   const handleSubmit = async () => {
-    if (!form.name || !form.ae_title || !form.r2_bucket) {
+    if (!form.name || !form.r2_bucket) {
       toast.error("All fields are required");
       return;
     }
@@ -76,9 +74,8 @@ export default function CreateHospitalForm() {
   };
 
   return (
-    <>
+    <div className="space-y-6">
       <FieldsSection>
-        {/* Name */}
         <div>
           <label className={labelClass}>Hospital Name</label>
           <input
@@ -92,9 +89,7 @@ export default function CreateHospitalForm() {
             AE title and bucket name are auto-generated from the name.
           </p>
         </div>
-
-        {/* AE Title */}
-        <div>
+        {/* <div>
           <label className={labelClass}>
             AE Title
             <span className="ml-2 text-xs text-gray-400 font-normal">
@@ -117,9 +112,7 @@ export default function CreateHospitalForm() {
             This is what the hospital technician configures on the scanner. Cannot be changed after
             creation.
           </p>
-        </div>
-
-        {/* R2 Bucket */}
+        </div> */}
         <div>
           <label className={labelClass}>
             R2 Bucket
@@ -129,9 +122,11 @@ export default function CreateHospitalForm() {
           </label>
           <input
             type="text"
-            className={inputClass}
+            className={DISABLED_INPUT_CLASS}
             placeholder="e.g. cadia-hospital-dos-de-mayo"
             value={form.r2_bucket}
+            disabled
+            readOnly
             onChange={(e) =>
               setForm((f) => ({
                 ...f,
@@ -143,9 +138,7 @@ export default function CreateHospitalForm() {
             A dedicated R2 bucket will be created automatically. Cannot be changed after creation.
           </p>
         </div>
-
-        {/* Info box */}
-        <div className="flex gap-3 bg-cyan-50 border border-cyan-100 rounded-xl px-4 py-3 text-sm text-cyan-700">
+        {/* <div className="flex gap-3 bg-cyan-50 border border-cyan-100 rounded-xl px-4 py-3 text-sm text-cyan-700">
           <Icon icon="solar:info-circle-linear" fontSize={18} className="flex-shrink-0 mt-0.5" />
           <div>
             <p className="font-semibold mb-1">After creation, share with the technician:</p>
@@ -162,7 +155,7 @@ export default function CreateHospitalForm() {
               </li>
             </ul>
           </div>
-        </div>
+        </div> */}
       </FieldsSection>
       <PrimaryButton
         type="submit"
@@ -170,7 +163,7 @@ export default function CreateHospitalForm() {
         onClick={handleSubmit}
         // disabled={isSubmitting || !form.name}
         isLoading={isSubmitting}
-      ></PrimaryButton>
-    </>
+      />
+    </div>
   );
 }

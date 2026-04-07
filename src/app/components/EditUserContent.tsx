@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import FieldsSection from "./FieldsSection";
 import useSWR from "swr";
 import { UUIDTypes } from "uuid";
-import { adminRolesKey, adminUsersKey } from "@/constants";
+import { adminRolesKey, adminUsersKey, SELECT_CLASS } from "@/constants";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import toast from "react-hot-toast";
 import ResidentList from "./ResidentList";
@@ -33,9 +33,6 @@ const templatesByUserFetcher = async (userId: UUIDTypes) => {
   if (error) throw error;
   return data;
 };
-
-const selectClassName =
-  "w-full pl-4 pr-7 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100 focus:border-cyan-500 bg-white";
 
 export default function EditUserContent({
   userId,
@@ -121,7 +118,7 @@ export default function EditUserContent({
                 value={user.role_id ?? ""}
                 onChange={(e) => updateUser("role_id", e.target.value)}
                 disabled={!roles}
-                className={selectClassName}
+                className={SELECT_CLASS}
               >
                 <option value="">{roles ? "Select ..." : "Loading..."}</option>
                 {roles?.map(({ id, name }) => (
@@ -146,7 +143,7 @@ export default function EditUserContent({
                 value={(user.template_id as string) ?? ""}
                 onChange={(e) => updateUser("template_id", e.target.value)}
                 disabled={!templates}
-                className={selectClassName}
+                className={SELECT_CLASS}
               >
                 <option value="">{templates ? "Select ..." : "Loading..."}</option>
                 {templates?.map(({ id, name }) => (

@@ -1,17 +1,19 @@
 import { supabase } from "@/lib/supabase";
 import { NextResponse } from "next/server";
 
-export async function GET() {
-  const { data, error } = await supabase
-    .from("ae_route")
-    .select("*, hospital(id, name, ae_title)")
-    .order("created_at", { ascending: false });
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const hospitalId = searchParams.get("hospitalId");
 
-  if (error) {
-    return NextResponse.json({ message: error.message }, { status: 500 });
+  let query = supabase.from("ae_route").select("*, hospital:hospital_id(id, name)");
+
+  if (hospitalId) {
+    query = query.eq("hospital_id", hospitalId);
   }
 
-  return NextResponse.json(data);
+  const { data, error } = await query;
+  if (error) return Response.json({ message: error.message }, { status: 500 });
+  return Response.json(data);
 }
 
 export async function POST(request: Request) {
@@ -27,8 +29,15 @@ export async function POST(request: Request) {
 
   const { data, error } = await supabase
     .from("ae_route")
-    .insert({ hospital_id, ae_title, host, port, description: description || null, is_active: is_active ?? true })
-    .select("*, hospital(id, name, ae_title)")
+    .insert({
+      hospital_id,
+      ae_title,
+      host,
+      port,
+      description: description || null,
+      is_active: is_active ?? true,
+    })
+    .select("*, hospital:hospital_id(id, name)")
     .single();
 
   if (error) {

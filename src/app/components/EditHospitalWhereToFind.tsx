@@ -12,7 +12,7 @@ import { ICON_SIZE } from "@/constants";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type HospitalOption = { id: string; name: string; ae_title: string };
+type HospitalOption = { id: string; name: string };
 
 type FormState = {
   hospital_id: string;
@@ -34,10 +34,14 @@ const EMPTY_FORM: FormState = {
 
 // ─── Fetchers ─────────────────────────────────────────────────────────────────
 
-const fetchRoutes = async (): Promise<AeRouteType[]> => {
-  const res = await fetch("/api/ae-routes");
-  if (!res.ok) throw new Error("Failed to fetch ae_routes");
-  return res.json();
+const fetchRoutes = async (hospitalId: string): Promise<AeRouteType[]> => {
+  const { data, error } = await supabase
+    .from("ae_route")
+    .select("*, hospital:hospital_id (id, name)")
+    .eq("hospital_id", hospitalId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as AeRouteType[];
 };
 
 const fetchHospitals = async (): Promise<HospitalOption[]> => {
@@ -125,7 +129,7 @@ function RouteModal({
             <select
               value={form.hospital_id}
               onChange={(e) => set("hospital_id", e.target.value)}
-              disabled={!!initial}
+              disabled
               className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-0 focus:ring-4 focus:ring-cyan-100 focus:border-cyan-500 disabled:bg-gray-50 disabled:text-gray-400"
             >
               {hospitals.map((h) => (
@@ -236,30 +240,31 @@ function RouteModal({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function AeRoutesTable() {
-  const { data: routes, isLoading, mutate } = useSWR<AeRouteType[]>("ae-routes", fetchRoutes);
+export default function EditHospitalWhereToFind({ hospitalId }: { hospitalId: string }) {
+  const {
+    data: routes,
+    isLoading,
+    mutate,
+  } = useSWR<AeRouteType[]>(`${hospitalId}-ae-routes`, () => fetchRoutes(hospitalId));
   const { data: hospitals } = useSWR<HospitalOption[]>("hospitals-list", fetchHospitals);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<AeRouteType | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [hospitalFilter, setHospitalFilter] = useState<string>("");
-
-  const filtered = (routes ?? []).filter((r) =>
-    hospitalFilter ? r.hospital_id === hospitalFilter : true,
-  );
 
   // ── Create ────────────────────────────────────────────────────────────────
   const handleCreate = async (form: FormState) => {
-    const res = await fetch("/api/ae-routes", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+    const { error } = await supabase.from("ae_route").insert({
+      hospital_id: form.hospital_id,
+      ae_title: form.ae_title,
+      host: form.host,
+      port: form.port,
+      description: form.description || null,
+      is_active: form.is_active,
     });
-    if (!res.ok) {
-      const err = await res.json();
-      toast.error(err.message ?? "Failed to create");
-      throw new Error(err.message);
+    if (error) {
+      toast.error(error.message);
+      throw error;
     }
     toast.success("AE Route created");
     mutate();
@@ -268,15 +273,19 @@ export default function AeRoutesTable() {
   // ── Update ────────────────────────────────────────────────────────────────
   const handleUpdate = async (form: FormState) => {
     if (!editing) return;
-    const res = await fetch(`/api/ae-routes/${editing.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    if (!res.ok) {
-      const err = await res.json();
-      toast.error(err.message ?? "Failed to update");
-      throw new Error(err.message);
+    const { error } = await supabase
+      .from("ae_route")
+      .update({
+        ae_title: form.ae_title,
+        host: form.host,
+        port: form.port,
+        description: form.description || null,
+        is_active: form.is_active,
+      })
+      .eq("id", editing.id);
+    if (error) {
+      toast.error(error.message);
+      throw error;
     }
     toast.success("AE Route updated");
     mutate();
@@ -286,10 +295,9 @@ export default function AeRoutesTable() {
   const handleDelete = async (id: string) => {
     setDeletingId(id);
     try {
-      const res = await fetch(`/api/ae-routes/${id}`, { method: "DELETE" });
-      if (!res.ok) {
-        const err = await res.json();
-        toast.error(err.message ?? "Failed to delete");
+      const { error } = await supabase.from("ae_route").delete().eq("id", id);
+      if (error) {
+        toast.error(error.message);
         return;
       }
       toast.success("AE Route deleted");
@@ -301,12 +309,11 @@ export default function AeRoutesTable() {
 
   // ── Toggle active ─────────────────────────────────────────────────────────
   const handleToggleActive = async (route: AeRouteType) => {
-    const res = await fetch(`/api/ae-routes/${route.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...route, is_active: !route.is_active }),
-    });
-    if (!res.ok) {
+    const { error } = await supabase
+      .from("ae_route")
+      .update({ is_active: !route.is_active })
+      .eq("id", route.id);
+    if (error) {
       toast.error("Failed to update status");
       return;
     }
@@ -315,21 +322,7 @@ export default function AeRoutesTable() {
 
   return (
     <>
-      {/* ── Toolbar ── */}
       <div className="flex flex-col sm:flex-row gap-2 mb-4 items-start sm:items-center justify-between">
-        <select
-          value={hospitalFilter}
-          onChange={(e) => setHospitalFilter(e.target.value)}
-          className="bg-white border border-gray-200 rounded-full px-4 py-2 text-sm outline-0 focus:ring-4 focus:ring-cyan-100 focus:border-cyan-500 cursor-pointer"
-        >
-          <option value="">All hospitals</option>
-          {(hospitals ?? []).map((h) => (
-            <option key={h.id} value={h.id}>
-              {h.name}
-            </option>
-          ))}
-        </select>
-
         <button
           onClick={() => {
             setEditing(null);
@@ -385,7 +378,7 @@ export default function AeRoutesTable() {
           )}
 
           {/* Empty */}
-          {!isLoading && filtered.length === 0 && (
+          {!isLoading && routes?.length === 0 && (
             <tbody>
               <tr>
                 <td colSpan={7} className="text-center py-16 text-gray-400">
@@ -402,9 +395,9 @@ export default function AeRoutesTable() {
           )}
 
           {/* Rows */}
-          {!isLoading && filtered.length > 0 && (
+          {!isLoading && routes && routes.length > 0 && (
             <tbody>
-              {filtered.map((route, index) => (
+              {routes.map((route, index) => (
                 <tr
                   key={route.id}
                   className={`border-t border-gray-100 hover:bg-cyan-50/30 transition-colors ${
@@ -460,7 +453,7 @@ export default function AeRoutesTable() {
                         onClick={() => handleDelete(route.id)}
                         title="Delete"
                         isDeleting={deletingId === route.id}
-                      ></DeleteButton>
+                      />
                     </div>
                   </td>
                 </tr>

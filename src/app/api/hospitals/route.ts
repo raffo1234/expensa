@@ -27,7 +27,7 @@ export async function GET() {
   try {
     const { data, error } = await supabase
       .from("hospital")
-      .select("id, name, ae_title, is_active, r2_bucket, created_at")
+      .select("id, name, is_active, r2_bucket, created_at")
       .order("created_at", { ascending: false });
 
     if (error) throw error;

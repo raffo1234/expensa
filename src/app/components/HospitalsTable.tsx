@@ -90,7 +90,6 @@ export default function HospitalsTable() {
         <thead>
           <tr className="border-b border-gray-200">
             <th className="text-left uppercase text-xs font-semibold py-4 px-4">Name</th>
-            <th className="text-left uppercase text-xs font-semibold py-4 px-4">AE Title</th>
             <th className="text-left uppercase text-xs font-semibold py-4 px-4">R2 Bucket</th>
             <th className="text-left uppercase text-xs font-semibold py-4 px-4">Status</th>
             <th className="text-left uppercase text-xs font-semibold py-4 px-4">Created</th>
@@ -107,11 +106,6 @@ export default function HospitalsTable() {
               ].join(" ")}
             >
               <td className="py-4 px-4">{hospital.name}</td>
-              <td className="py-4 px-4">
-                <span className="font-mono text-xs bg-slate-100 px-2 py-1 rounded">
-                  {hospital.ae_title}
-                </span>
-              </td>
               <td className="py-4 px-4">
                 <span className="font-mono text-xs bg-slate-100 px-2 py-1 rounded">
                   {hospital.r2_bucket}

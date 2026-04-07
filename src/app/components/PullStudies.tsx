@@ -163,9 +163,7 @@ export default function PullStudies() {
             disabled={loadingRoutes}
             className={inputClass}
           >
-            <option value="">
-              {loadingRoutes ? "Loading..." : "Select a PACS connection..."}
-            </option>
+            <option value="">{loadingRoutes ? "Loading..." : "Select a PACS connection..."}</option>
             {(routes ?? []).map((r) => (
               <option key={r.id} value={r.id}>
                 {r.hospital?.name} — {r.ae_title} ({r.host}:{r.port})
@@ -176,9 +174,15 @@ export default function PullStudies() {
 
         {selectedRoute && (
           <div className="flex gap-4 text-xs text-gray-500 font-mono bg-gray-50 rounded-lg px-4 py-2.5">
-            <span>AE: <span className="text-gray-800">{selectedRoute.ae_title}</span></span>
-            <span>Host: <span className="text-gray-800">{selectedRoute.host}</span></span>
-            <span>Port: <span className="text-gray-800">{selectedRoute.port}</span></span>
+            <span>
+              AE: <span className="text-gray-800">{selectedRoute.ae_title}</span>
+            </span>
+            <span>
+              Host: <span className="text-gray-800">{selectedRoute.host}</span>
+            </span>
+            <span>
+              Port: <span className="text-gray-800">{selectedRoute.port}</span>
+            </span>
           </div>
         )}
       </div>
@@ -259,8 +263,7 @@ export default function PullStudies() {
         <div className="bg-white rounded-xl shadow overflow-auto">
           <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
             <h2 className="font-semibold text-sm text-gray-700">
-              Results{" "}
-              <span className="text-gray-400 font-normal">({results.length})</span>
+              Results <span className="text-gray-400 font-normal">({results.length})</span>
             </h2>
           </div>
 
@@ -273,12 +276,24 @@ export default function PullStudies() {
             <table className="text-sm w-full">
               <thead>
                 <tr className="border-b border-gray-100">
-                  <th className="text-left uppercase text-xs font-semibold text-gray-500 py-3 px-4">Patient</th>
-                  <th className="text-left uppercase text-xs font-semibold text-gray-500 py-3 px-4">ID</th>
-                  <th className="text-left uppercase text-xs font-semibold text-gray-500 py-3 px-4">Date</th>
-                  <th className="text-left uppercase text-xs font-semibold text-gray-500 py-3 px-4">Description</th>
-                  <th className="text-left uppercase text-xs font-semibold text-gray-500 py-3 px-4">Mod</th>
-                  <th className="text-left uppercase text-xs font-semibold text-gray-500 py-3 px-4">Inst</th>
+                  <th className="text-left uppercase text-xs font-semibold text-gray-500 py-3 px-4">
+                    Patient
+                  </th>
+                  <th className="text-left uppercase text-xs font-semibold text-gray-500 py-3 px-4">
+                    ID
+                  </th>
+                  <th className="text-left uppercase text-xs font-semibold text-gray-500 py-3 px-4">
+                    Date
+                  </th>
+                  <th className="text-left uppercase text-xs font-semibold text-gray-500 py-3 px-4">
+                    Description
+                  </th>
+                  <th className="text-left uppercase text-xs font-semibold text-gray-500 py-3 px-4">
+                    Mod
+                  </th>
+                  <th className="text-left uppercase text-xs font-semibold text-gray-500 py-3 px-4">
+                    Inst
+                  </th>
                   <th className="w-24" />
                 </tr>
               </thead>
@@ -288,7 +303,10 @@ export default function PullStudies() {
                     key={study.StudyInstanceUID}
                     className={`border-t border-gray-100 ${index % 2 === 0 ? "bg-gray-50/50" : "bg-white"}`}
                   >
-                    <td className="py-3 px-4 font-medium truncate max-w-40" title={study.PatientName}>
+                    <td
+                      className="py-3 px-4 font-medium truncate max-w-40"
+                      title={study.PatientName}
+                    >
                       {study.PatientName || "—"}
                     </td>
                     <td className="py-3 px-4 text-gray-600">{study.PatientID || "—"}</td>
@@ -297,11 +315,16 @@ export default function PullStudies() {
                         ? `${study.StudyDate.slice(0, 4)}-${study.StudyDate.slice(4, 6)}-${study.StudyDate.slice(6, 8)}`
                         : "—"}
                     </td>
-                    <td className="py-3 px-4 text-gray-600 truncate max-w-48" title={study.StudyDescription}>
+                    <td
+                      className="py-3 px-4 text-gray-600 truncate max-w-48"
+                      title={study.StudyDescription}
+                    >
                       {study.StudyDescription || "—"}
                     </td>
                     <td className="py-3 px-4 text-gray-600">{study.Modality || "—"}</td>
-                    <td className="py-3 px-4 text-gray-600">{study.NumberOfStudyRelatedInstances || "—"}</td>
+                    <td className="py-3 px-4 text-gray-600">
+                      {study.NumberOfStudyRelatedInstances || "—"}
+                    </td>
                     <td className="py-3 px-4">
                       <button
                         onClick={() => handlePull(study)}

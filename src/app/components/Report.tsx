@@ -333,7 +333,11 @@ export default function Report({
                 isDownloadable={false}
                 dicomId={dicomId}
               />
-              <DownloadButtons liveReport={liveReport ?? dicom?.report ?? ""} dicomId={dicomId} userRoleId={userRoleId} />
+              <DownloadButtons
+                liveReport={liveReport ?? dicom?.report ?? ""}
+                dicomId={dicomId}
+                userRoleId={userRoleId}
+              />
             </div>
             <div className="flex justify-end gap-2">
               {dicom && (!dicom.state || dicom.state === DicomStateEnum.VIEWED) ? (

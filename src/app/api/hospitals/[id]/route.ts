@@ -14,7 +14,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
     const { data, error } = await supabase
       .from("hospital")
-      .select("id, name, ae_title, is_active, r2_bucket, created_at, updated_at")
+      .select("id, name, is_active, r2_bucket, created_at, updated_at")
       .eq("id", id)
       .single();
 
@@ -62,7 +62,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       .from("hospital")
       .update(updates)
       .eq("id", id)
-      .select("id, name, ae_title, is_active, r2_bucket, created_at, updated_at")
+      .select("id, name, is_active, r2_bucket, created_at, updated_at")
       .single();
 
     if (error || !data) {
@@ -92,7 +92,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
       .from("hospital")
       .update({ is_active: false })
       .eq("id", id)
-      .select("id, name, ae_title, is_active")
+      .select("id, name, is_active")
       .single();
 
     if (error || !data) {

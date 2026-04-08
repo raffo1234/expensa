@@ -1,7 +1,7 @@
 "use client";
 
 import { Icon } from "@iconify/react";
-import { useState } from "react";
+import { startTransition, useOptimistic, useState } from "react";
 import useSWR from "swr";
 import toast from "react-hot-toast";
 import { supabase } from "@/lib/supabase";
@@ -266,17 +266,33 @@ export default function EditHospitalConnectedDevices({ hospitalId }: { hospitalI
     }
   };
 
-  // ── Toggle active ─────────────────────────────────────────────────────────
+  const [optimisticDevices, addOptimistic] = useOptimistic(
+    access ?? [],
+    (state: HospitalAccess[], { id, is_active }: { id: string; is_active: boolean }) =>
+      state.map((d) => (d.id === id ? { ...d, is_active } : d)),
+  );
+
   const handleToggleActive = async (device: HospitalAccess) => {
-    const { error } = await supabase
-      .from("hospital_access")
-      .update({ is_active: !device.is_active })
-      .eq("id", device.id);
-    if (error) {
-      toast.error("Failed to update status");
-      return;
-    }
-    mutate();
+    startTransition(async () => {
+      addOptimistic({ id: device.id, is_active: !device.is_active });
+
+      const { error } = await supabase
+        .from("hospital_access")
+        .update({ is_active: !device.is_active })
+        .eq("id", device.id);
+
+      if (error) {
+        toast.error("Failed to update status");
+        mutate();
+        return;
+      }
+
+      mutate(
+        (current) =>
+          current?.map((d) => (d.id === device.id ? { ...d, is_active: !device.is_active } : d)),
+        { revalidate: false },
+      );
+    });
   };
 
   return (
@@ -348,7 +364,7 @@ export default function EditHospitalConnectedDevices({ hospitalId }: { hospitalI
 
           {!isLoading && access && access.length > 0 && (
             <tbody>
-              {access.map((device, index) => (
+              {optimisticDevices.map((device, index) => (
                 <tr
                   key={device.id}
                   className={`border-t border-gray-100 hover:bg-cyan-50/30 transition-colors ${

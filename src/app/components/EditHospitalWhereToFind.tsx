@@ -2,7 +2,7 @@
 
 import { AeRouteType } from "@/types/aeRouteType";
 import { Icon } from "@iconify/react";
-import { useState } from "react";
+import { startTransition, useOptimistic, useState } from "react";
 import useSWR from "swr";
 import toast from "react-hot-toast";
 import { supabase } from "@/lib/supabase";
@@ -295,6 +295,11 @@ export default function EditHospitalWhereToFind({ hospitalId }: { hospitalId: st
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<AeRouteType | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [optimisticRoutes, addOptimistic] = useOptimistic(
+    routes ?? [],
+    (state: AeRouteType[], { id, is_active }: { id: string; is_active: boolean }) =>
+      state.map((r) => (r.id === id ? { ...r, is_active } : r)),
+  );
 
   // ── Create ────────────────────────────────────────────────────────────────
   const handleCreate = async (form: FormState) => {
@@ -353,15 +358,26 @@ export default function EditHospitalWhereToFind({ hospitalId }: { hospitalId: st
 
   // ── Toggle active ─────────────────────────────────────────────────────────
   const handleToggleActive = async (route: AeRouteType) => {
-    const { error } = await supabase
-      .from("ae_route")
-      .update({ is_active: !route.is_active })
-      .eq("id", route.id);
-    if (error) {
-      toast.error("Failed to update status");
-      return;
-    }
-    mutate();
+    startTransition(async () => {
+      addOptimistic({ id: route.id, is_active: !route.is_active });
+
+      const { error } = await supabase
+        .from("ae_route")
+        .update({ is_active: !route.is_active })
+        .eq("id", route.id);
+
+      if (error) {
+        toast.error("Failed to update status");
+        mutate();
+        return;
+      }
+
+      mutate(
+        (current) =>
+          current?.map((r) => (r.id === route.id ? { ...r, is_active: !route.is_active } : r)),
+        { revalidate: false },
+      );
+    });
   };
 
   return (
@@ -440,7 +456,7 @@ export default function EditHospitalWhereToFind({ hospitalId }: { hospitalId: st
           {/* Rows */}
           {!isLoading && routes && routes.length > 0 && (
             <tbody>
-              {routes.map((route, index) => (
+              {optimisticRoutes.map((route, index) => (
                 <tr
                   key={route.id}
                   className={`border-t border-gray-100 hover:bg-cyan-50/30 transition-colors ${

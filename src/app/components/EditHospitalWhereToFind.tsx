@@ -80,13 +80,45 @@ function RouteModal({
       : { ...EMPTY_FORM, hospital_id: hospitals[0]?.id ?? "" },
   );
   const [saving, setSaving] = useState(false);
+  const [aeError, setAeError] = useState<string | null>(null);
+  const [aeChecking, setAeChecking] = useState(false);
 
   const set = (key: keyof FormState, value: string | number | boolean) =>
     setForm((f) => ({ ...f, [key]: value }));
 
+  // ── AE Title uniqueness check ──────────────────────────────────────────────
+  const checkAeTitle = async (value: string) => {
+    if (!value) return;
+    setAeChecking(true);
+    setAeError(null);
+    try {
+      let query = supabase
+        .from("ae_route")
+        .select("id")
+        .eq("ae_title", value)
+        .limit(1);
+
+      if (initial?.id) {
+        // Allow saving without changing the ae_title on edit
+        query = query.neq("id", initial.id);
+      }
+
+      const { data } = await query;
+      if (data && data.length > 0) {
+        setAeError("This AE Title is already in use");
+      }
+    } finally {
+      setAeChecking(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!form.hospital_id || !form.ae_title || !form.host || !form.port) {
       toast.error("Complete all required fields");
+      return;
+    }
+    if (aeError || aeChecking) {
+      toast.error("Fix AE Title before saving");
       return;
     }
     setSaving(true);
@@ -145,13 +177,36 @@ function RouteModal({
             <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">
               AE Title <span className="text-rose-400">*</span>
             </label>
-            <input
-              type="text"
-              value={form.ae_title}
-              onChange={(e) => set("ae_title", e.target.value.toUpperCase())}
-              placeholder="PACS-HOSP"
-              className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono outline-0 focus:ring-4 focus:ring-cyan-100 focus:border-cyan-500"
-            />
+            <div className="relative">
+              <input
+                type="text"
+                value={form.ae_title}
+                onChange={(e) => {
+                  set("ae_title", e.target.value.toUpperCase());
+                  setAeError(null); // clear error while typing
+                }}
+                onBlur={() => checkAeTitle(form.ae_title)}
+                placeholder="PACS-HOSP"
+                className={`w-full bg-white border rounded-lg px-3 py-2 text-sm font-mono outline-0 focus:ring-4 transition-colors ${
+                  aeError
+                    ? "border-rose-400 focus:ring-rose-100 focus:border-rose-500"
+                    : "border-gray-200 focus:ring-cyan-100 focus:border-cyan-500"
+                }`}
+              />
+              {aeChecking && (
+                <Icon
+                  icon="solar:spinner-bold"
+                  className="animate-spin absolute right-3 top-2.5 text-gray-400"
+                  fontSize={16}
+                />
+              )}
+            </div>
+            {aeError && (
+              <p className="mt-1 text-xs text-rose-500 flex items-center gap-1">
+                <Icon icon="solar:danger-circle-linear" fontSize={14} />
+                {aeError}
+              </p>
+            )}
           </div>
 
           {/* Host + Port */}
@@ -206,7 +261,7 @@ function RouteModal({
             >
               <span
                 className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${
-                  form.is_active ? "translate-x-5" : "translate-x-1"
+                  form.is_active ? "translate-x-0" : "-translate-x-4"
                 }`}
               />
             </button>
@@ -224,7 +279,7 @@ function RouteModal({
           </button>
           <button
             onClick={handleSubmit}
-            disabled={saving}
+            disabled={saving || aeChecking || !!aeError}
             className="px-4 py-2 text-sm bg-cyan-400 text-white rounded-full hover:bg-cyan-500 transition-colors cursor-pointer disabled:opacity-50 disabled:pointer-events-none flex items-center gap-2"
           >
             {saving && (

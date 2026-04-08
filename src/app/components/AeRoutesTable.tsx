@@ -10,6 +10,8 @@ import CircularSecondaryButton from "./CircularSecondaryButton";
 import DeleteButton from "./DeleteButton";
 import { ICON_SIZE, INPUT_CLASS } from "@/constants";
 import FormLabel from "./FormLabel";
+import SecondaryButton from "./SecondaryButton";
+import PrimaryButton from "./PrimaryButton";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -211,22 +213,12 @@ function RouteModal({
 
         {/* Footer */}
         <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-100">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm border border-gray-200 rounded-full hover:bg-gray-50 transition-colors cursor-pointer"
-          >
-            Cancel
-          </button>
-          <button
+          <SecondaryButton onClick={onClose} label="Cancel" />
+          <PrimaryButton
             onClick={handleSubmit}
-            disabled={saving}
-            className="px-4 py-2 text-sm bg-cyan-400 text-white rounded-full hover:bg-cyan-500 transition-colors cursor-pointer disabled:opacity-50 disabled:pointer-events-none flex items-center gap-2"
-          >
-            {saving && (
-              <Icon icon="solar:spinner-bold" className="animate-spin" fontSize={ICON_SIZE} />
-            )}
-            {initial ? "Save changes" : "Create"}
-          </button>
+            isLoading={saving}
+            label={initial ? "Save changes11" : "Create111"}
+          />
         </div>
       </div>
     </div>

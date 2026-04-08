@@ -13,6 +13,7 @@ import PopoverInnerButton from "./PopoverInnerButton";
 import FormLabel from "./FormLabel";
 import CloseIcon from "./CloseIcon";
 import PrimaryButton from "./PrimaryButton";
+import SecondaryButton from "./SecondaryButton";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -269,12 +270,7 @@ function RouteModal({
 
         {/* Footer */}
         <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-100">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm border border-gray-200 rounded-full hover:bg-gray-50 transition-colors cursor-pointer"
-          >
-            Cancel
-          </button>
+          <SecondaryButton onClick={onClose} label="Cancel" />
           <PrimaryButton
             label={initial ? "Save changes" : "Create"}
             onClick={handleSubmit}
@@ -382,7 +378,6 @@ export default function EditHospitalWhereToFind({ hospitalId }: { hospitalId: st
           New AE Route
         </button>
       </div>
-
       {/* ── Table ── */}
       <div className="bg-white shadow rounded-xl overflow-auto">
         <table className="text-sm w-full table-fixed">

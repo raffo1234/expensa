@@ -56,20 +56,20 @@ export default function AsideMenu({
           },
         ]
       : []),
-    ...(checkPermission(Permissions.MANAGE_PACS)
-      ? [
-          {
-            href: "/admin/pacs",
-            title: t("pacs"),
-            iconName: "solar:archive-down-minimlistic-linear",
-          },
-        ]
-      : []),
+    // ...(checkPermission(Permissions.MANAGE_PACS)
+    //   ? [
+    //       {
+    //         href: "/admin/pacs",
+    //         title: t("pacs"),
+    //         iconName: "solar:archive-down-minimlistic-linear",
+    //       },
+    //     ]
+    //   : []),
     ...(checkPermission(Permissions.MANAGE_PACS)
       ? [
           {
             href: "/admin/studies",
-            title: "Studies",
+            title: "PACS",
             iconName: "solar:archive-down-minimlistic-linear",
           },
         ]

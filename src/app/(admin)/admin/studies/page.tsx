@@ -24,7 +24,7 @@ export default async function StudiesPage() {
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-gray-800">Studies</h1>
         <p className="text-sm text-gray-500 mt-1">
-          DICOM studies received via SCP · 137.66.1.186:104 ·{" "}
+          DICOM studies received via SCP · 137.66.1.186:11112 ·{" "}
           <Link target="_blank" href="/admin/hospitals" className="text-cyan-600 hover:underline">
             Manage hospitals
           </Link>

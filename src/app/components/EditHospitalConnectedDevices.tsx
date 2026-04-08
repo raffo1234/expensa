@@ -119,7 +119,7 @@ function AccessModal({
           </h2>
           <button
             onClick={onClose}
-            className="p-1.5 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
+            className="p-1.5 rounded-full transition-colors cursor-pointer hover:text-cyan-500"
           >
             <CloseIcon />
           </button>

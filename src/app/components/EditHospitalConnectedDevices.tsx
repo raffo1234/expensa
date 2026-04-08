@@ -9,6 +9,7 @@ import CircularSecondaryButton from "./CircularSecondaryButton";
 import DeleteButton from "./DeleteButton";
 import { ICON_SIZE } from "@/constants";
 import AETitleInfo from "./AETitleInfo";
+import FormLabel from "./FormLabel";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -113,9 +114,9 @@ function AccessModal({
         <div className="px-6 py-5 flex flex-col gap-4">
           {/* Name */}
           <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">
+            <FormLabel>
               Device Name <span className="text-rose-400">*</span>
-            </label>
+            </FormLabel>
             <input
               type="text"
               value={form.name}
@@ -127,9 +128,9 @@ function AccessModal({
 
           {/* AE Title */}
           <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">
+            <FormLabel>
               AE Title <span className="text-rose-400">*</span>
-            </label>
+            </FormLabel>
             <input
               type="text"
               value={form.ae_title}
@@ -144,10 +145,10 @@ function AccessModal({
 
           {/* Allowed IP */}
           <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">
+            <FormLabel>
               Allowed IP
               <span className="ml-1.5 text-gray-400 font-normal normal-case">(optional)</span>
-            </label>
+            </FormLabel>
             <input
               type="text"
               value={form.allowed_ip}

@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabase";
 import CircularSecondaryButton from "./CircularSecondaryButton";
 import DeleteButton from "./DeleteButton";
 import { ICON_SIZE } from "@/constants";
+import FormLabel from "./FormLabel";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -119,9 +120,9 @@ function RouteModal({
         <div className="px-6 py-5 flex flex-col gap-4">
           {/* Hospital */}
           <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">
+            <FormLabel>
               Hospital <span className="text-rose-400">*</span>
-            </label>
+            </FormLabel>
             <select
               value={form.hospital_id}
               onChange={(e) => set("hospital_id", e.target.value)}
@@ -138,9 +139,9 @@ function RouteModal({
 
           {/* AE Title */}
           <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">
+            <FormLabel>
               AE Title <span className="text-rose-400">*</span>
-            </label>
+            </FormLabel>
             <input
               type="text"
               value={form.ae_title}
@@ -153,9 +154,9 @@ function RouteModal({
           {/* Host + Port */}
           <div className="flex gap-3">
             <div className="flex-1">
-              <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">
+              <FormLabel>
                 Host / IP <span className="text-rose-400">*</span>
-              </label>
+              </FormLabel>
               <input
                 type="text"
                 value={form.host}
@@ -165,9 +166,9 @@ function RouteModal({
               />
             </div>
             <div className="w-24">
-              <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">
+              <FormLabel>
                 Port <span className="text-rose-400">*</span>
-              </label>
+              </FormLabel>
               <input
                 type="number"
                 value={form.port}
@@ -179,9 +180,7 @@ function RouteModal({
 
           {/* Description */}
           <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">
-              Description
-            </label>
+            <FormLabel>Description</FormLabel>
             <input
               type="text"
               value={form.description}

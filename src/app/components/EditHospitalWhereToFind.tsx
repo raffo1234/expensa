@@ -8,9 +8,11 @@ import toast from "react-hot-toast";
 import { supabase } from "@/lib/supabase";
 import CircularSecondaryButton from "./CircularSecondaryButton";
 import DeleteButton from "./DeleteButton";
-import { ICON_SIZE } from "@/constants";
+import { ICON_SIZE, INPUT_CLASS } from "@/constants";
 import PopoverInnerButton from "./PopoverInnerButton";
 import FormLabel from "./FormLabel";
+import CloseIcon from "./CloseIcon";
+import PrimaryButton from "./PrimaryButton";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -145,7 +147,7 @@ function RouteModal({
             onClick={onClose}
             className="p-1.5 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
           >
-            <Icon icon="solar:close-circle-broken" fontSize={ICON_SIZE} className="text-gray-400" />
+            <CloseIcon />
           </button>
         </div>
 
@@ -185,7 +187,7 @@ function RouteModal({
                 }}
                 onBlur={() => checkAeTitle(form.ae_title)}
                 placeholder="PACS-HOSP"
-                className={`w-full bg-white border rounded-lg px-3 py-2 text-sm font-mono outline-0 focus:ring-4 transition-colors ${
+                className={`${INPUT_CLASS} ${
                   aeError
                     ? "border-rose-400 focus:ring-rose-100 focus:border-rose-500"
                     : "border-gray-200 focus:ring-cyan-100 focus:border-cyan-500"
@@ -218,7 +220,7 @@ function RouteModal({
                 value={form.host}
                 onChange={(e) => set("host", e.target.value)}
                 placeholder="192.168.1.10"
-                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono outline-0 focus:ring-4 focus:ring-cyan-100 focus:border-cyan-500"
+                className={INPUT_CLASS}
               />
             </div>
             <div className="w-24">
@@ -229,7 +231,7 @@ function RouteModal({
                 type="number"
                 value={form.port}
                 onChange={(e) => set("port", parseInt(e.target.value) || 104)}
-                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono outline-0 focus:ring-4 focus:ring-cyan-100 focus:border-cyan-500"
+                className={INPUT_CLASS}
               />
             </div>
           </div>
@@ -242,7 +244,7 @@ function RouteModal({
               value={form.description}
               onChange={(e) => set("description", e.target.value)}
               placeholder="Philips PACS — Radiology dept"
-              className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-0 focus:ring-4 focus:ring-cyan-100 focus:border-cyan-500"
+              className={INPUT_CLASS}
             />
           </div>
 
@@ -273,16 +275,11 @@ function RouteModal({
           >
             Cancel
           </button>
-          <button
+          <PrimaryButton
+            label={initial ? "Save changes" : "Create"}
             onClick={handleSubmit}
-            disabled={saving || aeChecking || !!aeError}
-            className="px-4 py-2 text-sm bg-cyan-400 text-white rounded-full hover:bg-cyan-500 transition-colors cursor-pointer disabled:opacity-50 disabled:pointer-events-none flex items-center gap-2"
-          >
-            {saving && (
-              <Icon icon="solar:spinner-bold" className="animate-spin" fontSize={ICON_SIZE} />
-            )}
-            {initial ? "Save changes" : "Create"}
-          </button>
+            isLoading={saving || aeChecking || !!aeError}
+          ></PrimaryButton>
         </div>
       </div>
     </div>

@@ -8,7 +8,7 @@ import toast from "react-hot-toast";
 import { supabase } from "@/lib/supabase";
 import CircularSecondaryButton from "./CircularSecondaryButton";
 import DeleteButton from "./DeleteButton";
-import { ICON_SIZE } from "@/constants";
+import { ICON_SIZE, INPUT_CLASS } from "@/constants";
 import FormLabel from "./FormLabel";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -147,7 +147,7 @@ function RouteModal({
               value={form.ae_title}
               onChange={(e) => set("ae_title", e.target.value.toUpperCase())}
               placeholder="PACS-HOSP"
-              className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono outline-0 focus:ring-4 focus:ring-cyan-100 focus:border-cyan-500"
+              className={INPUT_CLASS}
             />
           </div>
 
@@ -162,7 +162,7 @@ function RouteModal({
                 value={form.host}
                 onChange={(e) => set("host", e.target.value)}
                 placeholder="192.168.1.10"
-                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono outline-0 focus:ring-4 focus:ring-cyan-100 focus:border-cyan-500"
+                className={INPUT_CLASS}
               />
             </div>
             <div className="w-24">
@@ -173,7 +173,7 @@ function RouteModal({
                 type="number"
                 value={form.port}
                 onChange={(e) => set("port", parseInt(e.target.value) || 104)}
-                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono outline-0 focus:ring-4 focus:ring-cyan-100 focus:border-cyan-500"
+                className={INPUT_CLASS}
               />
             </div>
           </div>
@@ -186,7 +186,7 @@ function RouteModal({
               value={form.description}
               onChange={(e) => set("description", e.target.value)}
               placeholder="Philips PACS — Radiology dept"
-              className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-0 focus:ring-4 focus:ring-cyan-100 focus:border-cyan-500"
+              className={INPUT_CLASS}
             />
           </div>
 

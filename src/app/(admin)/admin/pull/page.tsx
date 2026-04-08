@@ -29,8 +29,8 @@ async function PullSection() {
   const user = await getCurrentUser();
   if (!user) return <NoAccess />;
 
-  const permissions = await checkPermissions(user.roleId, [Permissions.MANAGE_HOSPITALS]);
-  if (!permissions[Permissions.MANAGE_HOSPITALS]) return <FallbackPermission />;
+  const permissions = await checkPermissions(user.roleId, [Permissions.MANAGE_PACS]);
+  if (!permissions[Permissions.MANAGE_PACS]) return <FallbackPermission />;
 
   return <PullStudies />;
 }

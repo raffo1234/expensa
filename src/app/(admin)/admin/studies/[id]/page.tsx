@@ -3,11 +3,17 @@ import { supabase } from "@/lib/supabase";
 import Report from "@/components/Report";
 import { TemplateType } from "@/types/templateType";
 import Link from "next/link";
+import NoAccess from "@/components/NoAccess";
+import { Permissions } from "@/types/propertyState";
+import { checkPermissions } from "@/lib/checkPermissions";
 
 export default async function StudyReportPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await auth();
   const userRoleId = session?.user?.role_id ?? "";
+
+  const permissions = await checkPermissions(userRoleId, [Permissions.GENERATE_REPORT]);
+  if (!permissions.GENERATE_REPORT) return <NoAccess />;
 
   const [{ data: study }, { data: templates }] = await Promise.all([
     supabase

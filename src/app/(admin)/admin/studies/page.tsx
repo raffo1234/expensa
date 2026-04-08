@@ -2,6 +2,9 @@ import { auth } from "@/lib/auth";
 import Link from "next/link";
 import { Suspense } from "react";
 import StudiesTable from "@/components/StudiesTable";
+import { Permissions } from "@/types/propertyState";
+import { checkPermissions } from "@/lib/checkPermissions";
+import NoAccess from "@/components/NoAccess";
 
 function StudiesTableFallback() {
   return (
@@ -18,6 +21,11 @@ function StudiesTableFallback() {
 export default async function StudiesPage() {
   const session = await auth();
   const userRoleId = session?.user?.role_id;
+
+  if (!userRoleId) return <NoAccess />;
+
+  const permissions = await checkPermissions(userRoleId, [Permissions.MANAGE_PACS]);
+  if (!permissions.MANAGE_PACS) return <NoAccess />;
 
   return (
     <div className="p-6">

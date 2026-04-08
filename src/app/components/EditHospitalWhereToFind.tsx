@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabase";
 import CircularSecondaryButton from "./CircularSecondaryButton";
 import DeleteButton from "./DeleteButton";
 import { ICON_SIZE } from "@/constants";
+import PopoverInnerButton from "./PopoverInnerButton";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -92,11 +93,7 @@ function RouteModal({
     setAeChecking(true);
     setAeError(null);
     try {
-      let query = supabase
-        .from("ae_route")
-        .select("id")
-        .eq("ae_title", value)
-        .limit(1);
+      let query = supabase.from("ae_route").select("id").eq("ae_title", value).limit(1);
 
       if (initial?.id) {
         // Allow saving without changing the ae_title on edit
@@ -477,21 +474,23 @@ export default function EditHospitalWhereToFind({ hospitalId }: { hospitalId: st
                     {route.description ?? "—"}
                   </td>
                   <td className="py-4 px-3 text-center">
-                    <button
-                      onClick={() => handleToggleActive(route)}
-                      className="cursor-pointer"
-                      title={route.is_active ? "Deactivate" : "Activate"}
-                    >
-                      <span
-                        className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full border ${
-                          route.is_active
-                            ? "bg-cyan-50 text-cyan-700 border-cyan-200"
-                            : "bg-gray-100 text-gray-500 border-gray-200"
-                        }`}
-                      >
-                        {route.is_active ? "Active" : "Inactive"}
-                      </span>
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <PopoverInnerButton title={route.is_active ? "Desactive" : "Active"}>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleActive(route)}
+                          className={`relative w-10 h-6 rounded-full transition-colors duration-200 cursor-pointer ${
+                            route.is_active ? "bg-cyan-400" : "bg-gray-200"
+                          }`}
+                        >
+                          <span
+                            className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${
+                              route.is_active ? "translate-x-0" : "-translate-x-4"
+                            }`}
+                          />
+                        </button>
+                      </PopoverInnerButton>
+                    </div>
                   </td>
                   <td className="py-4 px-3">
                     <div className="flex items-center justify-end gap-1">

@@ -11,7 +11,7 @@ export default function AETitleInfo({ aeTitle }: { aeTitle: string }) {
             IP: <span className="font-mono">137.66.1.186</span>
           </li>
           <li>
-            PORT: <span className="font-mono">104</span>
+            PORT: <span className="font-mono">11112</span>
           </li>
           <li>
             AE Title: <span className="font-mono">{aeTitle}</span>

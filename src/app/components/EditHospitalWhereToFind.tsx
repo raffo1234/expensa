@@ -14,6 +14,7 @@ import FormLabel from "./FormLabel";
 import CloseIcon from "./CloseIcon";
 import PrimaryButton from "./PrimaryButton";
 import SecondaryButton from "./SecondaryButton";
+import FieldsSection from "./FieldsSection";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -146,15 +147,13 @@ function RouteModal({
       }}
     >
       <div
-        className={`bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden transition-all duration-300 ${
+        className={`bg-slate-50 p-4 sm:p-6 rounded-2xl shadow-xl w-full max-w-xl mx-4 overflow-hidden transition-all duration-300 ${
           mounted ? "translate-y-0 opacity-100" : "-translate-y-6 opacity-80"
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="text-base font-semibold text-gray-800">
-            {initial ? "Edit AE Route" : "New AE Route"}
-          </h2>
+        <div className="flex items-center pb-4 justify-between">
+          <h2 className="text-xl font-semibold">{initial ? "Edit AE Route" : "New AE Route"}</h2>
           <button
             onClick={onClose}
             className="p-1.5 rounded-full transition-colors cursor-pointer hover:text-cyan-500"
@@ -164,7 +163,7 @@ function RouteModal({
         </div>
 
         {/* Body */}
-        <div className="px-6 py-5 flex flex-col gap-4">
+        <FieldsSection>
           {/* Hospital */}
           <div>
             <FormLabel>
@@ -277,10 +276,10 @@ function RouteModal({
             </button>
             <span className="text-sm text-gray-600">{form.is_active ? "Active" : "Inactive"}</span>
           </div>
-        </div>
+        </FieldsSection>
 
         {/* Footer */}
-        <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-100">
+        <div className="flex justify-end gap-2 pt-6">
           <SecondaryButton onClick={onClose} label="Cancel" />
           <PrimaryButton
             label={initial ? "Save changes" : "Create"}

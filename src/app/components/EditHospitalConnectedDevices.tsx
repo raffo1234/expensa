@@ -14,6 +14,7 @@ import CloseIcon from "./CloseIcon";
 import PrimaryButton from "./PrimaryButton";
 import SecondaryButton from "./SecondaryButton";
 import PopoverInnerButton from "./PopoverInnerButton";
+import FieldsSection from "./FieldsSection";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -108,13 +109,13 @@ function AccessModal({
       }}
     >
       <div
-        className={`bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden transition-all duration-300 ${
+        className={`bg-slate-50 p-4 sm:p-6 rounded-2xl shadow-xl w-full max-w-xl mx-4 overflow-hidden transition-all duration-300 ${
           mounted ? "translate-y-0 opacity-100" : "-translate-y-6 opacity-80"
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="text-base font-semibold text-gray-800">
+        <div className="flex items-center justify-between pb-4">
+          <h2 className="text-xl font-semibold">
             {initial ? "Edit Device" : "New Device"}
           </h2>
           <button
@@ -126,7 +127,7 @@ function AccessModal({
         </div>
 
         {/* Body */}
-        <div className="px-6 py-5 flex flex-col gap-4">
+        <FieldsSection>
           {/* Name */}
           <div>
             <FormLabel>
@@ -195,10 +196,10 @@ function AccessModal({
           </div>
 
           <AETitleInfo aeTitle={form.ae_title} />
-        </div>
+        </FieldsSection>
 
         {/* Footer */}
-        <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-100">
+        <div className="flex justify-end gap-2 pt-6">
           <SecondaryButton onClick={onClose} label="Cancel"></SecondaryButton>
           <PrimaryButton
             label={initial ? "Save changes" : "Create"}

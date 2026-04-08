@@ -63,7 +63,7 @@ export default function Report({
     if (isDicomStudy) {
       const { data, error } = await supabase
         .from("dicom_study")
-        .select("*, hospital(id, name, ae_title), template:template_id(*)")
+        .select("*, hospital(id, name), template:template_id(*)")
         .eq("id", dicomId)
         .single();
       if (error) throw error;

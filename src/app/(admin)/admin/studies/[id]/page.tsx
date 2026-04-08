@@ -12,9 +12,9 @@ export default async function StudyReportPage({ params }: { params: Promise<{ id
   const [{ data: study }, { data: templates }] = await Promise.all([
     supabase
       .from("dicom_study")
-      .select("*, hospital(id, name, ae_title), template:template_id(*)")
+      .select("*, hospital(id, name), template:template_id(*)")
       .eq("id", id)
-      .single(),
+      .maybeSingle(),
     supabase
       .from("template")
       .select("*")
@@ -31,12 +31,7 @@ export default async function StudyReportPage({ params }: { params: Promise<{ id
           title="List of Studies"
           className="p-2 hover:text-cyan-400 transition-colors duration-300"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="36"
-            height="36"
-            viewBox="0 0 24 24"
-          >
+          <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24">
             <g fill="none" stroke="currentColor" strokeWidth="1.5">
               <path
                 d="M11.142 20c-2.227 0-3.341 0-4.27-.501c-.93-.502-1.52-1.42-2.701-3.259l-.681-1.06C2.497 13.634 2 12.86 2 12s.497-1.634 1.49-3.18l.68-1.06c1.181-1.838 1.771-2.757 2.701-3.259S8.915 4 11.142 4h2.637c3.875 0 5.813 0 7.017 1.172S22 8.229 22 12s0 5.657-1.204 6.828S17.654 20 13.78 20z"

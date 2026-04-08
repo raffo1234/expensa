@@ -2,7 +2,7 @@
 
 import { AeRouteType } from "@/types/aeRouteType";
 import { Icon } from "@iconify/react";
-import { startTransition, useOptimistic, useState } from "react";
+import { startTransition, useEffect, useOptimistic, useState } from "react";
 import useSWR from "swr";
 import toast from "react-hot-toast";
 import { supabase } from "@/lib/supabase";
@@ -72,6 +72,7 @@ function RouteModal({
   onClose: () => void;
   onSave: (form: FormState) => Promise<void>;
 }) {
+  const [mounted, setMounted] = useState(false);
   const [form, setForm] = useState<FormState>(
     initial
       ? {
@@ -131,14 +132,24 @@ function RouteModal({
     }
   };
 
+  useEffect(() => {
+    requestAnimationFrame(() => setMounted(true));
+  }, []);
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      className={`fixed inset-0 z-50 flex items-center justify-center transition-all duration-300 ${
+        mounted ? "bg-[rgb(255,255,255,.9)] visible" : "bg-white/0 invisible"
+      }`}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden">
+      <div
+        className={`bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden transition-all duration-300 ${
+          mounted ? "translate-y-0 opacity-100" : "-translate-y-6 opacity-80"
+        }`}
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h2 className="text-base font-semibold text-gray-800">

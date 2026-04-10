@@ -48,8 +48,8 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(data);
-  } catch {
-    console.error("[POST /api/pull/move]");
+  } catch (err) {
+    console.error("[POST /api/pull/move]", err);
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }

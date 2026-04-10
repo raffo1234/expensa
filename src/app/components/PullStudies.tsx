@@ -118,14 +118,21 @@ export default function PullStudies() {
 
     setPullingUID(study.StudyInstanceUID);
 
+    if (!selectedRoute.hospital?.id) {
+      toast.error("Route has no associated hospital");
+      setPullingUID(null);
+      return;
+    }
+
     try {
       const res = await fetch("/api/pull/move", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+
         body: JSON.stringify({
           aeTitle: selectedRoute.ae_title,
           studyInstanceUID: study.StudyInstanceUID,
-          hospitalId: selectedRoute.hospital?.id,
+          hospitalId: selectedRoute.hospital.id, // sin optional chaining
         }),
       });
 

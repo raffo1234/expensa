@@ -1,16 +1,13 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import syncUserWithDatabase from "@/lib/syncUserWithDatabase";
 import { supabase } from "./supabase";
-import CredentialsProvider from "next-auth/providers/credentials";
-import bcrypt from "bcryptjs";
+import { supabaseAdmin } from "./supabaseAdmin";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     GoogleProvider({
       clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
       clientSecret: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_SECRET,
-
       authorization: {
         params: {
           prompt: "consent",
@@ -20,49 +17,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
       checks: ["pkce"],
     }),
-    CredentialsProvider({
-      name: "Sign in with Email/Password",
-      async authorize(credentials) {
-        const email = credentials?.email;
-        const password = credentials?.password;
-
-        if (!email || !password) {
-          return null;
-        }
-
-        try {
-          const { data: user, error } = await supabase
-            .from("user")
-            .select("id, email, first_name, last_name, password")
-            .eq("email", email)
-            .single();
-
-          if (error) {
-            console.error("Error fetching user:", error);
-            return null;
-          }
-
-          if (!user) {
-            return null;
-          }
-
-          const isPasswordValid = await bcrypt.compare(password as string, user.password);
-
-          if (isPasswordValid) {
-            return {
-              id: user.id,
-              name: `${user.first_name || ""} ${user.last_name || ""}`.trim() || user.email,
-              email: user.email,
-            };
-          } else {
-            return null;
-          }
-        } catch (error) {
-          console.error("Error during authorization:", error);
-          return null;
-        }
-      },
-    }),
   ],
   session: {
     strategy: "jwt",
@@ -70,45 +24,44 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.AUTH_SECRET,
   callbacks: {
     async signIn({ user, account, profile }) {
-      if (user && account?.provider === "google" && profile) {
-        await syncUserWithDatabase(user, profile);
-      } else if (user && account?.provider === "credentials") {
-        console.log("Credentials sign-in successful for user:", user);
-      }
+      if (account?.provider === "google" && profile) {
+        const nameParts = (profile.name || "").split(" ");
 
+        await supabaseAdmin.from("user").upsert(
+          {
+            email: user.email,
+            name: profile.name,
+            first_name: nameParts[0] || null,
+            last_name: nameParts.slice(1).join(" ") || null,
+            image_url: profile.picture as string,
+          },
+          { onConflict: "email" },
+        );
+      }
       return true;
     },
     async jwt({ token }) {
       if (!token.user_id) {
-        try {
-          const { data: dbUser, error } = await supabase
-            .from("user")
-            .select("id, role_id")
-            .eq("email", token.email)
-            .single();
+        const { data: dbUser } = await supabase
+          .from("user")
+          .select("id")
+          .eq("email", token.email)
+          .single();
 
-          if (error) {
-            console.error("Error fetching user role in JWT callback:", error);
-          } else if (dbUser?.id) {
-            token.user_id = dbUser.id;
-            token.user_role_id = dbUser.role_id;
-          }
-        } catch (error) {
-          console.error("Error fetching user role in JWT callback:", error);
+        if (dbUser?.id) {
+          token.user_id = dbUser.id;
         }
       }
       return token;
     },
     async session({ session, token }) {
-      console.log("Session Callback Token:", token);
       if (token?.user_id) {
         session.user.id = token.user_id as string;
-        session.user.role_id = token.user_role_id as string;
       }
       return session;
     },
     async redirect({ baseUrl }) {
-      return `${baseUrl}/admin/dicom`;
+      return `${baseUrl}/admin`;
     },
   },
   debug: process.env.NODE_ENV === "development",

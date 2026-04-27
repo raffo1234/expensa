@@ -7,10 +7,14 @@ import { getTranslations } from "next-intl/server";
 import Why from "@/components/Why";
 import Footer from "@/components/Footer";
 import MissingReport from "@/components/MissingReport";
+import { supabase } from "@/lib/supabase";
+
 
 export default async function Index() {
   const [session, t] = await Promise.all([auth(), getTranslations("HomePage")]);
   const userRoleId = session?.user?.role_id || "";
+  const { data, error } = await supabase.from("user").select("*").limit(1);
+  console.log({ data, error });
 
   return (
     <>

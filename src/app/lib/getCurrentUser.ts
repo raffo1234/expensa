@@ -1,13 +1,14 @@
 import { auth } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { cache } from "react";
 
 type GetCurrentUserData = {
-  role_id: string;
+  id: string;
+  role_id: string | null;
   template_id: string | null;
   role: {
     name: string;
-  };
+  } | null;
 };
 
 export const getCurrentUser = cache(async () => {
@@ -16,13 +17,16 @@ export const getCurrentUser = cache(async () => {
 
   if (!user?.id || !user?.email) return null;
 
-  const { data } = (await supabase
+  const { data, error } = await supabaseAdmin
     .from("user")
-    .select("id,role_id, template_id, role(name)")
+    .select("id, role_id, role(name)")
     .eq("id", user.id)
-    .maybeSingle()) as { data: GetCurrentUserData | null };
+    .maybeSingle<GetCurrentUserData>();
 
-  if (!data?.role_id) return null;
+  console.log("4. db data:", JSON.stringify(data));
+  console.log("5. db error:", JSON.stringify(error));
+
+  if (!data?.role_id || !data?.role) return null;
 
   return {
     id: user.id,

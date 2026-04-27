@@ -1,6 +1,5 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import { supabase } from "./supabase";
 import { supabaseAdmin } from "./supabaseAdmin";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -27,30 +26,31 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (account?.provider === "google" && profile) {
         const nameParts = (profile.name || "").split(" ");
 
-        await supabaseAdmin.from("user").upsert(
-          {
-            email: user.email,
-            name: profile.name,
-            first_name: nameParts[0] || null,
-            last_name: nameParts.slice(1).join(" ") || null,
-            image_url: profile.picture as string,
-          },
-          { onConflict: "email" },
-        );
+        const { data } = await supabaseAdmin
+          .from("user")
+          .upsert(
+            {
+              email: user.email,
+              name: profile.name,
+              first_name: nameParts[0] || null,
+              last_name: nameParts.slice(1).join(" ") || null,
+              image_url: profile.picture as string,
+            },
+            { onConflict: "email" },
+          )
+          .select("id")
+          .single();
+
+        if (data?.id) {
+          user.id = data.id;
+        }
       }
       return true;
     },
-    async jwt({ token }) {
-      if (!token.user_id) {
-        const { data: dbUser } = await supabase
-          .from("user")
-          .select("id")
-          .eq("email", token.email)
-          .single();
-
-        if (dbUser?.id) {
-          token.user_id = dbUser.id;
-        }
+    async jwt({ token, user }) {
+      // `user` is only defined on the first sign-in — persist the DB id into the JWT
+      if (user?.id) {
+        token.user_id = user.id;
       }
       return token;
     },

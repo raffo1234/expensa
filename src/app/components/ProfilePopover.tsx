@@ -9,7 +9,7 @@ export default async function ProfilePopover() {
   const session = await auth();
   const user = await getCurrentUser();
   const t = await getTranslations("Popover");
-
+  console.log({user})
   return (
     <>
       {session?.user && user ? (

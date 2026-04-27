@@ -79,6 +79,11 @@ export default function PullStudies() {
       return;
     }
 
+    if (!selectedRoute.hospital?.id) {
+      toast.error("Route has no associated hospital");
+      return;
+    }
+
     setSearching(true);
     setResults(null);
 
@@ -87,9 +92,8 @@ export default function PullStudies() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          host: selectedRoute.host,
-          port: selectedRoute.port,
           aeTitle: selectedRoute.ae_title,
+          hospitalId: selectedRoute.hospital.id,
           filters,
         }),
       });
@@ -113,26 +117,25 @@ export default function PullStudies() {
     }
   };
 
+  // ── C-MOVE ────────────────────────────────────────────────────────────────
   const handlePull = async (study: StudyResult) => {
     if (!selectedRoute) return;
 
-    setPullingUID(study.StudyInstanceUID);
-
     if (!selectedRoute.hospital?.id) {
       toast.error("Route has no associated hospital");
-      setPullingUID(null);
       return;
     }
+
+    setPullingUID(study.StudyInstanceUID);
 
     try {
       const res = await fetch("/api/pull/move", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-
         body: JSON.stringify({
           aeTitle: selectedRoute.ae_title,
           studyInstanceUID: study.StudyInstanceUID,
-          hospitalId: selectedRoute.hospital.id, // sin optional chaining
+          hospitalId: selectedRoute.hospital.id,
         }),
       });
 

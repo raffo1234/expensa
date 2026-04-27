@@ -159,6 +159,22 @@ function GridCard({ ws }: { ws: Workspace }) {
         >
           Creado {formatDistanceToNow(new Date(ws.created_at), { addSuffix: true, locale: es })}
         </p>
+        <Link
+          href={`/admin/workspace/${ws.slug}/upload-expense`}
+          style={{ textDecoration: "none" }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <span
+            style={{
+              fontSize: 12,
+              color: "#06b6d4",
+              fontWeight: 500,
+              fontFamily: "'DM Sans', sans-serif",
+            }}
+          >
+            + Upload Expense
+          </span>
+        </Link>
       </div>
     </Link>
   );
@@ -219,6 +235,23 @@ function ListRow({ ws, isLast }: { ws: Workspace; isLast: boolean }) {
         >
           {formatDistanceToNow(new Date(ws.created_at), { addSuffix: true, locale: es })}
         </p>
+        <Link
+          href={`/admin/workspace/${ws.slug}/upload-expense`}
+          style={{ textDecoration: "none" }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <span
+            style={{
+              fontSize: 12,
+              color: "#06b6d4",
+              fontWeight: 500,
+              fontFamily: "'DM Sans', sans-serif",
+              whiteSpace: "nowrap",
+            }}
+          >
+            + Upload Expense
+          </span>
+        </Link>
         <span style={{ color: hovered ? "#06b6d4" : "#d1d5db", transition: "color 0.15s" }}>
           <ArrowIcon />
         </span>

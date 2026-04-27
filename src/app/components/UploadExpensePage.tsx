@@ -10,7 +10,13 @@ import { createExpense } from "@/actions/expenses";
 type Category = { id: string; name: string; color: string | null };
 type FileItem = { id: string; file: File; preview?: string };
 
-// ── SWR fetcher ──────────────────────────────────────────────────────────────
+// ── SWR fetchers ─────────────────────────────────────────────────────────────
+async function fetchWorkspace(slug: string): Promise<{ id: string }> {
+  const { data, error } = await supabase.from("workspace").select("id").eq("slug", slug).single();
+  if (error) throw error;
+  return data;
+}
+
 async function fetchCategories(workspaceId: string): Promise<Category[]> {
   const { data, error } = await supabase
     .from("category")
@@ -40,13 +46,20 @@ const inputCls =
 const labelCls = "block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide";
 
 // ── Component ────────────────────────────────────────────────────────────────
-export default function UploadExpensePage() {
+
+export default function UploadExpensePage({ userId }: { userId: string }) {
   const params = useParams();
-  const workspaceId = params.workspaceId as string;
   const workspaceSlug = params.slug as string;
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const dropRef = useRef<HTMLLabelElement>(null);
+
+  // Fetch workspace ID from slug
+  const { data: workspace } = useSWR(
+    workspaceSlug ? ["workspace", workspaceSlug] : null,
+    ([, slug]) => fetchWorkspace(slug),
+  );
+  const workspaceId = workspace?.id ?? "";
 
   const { data: categories = [], isLoading: catsLoading } = useSWR(
     workspaceId ? ["categories", workspaceId] : null,
@@ -101,6 +114,16 @@ export default function UploadExpensePage() {
     e.preventDefault();
     setError(null);
 
+    if (!workspaceId) {
+      setError("No se pudo obtener el workspace. Intenta recargar la página.");
+      return;
+    }
+
+    if (!userId) {
+      setError("No se pudo obtener el usuario autenticado. Intenta recargar la página.");
+      return;
+    }
+
     const amountCents = Math.round(parseFloat(form.amount) * 100);
     if (isNaN(amountCents) || amountCents <= 0) {
       setError("El monto debe ser un número mayor a 0.");
@@ -122,6 +145,7 @@ export default function UploadExpensePage() {
       const result = await createExpense({
         workspace_id: workspaceId,
         workspace_slug: workspaceSlug,
+        created_by: userId,
         category_id: form.category_id || undefined,
         provider: form.provider || undefined,
         amount: amountCents,
@@ -461,7 +485,7 @@ export default function UploadExpensePage() {
 
             <button
               type="submit"
-              disabled={isPending || success}
+              disabled={isPending || success || !workspaceId || !userId}
               className="flex-1 flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg
                          text-sm font-semibold text-white transition-all duration-150
                          active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"

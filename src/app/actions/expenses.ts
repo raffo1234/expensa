@@ -1,74 +1,67 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { randomUUID } from "crypto";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getCurrentUser } from "@/lib/getCurrentUser";
+import { revalidatePath } from "next/cache";
 import { uploadToR2 } from "@/lib/r2";
-import { supabase } from "@/lib/supabase";
 
-export type CreateExpenseInput = {
-  workspace_id: string;
-  category_id?: string;
-  provider?: string;
-  amount: number; // en céntimos / entero
-  currency: string;
-  paid_at: string; // ISO date
-  payment_method?: string;
-  notes?: string;
-  files: { name: string; type: string; buffer: number[] }[];
+type SerializedFile = {
+  name: string;
+  type: string;
+  buffer: number[];
 };
 
-export async function createExpense(input: CreateExpenseInput) {
-  const user = await getCurrentUser();
+type CreateExpenseInput = {
+  workspace_id: string;
+  workspace_slug: string;
+  category_id?: string;
+  provider?: string;
+  amount: number;
+  currency: string;
+  paid_at: string;
+  payment_method?: string;
+  notes?: string;
+  files: SerializedFile[];
+};
 
-  if (!user) return { error: "Unauthorized" };
+export async function createExpense(input: CreateExpenseInput): Promise<{ error?: string }> {
+  const user = await getCurrentUser();
+  if (!user) return { error: "No autenticado" };
 
   // 1. Insert expense
-  const { data: expense, error: expenseError } = await supabase
+  const { data: expense, error: expenseError } = await supabaseAdmin
     .from("expense")
     .insert({
       workspace_id: input.workspace_id,
-      category_id: input.category_id || null,
-      provider: input.provider || null,
+      category_id: input.category_id ?? null,
+      provider: input.provider ?? null,
       amount: input.amount,
       currency: input.currency,
       paid_at: input.paid_at,
-      payment_method: input.payment_method || null,
-      notes: input.notes || null,
-      created_by: user?.id,
+      payment_method: input.payment_method ?? null,
+      notes: input.notes ?? null,
+      created_by: user.id,
     })
     .select("id")
     .single();
 
-  if (expenseError || !expense) {
-    return { error: expenseError?.message ?? "Failed to create expense" };
+  if (expenseError) return { error: expenseError.message };
+
+  // 2. Upload files to R2 + insert expense_attachment rows
+  for (const file of input.files) {
+    const ext = file.name.split(".").pop();
+    const uniqueName = `${crypto.randomUUID()}.${ext}`;
+    const storagePath = `${input.workspace_slug}/${expense.id}/${uniqueName}`;
+
+    await uploadToR2(storagePath, Buffer.from(file.buffer), file.type);
+
+    await supabaseAdmin.from("expense_attachment").insert({
+      expense_id: expense.id,
+      storage_path: storagePath,
+      file_name: file.name,
+    });
   }
 
-  // 2. Upload attachments to R2 + insert expense_attachment rows
-  if (input.files.length > 0) {
-    for (const file of input.files) {
-      const ext = file.name.split(".").pop();
-      const key = `${input.workspace_id}/${expense.id}/${randomUUID()}.${ext}`;
-      const buffer = Buffer.from(file.buffer);
-
-      try {
-        await uploadToR2(key, buffer, file.type);
-      } catch (err: any) {
-        return { error: `R2 upload failed: ${err.message}` };
-      }
-
-      const { error: attachError } = await supabase.from("expense_attachment").insert({
-        expense_id: expense.id,
-        storage_path: key,
-        file_name: file.name,
-      });
-
-      if (attachError) {
-        return { error: attachError.message };
-      }
-    }
-  }
-
-  revalidatePath(`/workspaces/${input.workspace_id}/expenses`);
-  return { data: expense };
+  revalidatePath(`/admin/workspace/${input.workspace_slug}/expenses`);
+  return {};
 }

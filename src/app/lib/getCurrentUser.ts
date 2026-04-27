@@ -18,7 +18,7 @@ export const getCurrentUser = cache(async () => {
 
   const { data } = (await supabase
     .from("user")
-    .select("role_id, template_id, role(name)")
+    .select("id,role_id, template_id, role(name)")
     .eq("id", user.id)
     .maybeSingle()) as { data: GetCurrentUserData | null };
 

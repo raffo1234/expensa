@@ -93,90 +93,92 @@ const WorkspaceIcon = ({ char }: { char: string }) => (
 function GridCard({ ws }: { ws: Workspace }) {
   const [hovered, setHovered] = useState(false);
   return (
-    <Link href={`/admin/workspace/${ws.slug}`} style={{ textDecoration: "none" }}>
-      <div
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        style={{
-          background: "#fff",
-          border: `1.5px solid ${hovered ? "#06b6d4" : "#e5e7eb"}`,
-          borderRadius: 14,
-          padding: "24px 22px 20px",
-          cursor: "pointer",
-          transition: "border-color 0.18s, box-shadow 0.18s, transform 0.18s",
-          boxShadow: hovered ? "0 4px 20px rgba(6,182,212,0.10)" : "0 1px 4px rgba(0,0,0,0.04)",
-          transform: hovered ? "translateY(-2px)" : "none",
-          display: "flex",
-          flexDirection: "column",
-          gap: 14,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-          <WorkspaceIcon char={ws.name[0].toUpperCase()} />
-          <span
-            style={{
-              fontSize: 11,
-              color: hovered ? "#06b6d4" : "#9ca3af",
-              transition: "color 0.18s",
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-            }}
+    <div
+      style={{
+        background: "#fff",
+        border: `1.5px solid ${hovered ? "#06b6d4" : "#e5e7eb"}`,
+        borderRadius: 14,
+        padding: "24px 22px 20px",
+        cursor: "pointer",
+        transition: "border-color 0.18s, box-shadow 0.18s, transform 0.18s",
+        boxShadow: hovered ? "0 4px 20px rgba(6,182,212,0.10)" : "0 1px 4px rgba(0,0,0,0.04)",
+        transform: hovered ? "translateY(-2px)" : "none",
+        display: "flex",
+        flexDirection: "column",
+        gap: 14,
+      }}
+    >
+      <Link href={`/admin/workspace/${ws.slug}/upload-expense`} style={{ textDecoration: "none" }}>
+        <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
+          <div
+            style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}
           >
-            Abrir <ArrowIcon />
-          </span>
-        </div>
-        <div>
+            <WorkspaceIcon char={ws.name[0].toUpperCase()} />
+            <span
+              style={{
+                fontSize: 11,
+                color: hovered ? "#06b6d4" : "#9ca3af",
+                transition: "color 0.18s",
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+              }}
+            >
+              New expense <ArrowIcon />
+            </span>
+          </div>
+          <div>
+            <p
+              style={{
+                margin: 0,
+                fontWeight: 600,
+                fontSize: 15,
+                color: "#111827",
+                fontFamily: "'DM Sans', sans-serif",
+              }}
+            >
+              {ws.name}
+            </p>
+            <p
+              style={{
+                margin: "3px 0 0",
+                fontSize: 12,
+                color: "#9ca3af",
+                fontFamily: "'DM Sans', sans-serif",
+              }}
+            >
+              /{ws.slug}
+            </p>
+          </div>
           <p
             style={{
               margin: 0,
-              fontWeight: 600,
-              fontSize: 15,
-              color: "#111827",
-              fontFamily: "'DM Sans', sans-serif",
-            }}
-          >
-            {ws.name}
-          </p>
-          <p
-            style={{
-              margin: "3px 0 0",
-              fontSize: 12,
+              fontSize: 11.5,
               color: "#9ca3af",
               fontFamily: "'DM Sans', sans-serif",
             }}
           >
-            /{ws.slug}
+            Creado {formatDistanceToNow(new Date(ws.created_at), { addSuffix: true, locale: es })}
           </p>
         </div>
-        <p
+      </Link>
+      <Link
+        href={`/admin/workspace/${ws.slug}/upload-expense`}
+        style={{ textDecoration: "none" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <span
           style={{
-            margin: 0,
-            fontSize: 11.5,
-            color: "#9ca3af",
+            fontSize: 12,
+            color: "#06b6d4",
+            fontWeight: 500,
             fontFamily: "'DM Sans', sans-serif",
           }}
         >
-          Creado {formatDistanceToNow(new Date(ws.created_at), { addSuffix: true, locale: es })}
-        </p>
-        <Link
-          href={`/admin/workspace/${ws.slug}/upload-expense`}
-          style={{ textDecoration: "none" }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <span
-            style={{
-              fontSize: 12,
-              color: "#06b6d4",
-              fontWeight: 500,
-              fontFamily: "'DM Sans', sans-serif",
-            }}
-          >
-            + Upload Expense
-          </span>
-        </Link>
-      </div>
-    </Link>
+          + Upload Expense
+        </span>
+      </Link>
+    </div>
   );
 }
 

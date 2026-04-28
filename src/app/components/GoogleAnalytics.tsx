@@ -10,7 +10,7 @@ export default function GoogleAnalytics() {
   return (
     <>
       {/* GA4 main script */}
-      <Script
+      {/* <Script
         src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
         strategy="afterInteractive"
       />
@@ -23,7 +23,7 @@ export default function GoogleAnalytics() {
             page_path: window.location.pathname,
           });
         `}
-      </Script>
+      </Script> */}
     </>
   );
 }

@@ -1,17 +1,15 @@
 import ProfilePopover from "@/components/ProfilePopover";
-import LocaleSwitcher from "./LocaleSwitcher";
-import LogoLink from "./LogoLink";
-import WhatsappLink from "./WhatsappLink";
 
 export default async function Header() {
   return (
-    <nav className="max-w-[1816px] w-full mx-auto p-4 justify-between flex items-center">
-      <LogoLink />
-      <div className="flex gap-2 items-center">
-        <LocaleSwitcher />
-        <WhatsappLink />
-        <ProfilePopover />
-      </div>
+    <nav className="flex justify-between items-center px-8 py-6">
+      <span
+        className="text-sm font-semibold tracking-widest uppercase"
+        style={{ color: "#4d1d6a" }}
+      >
+        Expensa
+      </span>
+      <ProfilePopover />
     </nav>
   );
 }

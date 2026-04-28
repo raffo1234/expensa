@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import getAttachmentUrl from "@/lib/getAttachmentUrl";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type ExpenseAttachment = {
@@ -52,11 +53,6 @@ const CURRENCY_SYMBOL: Record<string, string> = { PEN: "S/", USD: "$", EUR: "€
 function formatAmount(amount: number, currency: string) {
   const sym = CURRENCY_SYMBOL[currency] ?? currency;
   return `${sym} ${(amount / 100).toFixed(2)}`;
-}
-
-function getAttachmentUrl(storagePath: string) {
-  const { data } = supabase.storage.from("expenses").getPublicUrl(storagePath);
-  return data.publicUrl;
 }
 
 function isImage(storagePath: string) {
@@ -281,7 +277,7 @@ export default function ExpenseDetailPage() {
               </button>
               <button
                 onClick={() =>
-                  router.push(`/admin/workspace/${workspaceSlug}/upload-expense?edit=${expense.id}`)
+                  router.push(`/admin/workspace/${workspaceSlug}/expenses/${expense.id}/edit`)
                 }
                 className="px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-all shadow-sm"
                 style={{

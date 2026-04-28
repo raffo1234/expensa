@@ -5,45 +5,51 @@ import useSWR from "swr";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import getAttachmentUrl from "@/lib/getAttachmentUrl";
+import { Expense } from "@/types/ExpenseType";
+import { Category } from "@/types/CategoryType";
+import { ExpenseAttachment } from "@/types/ExpenseAttachment";
+import { Provider } from "@/types/ProviderType";
 
-// ── Types ────────────────────────────────────────────────────────────────────
-type Category = { id: string; name: string; color: string | null };
+async function fetchProviders(workspaceId: string): Promise<Provider[]> {
+  const { data, error } = await supabase
+    .from("provider")
+    .select("id, name")
+    .eq("workspace_id", workspaceId)
+    .order("name");
 
-type ExpenseAttachment = {
-  id: string;
-  file_name: string | null;
-  storage_path: string;
-};
-
-type Expense = {
-  id: string;
-  provider: string | null;
-  amount: number;
-  currency: string;
-  paid_at: string;
-  payment_method: string | null;
-  notes: string | null;
-  category_id: string | null;
-  category: Category | null;
-  expense_attachment: ExpenseAttachment[];
-};
+  if (error) throw error;
+  return data ?? [];
+}
 
 // ── Fetchers ──────────────────────────────────────────────────────────────────
-async function fetchExpense(expenseId: string): Promise<Expense> {
+async function fetchExpense(expenseId: string, workspaceId: string): Promise<Expense> {
   const { data, error } = await supabase
     .from("expense")
     .select(
       `
-      id, provider, amount, currency, paid_at,
-      payment_method, notes, category_id,
-      category(id, name, color),
+      id, amount, currency, paid_at, payment_method, notes, created_at,
+      provider:provider_id(id, name),
+      category:category_id(id, name, color),
       expense_attachment(id, file_name, storage_path)
     `,
     )
     .eq("id", expenseId)
+    .eq("workspace_id", workspaceId)
     .single();
+
   if (error) throw error;
-  return data as unknown as Expense;
+  return data;
+}
+
+async function fetchWorkspace(slug: string): Promise<{ id: string; name: string }> {
+  const { data, error } = await supabase
+    .from("workspace")
+    .select("id, name")
+    .eq("slug", slug)
+    .single();
+
+  if (error) throw error;
+  return data;
 }
 
 async function fetchCategories(): Promise<Category[]> {
@@ -123,15 +129,26 @@ export default function EditExpensePage() {
   const expenseId = params.id as string;
   const router = useRouter();
 
-  const {
-    data: expense,
-    isLoading,
-    error,
-  } = useSWR(expenseId ? ["expense", expenseId] : null, ([, id]) => fetchExpense(id));
+  const { data: workspace } = useSWR(
+    workspaceSlug ? ["workspace", workspaceSlug] : null,
+    ([, slug]) => fetchWorkspace(slug),
+  );
+
+  const workspaceId = workspace?.id;
+
+  const { data: expense, error } = useSWR(
+    expenseId && workspaceId ? ["expense", expenseId, workspaceId] : null,
+    ([, id, wid]) => fetchExpense(id, wid),
+  );
   const { data: categories = [] } = useSWR("categories", fetchCategories);
 
+  const { data: providers = [], isLoading: providersLoading } = useSWR(
+    workspaceId ? ["providers", workspaceId] : null,
+    ([, wid]) => fetchProviders(wid),
+  );
+
   // ── Form state ──
-  const [provider, setProvider] = useState("");
+  const [provider_id, setProviderId] = useState<string | null>(null);
   const [amount, setAmount] = useState("");
   const [currency, setCurrency] = useState("PEN");
   const [paidAt, setPaidAt] = useState("");
@@ -151,13 +168,13 @@ export default function EditExpensePage() {
   // ── Populate form ──
   useEffect(() => {
     if (!expense) return;
-    setProvider(expense.provider ?? "");
+    setProviderId(expense.provider?.id ?? "");
     setAmount((expense.amount / 100).toFixed(2));
     setCurrency(expense.currency.trim());
     setPaidAt(expense.paid_at);
     setPaymentMethod(expense.payment_method ?? "");
     setNotes(expense.notes ?? "");
-    setCategoryId(expense.category_id ?? "");
+    setCategoryId(expense.category?.id ?? "");
     setExistingAttachments(expense.expense_attachment ?? []);
   }, [expense]);
 
@@ -185,7 +202,7 @@ export default function EditExpensePage() {
       const { error: updateError } = await supabase
         .from("expense")
         .update({
-          provider: provider.trim() || null,
+          provider_id: provider_id || null,
           amount: Math.round(parseFloat(amount) * 100),
           currency,
           paid_at: paidAt,
@@ -256,7 +273,7 @@ export default function EditExpensePage() {
               onClick={() => router.push(`/admin/workspace/${workspaceSlug}/expenses/${expenseId}`)}
               className="text-gray-500 hover:text-cyan-600 transition-colors px-2 py-1 rounded-md hover:bg-cyan-50 truncate max-w-[120px]"
             >
-              {isLoading ? "..." : (expense?.provider ?? "Sin proveedor")}
+              {providersLoading ? "..." : (expense?.provider?.name ?? "Sin proveedor")}
             </button>
             <span className="text-gray-300">/</span>
             <span className="text-gray-900 font-medium px-2 py-1">Editar</span>
@@ -272,7 +289,7 @@ export default function EditExpensePage() {
 
       <div className="max-w-2xl mx-auto px-6 py-10">
         {/* Loading */}
-        {isLoading && (
+        {providersLoading && (
           <div className="flex items-center justify-center py-32 text-gray-400 text-sm gap-2">
             <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
               <circle
@@ -333,7 +350,20 @@ export default function EditExpensePage() {
 
               <div>
                 <Label>Proveedor</Label>
-                <Input value={provider} onChange={setProvider} placeholder="Nombre del proveedor" />
+                <select
+                  value={provider_id ?? ""}
+                  onChange={(e) => setProviderId(e.target.value)}
+                  className="w-full bg-white border border-gray-200 rounded-lg px-4 py-3 text-sm text-gray-900
+             focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/10"
+                >
+                  <option value="">Sin proveedor</option>
+
+                  {providers.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="flex gap-3">

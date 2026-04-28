@@ -15,10 +15,7 @@ type CreateExpenseInput = {
   workspace_id: string;
   workspace_slug: string;
   category_id?: string;
-
-  // 🔥 FIX: renombrar correctamente
   provider_id?: string;
-
   amount: number;
   currency: string;
   paid_at: string;

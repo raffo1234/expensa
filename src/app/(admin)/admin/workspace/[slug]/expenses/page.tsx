@@ -30,13 +30,16 @@ async function fetchExpenses(workspaceId: string): Promise<Expense[]> {
   const { data, error } = await supabase
     .from("expense")
     .select(
-      `id, invoice_series, invoice_number, amount, currency,
-       issued_at, paid_at, payment_method, notes, created_at,
-       provider(id, name),
-       category(id, name, color)`,
+      `
+      id, invoice_series, invoice_number, amount, currency,
+      issued_at, paid_at, payment_method, notes, created_at,
+      provider:provider_id(id, name),
+      category:category_id(id, name, color)
+    `,
     )
     .eq("workspace_id", workspaceId)
     .order("paid_at", { ascending: false });
+
   if (error) throw error;
   return (data as unknown as Expense[]) ?? [];
 }
@@ -121,6 +124,10 @@ export default function ExpensesPage() {
   } = useSWR(workspaceId ? ["expenses", workspaceId] : null, ([, wid]) => fetchExpenses(wid));
 
   const currencies = [...new Set(expenses.map((e) => e.currency))];
+
+  console.log("workspaceId:", workspaceId);
+  console.log({ expenses, currencies });
+  console.log({ workspaceId, expenses });
 
   const filtered = expenses.filter((e) => {
     const providerName = e.provider?.name ?? "";
@@ -268,8 +275,20 @@ export default function ExpensesPage() {
         {isLoading && (
           <div className="flex items-center justify-center py-24 text-gray-400 text-sm gap-2">
             <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeOpacity="0.25" />
-              <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeOpacity="0.25"
+              />
+              <path
+                d="M12 2a10 10 0 0 1 10 10"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeLinecap="round"
+              />
             </svg>
             Cargando gastos...
           </div>
@@ -286,14 +305,24 @@ export default function ExpensesPage() {
         {!isLoading && !error && expenses.length === 0 && (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="w-12 h-12 rounded-2xl bg-cyan-50 flex items-center justify-center mb-4">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" strokeWidth="1.8" strokeLinecap="round">
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#06b6d4"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+              >
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="17 8 12 3 7 8" />
                 <line x1="12" y1="3" x2="12" y2="15" />
               </svg>
             </div>
             <p className="text-gray-700 font-semibold text-base">Sin gastos aún</p>
-            <p className="text-gray-400 text-sm mt-1 mb-5">Registra tu primer gasto para verlo aquí.</p>
+            <p className="text-gray-400 text-sm mt-1 mb-5">
+              Registra tu primer gasto para verlo aquí.
+            </p>
             <Link href={`/admin/workspace/${workspaceSlug}/upload-expense`}>
               <button
                 className="flex items-center gap-2 text-sm font-semibold text-white px-5 py-2.5 rounded-lg"
@@ -317,7 +346,10 @@ export default function ExpensesPage() {
           <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
             <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 px-5 py-3 border-b border-gray-100 bg-gray-50/60">
               {["Proveedor / Factura", "Categoría", "Método", "Fecha", "Monto"].map((h) => (
-                <span key={h} className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                <span
+                  key={h}
+                  className="text-[11px] font-bold text-gray-400 uppercase tracking-widest"
+                >
                   {h}
                 </span>
               ))}

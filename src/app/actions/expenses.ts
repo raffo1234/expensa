@@ -15,7 +15,10 @@ type CreateExpenseInput = {
   workspace_id: string;
   workspace_slug: string;
   category_id?: string;
-  provider?: string;
+
+  // 🔥 FIX: renombrar correctamente
+  provider_id?: string;
+
   amount: number;
   currency: string;
   paid_at: string;
@@ -34,7 +37,10 @@ export async function createExpense(input: CreateExpenseInput): Promise<{ error?
     .insert({
       workspace_id: input.workspace_id,
       category_id: input.category_id ?? null,
-      provider: input.provider ?? null,
+
+      // 🔥 FIX CLAVE
+      provider_id: input.provider_id ?? null,
+
       amount: input.amount,
       currency: input.currency,
       paid_at: input.paid_at,

@@ -16,7 +16,9 @@ type ExpenseAttachment = {
 
 type Expense = {
   id: string;
-  provider: string | null;
+  provider: {
+    name: string;
+  } | null;
   amount: number;
   currency: string;
   paid_at: string;
@@ -34,17 +36,18 @@ async function fetchExpense(expenseId: string): Promise<Expense> {
     .from("expense")
     .select(
       `
-      id, provider, amount, currency, paid_at,
+      id, amount, currency, paid_at,
+      provider:provider_id(name),
       payment_method, notes, created_at,
       category(id, name, color),
-      created_by_user:user(id, email),
+      user:user(id, email),
       expense_attachment(id, file_name, storage_path)
     `,
     )
     .eq("id", expenseId)
     .single();
   if (error) throw error;
-  return data as Expense;
+  return data as unknown as Expense;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -131,6 +134,8 @@ export default function ExpenseDetailPage() {
     error,
   } = useSWR(expenseId ? ["expense", expenseId] : null, ([, id]) => fetchExpense(id));
 
+  console.log({error})
+
   const categoryColor = expense?.category?.color ?? "#06b6d4";
 
   return (
@@ -158,7 +163,7 @@ export default function ExpenseDetailPage() {
             </button>
             <span className="text-gray-300">/</span>
             <span className="text-gray-900 font-medium px-2 py-1 truncate max-w-[160px]">
-              {isLoading ? "..." : (expense?.provider ?? "Sin proveedor")}
+              {isLoading ? "..." : (expense?.provider?.name ?? "Sin proveedor")}
             </span>
           </div>
           <button
@@ -230,7 +235,7 @@ export default function ExpenseDetailPage() {
                 Detalles
               </h2>
               <DetailRow label="Proveedor">
-                {expense.provider ?? <span className="text-gray-400">—</span>}
+                {expense.provider?.name ?? <span className="text-gray-400">—</span>}
               </DetailRow>
               <DetailRow label="Moneda">{expense.currency}</DetailRow>
               <DetailRow label="Método de pago">

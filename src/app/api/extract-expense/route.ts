@@ -28,11 +28,12 @@ const SUPPORTED_MIME_TYPES: SupportedMimeType[] = [
   "application/pdf",
 ];
 
-const MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite"] as const;
+const MODELS = ["gemini-2.5-flash-lite", "gemini-2.5-flash"] as const;
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
 const InvoiceSchema = z.object({
+  provider_ruc: z.string().nullable().describe("RUC del proveedor, ej: 20129646099"),
   amount: z.number().nullable().describe("Monto total a pagar, ej: 211.99"),
   currency: z.enum(["PEN", "USD", "EUR"]).nullable().describe("Moneda del documento"),
   paid_at: z.string().nullable().describe("Fecha de pago en formato YYYY-MM-DD"),

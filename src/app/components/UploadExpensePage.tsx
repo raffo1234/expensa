@@ -8,7 +8,7 @@ import { createExpense } from "@/actions/expenses";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type Category = { id: string; name: string; color: string | null };
-type Provider = { id: string; name: string };
+type Provider = { id: string; name: string; ruc: string }; // ← added ruc
 type FileItem = { id: string; file: File; preview?: string };
 
 // ── SWR fetchers ─────────────────────────────────────────────────────────────
@@ -31,7 +31,7 @@ async function fetchCategories(workspaceId: string): Promise<Category[]> {
 async function fetchProviders(workspaceId: string): Promise<Provider[]> {
   const { data, error } = await supabase
     .from("provider")
-    .select("id, name")
+    .select("id, name, ruc") // ← added ruc
     .eq("workspace_id", workspaceId)
     .order("name");
   if (error) throw error;
@@ -99,7 +99,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
   );
 
   const [form, setForm] = useState({
-    provider_id: "",
+    provider_id: "",        // controls the <select> UI only
     invoice_series: "",
     invoice_number: "",
     amount: "",
@@ -110,17 +110,41 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
     category_id: "",
     notes: "",
   });
+
+  // Resolved provider data sent to the server action (ruc + name)
+  // This is what createExpense uses to find-or-create the provider
+  const [resolvedProvider, setResolvedProvider] = useState<{
+    ruc: string | null;
+    name: string | null;
+  }>({ ruc: null, name: null });
+
   const [files, setFiles] = useState<FileItem[]>([]);
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [extracting, setExtracting] = useState(false);
-  const [extractedProviderName, setExtractedProviderName] = useState<string | null>(null);
+
+  // Whether the extracted provider wasn't found in the list (will be auto-created)
+  const willCreateProvider =
+    resolvedProvider.ruc !== null && !form.provider_id;
 
   const set =
     (k: keyof typeof form) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
       setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  // When the user manually picks a provider from the dropdown
+  const handleProviderChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const id = e.target.value;
+    setForm((f) => ({ ...f, provider_id: id }));
+
+    if (id) {
+      const provider = providers.find((p) => p.id === id);
+      setResolvedProvider({ ruc: provider?.ruc ?? null, name: provider?.name ?? null });
+    } else {
+      setResolvedProvider({ ruc: null, name: null });
+    }
+  };
 
   const addFiles = useCallback(
     async (incoming: File[]) => {
@@ -138,11 +162,12 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
         })),
       ]);
 
-      // Auto-extract from the first new file only
       setExtracting(true);
-      setExtractedProviderName(null);
+      setResolvedProvider({ ruc: null, name: null });
+
       try {
         const extracted = await extractFromReceipt(allowed[0]);
+
         setForm((f) => ({
           ...f,
           ...(extracted.amount ? { amount: String(extracted.amount) } : {}),
@@ -159,13 +184,27 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
             : {}),
         }));
 
-        // Try to match provider by name
-        if (extracted.provider_name) {
-          setExtractedProviderName(extracted.provider_name);
-          const match = providers.find((p) =>
-            p.name.toLowerCase().includes(extracted.provider_name.toLowerCase()),
+        // Resolve provider: try to match existing, otherwise queue for auto-creation
+        if (extracted.provider_ruc || extracted.provider_name) {
+          const match = providers.find(
+            (p) =>
+              (extracted.provider_ruc && p.ruc === extracted.provider_ruc) ||
+              (extracted.provider_name &&
+                p.name.toLowerCase().includes(extracted.provider_name.toLowerCase())),
           );
-          if (match) setForm((f) => ({ ...f, provider_id: match.id }));
+
+          if (match) {
+            // Already exists — pre-select it in the dropdown
+            setForm((f) => ({ ...f, provider_id: match.id }));
+            setResolvedProvider({ ruc: match.ruc, name: match.name });
+          } else {
+            // Doesn't exist — will be auto-created on submit
+            setForm((f) => ({ ...f, provider_id: "" }));
+            setResolvedProvider({
+              ruc: extracted.provider_ruc ?? null,
+              name: extracted.provider_name ?? null,
+            });
+          }
         }
       } catch {
         // silently fail — user fills manually
@@ -217,13 +256,18 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
       }),
     );
 
+    // Determine the ruc + name to send:
+    // - User picked from dropdown → resolvedProvider has that provider's ruc
+    // - AI found a new one → resolvedProvider has the extracted ruc
+    // - User left blank → both null → no provider linked
     startTransition(async () => {
       const result = await createExpense({
         workspace_id: workspaceId,
         workspace_slug: workspaceSlug,
         created_by: userId,
         category_id: form.category_id || undefined,
-        provider_id: form.provider_id || undefined,
+        provider_ruc: resolvedProvider.ruc,
+        provider_name: resolvedProvider.name,
         invoice_series: form.invoice_series || undefined,
         invoice_number: form.invoice_number || undefined,
         amount: amountCents,
@@ -285,7 +329,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Adjuntos — moved to top so extraction happens first */}
+          {/* Adjuntos */}
           <section className="bg-white border border-gray-200 rounded-xl p-5 space-y-3 shadow-sm">
             <div className="flex items-center justify-between">
               <h2 className="text-[11px] font-bold text-cyan-600 uppercase tracking-widest">
@@ -384,34 +428,36 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
               </div>
             )}
 
-            {/* Extracted provider hint */}
-            {!extracting && extractedProviderName && !form.provider_id && (
-              <div className="flex items-center gap-2.5 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5">
+            {/* New provider — will be auto-created */}
+            {!extracting && willCreateProvider && (
+              <div className="flex items-center gap-2.5 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2.5">
                 <svg
                   width="14"
                   height="14"
                   viewBox="0 0 24 24"
                   fill="none"
-                  className="text-amber-500 flex-shrink-0"
+                  className="text-emerald-500 flex-shrink-0"
                 >
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
                   <path
-                    d="M12 8v4M12 16h.01"
+                    d="M12 5v14M5 12h14"
                     stroke="currentColor"
                     strokeWidth="2"
                     strokeLinecap="round"
                   />
                 </svg>
-                <p className="text-xs text-amber-700">
-                  Proveedor detectado:{" "}
-                  <span className="font-semibold">{extractedProviderName}</span> — no encontrado en
-                  tu lista, selecciónalo manualmente.
+                <p className="text-xs text-emerald-700">
+                  Nuevo proveedor detectado:{" "}
+                  <span className="font-semibold">{resolvedProvider.name}</span>
+                  {resolvedProvider.ruc && (
+                    <span className="text-emerald-500"> · RUC {resolvedProvider.ruc}</span>
+                  )}
+                  {" "}— se creará automáticamente al guardar.
                 </p>
               </div>
             )}
 
             {/* Success extraction hint */}
-            {!extracting && files.length > 0 && !extractedProviderName && (
+            {!extracting && files.length > 0 && !willCreateProvider && form.provider_id && (
               <div className="flex items-center gap-2 text-xs text-cyan-600">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
                   <path
@@ -545,11 +591,15 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
               <label className={labelCls}>Proveedor</label>
               <select
                 value={form.provider_id}
-                onChange={set("provider_id")}
+                onChange={handleProviderChange}
                 disabled={providersLoading}
                 className={`${inputCls} appearance-none cursor-pointer disabled:opacity-40`}
               >
-                <option value="">Sin proveedor</option>
+                <option value="">
+                  {willCreateProvider
+                    ? `✦ ${resolvedProvider.name} (nuevo)`
+                    : "Sin proveedor"}
+                </option>
                 {providers.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
@@ -728,7 +778,6 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                       stroke="currentColor"
                       strokeWidth="2"
                       strokeLinecap="round"
-                      strokeLinejoin="round"
                     />
                   </svg>
                   Guardar gasto

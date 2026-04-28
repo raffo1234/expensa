@@ -573,7 +573,7 @@ export default function ProvidersPage() {
         {!isLoading && providers.length > 0 && filtered.length === 0 && (
           <div className="text-center py-16 text-sm text-gray-400">
             No se encontraron proveedores para{" "}
-            <span className="font-medium text-gray-600">"{search}"</span>.
+            <span className="font-medium text-gray-600">{search}</span>.
           </div>
         )}
 

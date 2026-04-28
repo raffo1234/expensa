@@ -275,11 +275,6 @@ export default function WorkspaceClient({ workspaces }: { workspaces: Workspace[
 
   return (
     <div style={{ minHeight: "100vh", background: "#f9fafb", fontFamily: "'DM Sans', sans-serif" }}>
-      <link
-        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap"
-        rel="stylesheet"
-      />
-
       <div style={{ maxWidth: 900, margin: "0 auto", padding: "48px 24px" }}>
         {/* Header */}
         <div
@@ -424,7 +419,7 @@ export default function WorkspaceClient({ workspaces }: { workspaces: Workspace[
         {/* Empty state — search no match */}
         {workspaces.length > 0 && filtered.length === 0 && (
           <div style={{ textAlign: "center", padding: "64px 0", color: "#9ca3af" }}>
-            <p style={{ fontSize: 15, margin: 0 }}>Ningún workspace coincide con "{search}"</p>
+            <p style={{ fontSize: 15, margin: 0 }}>Ningún workspace coincide con &quot;{search}&quot;</p>
           </div>
         )}
 

@@ -337,7 +337,7 @@ export default function ExpensesPage() {
         {/* No search results */}
         {!isLoading && expenses.length > 0 && filtered.length === 0 && (
           <div className="text-center py-16 text-gray-400 text-sm">
-            Ningún gasto coincide con "{search}"
+            Ningún gasto coincide con {search}
           </div>
         )}
 

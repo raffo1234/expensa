@@ -9,6 +9,7 @@ import Slider from "@/components/Slider";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, getLocale } from "next-intl/server";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
+import Providers from "@/components/Providers";
 
 const title = "Cadia - Encuentra la Claridad para tu Diagnóstico";
 const description =
@@ -56,17 +57,15 @@ export default async function Layout({ children }: Readonly<LayoutProps>) {
   return (
     <html lang={locale}>
       <body id="admin">
-        <Toaster
-          toastOptions={{
-            className: "text-xs",
-          }}
-        />
+        <Toaster toastOptions={{ className: "text-xs" }} />
         <ReactScan />
-        <SWRConfig value={{ fallback: initialPermissions }}>
-          <NextIntlClientProvider messages={messages}>{children}</NextIntlClientProvider>
-        </SWRConfig>
-        <GlobalModal />
-        <Slider />
+        <Providers>
+          <SWRConfig value={{ fallback: initialPermissions }}>
+            <NextIntlClientProvider messages={messages}>{children}</NextIntlClientProvider>
+          </SWRConfig>
+          <GlobalModal />
+          <Slider />
+        </Providers>
         <GoogleAnalytics />
       </body>
     </html>

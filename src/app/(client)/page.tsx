@@ -2,8 +2,18 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useSession } from "next-auth/react";
 
 export default function ExpenseLanding() {
+  const { data: session, status } = useSession();
+
+  const href =
+    status === "loading"
+      ? "#"
+      : session
+      ? "/admin/dicoms"
+      : "/session/new";
+
   return (
     <main className="min-h-screen">
       <section className="md:grid md:grid-cols-2 items-center px-10 gap-5 min-h-[580px]">
@@ -32,9 +42,10 @@ export default function ExpenseLanding() {
           <p className="text-lg w-full leading-relaxed mb-8">
             One app. All your accounts. Total clarity over every dollar — without the spreadsheet.
           </p>
+
           <div className="w-full text-center md:text-right">
             <Link
-              href="/admin/workspace"
+              href={href}
               className="text-lg w-fit inline-block font-semibold px-7 py-3.5 rounded-full"
               style={{ background: "#2d2d2d", color: "white" }}
             >
@@ -43,7 +54,6 @@ export default function ExpenseLanding() {
           </div>
         </div>
 
-        {/* Right — illustration + floating cards */}
         <div>
           <Image
             src="/expensa-hero.webp"
@@ -55,6 +65,7 @@ export default function ExpenseLanding() {
           />
         </div>
       </section>
+
       <div
         className="md:flex space-x-6 items-center justify-center mt-2 py-4 px-10"
         style={{ borderTop: "1px solid #e0d8cc" }}

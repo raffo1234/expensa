@@ -2,8 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { r2, BUCKET } from "@/lib/r2";
 
-export async function GET(_req: NextRequest, { params }: { params: { path: string[] } }) {
-  const storagePath = params.path.join("/");
+type RouteContext = {
+  params: Promise<{
+    path: string[];
+  }>;
+};
+
+export async function GET(_req: NextRequest, { params }: RouteContext) {
+  const { path } = await params;
+  const storagePath = path.join("/");
 
   const res = await r2.send(new GetObjectCommand({ Bucket: BUCKET, Key: storagePath }));
 
@@ -19,8 +26,9 @@ export async function GET(_req: NextRequest, { params }: { params: { path: strin
   });
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: { path: string[] } }) {
-  const storagePath = params.path.join("/");
+export async function DELETE(_req: NextRequest, { params }: RouteContext) {
+  const { path } = await params;
+  const storagePath = path.join("/");
 
   await r2.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: storagePath }));
 

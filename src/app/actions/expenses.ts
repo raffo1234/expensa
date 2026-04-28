@@ -22,6 +22,10 @@ type CreateExpenseInput = {
   payment_method?: string;
   notes?: string;
   files: SerializedFile[];
+  created_by?: string;
+  invoice_series?: string;
+  invoice_number?: string;
+  issued_at?: string;
 };
 
 export async function createExpense(input: CreateExpenseInput): Promise<{ error?: string }> {

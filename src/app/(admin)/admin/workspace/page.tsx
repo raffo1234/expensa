@@ -23,6 +23,6 @@ export default async function WorkspacePage() {
   if (error) {
     console.error("workspace fetch error:", error);
   }
-  console.log({workspaces});
+  
   return <WorkspaceClient workspaces={workspaces ?? []} />;
 }

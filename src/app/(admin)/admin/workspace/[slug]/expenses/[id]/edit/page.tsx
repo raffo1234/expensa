@@ -38,7 +38,7 @@ async function fetchExpense(expenseId: string, workspaceId: string): Promise<Exp
     .single();
 
   if (error) throw error;
-  return data;
+  return data as unknown as Expense;
 }
 
 async function fetchWorkspace(slug: string): Promise<{ id: string; name: string }> {

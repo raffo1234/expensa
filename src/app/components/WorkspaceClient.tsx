@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
-import type { Workspace } from "./workspace-page";
+import { Workspace } from "@/types/WorkspaceType";
 
 // ── Icons ──────────────────────────────────────────────────────────────────
 const GridIcon = () => (
@@ -419,7 +419,9 @@ export default function WorkspaceClient({ workspaces }: { workspaces: Workspace[
         {/* Empty state — search no match */}
         {workspaces.length > 0 && filtered.length === 0 && (
           <div style={{ textAlign: "center", padding: "64px 0", color: "#9ca3af" }}>
-            <p style={{ fontSize: 15, margin: 0 }}>Ningún workspace coincide con &quot;{search}&quot;</p>
+            <p style={{ fontSize: 15, margin: 0 }}>
+              Ningún workspace coincide con &quot;{search}&quot;
+            </p>
           </div>
         )}
 

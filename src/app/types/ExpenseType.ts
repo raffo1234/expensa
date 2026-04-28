@@ -3,7 +3,7 @@ import { ExpenseAttachment } from "./ExpenseAttachment";
 
 export type Expense = {
   id: string;
-  provider: { name: string } | null;
+  provider: { name: string; id: string } | null;
   amount: number;
   currency: string;
   paid_at: string;

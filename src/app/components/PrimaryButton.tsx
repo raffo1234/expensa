@@ -3,7 +3,7 @@ import { ICON_SIZE } from "@/constants";
 import { BaseButton, BaseButtonProps } from "./BaseButton";
 
 const primaryClassName =
-  "group relative px-6 py-2.5 rounded-full bg-gray-950 flex gap-2 items-center justify-center cursor-pointer overflow-hidden transition-all duration-300 active:scale-[0.97] shadow-sm hover:shadow-md";
+  "group relative px-6 py-3 rounded-full bg-gray-950 flex gap-2 items-center justify-center cursor-pointer overflow-hidden transition-all duration-300 active:scale-[0.97] shadow-sm hover:shadow-md";
 
 type PrimaryButtonProps = Omit<BaseButtonProps, "children" | "className"> & {
   icon?: string;

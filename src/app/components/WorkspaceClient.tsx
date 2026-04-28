@@ -274,7 +274,7 @@ export default function WorkspaceClient({ workspaces }: { workspaces: Workspace[
   );
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f9fafb", fontFamily: "'DM Sans', sans-serif" }}>
+    <div>
       <div style={{ maxWidth: 900, margin: "0 auto", padding: "48px 24px" }}>
         {/* Header */}
         <div
@@ -288,39 +288,13 @@ export default function WorkspaceClient({ workspaces }: { workspaces: Workspace[
           }}
         >
           <div>
-            <h1
-              style={{
-                margin: 0,
-                fontSize: 26,
-                fontWeight: 700,
-                color: "#111827",
-                letterSpacing: "-0.5px",
-              }}
-            >
-              Workspaces
-            </h1>
+            <h1 className="text-4xl font-bold">Workspaces</h1>
             <p style={{ margin: "4px 0 0", fontSize: 14, color: "#6b7280" }}>
               {workspaces.length} workspace{workspaces.length !== 1 ? "s" : ""}
             </p>
           </div>
           <Link href="/admin/workspace/new" style={{ textDecoration: "none" }}>
-            <button
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                background: "#06b6d4",
-                color: "#fff",
-                border: "none",
-                borderRadius: 10,
-                padding: "10px 18px",
-                fontWeight: 600,
-                fontSize: 14,
-                cursor: "pointer",
-                fontFamily: "'DM Sans', sans-serif",
-                boxShadow: "0 2px 8px rgba(6,182,212,0.25)",
-              }}
-            >
+            <button className="flex items-center gap-3 cursor-pointer text-white font-semibold rounded-full  px-7 py-3.5 bg-slate-900">
               <PlusIcon /> Nuevo Workspace
             </button>
           </Link>

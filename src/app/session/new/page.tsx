@@ -5,7 +5,7 @@ import { signIn } from "@/lib/auth";
 
 export default function Page() {
   return (
-    <div className="min-h-lvh flex gap-4" style={{ backgroundColor: "rgb(252, 245, 234)" }}>
+    <div className="min-h-lvh flex gap-4">
       <div className="flex flex-col flex-[60%] items-center justify-center pb-20 w-full">
         <div className="mb-6">
           <LogoLink />

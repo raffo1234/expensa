@@ -7,12 +7,7 @@ import { useSession } from "next-auth/react";
 export default function ExpenseLanding() {
   const { data: session, status } = useSession();
 
-  const href =
-    status === "loading"
-      ? "#"
-      : session
-      ? "/admin/dicoms"
-      : "/session/new";
+  const href = status === "loading" ? "#" : session ? "/admin/workspace" : "/session/new";
 
   return (
     <main className="min-h-screen">
@@ -46,8 +41,7 @@ export default function ExpenseLanding() {
           <div className="w-full text-center md:text-right">
             <Link
               href={href}
-              className="text-lg w-fit inline-block font-semibold px-7 py-3.5 rounded-full"
-              style={{ background: "#2d2d2d", color: "white" }}
+              className="text-white bg-slate-900 text-lg w-fit inline-block font-semibold px-7 py-3.5 rounded-full"
             >
               Upload free →
             </Link>

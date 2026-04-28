@@ -30,13 +30,16 @@ export default async function AdminLayout({ children }: Readonly<AdminLayoutProp
 
   return (
     <SessionProvider session={session}>
-      <header className="w-full h-20 pr-16 lg:pr-0">
+      <header className="w-full h-20 pr-16 lg:pr-0 bg-white">
         <Suspense>
           <Header />
         </Suspense>
       </header>
       <div className="border-t border-gray-200">
-        <main className="flex items-start w-full z-10 bg-slate-50">
+        <main
+          className="flex items-start w-full z-10"
+
+        >
           <Suspense>
             {currentUser && user?.name ? (
               <Aside

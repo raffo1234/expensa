@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createWorkspace } from "@/actions/workspace";
+import { INPUT_CLASS } from "@/constants";
 
 // ── Slug generator ─────────────────────────────────────────────────────────
 function toSlug(str: string) {
@@ -129,50 +130,19 @@ export default function NewWorkspacePage() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f9fafb", fontFamily: "'DM Sans', sans-serif" }}>
-      <link
-        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap"
-        rel="stylesheet"
-      />
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-
+    <>
       <div style={{ maxWidth: 520, margin: "0 auto", padding: "48px 24px" }}>
         {/* Back */}
-        <Link
-          href="/admin/workspace"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            fontSize: 13.5,
-            color: "#6b7280",
-            textDecoration: "none",
-            marginBottom: 28,
-            fontWeight: 500,
-          }}
-        >
+        <Link href="/admin/workspace" className="gap-3 flex items-center text-slate-500 mb-10">
           <BackIcon /> Volver a workspaces
         </Link>
-
-        {/* Header */}
-        <div style={{ marginBottom: 32 }}>
-          <h1
-            style={{
-              margin: 0,
-              fontSize: 24,
-              fontWeight: 700,
-              color: "#111827",
-              letterSpacing: "-0.4px",
-            }}
-          >
-            Nuevo Workspace
-          </h1>
-          <p style={{ margin: "5px 0 0", fontSize: 14, color: "#6b7280" }}>
+        <div className="mb-10">
+          <h1 className="text-4xl font-bold mb-1">Nuevo Workspace</h1>
+          <p className="text-slate-500">
             Los workspaces te ayudan a organizar tus proyectos y equipo.
           </p>
         </div>
 
-        {/* Card */}
         <div
           style={{
             background: "#fff",
@@ -184,44 +154,20 @@ export default function NewWorkspacePage() {
             gap: 22,
           }}
         >
-          {/* Name */}
           <Field label="Nombre del workspace" hint="Mínimo 2 caracteres.">
             <input
               value={name}
               onChange={(e) => handleNameChange(e.target.value)}
               placeholder="ej. Sistema de Diseño"
               maxLength={60}
-              style={{
-                padding: "10px 13px",
-                border: "1.5px solid #e5e7eb",
-                borderRadius: 9,
-                fontSize: 14,
-                color: "#111827",
-                outline: "none",
-                fontFamily: "'DM Sans', sans-serif",
-                transition: "border-color 0.15s",
-                background: "#fff",
-              }}
-              onFocus={(e) => (e.target.style.borderColor = "#06b6d4")}
-              onBlur={(e) => (e.target.style.borderColor = "#e5e7eb")}
+              className={INPUT_CLASS}
             />
           </Field>
-
-          {/* Slug */}
           <Field
             label="Slug"
             hint="Se usa en las URLs. Se genera automáticamente — o personalízalo."
           >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                border: "1.5px solid #e5e7eb",
-                borderRadius: 9,
-                overflow: "hidden",
-                background: "#fff",
-              }}
-            >
+            <div className="flex items-center">
               <span
                 style={{
                   padding: "10px 10px 10px 13px",
@@ -239,21 +185,11 @@ export default function NewWorkspacePage() {
                 onChange={(e) => handleSlugChange(e.target.value)}
                 placeholder="mi-workspace"
                 maxLength={60}
-                style={{
-                  flex: 1,
-                  padding: "10px 13px 10px 0",
-                  border: "none",
-                  fontSize: 14,
-                  color: "#111827",
-                  outline: "none",
-                  fontFamily: "'DM Sans', sans-serif",
-                  background: "transparent",
-                }}
+                className={INPUT_CLASS}
               />
             </div>
           </Field>
 
-          {/* Preview */}
           {name && (
             <div
               style={{
@@ -299,23 +235,8 @@ export default function NewWorkspacePage() {
           <button
             onClick={handleSubmit}
             disabled={!isValid || loading || success}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 8,
-              padding: "11px 18px",
-              borderRadius: 10,
-              border: "none",
-              background: success ? "#10b981" : !isValid ? "#e5e7eb" : "#06b6d4",
-              color: !isValid ? "#9ca3af" : "#fff",
-              fontWeight: 600,
-              fontSize: 14,
-              cursor: isValid && !loading && !success ? "pointer" : "not-allowed",
-              fontFamily: "'DM Sans', sans-serif",
-              transition: "background 0.2s",
-              boxShadow: isValid && !loading ? "0 2px 8px rgba(6,182,212,0.2)" : "none",
-            }}
+            type="submit"
+            className="bg-slate-900 px-4 py-3 rounded-full text-white font-semibold disabled:opacity-50 cursor-pointer disabled:pointer-events-none flex items-center gap-2 justify-center"
           >
             {success ? (
               <>
@@ -331,6 +252,6 @@ export default function NewWorkspacePage() {
           </button>
         </div>
       </div>
-    </div>
+    </>
   );
 }

@@ -9,7 +9,7 @@ export default async function ProfilePopover() {
   const session = await auth();
   const user = await getCurrentUser();
   const t = await getTranslations("Popover");
-  console.log({user})
+  console.log({ user });
   return (
     <>
       {session?.user && user ? (
@@ -23,7 +23,7 @@ export default async function ProfilePopover() {
         <Link
           title={t("sign-in")}
           href="/session/new"
-          className="cursor-pointer flex gap-4 bg-cyan-400 hover:bg-cyan-500 font-semibold px-6 py-2 text-white rounded-full transition-colors duration-700 active:bg-gray-900"
+          className="cursor-pointer flex gap-4 bg-black hover:slate-900 font-semibold px-6 py-2 text-white rounded-full transition-colors duration-700 active:bg-gray-900 items-center"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"

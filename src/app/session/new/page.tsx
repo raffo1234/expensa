@@ -1,15 +1,16 @@
-import CredentialsProviderForm from "@/components/CredentialsProviderForm";
+// import CredentialsProviderForm from "@/components/CredentialsProviderForm";
 import LogoLink from "@/components/LogoLink";
 import { ICON_SIZE } from "@/constants";
 import { signIn } from "@/lib/auth";
 
 export default function Page() {
   return (
-    <div className="min-h-lvh flex gap-4">
-      <div className="flex flex-[60%] items-center justify-center pb-20 w-full">
-        <div className="max-w-[340px] px-3 w-full mx-auto flex flex-col items-center gap-6">
+    <div className="min-h-lvh flex gap-4" style={{ backgroundColor: "rgb(252, 245, 234)" }}>
+      <div className="flex flex-col flex-[60%] items-center justify-center pb-20 w-full">
+        <div className="mb-6">
           <LogoLink />
-          <h1 className="font-semibold text-2xl">Welcome</h1>
+        </div>
+        <div className="max-w-xl bg-white p-20 rounded-3xl w-full mx-auto flex flex-col items-center gap-6">
           <form
             action={async () => {
               "use server";
@@ -49,19 +50,9 @@ export default function Page() {
               <span>Continue with Google</span>
             </button>
           </form>
-          <div className="text-sm text-gray-500">or</div>
-          <CredentialsProviderForm />
+          {/* <div className="text-sm text-gray-500">or</div> */}
+          {/* <CredentialsProviderForm /> */}
         </div>
-      </div>
-      <div className="hidden flex-[40%] lg:flex items-center">
-        <video
-          src="/videos/video.webm"
-          className="w-full h-auto"
-          muted
-          playsInline
-          loop
-          autoPlay
-        ></video>
       </div>
     </div>
   );

@@ -240,7 +240,9 @@ export default function ExpenseDetailPage() {
                 {format(new Date(expense.paid_at), "d MMM yyyy", { locale: es })}
               </DetailRow>
               <DetailRow label="Registrado">
-                {format(new Date(expense.created_at), "d MMM yyyy · HH:mm", { locale: es })}
+                {expense.created_at
+                  ? format(new Date(expense.created_at), "d MMM yyyy · HH:mm", { locale: es })
+                  : "—"}
               </DetailRow>
               {expense.created_by_user && (
                 <DetailRow label="Creado por">{expense.created_by_user.email}</DetailRow>

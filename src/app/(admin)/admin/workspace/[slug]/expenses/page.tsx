@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import useSWR from "swr";
+import useSWR, { mutate } from "swr";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { formatDistanceToNow, format } from "date-fns";
 import { es } from "date-fns/locale";
+import DeleteButton from "@/components/DeleteButton";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type Expense = {
@@ -125,6 +126,27 @@ export default function ExpensesPage() {
     const matchCurrency = !filterCurrency || e.currency === filterCurrency;
     return matchSearch && matchCurrency;
   });
+
+  async function handleDelete(expenseId: string) {
+    // 1. Fetch attachment paths before deleting anything
+    const { data: attachments } = await supabase
+      .from("expense_attachment")
+      .select("storage_path")
+      .eq("expense_id", expenseId);
+
+    // 2. Clean up R2 objects first
+    if (attachments?.length) {
+      await Promise.all(
+        attachments.map((a) => fetch(`/api/r2/${a.storage_path}`, { method: "DELETE" })),
+      );
+    }
+
+    // 3. Delete expense row (CASCADE removes attachment rows)
+    const { error } = await supabase.from("expense").delete().eq("id", expenseId);
+    if (error) throw error;
+
+    await mutate(["expenses", workspaceId]);
+  }
 
   return (
     <div
@@ -325,6 +347,7 @@ export default function ExpensesPage() {
                 expense={expense}
                 isLast={i === filtered.length - 1}
                 workspaceSlug={workspaceSlug}
+                onDelete={handleDelete}
               />
             ))}
           </div>
@@ -339,27 +362,26 @@ function ExpenseRow({
   expense,
   isLast,
   workspaceSlug,
+  onDelete,
 }: {
   expense: Expense;
   isLast: boolean;
   workspaceSlug: string;
+  onDelete: (id: string) => Promise<void>;
 }) {
   const [hovered, setHovered] = useState(false);
 
   return (
-    <Link
-      href={`/admin/workspace/${workspaceSlug}/expenses/${expense.id}`}
-      style={{ textDecoration: "none" }}
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className={`grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-4 items-center px-5 py-3.5 transition-colors
+        ${!isLast ? "border-b border-gray-100" : ""}
+        ${hovered ? "bg-cyan-50/40" : "bg-white"}`}
     >
-      <div
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        className={`grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 items-center px-5 py-3.5 cursor-pointer transition-colors
-          ${!isLast ? "border-b border-gray-100" : ""}
-          ${hovered ? "bg-cyan-50/40" : "bg-white"}`}
-      >
+      <Link href={`/admin/workspace/${workspaceSlug}/expenses/${expense.id}`} className="contents">
         {/* Provider */}
-        <div className="min-w-0">
+        <div className="min-w-0 cursor-pointer">
           <p className="text-sm font-semibold text-gray-900 truncate">
             {expense.provider ?? <span className="text-gray-400 font-normal">Sin proveedor</span>}
           </p>
@@ -369,15 +391,17 @@ function ExpenseRow({
         </div>
 
         {/* Category */}
-        <div className="flex justify-start">
+        <div className="flex justify-start cursor-pointer">
           <CategoryBadge category={expense.category} />
         </div>
 
         {/* Payment method */}
-        <p className="text-xs text-gray-500 whitespace-nowrap">{expense.payment_method ?? "—"}</p>
+        <p className="text-xs text-gray-500 whitespace-nowrap cursor-pointer">
+          {expense.payment_method ?? "—"}
+        </p>
 
         {/* Date */}
-        <div className="text-right">
+        <div className="text-right cursor-pointer">
           <p className="text-xs font-medium text-gray-700 whitespace-nowrap">
             {format(new Date(expense.paid_at), "d MMM yyyy", { locale: es })}
           </p>
@@ -387,10 +411,22 @@ function ExpenseRow({
         </div>
 
         {/* Amount */}
-        <p className="text-sm font-bold text-gray-900 whitespace-nowrap text-right">
+        <p className="text-sm font-bold text-gray-900 whitespace-nowrap text-right cursor-pointer">
           {formatAmount(expense.amount, expense.currency)}
         </p>
+      </Link>
+
+      {/* Delete — outside Link, inside row div */}
+      <div onClick={(e) => e.stopPropagation()}>
+        <DeleteButton
+          onClick={() => onDelete(expense.id)}
+          title="Eliminar gasto"
+          confirmTitle="¿Eliminar gasto?"
+          confirmDescription={`Se eliminará "${expense.provider ?? "este gasto"}" de forma permanente.`}
+          confirmLabel="Eliminar"
+          cancelLabel="Cancelar"
+        />
       </div>
-    </Link>
+    </div>
   );
 }

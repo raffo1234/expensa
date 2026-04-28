@@ -56,6 +56,24 @@ const inputCls =
 
 const labelCls = "block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide";
 
+// ── Receipt extractor ─────────────────────────────────────────────────────────
+async function extractFromReceipt(file: File): Promise<Record<string, string>> {
+  const buf = await file.arrayBuffer();
+  const bytes = new Uint8Array(buf);
+  let binary = "";
+  for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+  const base64 = btoa(binary);
+
+  const res = await fetch("/api/extract-expense", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ base64, mimeType: file.type }),
+  });
+
+  if (!res.ok) throw new Error("Extraction failed");
+  return res.json();
+}
+
 // ── Component ────────────────────────────────────────────────────────────────
 export default function UploadExpensePage({ userId }: { userId: string }) {
   const params = useParams();
@@ -96,25 +114,67 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [extracting, setExtracting] = useState(false);
+  const [extractedProviderName, setExtractedProviderName] = useState<string | null>(null);
 
   const set =
     (k: keyof typeof form) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
       setForm((f) => ({ ...f, [k]: e.target.value }));
 
-  const addFiles = useCallback((incoming: File[]) => {
-    const allowed = incoming.filter((f) =>
-      ["image/jpeg", "image/png", "image/webp", "application/pdf"].includes(f.type),
-    );
-    setFiles((prev) => [
-      ...prev,
-      ...allowed.map((file) => ({
-        id: crypto.randomUUID(),
-        file,
-        preview: file.type.startsWith("image/") ? URL.createObjectURL(file) : undefined,
-      })),
-    ]);
-  }, []);
+  const addFiles = useCallback(
+    async (incoming: File[]) => {
+      const allowed = incoming.filter((f) =>
+        ["image/jpeg", "image/png", "image/webp", "application/pdf"].includes(f.type),
+      );
+      if (!allowed.length) return;
+
+      setFiles((prev) => [
+        ...prev,
+        ...allowed.map((file) => ({
+          id: crypto.randomUUID(),
+          file,
+          preview: file.type.startsWith("image/") ? URL.createObjectURL(file) : undefined,
+        })),
+      ]);
+
+      // Auto-extract from the first new file only
+      setExtracting(true);
+      setExtractedProviderName(null);
+      try {
+        const extracted = await extractFromReceipt(allowed[0]);
+        setForm((f) => ({
+          ...f,
+          ...(extracted.amount ? { amount: String(extracted.amount) } : {}),
+          ...(extracted.currency && CURRENCIES.includes(extracted.currency)
+            ? { currency: extracted.currency }
+            : {}),
+          ...(extracted.paid_at ? { paid_at: extracted.paid_at } : {}),
+          ...(extracted.issued_at ? { issued_at: extracted.issued_at } : {}),
+          ...(extracted.invoice_series ? { invoice_series: extracted.invoice_series } : {}),
+          ...(extracted.invoice_number ? { invoice_number: extracted.invoice_number } : {}),
+          ...(extracted.notes ? { notes: extracted.notes } : {}),
+          ...(extracted.payment_method && PAYMENT_METHODS.includes(extracted.payment_method)
+            ? { payment_method: extracted.payment_method }
+            : {}),
+        }));
+
+        // Try to match provider by name
+        if (extracted.provider_name) {
+          setExtractedProviderName(extracted.provider_name);
+          const match = providers.find((p) =>
+            p.name.toLowerCase().includes(extracted.provider_name.toLowerCase()),
+          );
+          if (match) setForm((f) => ({ ...f, provider_id: match.id }));
+        }
+      } catch {
+        // silently fail — user fills manually
+      } finally {
+        setExtracting(false);
+      }
+    },
+    [providers],
+  );
 
   const onDrop = useCallback(
     (e: React.DragEvent) => {
@@ -219,10 +279,195 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
       <div className="max-w-2xl mx-auto px-6 py-10">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Nuevo gasto</h1>
-          <p className="text-sm text-gray-500 mt-1">Registra un gasto y adjunta el comprobante.</p>
+          <p className="text-sm text-gray-500 mt-1">
+            Sube un comprobante y los campos se rellenan solos.
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Adjuntos — moved to top so extraction happens first */}
+          <section className="bg-white border border-gray-200 rounded-xl p-5 space-y-3 shadow-sm">
+            <div className="flex items-center justify-between">
+              <h2 className="text-[11px] font-bold text-cyan-600 uppercase tracking-widest">
+                Comprobante / Adjuntos
+              </h2>
+              <span className="text-[10px] text-gray-400 font-medium">
+                Se rellena automáticamente ✦
+              </span>
+            </div>
+
+            <label
+              ref={dropRef}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragging(true);
+              }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={onDrop}
+              className={`flex flex-col items-center justify-center gap-3 border-2 border-dashed
+                rounded-xl py-9 cursor-pointer transition-all duration-200
+                ${
+                  dragging
+                    ? "border-cyan-400 bg-cyan-50"
+                    : "border-gray-200 hover:border-cyan-300 hover:bg-cyan-50/40"
+                }`}
+            >
+              <input
+                type="file"
+                multiple
+                accept="image/*,application/pdf"
+                className="hidden"
+                onChange={(e) => addFiles(Array.from(e.target.files ?? []))}
+              />
+              <div
+                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors
+                ${dragging ? "bg-cyan-100" : "bg-gray-100"}`}
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className={dragging ? "text-cyan-500" : "text-gray-400"}
+                  stroke="currentColor"
+                >
+                  <path
+                    d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                  />
+                  <polyline
+                    points="17 8 12 3 7 8"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <line x1="12" y1="3" x2="12" y2="15" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-medium text-gray-700">
+                  Arrastra archivos o{" "}
+                  <span className="text-cyan-600 underline underline-offset-2">haz click</span>
+                </p>
+                <p className="text-xs text-gray-400 mt-0.5">JPG, PNG, WEBP, PDF — máx 10 MB c/u</p>
+              </div>
+            </label>
+
+            {/* Extracting indicator */}
+            {extracting && (
+              <div className="flex items-center gap-2.5 bg-cyan-50 border border-cyan-200 rounded-lg px-4 py-3">
+                <svg
+                  className="animate-spin w-4 h-4 text-cyan-500 flex-shrink-0"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeOpacity="0.25"
+                  />
+                  <path
+                    d="M12 2a10 10 0 0 1 10 10"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <div>
+                  <p className="text-xs font-semibold text-cyan-700">Analizando comprobante...</p>
+                  <p className="text-[11px] text-cyan-500">Extrayendo monto, fechas y proveedor</p>
+                </div>
+              </div>
+            )}
+
+            {/* Extracted provider hint */}
+            {!extracting && extractedProviderName && !form.provider_id && (
+              <div className="flex items-center gap-2.5 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className="text-amber-500 flex-shrink-0"
+                >
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+                  <path
+                    d="M12 8v4M12 16h.01"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <p className="text-xs text-amber-700">
+                  Proveedor detectado:{" "}
+                  <span className="font-semibold">{extractedProviderName}</span> — no encontrado en
+                  tu lista, selecciónalo manualmente.
+                </p>
+              </div>
+            )}
+
+            {/* Success extraction hint */}
+            {!extracting && files.length > 0 && !extractedProviderName && (
+              <div className="flex items-center gap-2 text-xs text-cyan-600">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M20 6L9 17l-5-5"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                Campos rellenados desde el comprobante
+              </div>
+            )}
+
+            {files.length > 0 && (
+              <ul className="space-y-2 pt-1">
+                {files.map((fi) => (
+                  <li
+                    key={fi.id}
+                    className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg px-3.5 py-2.5 group"
+                  >
+                    {fi.preview ? (
+                      <img
+                        src={fi.preview}
+                        alt=""
+                        className="w-8 h-8 rounded-md object-cover flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-md bg-cyan-100 flex items-center justify-center text-[9px] font-bold text-cyan-600 flex-shrink-0">
+                        PDF
+                      </div>
+                    )}
+                    <span className="flex-1 text-sm text-gray-700 truncate">{fi.file.name}</span>
+                    <span className="text-xs text-gray-400 flex-shrink-0">
+                      {(fi.file.size / 1024).toFixed(0)} KB
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeFile(fi.id)}
+                      className="text-gray-300 hover:text-red-400 transition-colors ml-1 flex-shrink-0 opacity-0 group-hover:opacity-100"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                        <path
+                          d="M18 6L6 18M6 6l12 12"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
           {/* Importe */}
           <section className="bg-white border border-gray-200 rounded-xl p-5 space-y-4 shadow-sm">
             <h2 className="text-[11px] font-bold text-cyan-600 uppercase tracking-widest">
@@ -293,7 +538,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
           {/* Comprobante */}
           <section className="bg-white border border-gray-200 rounded-xl p-5 space-y-4 shadow-sm">
             <h2 className="text-[11px] font-bold text-cyan-600 uppercase tracking-widest">
-              Comprobante
+              Datos del comprobante
             </h2>
 
             <div>
@@ -389,112 +634,6 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
             </div>
           </section>
 
-          {/* Adjuntos */}
-          <section className="bg-white border border-gray-200 rounded-xl p-5 space-y-3 shadow-sm">
-            <h2 className="text-[11px] font-bold text-cyan-600 uppercase tracking-widest">
-              Adjuntos
-            </h2>
-
-            <label
-              ref={dropRef}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setDragging(true);
-              }}
-              onDragLeave={() => setDragging(false)}
-              onDrop={onDrop}
-              className={`flex flex-col items-center justify-center gap-3 border-2 border-dashed
-                rounded-xl py-9 cursor-pointer transition-all duration-200
-                ${
-                  dragging
-                    ? "border-cyan-400 bg-cyan-50"
-                    : "border-gray-200 hover:border-cyan-300 hover:bg-cyan-50/40"
-                }`}
-            >
-              <input
-                type="file"
-                multiple
-                accept="image/*,application/pdf"
-                className="hidden"
-                onChange={(e) => addFiles(Array.from(e.target.files ?? []))}
-              />
-              <div
-                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors
-                ${dragging ? "bg-cyan-100" : "bg-gray-100"}`}
-              >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  className={dragging ? "text-cyan-500" : "text-gray-400"}
-                  stroke="currentColor"
-                >
-                  <path
-                    d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                  />
-                  <polyline
-                    points="17 8 12 3 7 8"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <line x1="12" y1="3" x2="12" y2="15" strokeWidth="1.8" strokeLinecap="round" />
-                </svg>
-              </div>
-              <div className="text-center">
-                <p className="text-sm font-medium text-gray-700">
-                  Arrastra archivos o{" "}
-                  <span className="text-cyan-600 underline underline-offset-2">haz click</span>
-                </p>
-                <p className="text-xs text-gray-400 mt-0.5">JPG, PNG, WEBP, PDF — máx 10 MB c/u</p>
-              </div>
-            </label>
-
-            {files.length > 0 && (
-              <ul className="space-y-2 pt-1">
-                {files.map((fi) => (
-                  <li
-                    key={fi.id}
-                    className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg px-3.5 py-2.5 group"
-                  >
-                    {fi.preview ? (
-                      <img
-                        src={fi.preview}
-                        alt=""
-                        className="w-8 h-8 rounded-md object-cover flex-shrink-0"
-                      />
-                    ) : (
-                      <div className="w-8 h-8 rounded-md bg-cyan-100 flex items-center justify-center text-[9px] font-bold text-cyan-600 flex-shrink-0">
-                        PDF
-                      </div>
-                    )}
-                    <span className="flex-1 text-sm text-gray-700 truncate">{fi.file.name}</span>
-                    <span className="text-xs text-gray-400 flex-shrink-0">
-                      {(fi.file.size / 1024).toFixed(0)} KB
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => removeFile(fi.id)}
-                      className="text-gray-300 hover:text-red-400 transition-colors ml-1 flex-shrink-0 opacity-0 group-hover:opacity-100"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                        <path
-                          d="M18 6L6 18M6 6l12 12"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-
           {/* Error */}
           {error && (
             <div className="flex items-start gap-3 border border-red-200 bg-red-50 rounded-lg px-4 py-3 text-sm text-red-600">
@@ -545,7 +684,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
             </button>
             <button
               type="submit"
-              disabled={isPending || success || !workspaceId || !userId}
+              disabled={isPending || success || !workspaceId || !userId || extracting}
               className="flex-1 flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg
                          text-sm font-semibold text-white transition-all duration-150
                          active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"

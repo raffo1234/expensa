@@ -78,3 +78,5 @@ logs
 
 workers/process-dicom/node_modules/
 workers/process-dicom/.wrangler/
+
+.vercel

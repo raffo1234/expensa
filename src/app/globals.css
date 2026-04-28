@@ -1,10 +1,14 @@
 @import "tailwindcss";
-@import "@fontsource-variable/ibm-plex-sans";
-@import "@fontsource/poppins";
+@import "@fontsource-variable/quicksand";
 
-:root {
-  --font-sans: "IBM Plex Sans Variable", sans-serif;
-  --font-serif: "IBM Plex Serif Variable", serif;
+@theme {
+  --font-sans: "Quicksand Variable", sans-serif;
+}
+
+@layer base {
+  body {
+    font-family: "Quicksand Variable", sans-serif;
+  }
 }
 
 /* fix popover z-index */
@@ -73,16 +77,4 @@
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-/* ── Utilities ── */
-.animate-float {
-  animation: float 5s ease-in-out infinite;
-}
-.animate-float-slow {
-  animation: float-slow 7s ease-in-out infinite;
-  animation-delay: 1s;
-}
-.animate-fade-slide {
-  animation: fade-slide 0.7s ease both;
 }

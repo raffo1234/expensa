@@ -7,7 +7,7 @@ export default async function ClientLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div style={{ backgroundColor: "#d3ffe5", fontFamily: "'Inter', system-ui, sans-serif" }}>
+    <div style={{ backgroundColor: "#F8F8FA" }}>
       <header className="w-full h-20">
         <Header />
       </header>

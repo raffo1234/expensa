@@ -2027,15 +2027,10 @@
   resolved "https://registry.yarnpkg.com/@floating-ui/utils/-/utils-0.2.10.tgz#a2a1e3812d14525f725d011a73eceb41fef5bc1c"
   integrity sha512-aGTxbpbg8/b5JfU1HXSrbH3wXZuLPJcNEcZQFMxLs3oSzgtVu6nFPkbbGGUvBcUjKV2YyB9Wxxabo+HEH9tcRQ==
 
-"@fontsource-variable/ibm-plex-sans@^5.2.5":
-  version "5.2.5"
-  resolved "https://registry.npmjs.org/@fontsource-variable/ibm-plex-sans/-/ibm-plex-sans-5.2.5.tgz"
-  integrity sha512-SrvCxqJK3NI4JBroXsJdBZGfs6QVfY0lK2VIZIIgYPea+/LI/3zYOOTI0AVvrMrmBks87GJQfPGprftlO8yInQ==
-
-"@fontsource/poppins@^5.2.6":
-  version "5.2.6"
-  resolved "https://registry.npmjs.org/@fontsource/poppins/-/poppins-5.2.6.tgz"
-  integrity sha512-NFr0121+vWCfzLDVvSZOzwAjRUaNj6QHA9gtUh/KHHoWf1Qn23EkwVFs63XZ6UtF5K1b3UNmCx77YEMGgV7BOQ==
+"@fontsource-variable/quicksand@^5.2.10":
+  version "5.2.10"
+  resolved "https://registry.yarnpkg.com/@fontsource-variable/quicksand/-/quicksand-5.2.10.tgz#906f5dc4d4719f8d13dd90524457d64562521ba2"
+  integrity sha512-1uzkzGDwWgtFnxquAXuD7fZV9wHkALb49UPzRXxGTVeeLsNrGnIU0O/pcz6m1U7RDtpHz2qx77JhCpKaq7FrUg==
 
 "@formatjs/ecma402-abstract@2.3.6":
   version "2.3.6"

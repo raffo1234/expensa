@@ -57,7 +57,7 @@ export default function Aside({
   return (
     <div
       style={{ minHeight: "calc(100vh - 80px)" }}
-      className={`${isMenuContracted ? "lg:w-[91px]" : "lg:w-[286px]"} bg-white transition-all duration-300 flex-shrink-0 border-r border-r-gray-200`}
+      className={`${isMenuContracted ? "lg:w-[91px]" : "lg:w-[286px]"} transition-all duration-300 flex-shrink-0`}
     >
       <div className={`flex justify-end lg:p-2 ${!isMenuContracted ? "lg:pr-5" : "lg:pr-6"}`}>
         <button
@@ -78,7 +78,7 @@ export default function Aside({
           isOpen
             ? "opacity-100 visible translate-x-0"
             : "invisible opacity-0 lg:visible lg:opacity-100 lg:translate-x-0 -translate-x-2"
-        } transition-all bg-white w-full h-full overflow-auto absolute left-0 top-0 lg:static pb-8 pt-8 lg:pt-0 px-5 z-30`}
+        } transition-all w-full h-full overflow-auto absolute left-0 top-0 lg:static pb-8 pt-8 lg:pt-0 px-5 z-30`}
       >
         <header className="mb-20">
           <div className="flex min-h-[60px] gap-4 items-center">

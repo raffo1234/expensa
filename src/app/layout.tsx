@@ -56,7 +56,7 @@ export default async function Layout({ children }: Readonly<LayoutProps>) {
 
   return (
     <html lang={locale}>
-      <body id="admin" style={{ backgroundColor: "rgb(252, 245, 234)" }}>
+      <body style={{ backgroundImage: "url('/shapes.webp')", backgroundSize: "cover" }} className="bg-gray-50">
         <Toaster toastOptions={{ className: "text-xs" }} />
         <ReactScan />
         <Providers>

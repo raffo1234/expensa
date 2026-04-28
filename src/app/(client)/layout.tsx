@@ -7,11 +7,11 @@ export default async function ClientLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div>
+    <>
       <header className="w-full h-20">
         <Header />
       </header>
       {children}
-    </div>
+    </>
   );
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import { Popover } from "react-tiny-popover";
-import { ICON_SIZE } from "@/constants";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -45,16 +44,18 @@ const MenuItemLink = React.forwardRef<
       onMouseEnter={handleMouseEnter}
       onMouseLeave={closePopover}
       className={`${
-        href === currentPath ? "bg-gray-100 font-semibold" : "hover:bg-gray-50"
-      } truncate rounded-xl w-full h-auto lg:h-[43px] py-3 px-4 gap-3.5 flex items-center transition-colors duration-300`}
+        href === currentPath ? "bg-purple-200 font-semibold" : "hover:bg-purple-100 text-purple-800"
+      } truncate rounded-xl w-full p-2 gap-3.5 flex items-center text-sm font-semibold transition-colors duration-300`}
       onClick={closeMenu}
       ref={ref}
     >
-      <Icon
-        icon={iconName}
-        fontSize={ICON_SIZE}
-        className={`${href === currentPath ? "text-rose-400" : ""} flex-shrink-0`}
-      />
+      <span className="p-2 block bg-gradient-to-b lg:from-white/75 lg:to-purple-100/75 rounded-lg bg-purple-100 border border-purple-200">
+        <Icon
+          icon={iconName}
+          fontSize={16}
+          className={`${href === currentPath ? "text-rose-400" : ""} flex-shrink-0`}
+        />
+      </span>
       <span
         className={`${isContracted ? "lg:invisible lg:opacity-0 lg:w-0" : "lg:visible lg:opacity-100"} transition-all duration-400 overflow-hidden truncate`}
       >

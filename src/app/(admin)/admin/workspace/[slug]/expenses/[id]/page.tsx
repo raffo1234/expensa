@@ -6,6 +6,8 @@ import { supabase } from "@/lib/supabase";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import getAttachmentUrl from "@/lib/getAttachmentUrl";
+import FormSection from "@/components/FormSection";
+import FormInnerSection from "@/components/FormInnerSection";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type ExpenseAttachment = {
@@ -65,11 +67,11 @@ function isImage(storagePath: string) {
 // ── Sub-components ────────────────────────────────────────────────────────────
 function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-start justify-between py-3.5 border-b border-gray-100 last:border-0 gap-4">
-      <span className="text-xs font-bold text-gray-400 uppercase tracking-widest flex-shrink-0 pt-0.5">
+    <div className="flex items-start justify-between py-5 border-b border-gray-100 last:border-0 gap-4">
+      <span className="text-[11px] font-bold text-gray-800 uppercase tracking-widest flex-shrink-0 pt-0.5">
         {label}
       </span>
-      <span className="text-sm text-gray-900 text-right">{children}</span>
+      <span className="text-sm text-gray-900 text-right font-medium">{children}</span>
     </div>
   );
 }
@@ -134,26 +136,15 @@ export default function ExpenseDetailPage() {
     error,
   } = useSWR(expenseId ? ["expense", expenseId] : null, ([, id]) => fetchExpense(id));
 
-  console.log({error})
+  console.log({ error });
 
   const categoryColor = expense?.category?.color ?? "#06b6d4";
 
   return (
-    <div
-      className="min-h-screen text-gray-900"
-      style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: "#fafafa" }}
-    >
-      <link
-        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap"
-        rel="stylesheet"
-      />
-
+    <div className="min-h-screen text-gray-900">
       {/* Nav */}
-      <nav
-        className="sticky top-0 z-10 border-b border-gray-200/80"
-        style={{ background: "rgba(255,255,255,0.85)", backdropFilter: "blur(12px)" }}
-      >
-        <div className="max-w-2xl mx-auto px-6 h-14 flex items-center justify-between gap-3">
+      <nav className=" top-0 z-10">
+        <div className="py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-1 text-sm">
             <button
               onClick={() => router.push(`/admin/workspace/${workspaceSlug}/expenses`)}
@@ -168,14 +159,13 @@ export default function ExpenseDetailPage() {
           </div>
           <button
             onClick={() => router.push(`/admin/workspace/${workspaceSlug}/expenses`)}
-            className="text-xs text-gray-400 hover:text-gray-700 transition-colors px-2 py-1"
+            className="text-sm px-2 py-1"
           >
             ← Volver
           </button>
         </div>
       </nav>
-
-      <div className="max-w-2xl mx-auto px-6 py-10">
+      <FormSection>
         {isLoading && (
           <div className="flex items-center justify-center py-32 text-gray-400 text-sm gap-2">
             <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
@@ -205,33 +195,35 @@ export default function ExpenseDetailPage() {
         )}
 
         {expense && (
-          <div className="space-y-4">
+          <div className="space-y-8">
             {/* Amount hero */}
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex items-center justify-between gap-4">
-              <div>
-                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                  Monto
-                </p>
-                <p className="text-4xl font-bold tracking-tight" style={{ color: "#06b6d4" }}>
-                  {formatAmount(expense.amount, expense.currency)}
-                </p>
-                <p className="text-sm text-gray-400 mt-1">
-                  {format(new Date(expense.paid_at), "d 'de' MMMM, yyyy", { locale: es })}
-                </p>
+            <FormInnerSection>
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                    Monto
+                  </p>
+                  <p className="text-4xl font-bold tracking-tight" style={{ color: "#06b6d4" }}>
+                    {formatAmount(expense.amount, expense.currency)}
+                  </p>
+                  <p className="text-sm text-gray-400 mt-1">
+                    {format(new Date(expense.paid_at), "d 'de' MMMM, yyyy", { locale: es })}
+                  </p>
+                </div>
+                {expense.category && (
+                  <span
+                    className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold flex-shrink-0"
+                    style={{ background: `${categoryColor}18`, color: categoryColor }}
+                  >
+                    {expense.category.name}
+                  </span>
+                )}
               </div>
-              {expense.category && (
-                <span
-                  className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold flex-shrink-0"
-                  style={{ background: `${categoryColor}18`, color: categoryColor }}
-                >
-                  {expense.category.name}
-                </span>
-              )}
-            </div>
+            </FormInnerSection>
 
             {/* Details */}
-            <section className="bg-white border border-gray-200 rounded-xl px-5 shadow-sm">
-              <h2 className="text-[11px] font-bold text-cyan-600 uppercase tracking-widest pt-4 pb-1">
+            <FormInnerSection>
+              <h2 className="text-xs font-bold text-cyan-600 uppercase tracking-widest pb-1">
                 Detalles
               </h2>
               <DetailRow label="Proveedor">
@@ -259,18 +251,20 @@ export default function ExpenseDetailPage() {
                   </span>
                 </DetailRow>
               )}
-            </section>
+            </FormInnerSection>
 
             {/* Attachments */}
             {(expense.expense_attachment ?? []).length > 0 && (
-              <section className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-3">
-                <h2 className="text-[11px] font-bold text-cyan-600 uppercase tracking-widest">
-                  Adjuntos ({expense.expense_attachment.length})
-                </h2>
-                {expense.expense_attachment.map((att) => (
-                  <FilePreview key={att.id} attachment={att} />
-                ))}
-              </section>
+              <FormInnerSection>
+                <section className="space-y-4">
+                  <h2 className="text-[11px] font-bold text-cyan-600 uppercase tracking-widest">
+                    Adjuntos ({expense.expense_attachment.length})
+                  </h2>
+                  {expense.expense_attachment.map((att) => (
+                    <FilePreview key={att.id} attachment={att} />
+                  ))}
+                </section>
+              </FormInnerSection>
             )}
 
             {/* Actions */}
@@ -297,7 +291,7 @@ export default function ExpenseDetailPage() {
             </div>
           </div>
         )}
-      </div>
+      </FormSection>
     </div>
   );
 }

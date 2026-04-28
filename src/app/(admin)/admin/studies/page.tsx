@@ -5,6 +5,7 @@ import StudiesTable from "@/components/StudiesTable";
 import { Permissions } from "@/types/propertyState";
 import { checkPermissions } from "@/lib/checkPermissions";
 import NoAccess from "@/components/NoAccess";
+import FormSection from "@/components/FormSection";
 
 function StudiesTableFallback() {
   return (
@@ -28,7 +29,7 @@ export default async function StudiesPage() {
   if (!permissions.MANAGE_PACS) return <NoAccess />;
 
   return (
-    <div className="p-6">
+    <FormSection>
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-gray-800">Studies</h1>
         <p className="text-sm text-gray-500 mt-1">
@@ -41,6 +42,6 @@ export default async function StudiesPage() {
       <Suspense fallback={<StudiesTableFallback />}>
         {userRoleId ? <StudiesTable userRoleId={userRoleId} /> : null}
       </Suspense>
-    </div>
+    </FormSection>
   );
 }

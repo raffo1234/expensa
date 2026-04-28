@@ -4,6 +4,7 @@ import NoAccess from "@/components/NoAccess";
 import { Permissions } from "@/types/propertyState";
 import { checkPermissions } from "@/lib/checkPermissions";
 import { getCurrentUser } from "@/lib/getCurrentUser";
+import FormSection from "@/components/FormSection";
 
 function Fallback() {
   return (
@@ -25,7 +26,7 @@ export default async function AeRoutesPage() {
   if (!permissions[Permissions.MANAGE_PACS]) return <NoAccess />;
 
   return (
-    <div className="p-6">
+    <FormSection>
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-gray-800">AE Routes</h1>
         <p className="text-sm text-gray-500 mt-1">External PACS connections for C-FIND / C-MOVE</p>
@@ -33,6 +34,6 @@ export default async function AeRoutesPage() {
       <Suspense fallback={<Fallback />}>
         <AeRoutesTable />
       </Suspense>
-    </div>
+    </FormSection>
   );
 }

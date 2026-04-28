@@ -5,6 +5,9 @@ import useSWR from "swr";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { createExpense } from "@/actions/expenses";
+import FormSection from "./FormSection";
+import FormInnerSection from "./FormInnerSection";
+import { INPUT_CLASS } from "@/constants";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type Category = { id: string; name: string; color: string | null };
@@ -48,11 +51,6 @@ const PAYMENT_METHODS = [
   "Yape / Plin",
   "Otro",
 ];
-
-const inputCls =
-  "w-full bg-white border border-gray-200 rounded-lg px-4 py-3 text-sm text-gray-900 " +
-  "placeholder:text-gray-400 focus:outline-none focus:border-cyan-500 " +
-  "focus:ring-2 focus:ring-cyan-500/10 transition-all duration-150 shadow-sm";
 
 const labelCls = "block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide";
 
@@ -99,7 +97,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
   );
 
   const [form, setForm] = useState({
-    provider_id: "",        // controls the <select> UI only
+    provider_id: "", // controls the <select> UI only
     invoice_series: "",
     invoice_number: "",
     amount: "",
@@ -125,8 +123,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
   const [extracting, setExtracting] = useState(false);
 
   // Whether the extracted provider wasn't found in the list (will be auto-created)
-  const willCreateProvider =
-    resolvedProvider.ruc !== null && !form.provider_id;
+  const willCreateProvider = resolvedProvider.ruc !== null && !form.provider_id;
 
   const set =
     (k: keyof typeof form) =>
@@ -291,21 +288,10 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
   const currSymbol = form.currency === "PEN" ? "S/" : form.currency === "USD" ? "$" : "€";
 
   return (
-    <div
-      className="min-h-screen text-gray-900"
-      style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: "#fafafa" }}
-    >
-      <link
-        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap"
-        rel="stylesheet"
-      />
-
+    <div className="min-h-screen text-gray-900">
       {/* Nav */}
-      <nav
-        className="sticky top-0 z-10 border-b border-gray-200/80"
-        style={{ background: "rgba(255,255,255,0.85)", backdropFilter: "blur(12px)" }}
-      >
-        <div className="max-w-2xl mx-auto px-6 h-14 flex items-center gap-3">
+      <nav className=" top-0 z-10">
+        <div className="py-4 flex items-center gap-3">
           <div className="flex items-center gap-1 text-sm">
             <button
               onClick={() => router.push(`/admin/workspace/${workspaceSlug}/expenses`)}
@@ -318,373 +304,376 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
           </div>
         </div>
       </nav>
-
-      {/* Content */}
-      <div className="max-w-2xl mx-auto px-6 py-10">
+      <FormSection>
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Nuevo gasto</h1>
           <p className="text-sm text-gray-500 mt-1">
             Sube un comprobante y los campos se rellenan solos.
           </p>
         </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-8">
           {/* Adjuntos */}
-          <section className="bg-white border border-gray-200 rounded-xl p-5 space-y-3 shadow-sm">
-            <div className="flex items-center justify-between">
-              <h2 className="text-[11px] font-bold text-cyan-600 uppercase tracking-widest">
-                Comprobante / Adjuntos
-              </h2>
-              <span className="text-[10px] text-gray-400 font-medium">
-                Se rellena automáticamente ✦
-              </span>
-            </div>
+          <FormInnerSection>
+            <section className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-[11px] font-bold text-cyan-600 uppercase tracking-widest">
+                  Comprobante / Adjuntos
+                </h2>
+                <span className="text-xs text-gray-400 font-medium">
+                  Se rellena automáticamente ✦
+                </span>
+              </div>
 
-            <label
-              ref={dropRef}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setDragging(true);
-              }}
-              onDragLeave={() => setDragging(false)}
-              onDrop={onDrop}
-              className={`flex flex-col items-center justify-center gap-3 border-2 border-dashed
+              <label
+                ref={dropRef}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragging(true);
+                }}
+                onDragLeave={() => setDragging(false)}
+                onDrop={onDrop}
+                className={`flex flex-col items-center justify-center gap-3 border-2 border-dashed
                 rounded-xl py-9 cursor-pointer transition-all duration-200
                 ${
                   dragging
                     ? "border-cyan-400 bg-cyan-50"
                     : "border-gray-200 hover:border-cyan-300 hover:bg-cyan-50/40"
                 }`}
-            >
-              <input
-                type="file"
-                multiple
-                accept="image/*,application/pdf"
-                className="hidden"
-                onChange={(e) => addFiles(Array.from(e.target.files ?? []))}
-              />
-              <div
-                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors
-                ${dragging ? "bg-cyan-100" : "bg-gray-100"}`}
               >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  className={dragging ? "text-cyan-500" : "text-gray-400"}
-                  stroke="currentColor"
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*,application/pdf"
+                  className="hidden"
+                  onChange={(e) => addFiles(Array.from(e.target.files ?? []))}
+                />
+                <div
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors
+                ${dragging ? "bg-cyan-100" : "bg-gray-100"}`}
                 >
-                  <path
-                    d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                  />
-                  <polyline
-                    points="17 8 12 3 7 8"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <line x1="12" y1="3" x2="12" y2="15" strokeWidth="1.8" strokeLinecap="round" />
-                </svg>
-              </div>
-              <div className="text-center">
-                <p className="text-sm font-medium text-gray-700">
-                  Arrastra archivos o{" "}
-                  <span className="text-cyan-600 underline underline-offset-2">haz click</span>
-                </p>
-                <p className="text-xs text-gray-400 mt-0.5">JPG, PNG, WEBP, PDF — máx 10 MB c/u</p>
-              </div>
-            </label>
-
-            {/* Extracting indicator */}
-            {extracting && (
-              <div className="flex items-center gap-2.5 bg-cyan-50 border border-cyan-200 rounded-lg px-4 py-3">
-                <svg
-                  className="animate-spin w-4 h-4 text-cyan-500 flex-shrink-0"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="10"
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    className={dragging ? "text-cyan-500" : "text-gray-400"}
                     stroke="currentColor"
-                    strokeWidth="3"
-                    strokeOpacity="0.25"
-                  />
-                  <path
-                    d="M12 2a10 10 0 0 1 10 10"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <div>
-                  <p className="text-xs font-semibold text-cyan-700">Analizando comprobante...</p>
-                  <p className="text-[11px] text-cyan-500">Extrayendo monto, fechas y proveedor</p>
-                </div>
-              </div>
-            )}
-
-            {/* New provider — will be auto-created */}
-            {!extracting && willCreateProvider && (
-              <div className="flex items-center gap-2.5 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2.5">
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  className="text-emerald-500 flex-shrink-0"
-                >
-                  <path
-                    d="M12 5v14M5 12h14"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <p className="text-xs text-emerald-700">
-                  Nuevo proveedor detectado:{" "}
-                  <span className="font-semibold">{resolvedProvider.name}</span>
-                  {resolvedProvider.ruc && (
-                    <span className="text-emerald-500"> · RUC {resolvedProvider.ruc}</span>
-                  )}
-                  {" "}— se creará automáticamente al guardar.
-                </p>
-              </div>
-            )}
-
-            {/* Success extraction hint */}
-            {!extracting && files.length > 0 && !willCreateProvider && form.provider_id && (
-              <div className="flex items-center gap-2 text-xs text-cyan-600">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M20 6L9 17l-5-5"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                Campos rellenados desde el comprobante
-              </div>
-            )}
-
-            {files.length > 0 && (
-              <ul className="space-y-2 pt-1">
-                {files.map((fi) => (
-                  <li
-                    key={fi.id}
-                    className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg px-3.5 py-2.5 group"
                   >
-                    {fi.preview ? (
-                      <img
-                        src={fi.preview}
-                        alt=""
-                        className="w-8 h-8 rounded-md object-cover flex-shrink-0"
-                      />
-                    ) : (
-                      <div className="w-8 h-8 rounded-md bg-cyan-100 flex items-center justify-center text-[9px] font-bold text-cyan-600 flex-shrink-0">
-                        PDF
-                      </div>
-                    )}
-                    <span className="flex-1 text-sm text-gray-700 truncate">{fi.file.name}</span>
-                    <span className="text-xs text-gray-400 flex-shrink-0">
-                      {(fi.file.size / 1024).toFixed(0)} KB
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => removeFile(fi.id)}
-                      className="text-gray-300 hover:text-red-400 transition-colors ml-1 flex-shrink-0 opacity-0 group-hover:opacity-100"
+                    <path
+                      d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                    />
+                    <polyline
+                      points="17 8 12 3 7 8"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <line x1="12" y1="3" x2="12" y2="15" strokeWidth="1.8" strokeLinecap="round" />
+                  </svg>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-medium text-gray-700">
+                    Arrastra archivos o{" "}
+                    <span className="text-cyan-600 underline underline-offset-2">haz click</span>
+                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    JPG, PNG, WEBP, PDF — máx 10 MB c/u
+                  </p>
+                </div>
+              </label>
+
+              {/* Extracting indicator */}
+              {extracting && (
+                <div className="flex items-center gap-2.5 bg-cyan-50 border border-cyan-200 rounded-lg px-4 py-3">
+                  <svg
+                    className="animate-spin w-4 h-4 text-cyan-500 flex-shrink-0"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      strokeOpacity="0.25"
+                    />
+                    <path
+                      d="M12 2a10 10 0 0 1 10 10"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <div>
+                    <p className="text-xs font-semibold text-cyan-700">Analizando comprobante...</p>
+                    <p className="text-[11px] text-cyan-500">
+                      Extrayendo monto, fechas y proveedor
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* New provider — will be auto-created */}
+              {!extracting && willCreateProvider && (
+                <div className="flex items-center gap-2.5 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2.5">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    className="text-emerald-500 flex-shrink-0"
+                  >
+                    <path
+                      d="M12 5v14M5 12h14"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <p className="text-xs text-emerald-700">
+                    Nuevo proveedor detectado:{" "}
+                    <span className="font-semibold">{resolvedProvider.name}</span>
+                    {resolvedProvider.ruc && (
+                      <span className="text-emerald-500"> · RUC {resolvedProvider.ruc}</span>
+                    )}{" "}
+                    — se creará automáticamente al guardar.
+                  </p>
+                </div>
+              )}
+
+              {/* Success extraction hint */}
+              {!extracting && files.length > 0 && !willCreateProvider && form.provider_id && (
+                <div className="flex items-center gap-2 text-xs text-cyan-600">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M20 6L9 17l-5-5"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  Campos rellenados desde el comprobante
+                </div>
+              )}
+
+              {files.length > 0 && (
+                <ul className="space-y-2 pt-1">
+                  {files.map((fi) => (
+                    <li
+                      key={fi.id}
+                      className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg px-3.5 py-2.5 group"
                     >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                        <path
-                          d="M18 6L6 18M6 6l12 12"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
+                      {fi.preview ? (
+                        <img
+                          src={fi.preview}
+                          alt=""
+                          className="w-8 h-8 rounded-md object-cover flex-shrink-0"
                         />
-                      </svg>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
+                      ) : (
+                        <div className="w-8 h-8 rounded-md bg-cyan-100 flex items-center justify-center text-[9px] font-bold text-cyan-600 flex-shrink-0">
+                          PDF
+                        </div>
+                      )}
+                      <span className="flex-1 text-sm text-gray-700 truncate">{fi.file.name}</span>
+                      <span className="text-xs text-gray-400 flex-shrink-0">
+                        {(fi.file.size / 1024).toFixed(0)} KB
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeFile(fi.id)}
+                        className="text-gray-300 hover:text-red-400 transition-colors ml-1 flex-shrink-0 opacity-0 group-hover:opacity-100"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                          <path
+                            d="M18 6L6 18M6 6l12 12"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          </FormInnerSection>
 
           {/* Importe */}
-          <section className="bg-white border border-gray-200 rounded-xl p-5 space-y-4 shadow-sm">
-            <h2 className="text-[11px] font-bold text-cyan-600 uppercase tracking-widest">
-              Importe
-            </h2>
+          <FormInnerSection>
+            <section className="space-y-4">
+              <h2 className="text-[11px] font-bold text-cyan-600 uppercase tracking-widest">
+                Importe
+              </h2>
 
-            <div className="flex gap-3">
-              <div className="flex-1">
-                <label className={labelCls}>Monto *</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-500 font-bold text-base select-none">
-                    {currSymbol}
-                  </span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    required
-                    placeholder="0.00"
-                    value={form.amount}
-                    onChange={set("amount")}
-                    className={`${inputCls} pl-10 text-xl font-bold
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label className={labelCls}>Monto *</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-500 font-bold text-base select-none">
+                      {currSymbol}
+                    </span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      required
+                      placeholder="0.00"
+                      value={form.amount}
+                      onChange={set("amount")}
+                      className={`${INPUT_CLASS} pl-10 text-xl font-bold
                       [appearance:textfield]
                       [&::-webkit-outer-spin-button]:appearance-none
                       [&::-webkit-inner-spin-button]:appearance-none`}
+                    />
+                  </div>
+                </div>
+                <div className="w-28">
+                  <label className={labelCls}>Moneda</label>
+                  <select
+                    value={form.currency}
+                    onChange={set("currency")}
+                    className={`${INPUT_CLASS} h-[50px] appearance-none cursor-pointer`}
+                  >
+                    {CURRENCIES.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls}>Fecha de emisión</label>
+                  <input
+                    type="date"
+                    value={form.issued_at}
+                    onChange={set("issued_at")}
+                    className={INPUT_CLASS}
+                  />
+                </div>
+                <div>
+                  <label className={labelCls}>Fecha de pago *</label>
+                  <input
+                    type="date"
+                    required
+                    value={form.paid_at}
+                    onChange={set("paid_at")}
+                    className={INPUT_CLASS}
                   />
                 </div>
               </div>
-              <div className="w-28">
-                <label className={labelCls}>Moneda</label>
+            </section>
+          </FormInnerSection>
+
+          <FormInnerSection>
+            <section className="space-y-4">
+              <h2 className="text-[11px] font-bold text-cyan-600 uppercase tracking-widest">
+                Datos del comprobante
+              </h2>
+
+              <div>
+                <label className={labelCls}>Proveedor</label>
                 <select
-                  value={form.currency}
-                  onChange={set("currency")}
-                  className={`${inputCls} h-[50px] appearance-none cursor-pointer`}
+                  value={form.provider_id}
+                  onChange={handleProviderChange}
+                  disabled={providersLoading}
+                  className={`${INPUT_CLASS} appearance-none cursor-pointer disabled:opacity-40`}
                 >
-                  {CURRENCIES.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className={labelCls}>Fecha de emisión</label>
-                <input
-                  type="date"
-                  value={form.issued_at}
-                  onChange={set("issued_at")}
-                  className={inputCls}
-                />
-              </div>
-              <div>
-                <label className={labelCls}>Fecha de pago *</label>
-                <input
-                  type="date"
-                  required
-                  value={form.paid_at}
-                  onChange={set("paid_at")}
-                  className={inputCls}
-                />
-              </div>
-            </div>
-          </section>
-
-          {/* Comprobante */}
-          <section className="bg-white border border-gray-200 rounded-xl p-5 space-y-4 shadow-sm">
-            <h2 className="text-[11px] font-bold text-cyan-600 uppercase tracking-widest">
-              Datos del comprobante
-            </h2>
-
-            <div>
-              <label className={labelCls}>Proveedor</label>
-              <select
-                value={form.provider_id}
-                onChange={handleProviderChange}
-                disabled={providersLoading}
-                className={`${inputCls} appearance-none cursor-pointer disabled:opacity-40`}
-              >
-                <option value="">
-                  {willCreateProvider
-                    ? `✦ ${resolvedProvider.name} (nuevo)`
-                    : "Sin proveedor"}
-                </option>
-                {providers.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
+                  <option value="">
+                    {willCreateProvider ? `✦ ${resolvedProvider.name} (nuevo)` : "Sin proveedor"}
                   </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className={labelCls}>Serie</label>
-                <input
-                  type="text"
-                  placeholder="Ej: F001"
-                  value={form.invoice_series}
-                  onChange={set("invoice_series")}
-                  className={`${inputCls} font-mono`}
-                />
-              </div>
-              <div>
-                <label className={labelCls}>Número</label>
-                <input
-                  type="text"
-                  placeholder="Ej: 00012345"
-                  value={form.invoice_number}
-                  onChange={set("invoice_number")}
-                  className={`${inputCls} font-mono`}
-                />
-              </div>
-            </div>
-          </section>
-
-          {/* Detalles */}
-          <section className="bg-white border border-gray-200 rounded-xl p-5 space-y-4 shadow-sm">
-            <h2 className="text-[11px] font-bold text-cyan-600 uppercase tracking-widest">
-              Detalles
-            </h2>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className={labelCls}>Categoría</label>
-                <select
-                  value={form.category_id}
-                  onChange={set("category_id")}
-                  disabled={catsLoading}
-                  className={`${inputCls} appearance-none cursor-pointer disabled:opacity-40`}
-                >
-                  <option value="">Sin categoría</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
+                  {providers.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
                     </option>
                   ))}
                 </select>
               </div>
-              <div>
-                <label className={labelCls}>Método de pago</label>
-                <select
-                  value={form.payment_method}
-                  onChange={set("payment_method")}
-                  className={`${inputCls} appearance-none cursor-pointer`}
-                >
-                  <option value="">Seleccionar</option>
-                  {PAYMENT_METHODS.map((m) => (
-                    <option key={m} value={m}>
-                      {m}
-                    </option>
-                  ))}
-                </select>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls}>Serie</label>
+                  <input
+                    type="text"
+                    placeholder="Ej: F001"
+                    value={form.invoice_series}
+                    onChange={set("invoice_series")}
+                    className={`${INPUT_CLASS} font-mono`}
+                  />
+                </div>
+                <div>
+                  <label className={labelCls}>Número</label>
+                  <input
+                    type="text"
+                    placeholder="Ej: 00012345"
+                    value={form.invoice_number}
+                    onChange={set("invoice_number")}
+                    className={`${INPUT_CLASS} font-mono`}
+                  />
+                </div>
               </div>
-            </div>
+            </section>
+          </FormInnerSection>
+          <FormInnerSection>
+            <section className="space-y-4">
+              <h2 className="text-[11px] font-bold text-cyan-600 uppercase tracking-widest">
+                Detalles
+              </h2>
 
-            <div>
-              <label className={labelCls}>Notas</label>
-              <textarea
-                rows={3}
-                placeholder="Observaciones adicionales..."
-                value={form.notes}
-                onChange={set("notes")}
-                className={`${inputCls} resize-none`}
-              />
-            </div>
-          </section>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls}>Categoría</label>
+                  <select
+                    value={form.category_id}
+                    onChange={set("category_id")}
+                    disabled={catsLoading}
+                    className={`${INPUT_CLASS} appearance-none cursor-pointer disabled:opacity-40`}
+                  >
+                    <option value="">Sin categoría</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelCls}>Método de pago</label>
+                  <select
+                    value={form.payment_method}
+                    onChange={set("payment_method")}
+                    className={`${INPUT_CLASS} appearance-none cursor-pointer`}
+                  >
+                    <option value="">Seleccionar</option>
+                    {PAYMENT_METHODS.map((m) => (
+                      <option key={m} value={m}>
+                        {m}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
-          {/* Error */}
+              <div>
+                <label className={labelCls}>Notas</label>
+                <textarea
+                  rows={3}
+                  placeholder="Observaciones adicionales..."
+                  value={form.notes}
+                  onChange={set("notes")}
+                  className={`${INPUT_CLASS} resize-none`}
+                />
+              </div>
+            </section>
+          </FormInnerSection>
+
           {error && (
             <div className="flex items-start gap-3 border border-red-200 bg-red-50 rounded-lg px-4 py-3 text-sm text-red-600">
               <svg
@@ -786,7 +775,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
             </button>
           </div>
         </form>
-      </div>
+      </FormSection>
     </div>
   );
 }

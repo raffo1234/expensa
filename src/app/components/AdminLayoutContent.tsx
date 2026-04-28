@@ -16,7 +16,7 @@ export default function AdminLayoutContent({
         width: `${isContracted ? "calc(100% - 91px)" : "calc(100% - 286px)"}`,
         marginLeft: "-1px",
       }}
-      className="transition-all duration-300 flex-grow relative px-3.5 md:px-7 lg:px-10 py-14 lg:border-l lg:border-gray-200"
+      className="transition-all duration-300 flex-grow relative px-3.5 pb-10 md:px-7 lg:px-10"
     >
       {children}
     </section>

@@ -9,6 +9,8 @@ import { Expense } from "@/types/ExpenseType";
 import { Category } from "@/types/CategoryType";
 import { ExpenseAttachment } from "@/types/ExpenseAttachment";
 import { Provider } from "@/types/ProviderType";
+import FormSection from "@/components/FormSection";
+import { INPUT_CLASS } from "@/constants";
 
 async function fetchProviders(workspaceId: string): Promise<Provider[]> {
   const { data, error } = await supabase
@@ -93,9 +95,7 @@ function Input({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900
-                 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-cyan-400/40
-                 focus:border-cyan-400 transition-all"
+      className={INPUT_CLASS}
     />
   );
 }
@@ -246,20 +246,9 @@ export default function EditExpensePage() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div
-      className="min-h-screen text-gray-900"
-      style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: "#fafafa" }}
-    >
-      <link
-        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap"
-        rel="stylesheet"
-      />
-
+    <div className="min-h-screen text-gray-900">
       {/* Nav */}
-      <nav
-        className="sticky top-0 z-10 border-b border-gray-200/80"
-        style={{ background: "rgba(255,255,255,0.85)", backdropFilter: "blur(12px)" }}
-      >
+      <nav className=" top-0 z-10">
         <div className="max-w-2xl mx-auto px-6 h-14 flex items-center justify-between gap-3">
           <div className="flex items-center gap-1 text-sm">
             <button
@@ -280,15 +269,13 @@ export default function EditExpensePage() {
           </div>
           <button
             onClick={() => router.push(`/admin/workspace/${workspaceSlug}/expenses/${expenseId}`)}
-            className="text-xs text-gray-400 hover:text-gray-700 transition-colors px-2 py-1"
+            className="text-sm px-2 py-1"
           >
             ← Volver
           </button>
         </div>
       </nav>
-
-      <div className="max-w-2xl mx-auto px-6 py-10">
-        {/* Loading */}
+      <FormSection>
         {providersLoading && (
           <div className="flex items-center justify-center py-32 text-gray-400 text-sm gap-2">
             <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
@@ -353,8 +340,7 @@ export default function EditExpensePage() {
                 <select
                   value={provider_id ?? ""}
                   onChange={(e) => setProviderId(e.target.value)}
-                  className="w-full bg-white border border-gray-200 rounded-lg px-4 py-3 text-sm text-gray-900
-             focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/10"
+                  className={INPUT_CLASS}
                 >
                   <option value="">Sin proveedor</option>
 
@@ -593,7 +579,7 @@ export default function EditExpensePage() {
             </div>
           </div>
         )}
-      </div>
+      </FormSection>
     </div>
   );
 }

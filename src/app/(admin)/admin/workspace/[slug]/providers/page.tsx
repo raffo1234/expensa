@@ -407,20 +407,9 @@ export default function ProvidersPage() {
   }
 
   return (
-    <div
-      className="min-h-screen text-gray-900"
-      style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: "#fafafa" }}
-    >
-      <link
-        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap"
-        rel="stylesheet"
-      />
-
+    <div className="min-h-screen text-gray-900">
       {/* Nav */}
-      <nav
-        className="sticky top-0 z-10 border-b border-gray-200/80"
-        style={{ background: "rgba(255,255,255,0.85)", backdropFilter: "blur(12px)" }}
-      >
+      <nav className="sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-6 h-14 flex items-center gap-3">
           <div className="flex items-center gap-1 text-sm">
             <button

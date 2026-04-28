@@ -8,6 +8,9 @@ import { supabase } from "@/lib/supabase";
 import { formatDistanceToNow, format } from "date-fns";
 import { es } from "date-fns/locale";
 import DeleteButton from "@/components/DeleteButton";
+import { INPUT_CLASS } from "@/constants";
+import FormSection from "@/components/FormSection";
+import FormInnerSection from "@/components/FormInnerSection";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type Expense = {
@@ -63,11 +66,11 @@ function formatAmount(amount: number, currency: string) {
 }
 
 function CategoryBadge({ category }: { category: Expense["category"] }) {
-  if (!category) return <span className="text-xs text-gray-400">—</span>;
+  if (!category) return <span className="text-sm text-gray-400">—</span>;
   const color = category.color ?? "#06b6d4";
   return (
     <span
-      className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold"
+      className="inline-flex items-center px-2 py-0.5 rounded-full text-sm font-semibold"
       style={{ background: `${color}18`, color }}
     >
       {category.name}
@@ -83,19 +86,17 @@ function SummaryCards({ expenses }: { expenses: Expense[] }) {
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-6">
-      <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-          Total gastos
-        </p>
-        <p className="text-2xl font-bold text-gray-900">{expenses.length}</p>
-      </div>
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-8">
+      <FormInnerSection>
+        <p className="text-sm font-bold uppercase tracking-widest mb-1">Total gastos</p>
+        <p className="text-3xl font-bold">{expenses.length}</p>
+      </FormInnerSection>
       {Object.entries(byCurrency).map(([currency, total]) => (
-        <div key={currency} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-            {currency}
-          </p>
-          <p className="text-2xl font-bold text-cyan-600">{formatAmount(total, currency)}</p>
+        <div key={currency}>
+          <FormInnerSection>
+            <p className="text-sm font-bold uppercase tracking-widest mb-1">{currency}</p>
+            <p className="text-3xl font-bold text-purple-800">{formatAmount(total, currency)}</p>
+          </FormInnerSection>
         </div>
       ))}
     </div>
@@ -165,25 +166,14 @@ export default function ExpensesPage() {
   }
 
   return (
-    <div
-      className="min-h-screen text-gray-900"
-      style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: "#fafafa" }}
-    >
-      <link
-        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap"
-        rel="stylesheet"
-      />
-
+    <div className="min-h-screen text-gray-900">
       {/* Nav */}
-      <nav
-        className="sticky top-0 z-10 border-b border-gray-200/80"
-        style={{ background: "rgba(255,255,255,0.85)", backdropFilter: "blur(12px)" }}
-      >
-        <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between gap-3">
+      <nav className="top-0 z-10">
+        <div className="py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-1 text-sm">
             <button
               onClick={() => router.push(`/admin/workspace/${workspaceSlug}`)}
-              className="text-gray-500 hover:text-cyan-600 transition-colors px-2 py-1 rounded-md hover:bg-cyan-50"
+              className="text-gray-500 hover:text-cyan-600 transition-colors px-2 py-1 rounded-md hover:bg-purple-50"
             >
               {workspace?.name ?? "Workspace"}
             </button>
@@ -215,12 +205,10 @@ export default function ExpensesPage() {
           </Link>
         </div>
       </nav>
-
-      <div className="max-w-5xl mx-auto px-6 py-10">
-        {/* Header */}
+      <FormSection>
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Gastos</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-gray-600 mt-1">
             Todos los gastos registrados en este workspace.
           </p>
         </div>
@@ -229,31 +217,13 @@ export default function ExpensesPage() {
         {!isLoading && expenses.length > 0 && <SummaryCards expenses={expenses} />}
 
         {/* Toolbar */}
-        <div className="flex items-center gap-3 mb-4 flex-wrap">
-          <div className="relative flex-1 min-w-[200px]">
-            <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <path d="M21 21l-4.35-4.35" />
-            </svg>
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por proveedor, categoría, factura..."
-              className="w-full bg-white border border-gray-200 rounded-lg pl-9 pr-4 py-2.5 text-sm text-gray-900
-                         placeholder:text-gray-400 focus:outline-none focus:border-cyan-500 focus:ring-2
-                         focus:ring-cyan-500/10 transition-all shadow-sm"
-              onFocus={(e) => (e.target.style.borderColor = "#06b6d4")}
-              onBlur={(e) => (e.target.style.borderColor = "#e5e7eb")}
-            />
-          </div>
+        <div className="flex items-center gap-3 mb-8 flex-wrap">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por proveedor, categoría, factura..."
+            className={INPUT_CLASS}
+          />
           {currencies.length > 1 && (
             <select
               value={filterCurrency}
@@ -343,12 +313,12 @@ export default function ExpensesPage() {
 
         {/* Table */}
         {!isLoading && filtered.length > 0 && (
-          <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-            <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 px-5 py-3 border-b border-gray-100 bg-gray-50/60">
+          <FormInnerSection>
+            <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 px-5 py-5 border-b border-gray-100 bg-slate-50 rounded-lg">
               {["Proveedor / Factura", "Categoría", "Método", "Fecha", "Monto"].map((h) => (
                 <span
                   key={h}
-                  className="text-[11px] font-bold text-gray-400 uppercase tracking-widest"
+                  className="text-xs font-semibold text-navy-800 uppercase tracking-widest"
                 >
                   {h}
                 </span>
@@ -363,9 +333,9 @@ export default function ExpensesPage() {
                 onDelete={handleDelete}
               />
             ))}
-          </div>
+          </FormInnerSection>
         )}
-      </div>
+      </FormSection>
     </div>
   );
 }
@@ -390,12 +360,11 @@ function ExpenseRow({
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className={`grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-4 items-center px-5 py-3.5 transition-colors
+      className={`grid rounded-lg grid-cols-[1fr_auto_auto_auto_auto_auto] gap-4 items-center px-5 py-3.5 transition-colors
         ${!isLast ? "border-b border-gray-100" : ""}
-        ${hovered ? "bg-cyan-50/40" : "bg-white"}`}
+        ${hovered ? "bg-purple-50" : "bg-white"}`}
     >
       <Link href={`/admin/workspace/${workspaceSlug}/expenses/${expense.id}`} className="contents">
-        {/* Provider + invoice ref */}
         <div className="min-w-0 cursor-pointer">
           <p className="text-sm font-semibold text-gray-900 truncate">
             {expense.provider?.name ?? (
@@ -403,33 +372,31 @@ function ExpenseRow({
             )}
           </p>
           {invoiceRef ? (
-            <p className="text-xs text-gray-400 truncate mt-0.5 font-mono">{invoiceRef}</p>
+            <p className="text-sm text-gray-400 truncate mt-0.5 font-mono">{invoiceRef}</p>
           ) : expense.notes ? (
             <p className="text-xs text-gray-400 truncate mt-0.5">{expense.notes}</p>
           ) : null}
         </div>
-
-        {/* Category */}
         <div className="flex justify-start cursor-pointer">
           <CategoryBadge category={expense.category} />
         </div>
 
         {/* Payment method */}
-        <p className="text-xs text-gray-500 whitespace-nowrap cursor-pointer">
+        <p className="text-sm text-gray-500 whitespace-nowrap cursor-pointer">
           {expense.payment_method ?? "—"}
         </p>
 
         {/* Dates */}
         <div className="text-right cursor-pointer">
-          <p className="text-xs font-medium text-gray-700 whitespace-nowrap">
+          <p className="text-sm font-medium text-gray-800 whitespace-nowrap">
             {format(new Date(expense.paid_at), "d MMM yyyy", { locale: es })}
           </p>
           {expense.issued_at && expense.issued_at !== expense.paid_at ? (
-            <p className="text-[11px] text-gray-400 whitespace-nowrap">
+            <p className="text-sm text-gray-400 whitespace-nowrap">
               emitido {format(new Date(expense.issued_at), "d MMM", { locale: es })}
             </p>
           ) : (
-            <p className="text-[11px] text-gray-400 whitespace-nowrap">
+            <p className="text-sm text-gray-400 whitespace-nowrap">
               {formatDistanceToNow(new Date(expense.created_at), { addSuffix: true, locale: es })}
             </p>
           )}

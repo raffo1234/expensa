@@ -14,6 +14,7 @@
     "deploy:all": "npx wrangler deploy --config workers/process-dicom/wrangler.toml && vercel deploy"
   },
   "dependencies": {
+    "@ai-sdk/google": "^3.0.64",
     "@aws-sdk/client-s3": "^3.828.0",
     "@aws-sdk/s3-request-presigner": "^3.828.0",
     "@cornerstonejs/core": "^4.16.4",
@@ -27,6 +28,7 @@
     "@react-pdf/renderer": "^4.3.0",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.49.4",
+    "ai": "^6.0.168",
     "archiver": "^7.0.1",
     "bcryptjs": "^3.0.2",
     "clsx": "^2.1.1",
@@ -71,7 +73,7 @@
     "use-debounce": "^10.0.4",
     "uuid": "^13.0.0",
     "webpack": "^5.105.2",
-    "zod": "^3.24.2",
+    "zod": "^4.3.6",
     "zustand": "^5.0.3"
   },
   "devDependencies": {

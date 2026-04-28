@@ -12,9 +12,12 @@ import DeleteButton from "@/components/DeleteButton";
 // ── Types ────────────────────────────────────────────────────────────────────
 type Expense = {
   id: string;
-  provider: string | null;
+  provider: { id: string; name: string } | null;
+  invoice_series: string | null;
+  invoice_number: string | null;
   amount: number;
   currency: string;
+  issued_at: string | null;
   paid_at: string;
   payment_method: string | null;
   notes: string | null;
@@ -27,7 +30,10 @@ async function fetchExpenses(workspaceId: string): Promise<Expense[]> {
   const { data, error } = await supabase
     .from("expense")
     .select(
-      "id, provider, amount, currency, paid_at, payment_method, notes, created_at, category(id, name, color)",
+      `id, invoice_series, invoice_number, amount, currency,
+       issued_at, paid_at, payment_method, notes, created_at,
+       provider(id, name),
+       category(id, name, color)`,
     )
     .eq("workspace_id", workspaceId)
     .order("paid_at", { ascending: false });
@@ -117,9 +123,12 @@ export default function ExpensesPage() {
   const currencies = [...new Set(expenses.map((e) => e.currency))];
 
   const filtered = expenses.filter((e) => {
+    const providerName = e.provider?.name ?? "";
+    const invoiceRef = [e.invoice_series, e.invoice_number].filter(Boolean).join("-");
     const matchSearch =
       !search ||
-      e.provider?.toLowerCase().includes(search.toLowerCase()) ||
+      providerName.toLowerCase().includes(search.toLowerCase()) ||
+      invoiceRef.toLowerCase().includes(search.toLowerCase()) ||
       e.notes?.toLowerCase().includes(search.toLowerCase()) ||
       e.category?.name.toLowerCase().includes(search.toLowerCase()) ||
       e.payment_method?.toLowerCase().includes(search.toLowerCase());
@@ -230,7 +239,7 @@ export default function ExpensesPage() {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por proveedor, categoría, notas..."
+              placeholder="Buscar por proveedor, categoría, factura..."
               className="w-full bg-white border border-gray-200 rounded-lg pl-9 pr-4 py-2.5 text-sm text-gray-900
                          placeholder:text-gray-400 focus:outline-none focus:border-cyan-500 focus:ring-2
                          focus:ring-cyan-500/10 transition-all shadow-sm"
@@ -259,20 +268,8 @@ export default function ExpensesPage() {
         {isLoading && (
           <div className="flex items-center justify-center py-24 text-gray-400 text-sm gap-2">
             <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-              <circle
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="3"
-                strokeOpacity="0.25"
-              />
-              <path
-                d="M12 2a10 10 0 0 1 10 10"
-                stroke="currentColor"
-                strokeWidth="3"
-                strokeLinecap="round"
-              />
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeOpacity="0.25" />
+              <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
             </svg>
             Cargando gastos...
           </div>
@@ -289,24 +286,14 @@ export default function ExpensesPage() {
         {!isLoading && !error && expenses.length === 0 && (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="w-12 h-12 rounded-2xl bg-cyan-50 flex items-center justify-center mb-4">
-              <svg
-                width="22"
-                height="22"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#06b6d4"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-              >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" strokeWidth="1.8" strokeLinecap="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="17 8 12 3 7 8" />
                 <line x1="12" y1="3" x2="12" y2="15" />
               </svg>
             </div>
             <p className="text-gray-700 font-semibold text-base">Sin gastos aún</p>
-            <p className="text-gray-400 text-sm mt-1 mb-5">
-              Registra tu primer gasto para verlo aquí.
-            </p>
+            <p className="text-gray-400 text-sm mt-1 mb-5">Registra tu primer gasto para verlo aquí.</p>
             <Link href={`/admin/workspace/${workspaceSlug}/upload-expense`}>
               <button
                 className="flex items-center gap-2 text-sm font-semibold text-white px-5 py-2.5 rounded-lg"
@@ -328,19 +315,13 @@ export default function ExpensesPage() {
         {/* Table */}
         {!isLoading && filtered.length > 0 && (
           <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-            {/* Table header */}
             <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 px-5 py-3 border-b border-gray-100 bg-gray-50/60">
-              {["Proveedor", "Categoría", "Método", "Fecha", "Monto"].map((h) => (
-                <span
-                  key={h}
-                  className="text-[11px] font-bold text-gray-400 uppercase tracking-widest"
-                >
+              {["Proveedor / Factura", "Categoría", "Método", "Fecha", "Monto"].map((h) => (
+                <span key={h} className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
                   {h}
                 </span>
               ))}
             </div>
-
-            {/* Rows */}
             {filtered.map((expense, i) => (
               <ExpenseRow
                 key={expense.id}
@@ -371,6 +352,8 @@ function ExpenseRow({
 }) {
   const [hovered, setHovered] = useState(false);
 
+  const invoiceRef = [expense.invoice_series, expense.invoice_number].filter(Boolean).join("-");
+
   return (
     <div
       onMouseEnter={() => setHovered(true)}
@@ -380,14 +363,18 @@ function ExpenseRow({
         ${hovered ? "bg-cyan-50/40" : "bg-white"}`}
     >
       <Link href={`/admin/workspace/${workspaceSlug}/expenses/${expense.id}`} className="contents">
-        {/* Provider */}
+        {/* Provider + invoice ref */}
         <div className="min-w-0 cursor-pointer">
           <p className="text-sm font-semibold text-gray-900 truncate">
-            {expense.provider ?? <span className="text-gray-400 font-normal">Sin proveedor</span>}
+            {expense.provider?.name ?? (
+              <span className="text-gray-400 font-normal">Sin proveedor</span>
+            )}
           </p>
-          {expense.notes && (
+          {invoiceRef ? (
+            <p className="text-xs text-gray-400 truncate mt-0.5 font-mono">{invoiceRef}</p>
+          ) : expense.notes ? (
             <p className="text-xs text-gray-400 truncate mt-0.5">{expense.notes}</p>
-          )}
+          ) : null}
         </div>
 
         {/* Category */}
@@ -400,14 +387,20 @@ function ExpenseRow({
           {expense.payment_method ?? "—"}
         </p>
 
-        {/* Date */}
+        {/* Dates */}
         <div className="text-right cursor-pointer">
           <p className="text-xs font-medium text-gray-700 whitespace-nowrap">
             {format(new Date(expense.paid_at), "d MMM yyyy", { locale: es })}
           </p>
-          <p className="text-[11px] text-gray-400 whitespace-nowrap">
-            {formatDistanceToNow(new Date(expense.created_at), { addSuffix: true, locale: es })}
-          </p>
+          {expense.issued_at && expense.issued_at !== expense.paid_at ? (
+            <p className="text-[11px] text-gray-400 whitespace-nowrap">
+              emitido {format(new Date(expense.issued_at), "d MMM", { locale: es })}
+            </p>
+          ) : (
+            <p className="text-[11px] text-gray-400 whitespace-nowrap">
+              {formatDistanceToNow(new Date(expense.created_at), { addSuffix: true, locale: es })}
+            </p>
+          )}
         </div>
 
         {/* Amount */}
@@ -416,13 +409,13 @@ function ExpenseRow({
         </p>
       </Link>
 
-      {/* Delete — outside Link, inside row div */}
+      {/* Delete */}
       <div onClick={(e) => e.stopPropagation()}>
         <DeleteButton
           onClick={() => onDelete(expense.id)}
           title="Eliminar gasto"
           confirmTitle="¿Eliminar gasto?"
-          confirmDescription={`Se eliminará "${expense.provider ?? "este gasto"}" de forma permanente.`}
+          confirmDescription={`Se eliminará "${expense.provider?.name ?? "este gasto"}" de forma permanente.`}
           confirmLabel="Eliminar"
           cancelLabel="Cancelar"
         />

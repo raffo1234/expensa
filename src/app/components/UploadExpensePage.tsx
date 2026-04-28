@@ -8,6 +8,7 @@ import { createExpense } from "@/actions/expenses";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type Category = { id: string; name: string; color: string | null };
+type Provider = { id: string; name: string };
 type FileItem = { id: string; file: File; preview?: string };
 
 // ── SWR fetchers ─────────────────────────────────────────────────────────────
@@ -21,6 +22,16 @@ async function fetchCategories(workspaceId: string): Promise<Category[]> {
   const { data, error } = await supabase
     .from("category")
     .select("id, name, color")
+    .eq("workspace_id", workspaceId)
+    .order("name");
+  if (error) throw error;
+  return data ?? [];
+}
+
+async function fetchProviders(workspaceId: string): Promise<Provider[]> {
+  const { data, error } = await supabase
+    .from("provider")
+    .select("id, name")
     .eq("workspace_id", workspaceId)
     .order("name");
   if (error) throw error;
@@ -46,7 +57,6 @@ const inputCls =
 const labelCls = "block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide";
 
 // ── Component ────────────────────────────────────────────────────────────────
-
 export default function UploadExpensePage({ userId }: { userId: string }) {
   const params = useParams();
   const workspaceSlug = params.slug as string;
@@ -54,7 +64,6 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
   const [isPending, startTransition] = useTransition();
   const dropRef = useRef<HTMLLabelElement>(null);
 
-  // Fetch workspace ID from slug
   const { data: workspace } = useSWR(
     workspaceSlug ? ["workspace", workspaceSlug] : null,
     ([, slug]) => fetchWorkspace(slug),
@@ -66,10 +75,18 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
     ([, wid]) => fetchCategories(wid),
   );
 
+  const { data: providers = [], isLoading: providersLoading } = useSWR(
+    workspaceId ? ["providers", workspaceId] : null,
+    ([, wid]) => fetchProviders(wid),
+  );
+
   const [form, setForm] = useState({
-    provider: "",
+    provider_id: "",
+    invoice_series: "",
+    invoice_number: "",
     amount: "",
     currency: "PEN",
+    issued_at: "",
     paid_at: new Date().toISOString().slice(0, 10),
     payment_method: "",
     category_id: "",
@@ -118,7 +135,6 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
       setError("No se pudo obtener el workspace. Intenta recargar la página.");
       return;
     }
-
     if (!userId) {
       setError("No se pudo obtener el usuario autenticado. Intenta recargar la página.");
       return;
@@ -147,9 +163,12 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
         workspace_slug: workspaceSlug,
         created_by: userId,
         category_id: form.category_id || undefined,
-        provider: form.provider || undefined,
+        provider_id: form.provider_id || undefined,
+        invoice_series: form.invoice_series || undefined,
+        invoice_number: form.invoice_number || undefined,
         amount: amountCents,
         currency: form.currency,
+        issued_at: form.issued_at || undefined,
         paid_at: form.paid_at,
         payment_method: form.payment_method || undefined,
         notes: form.notes || undefined,
@@ -237,7 +256,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                 <select
                   value={form.currency}
                   onChange={set("currency")}
-                  className={`${inputCls} h-[46px] appearance-none cursor-pointer`}
+                  className={`${inputCls} h-[50px] appearance-none cursor-pointer`}
                 >
                   {CURRENCIES.map((c) => (
                     <option key={c} value={c}>
@@ -248,15 +267,73 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
               </div>
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls}>Fecha de emisión</label>
+                <input
+                  type="date"
+                  value={form.issued_at}
+                  onChange={set("issued_at")}
+                  className={inputCls}
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Fecha de pago *</label>
+                <input
+                  type="date"
+                  required
+                  value={form.paid_at}
+                  onChange={set("paid_at")}
+                  className={inputCls}
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* Comprobante */}
+          <section className="bg-white border border-gray-200 rounded-xl p-5 space-y-4 shadow-sm">
+            <h2 className="text-[11px] font-bold text-cyan-600 uppercase tracking-widest">
+              Comprobante
+            </h2>
+
             <div>
-              <label className={labelCls}>Fecha de pago *</label>
-              <input
-                type="date"
-                required
-                value={form.paid_at}
-                onChange={set("paid_at")}
-                className={inputCls}
-              />
+              <label className={labelCls}>Proveedor</label>
+              <select
+                value={form.provider_id}
+                onChange={set("provider_id")}
+                disabled={providersLoading}
+                className={`${inputCls} appearance-none cursor-pointer disabled:opacity-40`}
+              >
+                <option value="">Sin proveedor</option>
+                {providers.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls}>Serie</label>
+                <input
+                  type="text"
+                  placeholder="Ej: F001"
+                  value={form.invoice_series}
+                  onChange={set("invoice_series")}
+                  className={`${inputCls} font-mono`}
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Número</label>
+                <input
+                  type="text"
+                  placeholder="Ej: 00012345"
+                  value={form.invoice_number}
+                  onChange={set("invoice_number")}
+                  className={`${inputCls} font-mono`}
+                />
+              </div>
             </div>
           </section>
 
@@ -265,17 +342,6 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
             <h2 className="text-[11px] font-bold text-cyan-600 uppercase tracking-widest">
               Detalles
             </h2>
-
-            <div>
-              <label className={labelCls}>Proveedor</label>
-              <input
-                type="text"
-                placeholder="Ej: Rappi, AWS, Movistar"
-                value={form.provider}
-                onChange={set("provider")}
-                className={inputCls}
-              />
-            </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -315,7 +381,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
               <label className={labelCls}>Notas</label>
               <textarea
                 rows={3}
-                placeholder="Descripción, referencia, # de factura..."
+                placeholder="Observaciones adicionales..."
                 value={form.notes}
                 onChange={set("notes")}
                 className={`${inputCls} resize-none`}
@@ -352,7 +418,6 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                 className="hidden"
                 onChange={(e) => addFiles(Array.from(e.target.files ?? []))}
               />
-
               <div
                 className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors
                 ${dragging ? "bg-cyan-100" : "bg-gray-100"}`}
@@ -379,7 +444,6 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                   <line x1="12" y1="3" x2="12" y2="15" strokeWidth="1.8" strokeLinecap="round" />
                 </svg>
               </div>
-
               <div className="text-center">
                 <p className="text-sm font-medium text-gray-700">
                   Arrastra archivos o{" "}
@@ -403,10 +467,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                         className="w-8 h-8 rounded-md object-cover flex-shrink-0"
                       />
                     ) : (
-                      <div
-                        className="w-8 h-8 rounded-md bg-cyan-100 flex items-center justify-center
-                                      text-[9px] font-bold text-cyan-600 flex-shrink-0"
-                      >
+                      <div className="w-8 h-8 rounded-md bg-cyan-100 flex items-center justify-center text-[9px] font-bold text-cyan-600 flex-shrink-0">
                         PDF
                       </div>
                     )}
@@ -482,7 +543,6 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
             >
               Cancelar
             </button>
-
             <button
               type="submit"
               disabled={isPending || success || !workspaceId || !userId}

@@ -4,8 +4,7 @@ import toast from "react-hot-toast";
 
 const SETTINGS_TABLE = "user_setting";
 
-const getLocalKey = (userId: string, settingKey: string) =>
-  `user_setting_${userId}_${settingKey}`;
+const getLocalKey = (userId: string, settingKey: string) => `user_setting_${userId}_${settingKey}`;
 
 const readLocalCache = (userId: string, settingKey: string): boolean | null => {
   if (typeof window === "undefined") return null;
@@ -18,7 +17,9 @@ const writeLocalCache = (userId: string, settingKey: string, value: boolean) => 
   localStorage.setItem(getLocalKey(userId, settingKey), String(value));
 };
 
-const fetcher = async ([tableName, userId, settingKey]: [string, string, string]): Promise<boolean | null> => {
+const fetcher = async ([tableName, userId, settingKey]: [string, string, string]): Promise<
+  boolean | null
+> => {
   const { data, error } = await supabase
     .from(tableName)
     .select("setting_value")
@@ -39,7 +40,7 @@ export const useUpsertUserSetting = (userId: string, settingKey: string, initial
   const { data, error, isLoading } = useSWR<boolean | null>(
     userId ? [SETTINGS_TABLE, userId, settingKey] : null,
     fetcher,
-    { fallbackData: localCached }
+    { fallbackData: localCached },
   );
 
   const settingValue = data ?? initialValue;
@@ -57,7 +58,7 @@ export const useUpsertUserSetting = (userId: string, settingKey: string, initial
       .from(SETTINGS_TABLE)
       .upsert(
         { user_id: userId, setting_key: settingKey, setting_value: String(newValue) },
-        { onConflict: "user_id,setting_key" }
+        { onConflict: "user_id,setting_key" },
       )
       .select();
 

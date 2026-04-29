@@ -7,7 +7,9 @@ import { supabase } from "@/lib/supabase";
 import { createExpense } from "@/actions/expenses";
 import FormSection from "./FormSection";
 import FormInnerSection from "./FormInnerSection";
-import { INPUT_CLASS } from "@/constants";
+import { INPUT_CLASS, PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from "@/constants";
+import SectionTitle from "./SectionTitle";
+import BackLink from "./BackLink";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type Category = { id: string; name: string; color: string | null };
@@ -293,12 +295,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
       <nav className=" top-0 z-10">
         <div className="py-4 flex items-center gap-3">
           <div className="flex items-center gap-1 text-sm">
-            <button
-              onClick={() => router.push(`/admin/workspaces/${workspaceSlug}/expenses`)}
-              className="text-gray-500 hover:text-cyan-600 transition-colors px-2 py-1 rounded-md hover:bg-cyan-50"
-            >
-              Gastos
-            </button>
+            <BackLink href={`/admin/workspaces/${workspaceSlug}/expenses`}>Gastos</BackLink>
             <span className="text-gray-300">/</span>
             <span className="text-gray-900 font-medium px-2 py-1">Nuevo</span>
           </div>
@@ -503,13 +500,9 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
             </section>
           </FormInnerSection>
 
-          {/* Importe */}
+          <SectionTitle>Importe</SectionTitle>
           <FormInnerSection>
             <section className="space-y-4">
-              <h2 className="text-[11px] font-bold text-cyan-600 uppercase tracking-widest">
-                Importe
-              </h2>
-
               <div className="flex gap-3">
                 <div className="flex-1">
                   <label className={labelCls}>Monto *</label>
@@ -572,12 +565,9 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
             </section>
           </FormInnerSection>
 
+          <SectionTitle>Datos del comprobante</SectionTitle>
           <FormInnerSection>
             <section className="space-y-4">
-              <h2 className="text-[11px] font-bold text-cyan-600 uppercase tracking-widest">
-                Datos del comprobante
-              </h2>
-
               <div>
                 <label className={labelCls}>Proveedor</label>
                 <select
@@ -621,12 +611,9 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
               </div>
             </section>
           </FormInnerSection>
+          <SectionTitle>Detalles</SectionTitle>
           <FormInnerSection>
             <section className="space-y-4">
-              <h2 className="text-[11px] font-bold text-cyan-600 uppercase tracking-widest">
-                Detalles
-              </h2>
-
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>Categoría</label>
@@ -713,24 +700,13 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
 
           {/* Actions */}
           <div className="flex items-center gap-3 pt-1">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="px-5 py-2.5 rounded-lg border border-gray-200 text-sm font-medium
-                         text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all shadow-sm"
-            >
+            <button type="button" onClick={() => router.back()} className={SECONDARY_BUTTON_CLASS}>
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isPending || success || !workspaceId || !userId || extracting}
-              className="flex-1 flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg
-                         text-sm font-semibold text-white transition-all duration-150
-                         active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{
-                background: "linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)",
-                boxShadow: "0 2px 12px rgba(6,182,212,0.35), 0 1px 3px rgba(6,182,212,0.2)",
-              }}
+              className={PRIMARY_BUTTON_CLASS}
             >
               {isPending ? (
                 <>

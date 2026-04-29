@@ -62,7 +62,7 @@ export default function Aside({
       <div className={`flex justify-end lg:p-2 ${!isMenuContracted ? "lg:pr-5" : "lg:pr-6"}`}>
         <button
           onClick={toggleContracted}
-          className="p-3 cursor-pointer hover:bg-gray-200/70 transition-colors duration-300 active:scale-95 hidden lg:block bg-slate-100 rounded-lg"
+          className="p-3 cursor-pointer hover:bg-purple-200/70 transition-colors duration-300 active:scale-95 hidden lg:block bg-purple-100 rounded-lg"
           type="button"
         >
           <div className="w-[19px] relative h-[19px] rounded-md border-[1.5px] border-slate-800">

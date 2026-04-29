@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { createWorkspace } from "@/actions/workspace";
-import { INPUT_CLASS } from "@/constants";
+import { INPUT_CLASS, PRIMARY_BUTTON_CLASS, STYLED_ICON_CLASS } from "@/constants";
+import Field from "@/components/Field";
+import FormSection from "@/components/FormSection";
+import BackLink from "@/components/BackLink";
+import FormInnerSection from "@/components/FormInnerSection";
 
-// ── Slug generator ─────────────────────────────────────────────────────────
 function toSlug(str: string) {
   return str
     .toLowerCase()
@@ -16,20 +18,6 @@ function toSlug(str: string) {
     .replace(/-+/g, "-");
 }
 
-// ── Icons ──────────────────────────────────────────────────────────────────
-const BackIcon = () => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-  >
-    <path d="M19 12H5M12 5l-7 7 7 7" />
-  </svg>
-);
 const CheckIcon = () => (
   <svg
     width="14"
@@ -52,46 +40,12 @@ const SpinnerIcon = () => (
     stroke="currentColor"
     strokeWidth="2.5"
     strokeLinecap="round"
-    style={{ animation: "spin 0.8s linear infinite" }}
+    className="animate-spin"
   >
     <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
   </svg>
 );
 
-function Field({
-  label,
-  hint,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      <label
-        style={{
-          fontSize: 13.5,
-          fontWeight: 600,
-          color: "#374151",
-          fontFamily: "'DM Sans', sans-serif",
-        }}
-      >
-        {label}
-      </label>
-      {children}
-      {hint && (
-        <p
-          style={{ margin: 0, fontSize: 12, color: "#9ca3af", fontFamily: "'DM Sans', sans-serif" }}
-        >
-          {hint}
-        </p>
-      )}
-    </div>
-  );
-}
-
-// ── Main Page ──────────────────────────────────────────────────────────────
 export default function NewWorkspacePage() {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -130,30 +84,18 @@ export default function NewWorkspacePage() {
   };
 
   return (
-    <>
-      <div style={{ maxWidth: 520, margin: "0 auto", padding: "48px 24px" }}>
-        {/* Back */}
-        <Link href="/admin/workspaces" className="gap-3 flex items-center text-slate-500 mb-10">
-          <BackIcon /> Volver a workspaces
-        </Link>
-        <div className="mb-10">
-          <h1 className="text-4xl font-bold mb-1">Nuevo Workspace</h1>
-          <p className="text-slate-500">
-            Los workspaces te ayudan a organizar tus proyectos y equipo.
-          </p>
-        </div>
+    <div className="max-w-xl mx-auto py-10 px-4">
+      <BackLink href="/admin/workspaces">Volver a workspaces</BackLink>
 
-        <div
-          style={{
-            background: "#fff",
-            border: "1.5px solid #e5e7eb",
-            borderRadius: 14,
-            padding: "28px 26px",
-            display: "flex",
-            flexDirection: "column",
-            gap: 22,
-          }}
-        >
+      <div className="mb-10 mt-6">
+        <h1 className="text-4xl font-bold mb-1">Nuevo Workspace</h1>
+        <p className="text-slate-500">
+          Los workspaces te ayudan a organizar tus proyectos y equipo.
+        </p>
+      </div>
+
+      <FormSection>
+        <div className="space-y-6">
           <Field label="Nombre del workspace" hint="Mínimo 2 caracteres.">
             <input
               value={name}
@@ -163,21 +105,13 @@ export default function NewWorkspacePage() {
               className={INPUT_CLASS}
             />
           </Field>
+
           <Field
             label="Slug"
             hint="Se usa en las URLs. Se genera automáticamente — o personalízalo."
           >
             <div className="flex items-center">
-              <span
-                style={{
-                  padding: "10px 10px 10px 13px",
-                  fontSize: 14,
-                  color: "#9ca3af",
-                  userSelect: "none",
-                  whiteSpace: "nowrap",
-                  fontFamily: "'DM Sans', sans-serif",
-                }}
-              >
+              <span className="px-3 py-2.5 text-sm text-gray-400 select-none whitespace-nowrap">
                 /workspaces/
               </span>
               <input
@@ -191,52 +125,24 @@ export default function NewWorkspacePage() {
           </Field>
 
           {name && (
-            <div
-              style={{
-                background: "#f0f9ff",
-                border: "1px solid #bae6fd",
-                borderRadius: 8,
-                padding: "10px 14px",
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-              }}
-            >
-              <div
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 7,
-                  background: "linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#fff",
-                  fontWeight: 700,
-                  fontSize: 13,
-                  flexShrink: 0,
-                }}
-              >
-                {name[0]?.toUpperCase()}
+            <FormInnerSection>
+              <div className="flex items-center gap-3">
+                <div className={STYLED_ICON_CLASS}>{name[0]?.toUpperCase()}</div>
+                <div>
+                  <p className="text-sm font-semibold">{name}</p>
+                  <p className="text-sm text-purple-800">/{slug || "…"}</p>
+                </div>
               </div>
-              <div>
-                <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#0e7490" }}>{name}</p>
-                <p style={{ margin: 0, fontSize: 11.5, color: "#22d3ee" }}>/{slug || "…"}</p>
-              </div>
-            </div>
+            </FormInnerSection>
           )}
 
-          {/* Error */}
-          {error && (
-            <p style={{ margin: 0, fontSize: 13, color: "#ef4444", fontWeight: 500 }}>{error}</p>
-          )}
+          {error && <p className="text-sm font-medium text-red-500">{error}</p>}
 
-          {/* Submit */}
           <button
             onClick={handleSubmit}
             disabled={!isValid || loading || success}
             type="submit"
-            className="bg-slate-900 px-4 py-3 rounded-full text-white font-semibold disabled:opacity-50 cursor-pointer disabled:pointer-events-none flex items-center gap-2 justify-center"
+            className={PRIMARY_BUTTON_CLASS}
           >
             {success ? (
               <>
@@ -251,7 +157,7 @@ export default function NewWorkspacePage() {
             )}
           </button>
         </div>
-      </div>
-    </>
+      </FormSection>
+    </div>
   );
 }

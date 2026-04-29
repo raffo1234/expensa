@@ -1,6 +1,14 @@
-export default function FormInnerSection({ children }: { children: React.ReactNode }) {
+export default function FormInnerSection({
+  padding = true,
+  children,
+}: {
+  padding?: boolean;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="border border-purple-200 rounded-xl p-5 shadow-xl shadow-purple-100">
+    <div
+      className={`border bg-white border-purple-100 rounded-xl shadow-xl shadow-purple-50 ${padding ? "p-5" : ""}`}
+    >
       {children}
     </div>
   );

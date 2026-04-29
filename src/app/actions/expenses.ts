@@ -4,6 +4,8 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getCurrentUser } from "@/lib/getCurrentUser";
 import { revalidatePath } from "next/cache";
 import { uploadToR2 } from "@/lib/r2";
+import { DeleteObjectsCommand } from "@aws-sdk/client-s3";
+import { r2 } from "@/lib/r2";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -17,7 +19,6 @@ type CreateExpenseInput = {
   workspace_id: string;
   workspace_slug: string;
   category_id?: string;
-  // Pass ruc + name instead of provider_id — resolution happens here
   provider_ruc?: string | null;
   provider_name?: string | null;
   amount: number;
@@ -30,16 +31,11 @@ type CreateExpenseInput = {
   invoice_number?: string | null;
   issued_at?: string | null;
   created_by?: string | null;
-  provider_id?: string | null; // optional fallback if provider resolution fails, but ideally should not be used directly
+  provider_id?: string | null;
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/**
- * Finds or creates a provider by RUC within the workspace.
- * Uses the unique index (workspace_id, ruc) for conflict resolution.
- * Returns null if no RUC is provided.
- */
 async function resolveProvider(
   workspaceId: string,
   ruc: string | null | undefined,
@@ -53,11 +49,11 @@ async function resolveProvider(
       {
         workspace_id: workspaceId,
         ruc,
-        name: name?.trim() || ruc, // fallback to RUC if name is missing
+        name: name?.trim() || ruc,
       },
       {
         onConflict: "workspace_id,ruc",
-        ignoreDuplicates: false, // always update name in case it changed
+        ignoreDuplicates: false,
       },
     )
     .select("id")
@@ -67,7 +63,7 @@ async function resolveProvider(
   return data.id;
 }
 
-// ─── Action ───────────────────────────────────────────────────────────────────
+// ─── Actions ──────────────────────────────────────────────────────────────────
 
 export async function createExpense(input: CreateExpenseInput): Promise<{ error?: string }> {
   const user = await getCurrentUser();
@@ -120,4 +116,33 @@ export async function createExpense(input: CreateExpenseInput): Promise<{ error?
 
   revalidatePath(`/admin/workspaces/${input.workspace_slug}/expenses`);
   return {};
+}
+
+export async function deleteExpense(id: string, workspaceSlug: string): Promise<void> {
+  // 1. Obtener attachments del expense
+  const { data: attachments, error: fetchError } = await supabaseAdmin
+    .from("expense_attachment")
+    .select("storage_path")
+    .eq("expense_id", id);
+
+  if (fetchError) throw new Error(fetchError.message);
+
+  // 2. Eliminar archivos de R2
+  if (attachments && attachments.length > 0) {
+    await r2.send(
+      new DeleteObjectsCommand({
+        Bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME!,
+        Delete: {
+          Objects: attachments.map((a) => ({ Key: a.storage_path })),
+        },
+      }),
+    );
+  }
+
+  // 3. Eliminar expense (cascade borra expense_attachment)
+  const { error } = await supabaseAdmin.from("expense").delete().eq("id", id);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/admin/workspaces/${workspaceSlug}/expenses`);
 }

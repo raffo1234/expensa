@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { STYLED_ICON_CLASS } from "@/constants";
 
 type PageLink = {
   href: string;
@@ -49,7 +50,7 @@ const MenuItemLink = React.forwardRef<
       onClick={closeMenu}
       ref={ref}
     >
-      <span className="p-2 block bg-gradient-to-b lg:from-white/75 lg:to-purple-100/75 rounded-lg bg-purple-100 border border-purple-200">
+      <span className={STYLED_ICON_CLASS}>
         <Icon
           icon={iconName}
           fontSize={16}

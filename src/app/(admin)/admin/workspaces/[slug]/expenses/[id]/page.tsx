@@ -8,6 +8,9 @@ import { es } from "date-fns/locale";
 import getAttachmentUrl from "@/lib/getAttachmentUrl";
 import FormSection from "@/components/FormSection";
 import FormInnerSection from "@/components/FormInnerSection";
+import SectionTitle from "@/components/SectionTitle";
+import { PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from "@/constants";
+import Link from "next/link";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type ExpenseAttachment = {
@@ -64,14 +67,13 @@ function isImage(storagePath: string) {
   return /\.(jpe?g|png|webp|gif)$/i.test(storagePath);
 }
 
-// ── Sub-components ────────────────────────────────────────────────────────────
 function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-start justify-between py-5 border-b border-gray-100 last:border-0 gap-4">
+    <div className="first:rounded-t-xl odd:bg-slate-50 flex items-start justify-between p-5 border-b border-gray-100 last:border-0 gap-4">
       <span className="text-[11px] font-bold text-gray-800 uppercase tracking-widest flex-shrink-0 pt-0.5">
         {label}
       </span>
-      <span className="text-sm text-gray-900 text-right font-medium">{children}</span>
+      <span className="text-sm text-gray-500 text-right font-medium">{children}</span>
     </div>
   );
 }
@@ -197,12 +199,10 @@ export default function ExpenseDetailPage() {
         {expense && (
           <div className="space-y-8">
             {/* Amount hero */}
+            <SectionTitle>Monto</SectionTitle>
             <FormInnerSection>
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                    Monto
-                  </p>
                   <p className="text-4xl font-bold tracking-tight" style={{ color: "#06b6d4" }}>
                     {formatAmount(expense.amount, expense.currency)}
                   </p>
@@ -221,11 +221,8 @@ export default function ExpenseDetailPage() {
               </div>
             </FormInnerSection>
 
-            {/* Details */}
-            <FormInnerSection>
-              <h2 className="text-xs font-bold text-cyan-600 uppercase tracking-widest pb-1">
-                Detalles
-              </h2>
+            <SectionTitle>Detalles</SectionTitle>
+            <FormInnerSection padding={false}>
               <DetailRow label="Proveedor">
                 {expense.provider?.name ?? <span className="text-gray-400">—</span>}
               </DetailRow>
@@ -246,20 +243,17 @@ export default function ExpenseDetailPage() {
               )}
               {expense.notes && (
                 <DetailRow label="Notas">
-                  <span className="text-gray-700 whitespace-pre-wrap text-right">
+                  <span className="text-gray-500 whitespace-pre-wrap text-right">
                     {expense.notes}
                   </span>
                 </DetailRow>
               )}
             </FormInnerSection>
 
-            {/* Attachments */}
+            <SectionTitle>Adjuntos ({expense.expense_attachment.length})</SectionTitle>
             {(expense.expense_attachment ?? []).length > 0 && (
               <FormInnerSection>
                 <section className="space-y-4">
-                  <h2 className="text-[11px] font-bold text-cyan-600 uppercase tracking-widest">
-                    Adjuntos ({expense.expense_attachment.length})
-                  </h2>
                   {expense.expense_attachment.map((att) => (
                     <FilePreview key={att.id} attachment={att} />
                   ))}
@@ -269,22 +263,17 @@ export default function ExpenseDetailPage() {
 
             {/* Actions */}
             <div className="flex gap-3 pt-1">
-              <button
-                onClick={() => router.push(`/admin/workspaces/${workspaceSlug}/expenses`)}
-                className="flex-1 px-5 py-2.5 rounded-lg border border-gray-200 text-sm font-medium
-                           text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all shadow-sm"
+              <Link
+                href={`/admin/workspaces/${workspaceSlug}/expenses`}
+                className={SECONDARY_BUTTON_CLASS}
               >
                 ← Volver a gastos
-              </button>
+              </Link>
               <button
                 onClick={() =>
                   router.push(`/admin/workspaces/${workspaceSlug}/expenses/${expense.id}/edit`)
                 }
-                className="px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-all shadow-sm"
-                style={{
-                  background: "linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)",
-                  boxShadow: "0 2px 8px rgba(6,182,212,0.25)",
-                }}
+                className={PRIMARY_BUTTON_CLASS}
               >
                 Editar
               </button>

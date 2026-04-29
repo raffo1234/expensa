@@ -7,6 +7,7 @@ import { es } from "date-fns/locale";
 import DeleteButton from "@/components/DeleteButton";
 import CategoryBadge from "@/components/CategoryBadge";
 import { formatAmount } from "@/utils/formatAmount";
+import FormSection from "./FormSection";
 
 interface Expense {
   id: string;
@@ -26,10 +27,11 @@ interface ExpenseRowProps {
   expense: Expense;
   isLast: boolean;
   onDelete: (id: string) => void;
+  isDeleting: boolean;
   workspaceSlug: string;
 }
 
-function ExpenseRow({ expense, isLast, onDelete, workspaceSlug }: ExpenseRowProps) {
+function ExpenseRow({ expense, isLast, onDelete, isDeleting, workspaceSlug }: ExpenseRowProps) {
   const [hovered, setHovered] = useState(false);
   const router = useRouter();
   const invoiceRef = expense.invoice_ref;
@@ -38,10 +40,18 @@ function ExpenseRow({ expense, isLast, onDelete, workspaceSlug }: ExpenseRowProp
     <tr
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      onClick={() => router.push(`/admin/workspaces/${workspaceSlug}/expenses/${expense.id}`)}
-      className={`cursor-pointer transition-colors ${!isLast ? "border-b border-gray-100" : ""} ${hovered ? "bg-purple-50" : "bg-white"}`}
+      onClick={() =>
+        !isDeleting && router.push(`/admin/workspaces/${workspaceSlug}/expenses/${expense.id}`)
+      }
+      className={`transition-all duration-200 ${!isLast ? "border-b border-gray-100" : ""} ${
+        isDeleting
+          ? "opacity-40 pointer-events-none"
+          : hovered
+            ? "bg-purple-50 cursor-pointer"
+            : "cursor-pointer"
+      }`}
     >
-      <td className="px-5 py-3.5 min-w-0 max-w-[200px]">
+      <td className={`${isLast ? "rounded-bl-xl" : ""} px-5 py-3.5 min-w-0 max-w-[200px]`}>
         <p className="text-sm font-semibold text-gray-900 truncate">
           {expense.provider?.name ?? (
             <span className="text-gray-400 font-normal">Sin proveedor</span>
@@ -76,12 +86,18 @@ function ExpenseRow({ expense, isLast, onDelete, workspaceSlug }: ExpenseRowProp
           </p>
         )}
       </td>
+
       <td className="px-5 py-3.5 text-sm font-bold text-gray-900 whitespace-nowrap text-right">
         {formatAmount(expense.amount, expense.currency)}
       </td>
-      <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
+
+      <td
+        className={`px-5 py-3.5 ${isLast ? "rounded-br-xl" : ""}`}
+        onClick={(e) => e.stopPropagation()}
+      >
         <DeleteButton
           onClick={() => onDelete(expense.id)}
+          isDeleting={isDeleting}
           title="Eliminar gasto"
           confirmTitle="¿Eliminar gasto?"
           confirmDescription={`Se eliminará "${expense.provider?.name ?? "este gasto"}" de forma permanente.`}
@@ -96,6 +112,7 @@ function ExpenseRow({ expense, isLast, onDelete, workspaceSlug }: ExpenseRowProp
 interface ExpenseTableProps {
   expenses: Expense[];
   onDelete: (id: string) => void;
+  deletingId?: string | null;
   workspaceSlug: string;
   maxHeight?: string;
 }
@@ -103,46 +120,50 @@ interface ExpenseTableProps {
 export default function ExpenseTable({
   expenses = [],
   onDelete,
+  deletingId,
   workspaceSlug,
   maxHeight = "600px",
 }: ExpenseTableProps) {
   return (
-    <div className="overflow-y-auto rounded-lg border border-gray-100" style={{ maxHeight }}>
-      <table className="w-full border-collapse">
-        <thead className="sticky top-0 bg-white z-10 border-b border-gray-100">
-          <tr>
-            {["Proveedor", "Categoría", "Método", "Fecha", "Monto", ""].map((h) => (
-              <th
-                key={h}
-                className={`px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider ${
-                  h === "Fecha" || h === "Monto" ? "text-right" : "text-left"
-                }`}
-              >
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {expenses.length === 0 ? (
+    <div className="overflow-y-auto" style={{ maxHeight }}>
+      <FormSection padding={false}>
+        <table className="w-full border-collapse">
+          <thead className="sticky top-0 z-10 border-b border-gray-100">
             <tr>
-              <td colSpan={6} className="px-5 py-10 text-center text-sm text-gray-400">
-                No hay gastos registrados.
-              </td>
+              {["Proveedor", "Categoría", "Método", "Fecha", "Monto", ""].map((h) => (
+                <th
+                  key={h}
+                  className={`px-5 py-3 font-semibold text-gray-700 ${
+                    h === "Fecha" || h === "Monto" ? "text-right" : "text-left"
+                  }`}
+                >
+                  {h}
+                </th>
+              ))}
             </tr>
-          ) : (
-            expenses.map((expense, i) => (
-              <ExpenseRow
-                key={expense.id}
-                expense={expense}
-                isLast={i === expenses.length - 1}
-                onDelete={onDelete}
-                workspaceSlug={workspaceSlug}
-              />
-            ))
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {expenses.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="px-5 py-10 text-center text-sm text-gray-400">
+                  No hay gastos registrados.
+                </td>
+              </tr>
+            ) : (
+              expenses.map((expense, i) => (
+                <ExpenseRow
+                  key={expense.id}
+                  expense={expense}
+                  isLast={i === expenses.length - 1}
+                  onDelete={onDelete}
+                  isDeleting={deletingId === expense.id}
+                  workspaceSlug={workspaceSlug}
+                />
+              ))
+            )}
+          </tbody>
+        </table>
+      </FormSection>
     </div>
   );
 }

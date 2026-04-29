@@ -17,12 +17,12 @@ export default async function WorkspacePage() {
 
   const { data: workspaces, error } = await supabaseAdmin
     .from("workspace")
-    .select("id, name, slug, created_by, created_at")
+    .select("id, name, slug, created_by, created_at, expense(*)")
     .order("created_at", { ascending: false });
 
   if (error) {
     console.error("workspace fetch error:", error);
   }
-  
+
   return <WorkspaceClient workspaces={workspaces ?? []} />;
 }

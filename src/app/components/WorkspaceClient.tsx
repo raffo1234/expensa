@@ -2,45 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { formatDistanceToNow } from "date-fns";
-import { es } from "date-fns/locale";
 import { Workspace } from "@/types/WorkspaceType";
+import { INPUT_CLASS } from "@/constants";
+import FormSection from "./FormSection";
+import DeleteButton from "./DeleteButton";
+import { deleteWorkspace } from "@/actions/workspace";
 
-// ── Icons ──────────────────────────────────────────────────────────────────
-const GridIcon = () => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-  >
-    <rect x="3" y="3" width="7" height="7" rx="1" />
-    <rect x="14" y="3" width="7" height="7" rx="1" />
-    <rect x="3" y="14" width="7" height="7" rx="1" />
-    <rect x="14" y="14" width="7" height="7" rx="1" />
-  </svg>
-);
-const ListIcon = () => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-  >
-    <line x1="8" y1="6" x2="21" y2="6" />
-    <line x1="8" y1="12" x2="21" y2="12" />
-    <line x1="8" y1="18" x2="21" y2="18" />
-    <circle cx="3" cy="6" r="1.2" fill="currentColor" stroke="none" />
-    <circle cx="3" cy="12" r="1.2" fill="currentColor" stroke="none" />
-    <circle cx="3" cy="18" r="1.2" fill="currentColor" stroke="none" />
-  </svg>
-);
 const PlusIcon = () => (
   <svg
     width="16"
@@ -55,217 +22,102 @@ const PlusIcon = () => (
     <line x1="5" y1="12" x2="19" y2="12" />
   </svg>
 );
-const ArrowIcon = () => (
-  <svg
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-  >
-    <path d="M5 12h14M12 5l7 7-7 7" />
-  </svg>
-);
-const WorkspaceIcon = ({ char }: { char: string }) => (
-  <div
-    style={{
-      width: 40,
-      height: 40,
-      borderRadius: 10,
-      background: "linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      color: "#fff",
-      fontWeight: 700,
-      fontSize: 16,
-      flexShrink: 0,
-      fontFamily: "'DM Sans', sans-serif",
-    }}
-  >
-    {char}
-  </div>
-);
 
-// ── Grid Card ──────────────────────────────────────────────────────────────
-function GridCard({ ws }: { ws: Workspace }) {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <div
-      style={{
-        background: "#fff",
-        border: `1.5px solid ${hovered ? "#06b6d4" : "#e5e7eb"}`,
-        borderRadius: 14,
-        padding: "24px 22px 20px",
-        cursor: "pointer",
-        transition: "border-color 0.18s, box-shadow 0.18s, transform 0.18s",
-        boxShadow: hovered ? "0 4px 20px rgba(6,182,212,0.10)" : "0 1px 4px rgba(0,0,0,0.04)",
-        transform: hovered ? "translateY(-2px)" : "none",
-        display: "flex",
-        flexDirection: "column",
-        gap: 14,
-      }}
-    >
-      <Link href={`/admin/workspaces/${ws.slug}/upload-expense`} style={{ textDecoration: "none" }}>
-        <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
-          <div
-            style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}
-          >
-            <WorkspaceIcon char={ws.name[0].toUpperCase()} />
-            <span
-              style={{
-                fontSize: 11,
-                color: hovered ? "#06b6d4" : "#9ca3af",
-                transition: "color 0.18s",
-                display: "flex",
-                alignItems: "center",
-                gap: 4,
-              }}
-            >
-              New expense <ArrowIcon />
-            </span>
-          </div>
-          <div>
-            <p
-              style={{
-                margin: 0,
-                fontWeight: 600,
-                fontSize: 15,
-                color: "#111827",
-                fontFamily: "'DM Sans', sans-serif",
-              }}
-            >
-              {ws.name}
-            </p>
-            <p
-              style={{
-                margin: "3px 0 0",
-                fontSize: 12,
-                color: "#9ca3af",
-                fontFamily: "'DM Sans', sans-serif",
-              }}
-            >
-              /{ws.slug}
-            </p>
-          </div>
-          <p
-            style={{
-              margin: 0,
-              fontSize: 11.5,
-              color: "#9ca3af",
-              fontFamily: "'DM Sans', sans-serif",
-            }}
-          >
-            Creado {formatDistanceToNow(new Date(ws.created_at), { addSuffix: true, locale: es })}
-          </p>
-        </div>
-      </Link>
-      <Link
-        href={`/admin/workspaces/${ws.slug}/upload-expense`}
-        style={{ textDecoration: "none" }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <span
-          style={{
-            fontSize: 12,
-            color: "#06b6d4",
-            fontWeight: 500,
-            fontFamily: "'DM Sans', sans-serif",
-          }}
-        >
-          + Upload Expense
-        </span>
-      </Link>
-    </div>
-  );
-}
+// ── Table View ─────────────────────────────────────────────────────────────
+function TableView({
+  workspaces,
+  onDelete,
+}: {
+  workspaces: Workspace[];
+  onDelete: (id: string) => void;
+}) {
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
-// ── List Row ───────────────────────────────────────────────────────────────
-function ListRow({ ws, isLast }: { ws: Workspace; isLast: boolean }) {
-  const [hovered, setHovered] = useState(false);
+  const handleDelete = async (id: string) => {
+    setDeletingId(id);
+    try {
+      await deleteWorkspace(id);
+      onDelete(id);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   return (
-    <Link href={`/admin/workspaces/${ws.slug}`} style={{ textDecoration: "none" }}>
-      <div
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 14,
-          padding: "14px 18px",
-          borderBottom: isLast ? "none" : "1px solid #f3f4f6",
-          background: hovered ? "#f9fafb" : "transparent",
-          cursor: "pointer",
-          transition: "background 0.15s",
-          borderRadius: isLast ? "0 0 12px 12px" : 0,
-        }}
-      >
-        <WorkspaceIcon char={ws.name[0].toUpperCase()} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <p
-            style={{
-              margin: 0,
-              fontWeight: 600,
-              fontSize: 14,
-              color: "#111827",
-              fontFamily: "'DM Sans', sans-serif",
-            }}
-          >
-            {ws.name}
-          </p>
-          <p
-            style={{
-              margin: "2px 0 0",
-              fontSize: 12,
-              color: "#9ca3af",
-              fontFamily: "'DM Sans', sans-serif",
-            }}
-          >
-            /{ws.slug}
-          </p>
+    <FormSection padding={false}>
+      <div className="overflow-hidden">
+        <div className="overflow-y-auto max-h-[60vh]">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="border-b border-gray-200 sticky top-0 z-10">
+                {["Workspace", "Slug", "Gastos", "Creado", ""].map((h, i) => (
+                  <th key={i} className="px-6 py-4 text-left text-sm">
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {workspaces.map((ws) => (
+                <tr
+                  key={ws.id}
+                  className="border-b border-purple-100 last:border-0 hover:bg-violet-50/60 transition-colors duration-150"
+                >
+                  <td className="px-6 py-5 font-semibold text-[15px] text-gray-800">{ws.name}</td>
+                  <td className="px-6 py-5 text-sm text-gray-500 font-medium">/{ws.slug}</td>
+                  <td className="px-6 py-5 text-sm text-gray-500 font-medium">
+                    {ws.expense?.length ?? 0} gasto{ws.expense?.length === 1 ? "" : "s"}
+                  </td>
+                  <td className="px-6 py-5 text-sm text-gray-500 font-medium">
+                    {new Date(ws.created_at).toLocaleDateString("es-PE", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    })}
+                  </td>
+                  <td className="px-6 py-5">
+                    <div className="flex items-center gap-2 justify-end">
+                      <Link
+                        href={`/admin/workspaces/${ws.slug}/upload-expense`}
+                        className="text-xs font-semibold text-gray-500 hover:text-gray-600 transition-colors px-3 py-1.5 rounded-full border border-gray-200 hover:border-gray-300"
+                      >
+                        + Agregar
+                      </Link>
+                      <Link
+                        href={`/admin/workspaces/${ws.slug}/expenses`}
+                        className="text-xs font-bold text-white bg-gray-900 hover:bg-gray-700 transition-colors px-4 py-1.5 rounded-full"
+                      >
+                        Ver gastos
+                      </Link>
+                      <DeleteButton
+                        title="Eliminar workspace"
+                        confirmTitle="¿Eliminar workspace?"
+                        confirmDescription="Se eliminarán todos los gastos y archivos adjuntos. Esta acción no se puede deshacer."
+                        confirmLabel="Eliminar"
+                        cancelLabel="Cancelar"
+                        isDeleting={deletingId === ws.id}
+                        onClick={() => handleDelete(ws.id)}
+                      />
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-        <p
-          style={{
-            margin: 0,
-            fontSize: 12,
-            color: "#9ca3af",
-            fontFamily: "'DM Sans', sans-serif",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {formatDistanceToNow(new Date(ws.created_at), { addSuffix: true, locale: es })}
-        </p>
-        <Link
-          href={`/admin/workspaces/${ws.slug}/upload-expense`}
-          style={{ textDecoration: "none" }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <span
-            style={{
-              fontSize: 12,
-              color: "#06b6d4",
-              fontWeight: 500,
-              fontFamily: "'DM Sans', sans-serif",
-              whiteSpace: "nowrap",
-            }}
-          >
-            + Upload Expense
-          </span>
-        </Link>
-        <span style={{ color: hovered ? "#06b6d4" : "#d1d5db", transition: "color 0.15s" }}>
-          <ArrowIcon />
-        </span>
       </div>
-    </Link>
+    </FormSection>
   );
 }
 
-// ── Main Client ────────────────────────────────────────────────────────────
-export default function WorkspaceClient({ workspaces }: { workspaces: Workspace[] }) {
-  const [view, setView] = useState<"grid" | "list">("grid");
+// ── Main ───────────────────────────────────────────────────────────────────
+export default function WorkspaceClient({ workspaces: initial }: { workspaces: Workspace[] }) {
+  const [workspaces, setWorkspaces] = useState(initial);
   const [search, setSearch] = useState("");
+
+  const handleDelete = (id: string) => {
+    setWorkspaces((prev) => prev.filter((ws) => ws.id !== id));
+  };
 
   const filtered = workspaces.filter(
     (ws) =>
@@ -274,162 +126,47 @@ export default function WorkspaceClient({ workspaces }: { workspaces: Workspace[
   );
 
   return (
-    <div>
-      <div style={{ maxWidth: 900, margin: "0 auto", padding: "48px 24px" }}>
-        {/* Header */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            justifyContent: "space-between",
-            marginBottom: 32,
-            flexWrap: "wrap",
-            gap: 16,
-          }}
-        >
-          <div>
-            <h1 className="text-4xl font-bold">Workspaces</h1>
-            <p style={{ margin: "4px 0 0", fontSize: 14, color: "#6b7280" }}>
-              {workspaces.length} workspace{workspaces.length !== 1 ? "s" : ""}
-            </p>
-          </div>
-          <Link href="/admin/workspaces/new" style={{ textDecoration: "none" }}>
-            <button className="flex items-center gap-3 cursor-pointer text-white font-semibold rounded-full  px-7 py-3.5 bg-slate-900">
-              <PlusIcon /> Nuevo Workspace
+    <div className="py-12">
+      <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
+        <div>
+          <h1 className="text-4xl font-bold">Workspaces</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            {workspaces.length} workspace{workspaces.length !== 1 ? "s" : ""}
+          </p>
+        </div>
+        <Link href="/admin/workspaces/new" className="no-underline">
+          <button className="flex items-center gap-3 cursor-pointer text-white font-semibold rounded-full px-7 py-3.5 bg-slate-900">
+            <PlusIcon /> Nuevo Workspace
+          </button>
+        </Link>
+      </div>
+      <div className="flex items-center gap-2.5 mb-6">
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar workspaces…"
+          className={INPUT_CLASS}
+        />
+      </div>
+
+      {workspaces.length === 0 && (
+        <div className="text-center py-20">
+          <p className="text-[15px] text-gray-400 mb-4">Aún no tienes workspaces</p>
+          <Link href="/admin/workspaces/new" className="no-underline">
+            <button className="inline-flex items-center gap-2 bg-cyan-500 text-white border-none rounded-[10px] px-[18px] py-2.5 font-semibold text-sm cursor-pointer">
+              <PlusIcon /> Crear mi primer workspace
             </button>
           </Link>
         </div>
+      )}
 
-        {/* Toolbar */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            marginBottom: 24,
-            flexWrap: "wrap",
-          }}
-        >
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar workspaces…"
-            style={{
-              flex: 1,
-              minWidth: 180,
-              padding: "9px 14px",
-              border: "1.5px solid #e5e7eb",
-              borderRadius: 9,
-              fontSize: 14,
-              color: "#111827",
-              outline: "none",
-              fontFamily: "'DM Sans', sans-serif",
-              background: "#fff",
-            }}
-            onFocus={(e) => (e.target.style.borderColor = "#06b6d4")}
-            onBlur={(e) => (e.target.style.borderColor = "#e5e7eb")}
-          />
-          <div
-            style={{
-              display: "flex",
-              background: "#fff",
-              border: "1.5px solid #e5e7eb",
-              borderRadius: 9,
-              overflow: "hidden",
-            }}
-          >
-            {(["grid", "list"] as const).map((v) => (
-              <button
-                key={v}
-                onClick={() => setView(v)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: 38,
-                  height: 38,
-                  border: "none",
-                  cursor: "pointer",
-                  background: view === v ? "#f0f9ff" : "transparent",
-                  color: view === v ? "#06b6d4" : "#9ca3af",
-                  transition: "background 0.15s, color 0.15s",
-                }}
-              >
-                {v === "grid" ? <GridIcon /> : <ListIcon />}
-              </button>
-            ))}
-          </div>
+      {workspaces.length > 0 && filtered.length === 0 && (
+        <div className="text-center py-16 text-gray-400">
+          <p className="text-[15px] m-0">Ningún workspace coincide con &quot;{search}&quot;</p>
         </div>
+      )}
 
-        {/* Empty state — no workspaces at all */}
-        {workspaces.length === 0 && (
-          <div style={{ textAlign: "center", padding: "80px 0" }}>
-            <p style={{ fontSize: 15, color: "#9ca3af", margin: "0 0 16px" }}>
-              Aún no tienes workspaces
-            </p>
-            <Link href="/admin/workspaces/new" style={{ textDecoration: "none" }}>
-              <button
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 8,
-                  background: "#06b6d4",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 10,
-                  padding: "10px 18px",
-                  fontWeight: 600,
-                  fontSize: 14,
-                  cursor: "pointer",
-                  fontFamily: "'DM Sans', sans-serif",
-                }}
-              >
-                <PlusIcon /> Crear mi primer workspace
-              </button>
-            </Link>
-          </div>
-        )}
-
-        {/* Empty state — search no match */}
-        {workspaces.length > 0 && filtered.length === 0 && (
-          <div style={{ textAlign: "center", padding: "64px 0", color: "#9ca3af" }}>
-            <p style={{ fontSize: 15, margin: 0 }}>
-              Ningún workspace coincide con &quot;{search}&quot;
-            </p>
-          </div>
-        )}
-
-        {/* Grid view */}
-        {view === "grid" && filtered.length > 0 && (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
-              gap: 16,
-            }}
-          >
-            {filtered.map((ws) => (
-              <GridCard key={ws.id} ws={ws} />
-            ))}
-          </div>
-        )}
-
-        {/* List view */}
-        {view === "list" && filtered.length > 0 && (
-          <div
-            style={{
-              background: "#fff",
-              border: "1.5px solid #e5e7eb",
-              borderRadius: 12,
-              overflow: "hidden",
-            }}
-          >
-            {filtered.map((ws, i) => (
-              <ListRow key={ws.id} ws={ws} isLast={i === filtered.length - 1} />
-            ))}
-          </div>
-        )}
-      </div>
+      {filtered.length > 0 && <TableView workspaces={filtered} onDelete={handleDelete} />}
     </div>
   );
 }

@@ -413,7 +413,7 @@ export default function ProvidersPage() {
         <div className="max-w-3xl mx-auto px-6 h-14 flex items-center gap-3">
           <div className="flex items-center gap-1 text-sm">
             <button
-              onClick={() => router.push(`/admin/workspace/${workspaceSlug}`)}
+              onClick={() => router.push(`/admin/workspaces/${workspaceSlug}`)}
               className="text-gray-500 hover:text-cyan-600 transition-colors px-2 py-1 rounded-md hover:bg-cyan-50"
             >
               Workspace

@@ -121,7 +121,7 @@ export default function NewWorkspacePage() {
     try {
       await createWorkspace(name.trim(), slug);
       setSuccess(true);
-      setTimeout(() => router.push("/admin/workspace"), 1000);
+      setTimeout(() => router.push("/admin/workspaces"), 1000);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Algo salió mal");
     } finally {
@@ -133,7 +133,7 @@ export default function NewWorkspacePage() {
     <>
       <div style={{ maxWidth: 520, margin: "0 auto", padding: "48px 24px" }}>
         {/* Back */}
-        <Link href="/admin/workspace" className="gap-3 flex items-center text-slate-500 mb-10">
+        <Link href="/admin/workspaces" className="gap-3 flex items-center text-slate-500 mb-10">
           <BackIcon /> Volver a workspaces
         </Link>
         <div className="mb-10">
@@ -178,7 +178,7 @@ export default function NewWorkspacePage() {
                   fontFamily: "'DM Sans', sans-serif",
                 }}
               >
-                /workspace/
+                /workspaces/
               </span>
               <input
                 value={slug}

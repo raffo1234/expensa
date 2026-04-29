@@ -118,6 +118,6 @@ export async function createExpense(input: CreateExpenseInput): Promise<{ error?
     });
   }
 
-  revalidatePath(`/admin/workspace/${input.workspace_slug}/expenses`);
+  revalidatePath(`/admin/workspaces/${input.workspace_slug}/expenses`);
   return {};
 }

@@ -236,7 +236,7 @@ export default function EditExpensePage() {
         if (insertError) throw insertError;
       }
 
-      router.push(`/admin/workspace/${workspaceSlug}/expenses/${expenseId}`);
+      router.push(`/admin/workspaces/${workspaceSlug}/expenses/${expenseId}`);
     } catch (err: unknown) {
       setSaveError(err instanceof Error ? err.message : "Error al guardar");
     } finally {
@@ -252,14 +252,16 @@ export default function EditExpensePage() {
         <div className="max-w-2xl mx-auto px-6 h-14 flex items-center justify-between gap-3">
           <div className="flex items-center gap-1 text-sm">
             <button
-              onClick={() => router.push(`/admin/workspace/${workspaceSlug}/expenses`)}
+              onClick={() => router.push(`/admin/workspaces/${workspaceSlug}/expenses`)}
               className="text-gray-500 hover:text-cyan-600 transition-colors px-2 py-1 rounded-md hover:bg-cyan-50"
             >
               Gastos
             </button>
             <span className="text-gray-300">/</span>
             <button
-              onClick={() => router.push(`/admin/workspace/${workspaceSlug}/expenses/${expenseId}`)}
+              onClick={() =>
+                router.push(`/admin/workspaces/${workspaceSlug}/expenses/${expenseId}`)
+              }
               className="text-gray-500 hover:text-cyan-600 transition-colors px-2 py-1 rounded-md hover:bg-cyan-50 truncate max-w-[120px]"
             >
               {providersLoading ? "..." : (expense?.provider?.name ?? "Sin proveedor")}
@@ -268,7 +270,7 @@ export default function EditExpensePage() {
             <span className="text-gray-900 font-medium px-2 py-1">Editar</span>
           </div>
           <button
-            onClick={() => router.push(`/admin/workspace/${workspaceSlug}/expenses/${expenseId}`)}
+            onClick={() => router.push(`/admin/workspaces/${workspaceSlug}/expenses/${expenseId}`)}
             className="text-sm px-2 py-1"
           >
             ← Volver
@@ -539,7 +541,7 @@ export default function EditExpensePage() {
             <div className="flex gap-3 pt-1">
               <button
                 onClick={() =>
-                  router.push(`/admin/workspace/${workspaceSlug}/expenses/${expenseId}`)
+                  router.push(`/admin/workspaces/${workspaceSlug}/expenses/${expenseId}`)
                 }
                 className="flex-1 px-5 py-2.5 rounded-lg border border-gray-200 text-sm font-medium
                            text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all shadow-sm"

@@ -280,7 +280,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
         setError(result.error);
       } else {
         setSuccess(true);
-        setTimeout(() => router.push(`/admin/workspace/${workspaceSlug}/expenses`), 1200);
+        setTimeout(() => router.push(`/admin/workspaces/${workspaceSlug}/expenses`), 1200);
       }
     });
   };
@@ -294,7 +294,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
         <div className="py-4 flex items-center gap-3">
           <div className="flex items-center gap-1 text-sm">
             <button
-              onClick={() => router.push(`/admin/workspace/${workspaceSlug}/expenses`)}
+              onClick={() => router.push(`/admin/workspaces/${workspaceSlug}/expenses`)}
               className="text-gray-500 hover:text-cyan-600 transition-colors px-2 py-1 rounded-md hover:bg-cyan-50"
             >
               Gastos

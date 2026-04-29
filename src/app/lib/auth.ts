@@ -61,7 +61,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return session;
     },
     async redirect({ baseUrl }) {
-      return `${baseUrl}/admin/workspace`;
+      return `${baseUrl}/admin/workspaces`;
     },
   },
   debug: process.env.NODE_ENV === "development",

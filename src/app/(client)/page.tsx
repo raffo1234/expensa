@@ -3,11 +3,12 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
+import { PRIMARY_BUTTON_CLASS } from "@/constants";
 
 export default function ExpenseLanding() {
   const { data: session, status } = useSession();
 
-  const href = status === "loading" ? "#" : session ? "/admin/workspace" : "/session/new";
+  const href = status === "loading" ? "#" : session ? "/admin/workspaces" : "/session/new";
 
   return (
     <main className="min-h-screen">
@@ -38,11 +39,8 @@ export default function ExpenseLanding() {
             One app. All your accounts. Total clarity over every dollar — without the spreadsheet.
           </p>
 
-          <div className="w-full text-center md:text-right">
-            <Link
-              href={href}
-              className="text-white bg-slate-900 text-lg w-fit inline-block font-semibold px-7 py-3.5 rounded-full"
-            >
+          <div className="w-full justify-center md:justify-end flex">
+            <Link href={href} className={PRIMARY_BUTTON_CLASS}>
               Upload free →
             </Link>
           </div>

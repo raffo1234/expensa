@@ -147,7 +147,7 @@ export default function ExpenseDetailPage() {
         <div className="py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-1 text-sm">
             <button
-              onClick={() => router.push(`/admin/workspace/${workspaceSlug}/expenses`)}
+              onClick={() => router.push(`/admin/workspaces/${workspaceSlug}/expenses`)}
               className="text-gray-500 hover:text-cyan-600 transition-colors px-2 py-1 rounded-md hover:bg-cyan-50"
             >
               Gastos
@@ -158,7 +158,7 @@ export default function ExpenseDetailPage() {
             </span>
           </div>
           <button
-            onClick={() => router.push(`/admin/workspace/${workspaceSlug}/expenses`)}
+            onClick={() => router.push(`/admin/workspaces/${workspaceSlug}/expenses`)}
             className="text-sm px-2 py-1"
           >
             ← Volver
@@ -270,7 +270,7 @@ export default function ExpenseDetailPage() {
             {/* Actions */}
             <div className="flex gap-3 pt-1">
               <button
-                onClick={() => router.push(`/admin/workspace/${workspaceSlug}/expenses`)}
+                onClick={() => router.push(`/admin/workspaces/${workspaceSlug}/expenses`)}
                 className="flex-1 px-5 py-2.5 rounded-lg border border-gray-200 text-sm font-medium
                            text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all shadow-sm"
               >
@@ -278,7 +278,7 @@ export default function ExpenseDetailPage() {
               </button>
               <button
                 onClick={() =>
-                  router.push(`/admin/workspace/${workspaceSlug}/expenses/${expense.id}/edit`)
+                  router.push(`/admin/workspaces/${workspaceSlug}/expenses/${expense.id}/edit`)
                 }
                 className="px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-all shadow-sm"
                 style={{

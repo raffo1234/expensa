@@ -2,7 +2,12 @@
 
 import ExpenseTable from "@/components/ExpenseTable";
 import { supabase } from "@/lib/supabase";
+import { use } from "react";
 import useSWR from "swr";
+
+interface ExpensesPageProps {
+  params: Promise<{ slug: string }>;
+}
 
 interface Provider {
   id: string;
@@ -40,16 +45,23 @@ interface ExpenseRow {
   category?: { id: string; name: string; color?: string | null } | null;
 }
 
-async function fetchExpenses(workspaceSlug: string): Promise<Expense[]> {
-  // primero obtenemos el workspace por slug
-  const { data: workspace, error: wsError } = await supabase
+interface Workspace {
+  id: string;
+  name: string;
+}
+
+async function fetchWorkspace(slug: string): Promise<Workspace> {
+  const { data, error } = await supabase
     .from("workspace")
-    .select("id")
-    .eq("slug", workspaceSlug)
+    .select("id, name")
+    .eq("slug", slug)
     .single();
 
-  if (wsError || !workspace) throw wsError;
+  if (error || !data) throw error;
+  return data as Workspace;
+}
 
+async function fetchExpenses(workspaceId: string): Promise<Expense[]> {
   const { data, error } = await supabase
     .from("expense")
     .select(
@@ -60,7 +72,7 @@ async function fetchExpenses(workspaceSlug: string): Promise<Expense[]> {
       category:category_id(id, name, color)
     `,
     )
-    .eq("workspace_id", workspace.id)
+    .eq("workspace_id", workspaceId)
     .order("paid_at", { ascending: false });
 
   if (error) throw error;
@@ -80,19 +92,17 @@ async function deleteExpense(id: string) {
   if (error) throw error;
 }
 
-interface ExpensesPageProps {
-  params: { slug: string };
-}
-
 export default function ExpensesPage({ params }: ExpensesPageProps) {
-  const { slug } = params;
+  const { slug } = use(params);
+
+  const { data: workspace } = useSWR(["workspace", slug], () => fetchWorkspace(slug));
 
   const {
     data: expenses,
     isLoading,
     error,
     mutate,
-  } = useSWR(["expenses", slug], () => fetchExpenses(slug));
+  } = useSWR(workspace ? ["expenses", workspace.id] : null, () => fetchExpenses(workspace!.id));
 
   const handleDelete = async (id: string) => {
     await deleteExpense(id);
@@ -118,7 +128,12 @@ export default function ExpensesPage({ params }: ExpensesPageProps) {
   return (
     <>
       <div className="py-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold">Gastos</h1>
+        <h1 className="text-xl font-bold">
+          Gastos
+          {workspace?.name && (
+            <span className="text-gray-400 font-normal ml-2">— {workspace.name}</span>
+          )}
+        </h1>
         <span className="text-sm text-gray-400">
           {expenses?.length ?? 0} registro{expenses?.length !== 1 ? "s" : ""}
         </span>

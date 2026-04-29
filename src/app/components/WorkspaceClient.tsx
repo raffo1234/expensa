@@ -108,7 +108,7 @@ function GridCard({ ws }: { ws: Workspace }) {
         gap: 14,
       }}
     >
-      <Link href={`/admin/workspace/${ws.slug}/upload-expense`} style={{ textDecoration: "none" }}>
+      <Link href={`/admin/workspaces/${ws.slug}/upload-expense`} style={{ textDecoration: "none" }}>
         <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
           <div
             style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}
@@ -163,7 +163,7 @@ function GridCard({ ws }: { ws: Workspace }) {
         </div>
       </Link>
       <Link
-        href={`/admin/workspace/${ws.slug}/upload-expense`}
+        href={`/admin/workspaces/${ws.slug}/upload-expense`}
         style={{ textDecoration: "none" }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -186,7 +186,7 @@ function GridCard({ ws }: { ws: Workspace }) {
 function ListRow({ ws, isLast }: { ws: Workspace; isLast: boolean }) {
   const [hovered, setHovered] = useState(false);
   return (
-    <Link href={`/admin/workspace/${ws.slug}`} style={{ textDecoration: "none" }}>
+    <Link href={`/admin/workspaces/${ws.slug}`} style={{ textDecoration: "none" }}>
       <div
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
@@ -238,7 +238,7 @@ function ListRow({ ws, isLast }: { ws: Workspace; isLast: boolean }) {
           {formatDistanceToNow(new Date(ws.created_at), { addSuffix: true, locale: es })}
         </p>
         <Link
-          href={`/admin/workspace/${ws.slug}/upload-expense`}
+          href={`/admin/workspaces/${ws.slug}/upload-expense`}
           style={{ textDecoration: "none" }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -293,7 +293,7 @@ export default function WorkspaceClient({ workspaces }: { workspaces: Workspace[
               {workspaces.length} workspace{workspaces.length !== 1 ? "s" : ""}
             </p>
           </div>
-          <Link href="/admin/workspace/new" style={{ textDecoration: "none" }}>
+          <Link href="/admin/workspaces/new" style={{ textDecoration: "none" }}>
             <button className="flex items-center gap-3 cursor-pointer text-white font-semibold rounded-full  px-7 py-3.5 bg-slate-900">
               <PlusIcon /> Nuevo Workspace
             </button>
@@ -367,7 +367,7 @@ export default function WorkspaceClient({ workspaces }: { workspaces: Workspace[
             <p style={{ fontSize: 15, color: "#9ca3af", margin: "0 0 16px" }}>
               Aún no tienes workspaces
             </p>
-            <Link href="/admin/workspace/new" style={{ textDecoration: "none" }}>
+            <Link href="/admin/workspaces/new" style={{ textDecoration: "none" }}>
               <button
                 style={{
                   display: "inline-flex",

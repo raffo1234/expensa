@@ -46,3 +46,6 @@ export const DISABLED_INPUT_CLASS =
   "w-full px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50 text-gray-400 font-mono cursor-not-allowed";
 export const SELECT_CLASS =
   "w-full pl-4 pr-7 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100 focus:border-cyan-500 bg-white";
+
+export const PRIMARY_BUTTON_CLASS =
+  "text-white bg-slate-900 text-lg w-fit flex gap-4 items-center  font-semibold px-7 py-3.5 rounded-full";

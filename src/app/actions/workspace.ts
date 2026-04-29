@@ -15,11 +15,9 @@ export async function createWorkspace(name: string, slug: string) {
     .single();
 
   if (error) {
-    throw new Error(
-      error.code === "23505" ? "El slug ya está en uso" : error.message
-    );
+    throw new Error(error.code === "23505" ? "El slug ya está en uso" : error.message);
   }
 
-  revalidatePath("/admin/workspace");
+  revalidatePath("/admin/workspaces");
   return data;
 }

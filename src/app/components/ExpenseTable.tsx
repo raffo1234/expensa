@@ -38,7 +38,7 @@ function ExpenseRow({ expense, isLast, onDelete, workspaceSlug }: ExpenseRowProp
     <tr
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      onClick={() => router.push(`/admin/workspace/${workspaceSlug}/expenses/${expense.id}`)}
+      onClick={() => router.push(`/admin/workspaces/${workspaceSlug}/expenses/${expense.id}`)}
       className={`cursor-pointer transition-colors ${!isLast ? "border-b border-gray-100" : ""} ${hovered ? "bg-purple-50" : "bg-white"}`}
     >
       <td className="px-5 py-3.5 min-w-0 max-w-[200px]">

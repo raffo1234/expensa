@@ -41,11 +41,11 @@ export const SWR_KEY_USER_ROLE = "user-role";
 export const SWR_KEY_PERMISSIONS = "admin-permissions";
 
 export const INPUT_CLASS =
-  "w-full px-4 py-3 rounded-xl bg-white border border-gray-200 focus:outline-none focus:ring-4 focus:ring-purple-200 focus:border-purple-300 transition-all";
+  "w-full px-3 py-2 rounded-xl bg-white border border-slate-300 focus:outline-none focus:ring-4 focus:ring-purple-200 focus:border-purple-300 transition-all";
 export const DISABLED_INPUT_CLASS =
-  "w-full px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50 text-gray-400 font-mono cursor-not-allowed";
+  "w-full px-3 py-2 rounded-xl border border-gray-100 bg-gray-50 text-gray-400 font-mono cursor-not-allowed";
 export const SELECT_CLASS =
-  "w-full pl-4 pr-7 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100 focus:border-cyan-500 bg-white";
+  "w-full pl-3 pr-7 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100 focus:border-cyan-500 bg-white";
 
 export const PRIMARY_BUTTON_CLASS =
   "cursor-pointer disabled:opacity-50 disabled:pointer-events-none text-white bg-slate-900 text-lg w-fit flex gap-4 items-center  font-semibold px-7 py-3.5 rounded-full hover:bg-slate-700";

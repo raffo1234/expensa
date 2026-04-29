@@ -409,7 +409,7 @@ export default function ProvidersPage() {
   return (
     <div className="min-h-screen text-gray-900">
       {/* Nav */}
-      <nav className="sticky top-0 z-10">
+      <nav className=" top-0 z-10">
         <div className="max-w-3xl mx-auto px-6 h-14 flex items-center gap-3">
           <div className="flex items-center gap-1 text-sm">
             <button

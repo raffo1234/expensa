@@ -50,7 +50,7 @@ export default function ExpenseLanding() {
 
         <div>
           <Image
-            src="/expensa-hero.webp"
+            src="/expensa-hero.svg"
             alt="Person managing expenses on their phone"
             width={800}
             height={600}

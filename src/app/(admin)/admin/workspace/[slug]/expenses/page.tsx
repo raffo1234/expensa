@@ -117,8 +117,8 @@ export default function ExpensesPage({ params }: ExpensesPageProps) {
 
   return (
     <>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900">Gastos</h1>
+      <div className="py-4 flex items-center justify-between">
+        <h1 className="text-xl font-bold">Gastos</h1>
         <span className="text-sm text-gray-400">
           {expenses?.length ?? 0} registro{expenses?.length !== 1 ? "s" : ""}
         </span>

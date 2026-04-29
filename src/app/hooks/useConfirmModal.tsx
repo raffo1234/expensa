@@ -1,5 +1,6 @@
 "use client";
 
+import FormSection from "@/components/FormSection";
 import { useGlobalState } from "@/lib/globalState";
 
 interface ConfirmModalOptions {
@@ -65,27 +66,29 @@ function ConfirmModalContent({
   };
 
   return (
-    <div className="flex bg-white rounded-xl flex-col items-center text-center py-4">
-      <div className={`${iconColors[variant]} p-4 rounded-full mb-5`}>{icons[variant]}</div>
-      <h2 className="text-xl font-semibold mb-2">{title}</h2>
-      {description && <p className="text-slate-500 text-sm mb-8 max-w-sm">{description}</p>}
-      <div className="flex gap-3 mt-2">
-        <button
-          type="button"
-          onClick={onClose}
-          className="px-6 py-2 cursor-pointer rounded-full border border-slate-200 hover:bg-slate-100 active:bg-slate-200 transition-colors duration-200"
-        >
-          {cancelLabel}
-        </button>
-        <button
-          type="button"
-          onClick={handleConfirm}
-          className={`px-6 py-2 rounded-full cursor-pointer transition-colors duration-200 ${confirmColors[variant]}`}
-        >
-          {confirmLabel}
-        </button>
+    <FormSection>
+      <div className="flex flex-col items-center text-center py-4">
+        <div className={`${iconColors[variant]} rounded-full mb-5`}>{icons[variant]}</div>
+        <h2 className="text-xl font-semibold mb-2">{title}</h2>
+        {description && <p className="text-slate-500 text-sm mb-8 max-w-sm">{description}</p>}
+        <div className="flex gap-3 mt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-6 py-2 cursor-pointer rounded-full border border-slate-200 hover:bg-slate-100 active:bg-slate-200 transition-colors duration-200"
+          >
+            {cancelLabel}
+          </button>
+          <button
+            type="button"
+            onClick={handleConfirm}
+            className={`px-6 py-2 rounded-full cursor-pointer transition-colors duration-200 ${confirmColors[variant]}`}
+          >
+            {confirmLabel}
+          </button>
+        </div>
       </div>
-    </div>
+    </FormSection>
   );
 }
 

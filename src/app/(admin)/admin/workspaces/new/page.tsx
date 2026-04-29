@@ -93,71 +93,76 @@ export default function NewWorkspacePage() {
           Los workspaces te ayudan a organizar tus proyectos y equipo.
         </p>
       </div>
-
-      <FormSection>
-        <div className="space-y-6">
-          <Field label="Nombre del workspace" hint="Mínimo 2 caracteres.">
-            <input
-              value={name}
-              onChange={(e) => handleNameChange(e.target.value)}
-              placeholder="ej. Sistema de Diseño"
-              maxLength={60}
-              className={INPUT_CLASS}
-            />
-          </Field>
-
-          <Field
-            label="Slug"
-            hint="Se usa en las URLs. Se genera automáticamente — o personalízalo."
-          >
-            <div className="flex items-center">
-              <span className="px-3 py-2.5 text-sm text-gray-400 select-none whitespace-nowrap">
-                /workspaces/
-              </span>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleSubmit();
+        }}
+      >
+        <FormSection>
+          <div className="space-y-6">
+            <Field label="Nombre del workspace" hint="Mínimo 2 caracteres.">
               <input
-                value={slug}
-                onChange={(e) => handleSlugChange(e.target.value)}
-                placeholder="mi-workspace"
+                value={name}
+                onChange={(e) => handleNameChange(e.target.value)}
+                placeholder="ej. Sistema de Diseño"
                 maxLength={60}
                 className={INPUT_CLASS}
               />
-            </div>
-          </Field>
+            </Field>
 
-          {name && (
-            <FormInnerSection>
-              <div className="flex items-center gap-3">
-                <div className={STYLED_ICON_CLASS}>{name[0]?.toUpperCase()}</div>
-                <div>
-                  <p className="text-sm font-semibold">{name}</p>
-                  <p className="text-sm text-purple-800">/{slug || "…"}</p>
-                </div>
+            <Field
+              label="Slug"
+              hint="Se usa en las URLs. Se genera automáticamente — o personalízalo."
+            >
+              <div className="flex items-center">
+                <span className="px-3 py-2.5 text-sm text-gray-400 select-none whitespace-nowrap">
+                  /workspaces/
+                </span>
+                <input
+                  value={slug}
+                  onChange={(e) => handleSlugChange(e.target.value)}
+                  placeholder="mi-workspace"
+                  maxLength={60}
+                  className={INPUT_CLASS}
+                />
               </div>
-            </FormInnerSection>
-          )}
+            </Field>
 
-          {error && <p className="text-sm font-medium text-red-500">{error}</p>}
-
-          <button
-            onClick={handleSubmit}
-            disabled={!isValid || loading || success}
-            type="submit"
-            className={PRIMARY_BUTTON_CLASS}
-          >
-            {success ? (
-              <>
-                <CheckIcon /> ¡Creado!
-              </>
-            ) : loading ? (
-              <>
-                <SpinnerIcon /> Creando…
-              </>
-            ) : (
-              "Crear Workspace"
+            {name && (
+              <FormInnerSection>
+                <div className="flex items-center gap-3">
+                  <div className={STYLED_ICON_CLASS}>{name[0]?.toUpperCase()}</div>
+                  <div>
+                    <p className="text-sm font-semibold">{name}</p>
+                    <p className="text-sm text-purple-800">/{slug || "…"}</p>
+                  </div>
+                </div>
+              </FormInnerSection>
             )}
-          </button>
-        </div>
-      </FormSection>
+
+            {error && <p className="text-sm font-medium text-red-500">{error}</p>}
+
+            <button
+              disabled={!isValid || loading || success}
+              type="submit"
+              className={PRIMARY_BUTTON_CLASS}
+            >
+              {success ? (
+                <>
+                  <CheckIcon /> ¡Creado!
+                </>
+              ) : loading ? (
+                <>
+                  <SpinnerIcon /> Creando…
+                </>
+              ) : (
+                "Crear Workspace"
+              )}
+            </button>
+          </div>
+        </FormSection>
+      </form>
     </div>
   );
 }

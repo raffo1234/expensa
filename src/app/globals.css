@@ -1,16 +1,4 @@
 @import "tailwindcss";
-@import "@fontsource-variable/quicksand";
-
-@theme {
-  --font-sans: "Quicksand Variable", sans-serif;
-}
-
-@layer base {
-  body {
-    font-family: "Quicksand Variable", sans-serif;
-    font-weight: 500;
-  }
-}
 
 /* fix popover z-index */
 .react-tiny-popover-container {

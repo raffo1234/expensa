@@ -8,6 +8,8 @@ import Field from "@/components/Field";
 import FormSection from "@/components/FormSection";
 import BackLink from "@/components/BackLink";
 import FormInnerSection from "@/components/FormInnerSection";
+import SectionTitle from "@/components/SectionTitle";
+import TitleWrapper from "@/components/TitleWrapper";
 
 function toSlug(str: string) {
   return str
@@ -84,15 +86,14 @@ export default function NewWorkspacePage() {
   };
 
   return (
-    <div className="max-w-xl mx-auto py-10 px-4">
+    <div className="max-w-xl mx-auto">
       <BackLink href="/admin/workspaces">Volver a workspaces</BackLink>
-
-      <div className="mb-10 mt-6">
-        <h1 className="text-4xl font-bold mb-1">Nuevo Workspace</h1>
-        <p className="text-slate-500">
+      <TitleWrapper>
+        <SectionTitle>Nuevo Workspace</SectionTitle>
+        <p className="text-slate-500 text-sm">
           Los workspaces te ayudan a organizar tus proyectos y equipo.
         </p>
-      </div>
+      </TitleWrapper>
       <form
         onSubmit={(e) => {
           e.preventDefault();

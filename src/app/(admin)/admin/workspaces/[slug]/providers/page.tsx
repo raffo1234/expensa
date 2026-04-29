@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import useSWR, { mutate } from "swr";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import SectionTitle from "@/components/SectionTitle";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type Provider = {
@@ -429,7 +430,7 @@ export default function ProvidersPage() {
         {/* Header */}
         <div className="flex items-start justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Proveedores</h1>
+            <SectionTitle>Proveedores</SectionTitle>
             <p className="text-sm text-gray-500 mt-1">
               Gestiona los proveedores asociados a tus gastos.
             </p>

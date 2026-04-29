@@ -10,6 +10,8 @@ import { Expense, ExpenseRow } from "@/types/ExpenseType";
 import { Workspace } from "@/types/WorkspaceType";
 import { deleteExpense } from "@/actions/expenses";
 import { useState } from "react";
+import SectionTitle from "./SectionTitle";
+import TitleWrapper from "./TitleWrapper";
 
 interface Props {
   slug: string;
@@ -86,40 +88,35 @@ export default function ExpensesClient({ slug, workspace, initialExpenses }: Pro
 
   return (
     <>
-      <div className="pt-10 pb-6">
+      <div>
         <BackLink href="/admin/workspaces">Workspaces</BackLink>
-        <div className="flex items-center justify-between w-full">
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold">
-              Gastos
-              <span className="text-gray-400 font-normal ml-2">— {workspace.name}</span>
-            </h1>
-          </div>
+        <TitleWrapper>
+          <SectionTitle>
+            Gastos
+            <span className="text-gray-400 font-normal ml-2">— {workspace.name}</span>
+          </SectionTitle>
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-400">
               {expenses?.length ?? 0} registro{expenses?.length !== 1 ? "s" : ""}
             </span>
-            <Link
-              href={`/admin/workspaces/${slug}/upload-expense`}
-              className={PRIMARY_BUTTON_CLASS}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M5 12h14M12 5v14" />
-              </svg>
-              Add
-            </Link>
           </div>
-        </div>
+          <Link href={`/admin/workspaces/${slug}/upload-expense`} className={` ${PRIMARY_BUTTON_CLASS} mt-8`}>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M5 12h14M12 5v14" />
+            </svg>
+            Agregar
+          </Link>
+        </TitleWrapper>
       </div>
       <ExpenseTable
         expenses={expenses ?? []}

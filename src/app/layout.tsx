@@ -10,6 +10,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getMessages, getLocale } from "next-intl/server";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import Providers from "@/components/Providers";
+import { Inter, Sora } from "next/font/google";
 
 const siteName = "Finolis";
 const title = "Finolis - Gestión de Gastos Inteligente";
@@ -46,6 +47,18 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-inter",
+});
+
+const sora = Sora({
+  subsets: ["latin"],
+  weight: ["600", "700", "800"],
+  variable: "--font-sora",
+});
+
 export default async function Layout({ children }: Readonly<LayoutProps>) {
   const messages = await getMessages();
   const locale = await getLocale();
@@ -58,10 +71,10 @@ export default async function Layout({ children }: Readonly<LayoutProps>) {
   }
 
   return (
-    <html lang={locale}>
+    <html lang={locale} className={`${inter.variable} ${sora.variable}`}>
       <body
         style={{ backgroundImage: "url('/shapes.webp')", backgroundSize: "cover" }}
-        className="bg-gray-50"
+        className="bg-gray-50 font-sans"
       >
         <Toaster toastOptions={{ className: "text-xs" }} />
         <ReactScan />

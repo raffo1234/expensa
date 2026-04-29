@@ -16,6 +16,8 @@ import SectionTitle from "@/components/SectionTitle";
 import Field from "@/components/Field";
 import BackLink from "@/components/BackLink";
 import { deleteAttachment, uploadAttachment } from "@/actions/expenses";
+import Link from "next/link";
+import TitleWrapper from "@/components/TitleWrapper";
 
 async function fetchProviders(workspaceId: string): Promise<Provider[]> {
   const { data, error } = await supabase
@@ -233,33 +235,27 @@ export default function EditExpensePage() {
   }
 
   return (
-    <div className="min-h-screen">
-      <nav className=" top-0 z-10">
-        <div className="py-6">
-          <BackLink href={`/admin/workspaces/${workspaceSlug}/expenses/${expenseId}`}>
-            Volver
-          </BackLink>
-          <div className="flex mt-5 items-center gap-1 text-sm">
-            <button
-              onClick={() => router.push(`/admin/workspaces/${workspaceSlug}/expenses`)}
-              className="text-gray-500 hover:text-cyan-600 transition-colors px-2 py-1 rounded-md hover:bg-cyan-50"
-            >
-              Gastos
-            </button>
-            <span className="text-gray-300">/</span>
-            <button
-              onClick={() =>
-                router.push(`/admin/workspaces/${workspaceSlug}/expenses/${expenseId}`)
-              }
-              className="text-gray-500 hover:text-cyan-600 transition-colors px-2 py-1 rounded-md hover:bg-cyan-50 truncate max-w-[120px]"
-            >
-              {providersLoading ? "..." : (expense?.provider?.name ?? "Sin proveedor")}
-            </button>
-            <span className="text-gray-300">/</span>
-            <span className="text-gray-900 font-medium px-2 py-1">Editar</span>
-          </div>
-        </div>
-      </nav>
+    <div>
+      <BackLink href={`/admin/workspaces/${workspaceSlug}/expenses/${expenseId}`}>Volver</BackLink>
+      <TitleWrapper>
+        <SectionTitle>
+          <Link
+            href={`/admin/workspaces/${workspaceSlug}/expenses`}
+            className="text-gray-500 hover:text-cyan-600 transition-colors px-2 py-1 rounded-md hover:bg-cyan-50"
+          >
+            Gastos
+          </Link>
+          <span className="text-gray-300">/</span>
+          <Link
+            href={`/admin/workspaces/${workspaceSlug}/expenses/${expenseId}`}
+            className="text-gray-500 hover:text-cyan-600 transition-colors px-2 py-1 rounded-md hover:bg-cyan-50 truncate max-w-[120px]"
+          >
+            {providersLoading ? "..." : (expense?.provider?.name ?? "Sin proveedor")}
+          </Link>
+          <span className="text-gray-300">/</span>
+          <span className="text-gray-900 font-medium px-2 py-1">Editar</span>
+        </SectionTitle>
+      </TitleWrapper>
       <FormSection>
         {providersLoading && (
           <div className="flex items-center justify-center py-32 text-gray-400 text-sm gap-2">
@@ -462,8 +458,8 @@ export default function EditExpensePage() {
                 ))}
                 <label
                   className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed
-             border-gray-200 py-3 text-sm text-gray-400 hover:border-cyan-300
-             hover:text-cyan-500 hover:bg-cyan-50/40 transition-all cursor-pointer"
+             border-gray-200 py-8 text-sm text-gray-400 hover:border-purple-500
+             hover:text-purple-600 hover:bg-purple-50/40 transition-all cursor-pointer"
                 >
                   <input
                     type="file"

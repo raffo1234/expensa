@@ -115,7 +115,7 @@ export default function ExpenseTable({
     <div className="overflow-y-auto" style={{ maxHeight }}>
       <FormSection padding={false}>
         <table className="w-full border-collapse">
-          <thead className="sticky top-0 z-10 border-b border-gray-100">
+          <thead className="border-b border-gray-100">
             <tr>
               {["Proveedor", "Categoría", "Método", "Fecha", "Monto", ""].map((h) => (
                 <th

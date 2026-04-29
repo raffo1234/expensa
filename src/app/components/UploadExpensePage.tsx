@@ -10,6 +10,8 @@ import FormInnerSection from "./FormInnerSection";
 import { INPUT_CLASS, PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from "@/constants";
 import SectionTitle from "./SectionTitle";
 import BackLink from "./BackLink";
+import TitleWrapper from "./TitleWrapper";
+import Field from "./Field";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type Category = { id: string; name: string; color: string | null };
@@ -53,8 +55,6 @@ const PAYMENT_METHODS = [
   "Yape / Plin",
   "Otro",
 ];
-
-const labelCls = "block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide";
 
 // ── Receipt extractor ─────────────────────────────────────────────────────────
 async function extractFromReceipt(file: File): Promise<Record<string, string>> {
@@ -290,37 +290,28 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
   const currSymbol = form.currency === "PEN" ? "S/" : form.currency === "USD" ? "$" : "€";
 
   return (
-    <div className="min-h-screen text-gray-900">
-      {/* Nav */}
-      <nav className=" top-0 z-10">
-        <div className="py-4 flex items-center gap-3">
-          <div className="flex items-center gap-1 text-sm">
-            <BackLink href={`/admin/workspaces/${workspaceSlug}/expenses`}>Gastos</BackLink>
-            <span className="text-gray-300">/</span>
+    <div>
+      <BackLink href={`/admin/workspaces/${workspaceSlug}/expenses`}>Volver</BackLink>
+      <TitleWrapper>
+        <div className="flex items-center gap-3">
+          <SectionTitle>
+            Gastos <span className="text-gray-300">/</span>
             <span className="text-gray-900 font-medium px-2 py-1">Nuevo</span>
-          </div>
+          </SectionTitle>
         </div>
-      </nav>
+      </TitleWrapper>
       <FormSection>
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Nuevo gasto</h1>
+          <SectionTitle>Nuevo gasto</SectionTitle>
           <p className="text-sm text-gray-500 mt-1">
             Sube un comprobante y los campos se rellenan solos.
           </p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Adjuntos */}
+          <SectionTitle>Comprobante / Adjuntos</SectionTitle>
           <FormInnerSection>
             <section className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-[11px] font-bold text-cyan-600 uppercase tracking-widest">
-                  Comprobante / Adjuntos
-                </h2>
-                <span className="text-xs text-gray-400 font-medium">
-                  Se rellena automáticamente ✦
-                </span>
-              </div>
-
+              <div className="text-xs text-gray-500 mb-2">Se rellena automáticamente ✦</div>
               <label
                 ref={dropRef}
                 onDragOver={(e) => {
@@ -333,8 +324,8 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                 rounded-xl py-9 cursor-pointer transition-all duration-200
                 ${
                   dragging
-                    ? "border-cyan-400 bg-cyan-50"
-                    : "border-gray-200 hover:border-cyan-300 hover:bg-cyan-50/40"
+                    ? "border-purple-600 bg-cyan-50"
+                    : "border-gray-200 hover:border-purple-400 hover:bg-purple-50/40"
                 }`}
               >
                 <input
@@ -504,8 +495,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
           <FormInnerSection>
             <section className="space-y-4">
               <div className="flex gap-3">
-                <div className="flex-1">
-                  <label className={labelCls}>Monto *</label>
+                <Field label="Monto *">
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-500 font-bold text-base select-none">
                       {currSymbol}
@@ -518,19 +508,15 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                       placeholder="0.00"
                       value={form.amount}
                       onChange={set("amount")}
-                      className={`${INPUT_CLASS} pl-10 text-xl font-bold
-                      [appearance:textfield]
-                      [&::-webkit-outer-spin-button]:appearance-none
-                      [&::-webkit-inner-spin-button]:appearance-none`}
+                      className={`${INPUT_CLASS} pl-10`}
                     />
                   </div>
-                </div>
-                <div className="w-28">
-                  <label className={labelCls}>Moneda</label>
+                </Field>
+                <Field label="Moneda">
                   <select
                     value={form.currency}
                     onChange={set("currency")}
-                    className={`${INPUT_CLASS} h-[50px] appearance-none cursor-pointer`}
+                    className={`${INPUT_CLASS}`}
                   >
                     {CURRENCIES.map((c) => (
                       <option key={c} value={c}>
@@ -538,21 +524,19 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                       </option>
                     ))}
                   </select>
-                </div>
+                </Field>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className={labelCls}>Fecha de emisión</label>
+                <Field label="Fecha de emisión">
                   <input
                     type="date"
                     value={form.issued_at}
                     onChange={set("issued_at")}
                     className={INPUT_CLASS}
                   />
-                </div>
-                <div>
-                  <label className={labelCls}>Fecha de pago *</label>
+                </Field>
+                <Field label="Fecha de pago *">
                   <input
                     type="date"
                     required
@@ -560,7 +544,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                     onChange={set("paid_at")}
                     className={INPUT_CLASS}
                   />
-                </div>
+                </Field>
               </div>
             </section>
           </FormInnerSection>
@@ -568,8 +552,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
           <SectionTitle>Datos del comprobante</SectionTitle>
           <FormInnerSection>
             <section className="space-y-4">
-              <div>
-                <label className={labelCls}>Proveedor</label>
+              <Field label="Proveedor">
                 <select
                   value={form.provider_id}
                   onChange={handleProviderChange}
@@ -585,29 +568,27 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                     </option>
                   ))}
                 </select>
-              </div>
+              </Field>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className={labelCls}>Serie</label>
+                <Field label="Serie">
                   <input
                     type="text"
                     placeholder="Ej: F001"
                     value={form.invoice_series}
                     onChange={set("invoice_series")}
-                    className={`${INPUT_CLASS} font-mono`}
+                    className={INPUT_CLASS}
                   />
-                </div>
-                <div>
-                  <label className={labelCls}>Número</label>
+                </Field>
+                <Field label="Número">
                   <input
                     type="text"
                     placeholder="Ej: 00012345"
                     value={form.invoice_number}
                     onChange={set("invoice_number")}
-                    className={`${INPUT_CLASS} font-mono`}
+                    className={INPUT_CLASS}
                   />
-                </div>
+                </Field>
               </div>
             </section>
           </FormInnerSection>
@@ -615,8 +596,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
           <FormInnerSection>
             <section className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className={labelCls}>Categoría</label>
+                <Field label="Categoría">
                   <select
                     value={form.category_id}
                     onChange={set("category_id")}
@@ -630,9 +610,8 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                       </option>
                     ))}
                   </select>
-                </div>
-                <div>
-                  <label className={labelCls}>Método de pago</label>
+                </Field>
+                <Field label="Método de pago">
                   <select
                     value={form.payment_method}
                     onChange={set("payment_method")}
@@ -645,11 +624,10 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                       </option>
                     ))}
                   </select>
-                </div>
+                </Field>
               </div>
 
-              <div>
-                <label className={labelCls}>Notas</label>
+              <Field label="Notas">
                 <textarea
                   rows={3}
                   placeholder="Observaciones adicionales..."
@@ -657,7 +635,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                   onChange={set("notes")}
                   className={`${INPUT_CLASS} resize-none`}
                 />
-              </div>
+              </Field>
             </section>
           </FormInnerSection>
 

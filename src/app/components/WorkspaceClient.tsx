@@ -3,10 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Workspace } from "@/types/WorkspaceType";
-import { INPUT_CLASS } from "@/constants";
+import { PRIMARY_BUTTON_CLASS, SEARCH_INPUT_CLASS } from "@/constants";
 import FormSection from "./FormSection";
 import DeleteButton from "./DeleteButton";
 import { deleteWorkspace } from "@/actions/workspace";
+import SectionTitle from "./SectionTitle";
+import TitleWrapper from "./TitleWrapper";
+import BackLink from "./BackLink";
 
 const PlusIcon = () => (
   <svg
@@ -126,26 +129,36 @@ export default function WorkspaceClient({ workspaces: initial }: { workspaces: W
   );
 
   return (
-    <div className="py-12">
-      <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
-        <div>
-          <h1 className="text-4xl font-bold">Workspaces</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            {workspaces.length} workspace{workspaces.length !== 1 ? "s" : ""}
-          </p>
-        </div>
-        <Link href="/admin/workspaces/new" className="no-underline">
-          <button className="flex items-center gap-3 cursor-pointer text-white font-semibold rounded-full px-7 py-3.5 bg-slate-900">
-            <PlusIcon /> Nuevo Workspace
-          </button>
-        </Link>
-      </div>
-      <div className="flex items-center gap-2.5 mb-6">
+    <div>
+      <BackLink href="/">Home</BackLink>
+      <TitleWrapper>
+        <SectionTitle>Workspaces</SectionTitle>
+        <p className="text-sm text-gray-500">
+          {workspaces.length} workspace{workspaces.length !== 1 ? "s" : ""}
+        </p>
+      </TitleWrapper>
+      <Link href="/admin/workspaces/new" className={PRIMARY_BUTTON_CLASS}>
+        <PlusIcon /> Nuevo Workspace
+      </Link>
+      <div className="relative my-6">
+        <svg
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        >
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.35-4.35" />
+        </svg>
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar workspaces…"
-          className={INPUT_CLASS}
+          className={SEARCH_INPUT_CLASS}
         />
       </div>
 

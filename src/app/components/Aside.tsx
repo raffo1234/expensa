@@ -76,7 +76,7 @@ export default function Aside({
       <aside
         className={`${
           isOpen
-            ? "opacity-100 visible translate-x-0"
+            ? "bg-white opacity-100 visible translate-x-0"
             : "invisible opacity-0 lg:visible lg:opacity-100 lg:translate-x-0 -translate-x-2"
         } transition-all w-full h-full overflow-auto absolute left-0 top-0 lg:static pb-8 pt-8 lg:pt-0 px-5 z-30`}
       >

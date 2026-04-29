@@ -12,6 +12,8 @@ import SectionTitle from "@/components/SectionTitle";
 import { PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from "@/constants";
 import Link from "next/link";
 import { formatAmount } from "@/utils/formatAmount";
+import BackLink from "@/components/BackLink";
+import TitleWrapper from "@/components/TitleWrapper";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type ExpenseAttachment = {
@@ -57,7 +59,6 @@ async function fetchExpense(expenseId: string): Promise<Expense> {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
 
 function isImage(storagePath: string) {
   return /\.(jpe?g|png|webp|gif)$/i.test(storagePath);
@@ -139,30 +140,20 @@ export default function ExpenseDetailPage() {
   const categoryColor = expense?.category?.color ?? "#06b6d4";
 
   return (
-    <div className="min-h-screen text-gray-900">
-      {/* Nav */}
-      <nav className=" top-0 z-10">
-        <div className="py-3 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-1 text-sm">
-            <button
-              onClick={() => router.push(`/admin/workspaces/${workspaceSlug}/expenses`)}
-              className="text-gray-500 hover:text-cyan-600 transition-colors px-2 py-1 rounded-md hover:bg-cyan-50"
-            >
-              Gastos
-            </button>
-            <span className="text-gray-300">/</span>
-            <span className="text-gray-900 font-medium px-2 py-1 truncate max-w-[160px]">
-              {isLoading ? "..." : (expense?.provider?.name ?? "Sin proveedor")}
-            </span>
-          </div>
-          <button
-            onClick={() => router.push(`/admin/workspaces/${workspaceSlug}/expenses`)}
-            className="text-sm px-2 py-1"
-          >
-            ← Volver
-          </button>
-        </div>
-      </nav>
+    <div>
+      <BackLink href={`/admin/workspaces/${workspaceSlug}/expenses`}>Volver</BackLink>
+      <TitleWrapper>
+        <SectionTitle>
+          <Link href={`/admin/workspaces/${workspaceSlug}/expenses`} className="text-gray-500">
+            Gastos{" "}
+          </Link>
+          <span className="text-gray-300">/</span>
+          <span className="text-gray-900 font-medium px-2 py-1 truncate max-w-[160px]">
+            {isLoading ? "..." : (expense?.provider?.name ?? "Sin proveedor")}
+          </span>
+        </SectionTitle>
+      </TitleWrapper>
+
       <FormSection>
         {isLoading && (
           <div className="flex items-center justify-center py-32 text-gray-400 text-sm gap-2">

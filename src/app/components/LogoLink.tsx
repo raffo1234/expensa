@@ -1,11 +1,17 @@
+import { Icon } from "@iconify/react/dist/iconify.js";
 import Link from "next/link";
 
 export default async function LogoLink() {
   return (
-    <Link href="/" title="Cadia" className="flex items-center gap-2">
-      <div className="text-2xl font-black tracking-tight" style={{ color: "#2d2d2d" }}>
-        expen<span style={{ color: "#7fb89a" }}>sa</span>
-      </div>
+    <Link
+      href="/"
+      title="Finolis"
+      className="flex text-3xl items-center font-black tracking-tight gap-1"
+    >
+      <Icon icon="solar:wallet-bold"></Icon>
+      <span>
+        fino<span className="text-purple-400">lis</span>
+      </span>
     </Link>
   );
 }

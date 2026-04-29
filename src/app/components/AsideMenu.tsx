@@ -139,9 +139,9 @@ export default function AsideMenu({
         ]
       : []),
     {
-      href: "/admin/my-studies",
-      title: t("my-studies"),
-      iconName: "solar:hand-heart-linear",
+      href: "/admin/workspaces",
+      title: t("my-workspaces"),
+      iconName: "solar:wallet-bold",
     },
     ...(checkPermission(Permissions.HANDLE_SETTINGS)
       ? [

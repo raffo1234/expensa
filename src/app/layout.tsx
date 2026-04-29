@@ -11,12 +11,15 @@ import { getMessages, getLocale } from "next-intl/server";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import Providers from "@/components/Providers";
 
-const title = "Cadia - Encuentra la Claridad para tu Diagnóstico";
+const siteName = "Finolis";
+const title = "Finolis - Gestión de Gastos Inteligente";
 const description =
-  "Segunda Opinión Experta para Tomografía, Resonancia y Rayos X. Obtén la certeza que necesitas en menos de 24 horas";
+  "Registra, organiza y analiza tus gastos en un solo lugar. Facturas, adjuntos y reportes en tiempo real.";
+
+const url = "https://expensa-sigma.vercel.app";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.cadia.cc/"),
+  metadataBase: new URL(url),
   title,
   description,
   icons: {
@@ -25,11 +28,11 @@ export const metadata: Metadata = {
   openGraph: {
     title,
     description,
-    url: "https://www.cadia.cc/",
-    siteName: "CADIA",
+    url: url,
+    siteName: siteName,
     images: [
       {
-        url: "/radiologist.png",
+        url: "/expensa-hero.svg",
         width: 1200,
         height: 630,
         alt: `${title} - ${description}`,
@@ -56,7 +59,10 @@ export default async function Layout({ children }: Readonly<LayoutProps>) {
 
   return (
     <html lang={locale}>
-      <body style={{ backgroundImage: "url('/shapes.webp')", backgroundSize: "cover" }} className="bg-gray-50">
+      <body
+        style={{ backgroundImage: "url('/shapes.webp')", backgroundSize: "cover" }}
+        className="bg-gray-50"
+      >
         <Toaster toastOptions={{ className: "text-xs" }} />
         <ReactScan />
         <Providers>

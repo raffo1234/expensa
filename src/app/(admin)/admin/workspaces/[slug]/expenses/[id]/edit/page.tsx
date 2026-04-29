@@ -42,9 +42,10 @@ async function fetchExpense(expenseId: string, workspaceId: string): Promise<Exp
     )
     .eq("id", expenseId)
     .eq("workspace_id", workspaceId)
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
+  if (!data) throw new Error("Expense not found");
   return data as unknown as Expense;
 }
 
@@ -53,9 +54,10 @@ async function fetchWorkspace(slug: string): Promise<{ id: string; name: string 
     .from("workspace")
     .select("id, name")
     .eq("slug", slug)
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
+  if (!data) throw new Error("Workspace not found");
   return data;
 }
 

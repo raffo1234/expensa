@@ -12,6 +12,7 @@ export interface Expense {
   provider?: { id: string; name: string };
   category?: { id: string; name: string; color?: string };
   expense_attachment?: { id: string; url: string; file_name: string; storage_path: string }[];
+  invoice_ref?: string;
 }
 
 export interface ExpenseRow {

@@ -146,3 +146,51 @@ export async function deleteExpense(id: string, workspaceSlug: string): Promise<
 
   revalidatePath(`/admin/workspaces/${workspaceSlug}/expenses`);
 }
+
+export async function deleteAttachment(
+  attachmentId: string,
+  storagePath: string,
+): Promise<{ error?: string }> {
+  try {
+    await r2.send(
+      new DeleteObjectsCommand({
+        Bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME!,
+        Delete: { Objects: [{ Key: storagePath }] },
+      }),
+    );
+
+    const { error } = await supabaseAdmin
+      .from("expense_attachment")
+      .delete()
+      .eq("id", attachmentId);
+
+    if (error) throw new Error(error.message);
+    return {};
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Error al eliminar adjunto" };
+  }
+}
+
+export async function uploadAttachment(
+  expenseId: string,
+  workspaceSlug: string,
+  file: SerializedFile,
+): Promise<{ error?: string }> {
+  try {
+    const ext = file.name.split(".").pop();
+    const storagePath = `${workspaceSlug}/${expenseId}/${crypto.randomUUID()}.${ext}`;
+
+    await uploadToR2(storagePath, Buffer.from(file.buffer), file.type);
+
+    const { error } = await supabaseAdmin.from("expense_attachment").insert({
+      expense_id: expenseId,
+      storage_path: storagePath,
+      file_name: file.name,
+    });
+
+    if (error) throw new Error(error.message);
+    return {};
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Error al subir archivo" };
+  }
+}

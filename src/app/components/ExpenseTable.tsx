@@ -8,20 +8,7 @@ import DeleteButton from "@/components/DeleteButton";
 import CategoryBadge from "@/components/CategoryBadge";
 import { formatAmount } from "@/utils/formatAmount";
 import FormSection from "./FormSection";
-
-interface Expense {
-  id: string;
-  provider?: { name: string };
-  category: string;
-  payment_method?: string;
-  paid_at: string;
-  issued_at?: string;
-  created_at: string;
-  amount: number;
-  currency: string;
-  notes?: string;
-  invoice_ref?: string;
-}
+import { Expense } from "@/types/ExpenseType";
 
 interface ExpenseRowProps {
   expense: Expense;
@@ -65,7 +52,7 @@ function ExpenseRow({ expense, isLast, onDelete, isDeleting, workspaceSlug }: Ex
       </td>
 
       <td className="px-5 py-3.5">
-        <CategoryBadge category={expense.category} />
+        <CategoryBadge category={expense.category?.name} />
       </td>
 
       <td className="px-5 py-3.5 text-sm text-gray-500 whitespace-nowrap">
@@ -74,7 +61,7 @@ function ExpenseRow({ expense, isLast, onDelete, isDeleting, workspaceSlug }: Ex
 
       <td className="px-5 py-3.5 text-right">
         <p className="text-sm font-medium text-gray-800 whitespace-nowrap">
-          {format(new Date(expense.paid_at), "d MMM yyyy", { locale: es })}
+          {expense.paid_at ? format(new Date(expense.paid_at), "d MMM yyyy", { locale: es }) : "—"}
         </p>
         {expense.issued_at && expense.issued_at !== expense.paid_at ? (
           <p className="text-sm text-gray-400 whitespace-nowrap">
@@ -88,7 +75,7 @@ function ExpenseRow({ expense, isLast, onDelete, isDeleting, workspaceSlug }: Ex
       </td>
 
       <td className="px-5 py-3.5 text-sm font-bold text-gray-900 whitespace-nowrap text-right">
-        {formatAmount(expense.amount, expense.currency)}
+        {expense.amount ? formatAmount(expense.amount, expense.currency) : "—"}
       </td>
 
       <td

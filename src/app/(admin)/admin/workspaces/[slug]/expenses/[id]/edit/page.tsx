@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import useSWR from "swr";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -15,6 +15,7 @@ import FormInnerSection from "@/components/FormInnerSection";
 import SectionTitle from "@/components/SectionTitle";
 import Field from "@/components/Field";
 import BackLink from "@/components/BackLink";
+import { deleteAttachment, uploadAttachment } from "@/actions/expenses";
 
 async function fetchProviders(workspaceId: string): Promise<Provider[]> {
   const { data, error } = await supabase
@@ -67,7 +68,6 @@ async function fetchCategories(): Promise<Category[]> {
 // ── Constants ─────────────────────────────────────────────────────────────────
 const CURRENCIES = ["PEN", "USD", "EUR"];
 const PAYMENT_METHODS = ["Efectivo", "Transferencia", "Tarjeta", "Yape", "Plin", "Otro"];
-const BUCKET = "expenses"; // ← change to your actual bucket name
 
 function isImage(path: string) {
   return /\.(jpe?g|png|webp|gif)$/i.test(path);
@@ -149,7 +149,6 @@ export default function EditExpensePage() {
   const [existingAttachments, setExistingAttachments] = useState<ExpenseAttachment[]>([]);
   const [deletedIds, setDeletedIds] = useState<string[]>([]);
   const [newFiles, setNewFiles] = useState<File[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -158,7 +157,7 @@ export default function EditExpensePage() {
   useEffect(() => {
     if (!expense) return;
     setProviderId(expense.provider?.id ?? "");
-    setAmount((expense.amount ?? 0 / 100).toFixed(2));
+    setAmount(((expense.amount ?? 0) / 100).toFixed(2));
     setCurrency(expense.currency ? expense.currency.trim() : "");
     setPaidAt(expense.paid_at ?? "");
     setPaymentMethod(expense.payment_method ?? "");
@@ -174,8 +173,9 @@ export default function EditExpensePage() {
   }
 
   function addFiles(e: React.ChangeEvent<HTMLInputElement>) {
-    setNewFiles((prev) => [...prev, ...Array.from(e.target.files ?? [])]);
-    e.target.value = "";
+    const files = Array.from(e.target.files ?? []);
+    console.log("files selected:", files); // ← verifica que llegan
+    setNewFiles((prev) => [...prev, ...files]);
   }
 
   function removeNewFile(index: number) {
@@ -202,27 +202,24 @@ export default function EditExpensePage() {
         .eq("id", expenseId);
       if (updateError) throw updateError;
 
-      // 2. Delete removed attachments (storage + row)
+      // 2. Delete removed attachments via action
       for (const id of deletedIds) {
         const att = expense?.expense_attachment?.find((a) => a.id === id);
-        if (att) await supabase.storage.from(BUCKET).remove([att.storage_path]);
-        await supabase.from("expense_attachment").delete().eq("id", id);
+        if (att) {
+          const { error } = await deleteAttachment(att.id, att.storage_path);
+          if (error) throw new Error(error);
+        }
       }
 
-      // 3. Upload new files
+      // 3. Upload new files via action
       for (const file of newFiles) {
-        const ext = file.name.split(".").pop();
-        const storagePath = `${expenseId}/${crypto.randomUUID()}.${ext}`;
-        const { error: uploadError } = await supabase.storage
-          .from(BUCKET)
-          .upload(storagePath, file);
-        if (uploadError) throw uploadError;
-        const { error: insertError } = await supabase.from("expense_attachment").insert({
-          expense_id: expenseId,
-          storage_path: storagePath,
-          file_name: file.name,
+        const buffer = await file.arrayBuffer();
+        const { error } = await uploadAttachment(expenseId, workspaceSlug, {
+          name: file.name,
+          type: file.type,
+          buffer: Array.from(new Uint8Array(buffer)),
         });
-        if (insertError) throw insertError;
+        if (error) throw new Error(error);
       }
 
       router.push(`/admin/workspaces/${workspaceSlug}/expenses/${expenseId}`);
@@ -461,20 +458,18 @@ export default function EditExpensePage() {
                     </button>
                   </div>
                 ))}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  accept="image/*,application/pdf"
-                  className="hidden"
-                  onChange={addFiles}
-                />
-                <button
-                  onClick={() => fileInputRef.current?.click()}
+                <label
                   className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed
-                           border-gray-200 py-3 text-sm text-gray-400 hover:border-cyan-300
-                           hover:text-cyan-500 hover:bg-cyan-50/40 transition-all"
+             border-gray-200 py-3 text-sm text-gray-400 hover:border-cyan-300
+             hover:text-cyan-500 hover:bg-cyan-50/40 transition-all cursor-pointer"
                 >
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*,application/pdf"
+                    className="hidden"
+                    onChange={addFiles}
+                  />
                   <svg
                     width="14"
                     height="14"
@@ -488,7 +483,7 @@ export default function EditExpensePage() {
                     <line x1="5" y1="12" x2="19" y2="12" />
                   </svg>
                   Agregar archivo
-                </button>
+                </label>
               </div>
             </FormInnerSection>
 

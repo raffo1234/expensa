@@ -18,5 +18,5 @@ export function formatAmount(amount: number, currency?: string | null): string {
     currency: code,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(amount);
+  }).format(amount / 100);
 }

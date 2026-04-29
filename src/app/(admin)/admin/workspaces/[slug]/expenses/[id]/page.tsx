@@ -11,6 +11,7 @@ import FormInnerSection from "@/components/FormInnerSection";
 import SectionTitle from "@/components/SectionTitle";
 import { PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from "@/constants";
 import Link from "next/link";
+import { formatAmount } from "@/utils/formatAmount";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type ExpenseAttachment = {
@@ -56,12 +57,7 @@ async function fetchExpense(expenseId: string): Promise<Expense> {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-const CURRENCY_SYMBOL: Record<string, string> = { PEN: "S/", USD: "$", EUR: "€" };
 
-function formatAmount(amount: number, currency: string) {
-  const sym = CURRENCY_SYMBOL[currency] ?? currency;
-  return `${sym} ${(amount / 100).toFixed(2)}`;
-}
 
 function isImage(storagePath: string) {
   return /\.(jpe?g|png|webp|gif)$/i.test(storagePath);

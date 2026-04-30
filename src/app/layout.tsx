@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     siteName: siteName,
     images: [
       {
-        url: "/expensa-hero.png",
+        url: "/expensa-hero.png?v=2",
         width: 1200,
         height: 630,
         alt: `${title} - ${description}`,

@@ -12,6 +12,7 @@ import SectionTitle from "./SectionTitle";
 import BackLink from "./BackLink";
 import TitleWrapper from "./TitleWrapper";
 import Field from "./Field";
+import PageTitle from "./PageTitle";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type Category = { id: string; name: string; color: string | null };
@@ -314,19 +315,13 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
       <BackLink href={`/admin/workspaces/${workspaceSlug}/expenses`}>Volver</BackLink>
       <TitleWrapper>
         <div className="flex items-center gap-3">
-          <SectionTitle>
+          <PageTitle>
             Gastos <span className="text-gray-300">/</span>
             <span className="text-gray-900 font-medium px-2 py-1">Nuevo</span>
-          </SectionTitle>
+          </PageTitle>
         </div>
       </TitleWrapper>
       <FormSection>
-        <div className="mb-8">
-          <SectionTitle>Nuevo gasto</SectionTitle>
-          <p className="text-sm text-gray-500 mt-1">
-            Sube un comprobante y los campos se rellenan solos.
-          </p>
-        </div>
         <form onSubmit={handleSubmit} className="space-y-8">
           <SectionTitle>Comprobante / Adjuntos</SectionTitle>
           <FormInnerSection>

@@ -10,6 +10,7 @@ import BackLink from "@/components/BackLink";
 import FormInnerSection from "@/components/FormInnerSection";
 import SectionTitle from "@/components/SectionTitle";
 import TitleWrapper from "@/components/TitleWrapper";
+import PageTitle from "@/components/PageTitle";
 
 function toSlug(str: string) {
   return str
@@ -89,7 +90,7 @@ export default function NewWorkspacePage() {
     <div className="max-w-xl mx-auto">
       <BackLink href="/admin/workspaces">Volver a workspaces</BackLink>
       <TitleWrapper>
-        <SectionTitle>Nuevo Workspace</SectionTitle>
+        <PageTitle>Nuevo Workspace</PageTitle>
         <p className="text-slate-500 text-sm">
           Los workspaces te ayudan a organizar tus proyectos y equipo.
         </p>

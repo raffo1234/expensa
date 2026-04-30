@@ -14,6 +14,7 @@ import Link from "next/link";
 import { formatAmount } from "@/utils/formatAmount";
 import BackLink from "@/components/BackLink";
 import TitleWrapper from "@/components/TitleWrapper";
+import PageTitle from "@/components/PageTitle";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type ExpenseAttachment = {
@@ -143,7 +144,7 @@ export default function ExpenseDetailPage() {
     <div>
       <BackLink href={`/admin/workspaces/${workspaceSlug}/expenses`}>Volver</BackLink>
       <TitleWrapper>
-        <SectionTitle>
+        <PageTitle>
           <Link href={`/admin/workspaces/${workspaceSlug}/expenses`} className="text-gray-500">
             Gastos{" "}
           </Link>
@@ -151,7 +152,7 @@ export default function ExpenseDetailPage() {
           <span className="text-gray-900 font-medium px-2 py-1 truncate max-w-[160px]">
             {isLoading ? "..." : (expense?.provider?.name ?? "Sin proveedor")}
           </span>
-        </SectionTitle>
+        </PageTitle>
       </TitleWrapper>
 
       <FormSection>

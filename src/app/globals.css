@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-sora), ui-sans-serif, system-ui, sans-serif;
+}
+
 /* fix popover z-index */
 .react-tiny-popover-container {
   z-index: 100;
@@ -25,15 +30,6 @@
   100% {
     background-position: 40px -40px;
   }
-}
-
-:root {
-  --color-mint: #d4f5e2;
-  --color-mint-dark: #b8edce;
-  --color-emerald: #2eb87a;
-  --color-plum: #3b1f6e;
-  --color-plum-light: #5a3496;
-  --color-cream: #f6fef9;
 }
 
 /* ── Keyframes ── */

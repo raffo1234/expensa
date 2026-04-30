@@ -11,7 +11,7 @@ export default function Field({
 }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      <label htmlFor={htmlFor} className="text-sm font-semibold">
+      <label htmlFor={htmlFor} className="text-sm font-semibold text-slate-800">
         {label}
       </label>
       {children}

@@ -3,11 +3,12 @@ import MySettings from "@/components/MySettings";
 import { Suspense } from "react";
 import NoAccess from "@/components/NoAccess";
 import MySettingsPageFallBack from "@/components/MySettingsPageFallBack";
+import PageTitle from "@/components/PageTitle";
 
 export default async function Page() {
   return (
     <>
-      <h1 className="mb-6 font-semibold text-lg block">My Settings</h1>
+      <PageTitle>My Settings</PageTitle>
       <Suspense fallback={<MySettingsPageFallBack />}>
         <SettingsSection />
       </Suspense>

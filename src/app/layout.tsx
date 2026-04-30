@@ -47,13 +47,10 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
-
-
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
 
 const sora = Sora({
   subsets: ["latin"],
-  weight: ["600", "700", "800"],
   variable: "--font-sora",
 });
 

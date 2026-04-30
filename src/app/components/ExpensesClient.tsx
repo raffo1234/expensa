@@ -12,6 +12,7 @@ import { deleteExpense } from "@/actions/expenses";
 import { useState } from "react";
 import SectionTitle from "./SectionTitle";
 import TitleWrapper from "./TitleWrapper";
+import PageTitle from "./PageTitle";
 
 interface Props {
   slug: string;
@@ -91,10 +92,10 @@ export default function ExpensesClient({ slug, workspace, initialExpenses }: Pro
       <div>
         <BackLink href="/admin/workspaces">Workspaces</BackLink>
         <TitleWrapper>
-          <SectionTitle>
+          <PageTitle>
             Gastos
             <span className="text-gray-400 font-normal ml-2">— {workspace.name}</span>
-          </SectionTitle>
+          </PageTitle>
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-400">
               {expenses?.length ?? 0} registro{expenses?.length !== 1 ? "s" : ""}

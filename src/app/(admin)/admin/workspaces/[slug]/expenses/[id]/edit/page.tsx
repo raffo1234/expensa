@@ -18,6 +18,7 @@ import BackLink from "@/components/BackLink";
 import { deleteAttachment, uploadAttachment } from "@/actions/expenses";
 import Link from "next/link";
 import TitleWrapper from "@/components/TitleWrapper";
+import PageTitle from "@/components/PageTitle";
 
 async function fetchProviders(workspaceId: string): Promise<Provider[]> {
   const { data, error } = await supabase
@@ -238,7 +239,7 @@ export default function EditExpensePage() {
     <div>
       <BackLink href={`/admin/workspaces/${workspaceSlug}/expenses/${expenseId}`}>Volver</BackLink>
       <TitleWrapper>
-        <SectionTitle>
+        <PageTitle>
           <Link
             href={`/admin/workspaces/${workspaceSlug}/expenses`}
             className="text-gray-500 hover:text-cyan-600 transition-colors px-2 py-1 rounded-md hover:bg-cyan-50"
@@ -254,7 +255,7 @@ export default function EditExpensePage() {
           </Link>
           <span className="text-gray-300">/</span>
           <span className="text-gray-900 font-medium px-2 py-1">Editar</span>
-        </SectionTitle>
+        </PageTitle>
       </TitleWrapper>
       <FormSection>
         {providersLoading && (

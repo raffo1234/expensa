@@ -235,61 +235,67 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
     setError(null);
 
     if (!workspaceId) {
-      setError("No se pudo obtener el workspace. Intenta recargar la página.");
+      setError("No se pudo obtener el workspace.");
       return;
     }
     if (!userId) {
-      setError("No se pudo obtener el usuario autenticado. Intenta recargar la página.");
+      setError("No se pudo obtener el usuario.");
       return;
     }
 
     const amountCents = Math.round(parseFloat(form.amount) * 100);
     if (isNaN(amountCents) || amountCents <= 0) {
-      setError("El monto debe ser un número mayor a 0.");
+      setError("El monto debe ser mayor a 0.");
       return;
     }
 
-    const serializedFiles = await Promise.all(
-      files.map(async (fi) => {
-        const buf = await fi.file.arrayBuffer();
-        return {
-          name: fi.file.name,
-          type: fi.file.type,
-          buffer: Array.from(new Uint8Array(buf)),
-        };
-      }),
-    );
-
-    // Determine the ruc + name to send:
-    // - User picked from dropdown → resolvedProvider has that provider's ruc
-    // - AI found a new one → resolvedProvider has the extracted ruc
-    // - User left blank → both null → no provider linked
     setIsPending(true);
-    const result = await createExpense({
-      workspace_id: workspaceId,
-      workspace_slug: workspaceSlug,
-      created_by: userId,
-      category_id: form.category_id || undefined,
-      provider_ruc: resolvedProvider.ruc,
-      provider_name: resolvedProvider.name,
-      invoice_series: form.invoice_series || undefined,
-      invoice_number: form.invoice_number || undefined,
-      amount: amountCents,
-      currency: form.currency,
-      issued_at: form.issued_at || undefined,
-      paid_at: form.paid_at,
-      payment_method: form.payment_method || undefined,
-      notes: form.notes || undefined,
-      files: serializedFiles,
-    });
+    try {
+      const serializedFiles = await Promise.all(
+        files.map(async (fi) => {
+          const base64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve((reader.result as string).split(",")[1]);
+            reader.onerror = reject;
+            reader.readAsDataURL(fi.file);
+          });
+          return {
+            name: fi.file.name,
+            type: fi.file.type,
+            buffer: Array.from(Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))),
+          };
+        }),
+      );
 
-    if (result.error) {
-      setError(result.error);
-    } else {
-      setSuccess(true);
-      setTimeout(() => router.push(`/admin/workspaces/${workspaceSlug}/expenses`), 1200);
+      const result = await createExpense({
+        workspace_id: workspaceId,
+        workspace_slug: workspaceSlug,
+        created_by: userId,
+        category_id: form.category_id || undefined,
+        provider_ruc: resolvedProvider.ruc,
+        provider_name: resolvedProvider.name,
+        invoice_series: form.invoice_series || undefined,
+        invoice_number: form.invoice_number || undefined,
+        amount: amountCents,
+        currency: form.currency,
+        issued_at: form.issued_at || undefined,
+        paid_at: form.paid_at,
+        payment_method: form.payment_method || undefined,
+        notes: form.notes || undefined,
+        files: serializedFiles,
+      });
+
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setSuccess(true);
+        setTimeout(() => router.push(`/admin/workspaces/${workspaceSlug}/expenses`), 1200);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al guardar");
+    } finally {
+      setIsPending(false);
     }
-    setIsPending(false);
   };
 
   const currSymbol = form.currency === "PEN" ? "S/" : form.currency === "USD" ? "$" : "€";

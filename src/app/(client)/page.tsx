@@ -1,19 +1,10 @@
-"use client";
-
 import Image from "next/image";
-import { useSession } from "next-auth/react";
-import { CTA_PRIMARY_CLASS } from "@/constants";
-import { useRouter } from "next/navigation";
+import CTAButton from "@/components/CTAButton";
+import { auth } from "@/lib/auth";
 
-export default function ExpenseLanding() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-
-  const handleClick = () => {
-    if (status === "loading") return;
-    router.push(session ? "/admin/workspaces" : "/session/new");
-  };
-
+export default async function ExpenseLanding() {
+   const session = await auth();
+   
   return (
     <main className="min-h-screen">
       <section className="md:grid md:grid-cols-2 items-center px-10 gap-5 min-h-[580px]">
@@ -44,13 +35,7 @@ export default function ExpenseLanding() {
           </p>
 
           <div className="w-fit mx-auto">
-            <button
-              onClick={handleClick}
-              className={CTA_PRIMARY_CLASS}
-              disabled={status === "loading"}
-            >
-              Upload free <span>→</span>
-            </button>
+            <CTAButton isLoggedIn={!!session} />
           </div>
         </div>
 

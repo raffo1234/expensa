@@ -10,7 +10,7 @@ import { Category } from "@/types/CategoryType";
 import { ExpenseAttachment } from "@/types/ExpenseAttachment";
 import { Provider } from "@/types/ProviderType";
 import FormSection from "@/components/FormSection";
-import { INPUT_CLASS, PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from "@/constants";
+import { INPUT_CLASS, PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS, SELECT_CLASS } from "@/constants";
 import FormInnerSection from "@/components/FormInnerSection";
 import SectionTitle from "@/components/SectionTitle";
 import Field from "@/components/Field";
@@ -312,7 +312,7 @@ export default function EditExpensePage() {
                   <select
                     value={provider_id ?? ""}
                     onChange={(e) => setProviderId(e.target.value)}
-                    className={INPUT_CLASS}
+                    className={SELECT_CLASS}
                   >
                     <option value="">Sin proveedor</option>
 

@@ -46,14 +46,14 @@ export const STYLED_ICON_CLASS =
 // ─── Inputs ───────────────────────────────────────────────────────────────────
 
 export const INPUT_CLASS =
-  "w-full px-3 py-2 rounded-md bg-white border border-zinc-300 text-zinc-900 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors";
+  "w-full pl-3 pr-3 py-2 rounded-md bg-white border border-zinc-300 text-zinc-900 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors";
 
-export const SEARCH_INPUT_CLASS = `${INPUT_CLASS} pl-9`;
+export const SEARCH_CLASS = `${INPUT_CLASS} search-field`;
 
 export const DISABLED_INPUT_CLASS =
   "w-full px-3 py-2 rounded-md border border-zinc-200 bg-zinc-50 text-zinc-400 text-sm font-mono cursor-not-allowed";
 
-export const SELECT_CLASS = `${INPUT_CLASS} appearance-none bg-no-repeat bg-[right_0.75rem_center] bg-[url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")] pr-10`;
+export const SELECT_CLASS = `${INPUT_CLASS} select-field`;
 
 // ─── Buttons — Dashboard ──────────────────────────────────────────────────────
 

@@ -7,7 +7,12 @@ import { supabase } from "@/lib/supabase";
 import { createExpense, getUploadUrl, registerAttachment } from "@/actions/expenses";
 import FormSection from "./FormSection";
 import FormInnerSection from "./FormInnerSection";
-import { INPUT_CLASS, PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from "@/constants";
+import {
+  INPUT_CLASS,
+  PRIMARY_BUTTON_CLASS,
+  SECONDARY_BUTTON_CLASS,
+  SELECT_CLASS,
+} from "@/constants";
 import SectionTitle from "./SectionTitle";
 import BackLink from "./BackLink";
 import TitleWrapper from "./TitleWrapper";
@@ -531,7 +536,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                   <select
                     value={form.currency}
                     onChange={set("currency")}
-                    className={`${INPUT_CLASS}`}
+                    className={`${SELECT_CLASS}`}
                   >
                     {CURRENCIES.map((c) => (
                       <option key={c} value={c}>
@@ -572,7 +577,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                   value={form.provider_id}
                   onChange={handleProviderChange}
                   disabled={providersLoading}
-                  className={`${INPUT_CLASS} appearance-none cursor-pointer disabled:opacity-40`}
+                  className={SELECT_CLASS}
                 >
                   <option value="">
                     {willCreateProvider ? `✦ ${resolvedProvider.name} (nuevo)` : "Sin proveedor"}
@@ -616,7 +621,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                     value={form.category_id}
                     onChange={set("category_id")}
                     disabled={catsLoading}
-                    className={`${INPUT_CLASS} appearance-none cursor-pointer disabled:opacity-40`}
+                    className={SELECT_CLASS}
                   >
                     <option value="">Sin categoría</option>
                     {categories.map((c) => (
@@ -630,7 +635,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                   <select
                     value={form.payment_method}
                     onChange={set("payment_method")}
-                    className={`${INPUT_CLASS} appearance-none cursor-pointer`}
+                    className={SELECT_CLASS}
                   >
                     <option value="">Seleccionar</option>
                     {PAYMENT_METHODS.map((m) => (

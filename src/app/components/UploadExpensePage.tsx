@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useTransition } from "react";
+import { useState, useCallback, useRef } from "react";
 import useSWR from "swr";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -58,11 +58,12 @@ const PAYMENT_METHODS = [
 
 // ── Receipt extractor ─────────────────────────────────────────────────────────
 async function extractFromReceipt(file: File): Promise<Record<string, string>> {
-  const buf = await file.arrayBuffer();
-  const bytes = new Uint8Array(buf);
-  let binary = "";
-  for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
-  const base64 = btoa(binary);
+  const base64 = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve((reader.result as string).split(",")[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 
   const res = await fetch("/api/extract-expense", {
     method: "POST",
@@ -79,7 +80,6 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
   const params = useParams();
   const workspaceSlug = params.slug as string;
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
   const dropRef = useRef<HTMLLabelElement>(null);
 
   const { data: workspace } = useSWR(
@@ -123,6 +123,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [extracting, setExtracting] = useState(false);
+  const [isPending, setIsPending] = useState(false);
 
   // Whether the extracted provider wasn't found in the list (will be auto-created)
   const willCreateProvider = resolvedProvider.ruc !== null && !form.provider_id;
@@ -223,7 +224,11 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
     [addFiles],
   );
 
-  const removeFile = (id: string) => setFiles((prev) => prev.filter((f) => f.id !== id));
+  const removeFile = (id: string) => {
+    const file = files.find((f) => f.id === id);
+    if (file?.preview) URL.revokeObjectURL(file.preview);
+    setFiles((prev) => prev.filter((f) => f.id !== id));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -259,32 +264,32 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
     // - User picked from dropdown → resolvedProvider has that provider's ruc
     // - AI found a new one → resolvedProvider has the extracted ruc
     // - User left blank → both null → no provider linked
-    startTransition(async () => {
-      const result = await createExpense({
-        workspace_id: workspaceId,
-        workspace_slug: workspaceSlug,
-        created_by: userId,
-        category_id: form.category_id || undefined,
-        provider_ruc: resolvedProvider.ruc,
-        provider_name: resolvedProvider.name,
-        invoice_series: form.invoice_series || undefined,
-        invoice_number: form.invoice_number || undefined,
-        amount: amountCents,
-        currency: form.currency,
-        issued_at: form.issued_at || undefined,
-        paid_at: form.paid_at,
-        payment_method: form.payment_method || undefined,
-        notes: form.notes || undefined,
-        files: serializedFiles,
-      });
-
-      if (result.error) {
-        setError(result.error);
-      } else {
-        setSuccess(true);
-        setTimeout(() => router.push(`/admin/workspaces/${workspaceSlug}/expenses`), 1200);
-      }
+    setIsPending(true);
+    const result = await createExpense({
+      workspace_id: workspaceId,
+      workspace_slug: workspaceSlug,
+      created_by: userId,
+      category_id: form.category_id || undefined,
+      provider_ruc: resolvedProvider.ruc,
+      provider_name: resolvedProvider.name,
+      invoice_series: form.invoice_series || undefined,
+      invoice_number: form.invoice_number || undefined,
+      amount: amountCents,
+      currency: form.currency,
+      issued_at: form.issued_at || undefined,
+      paid_at: form.paid_at,
+      payment_method: form.payment_method || undefined,
+      notes: form.notes || undefined,
+      files: serializedFiles,
     });
+
+    if (result.error) {
+      setError(result.error);
+    } else {
+      setSuccess(true);
+      setTimeout(() => router.push(`/admin/workspaces/${workspaceSlug}/expenses`), 1200);
+    }
+    setIsPending(false);
   };
 
   const currSymbol = form.currency === "PEN" ? "S/" : form.currency === "USD" ? "$" : "€";

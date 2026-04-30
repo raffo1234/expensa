@@ -4,7 +4,7 @@ import { useState, useCallback, useRef } from "react";
 import useSWR from "swr";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { createExpense } from "@/actions/expenses";
+import { createExpense, getUploadUrl, registerAttachment } from "@/actions/expenses";
 import FormSection from "./FormSection";
 import FormInnerSection from "./FormInnerSection";
 import { INPUT_CLASS, PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from "@/constants";
@@ -251,22 +251,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
 
     setIsPending(true);
     try {
-      const serializedFiles = await Promise.all(
-        files.map(async (fi) => {
-          const base64 = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve((reader.result as string).split(",")[1]);
-            reader.onerror = reject;
-            reader.readAsDataURL(fi.file);
-          });
-          return {
-            name: fi.file.name,
-            type: fi.file.type,
-            buffer: Array.from(Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))),
-          };
-        }),
-      );
-
+      // 1. Crear expense sin archivos
       const result = await createExpense({
         workspace_id: workspaceId,
         workspace_slug: workspaceSlug,
@@ -282,15 +267,39 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
         paid_at: form.paid_at,
         payment_method: form.payment_method || undefined,
         notes: form.notes || undefined,
-        files: serializedFiles,
       });
 
       if (result.error) {
         setError(result.error);
-      } else {
-        setSuccess(true);
-        setTimeout(() => router.push(`/admin/workspaces/${workspaceSlug}/expenses`), 1200);
+        return;
       }
+
+      // 2. Subir archivos directo a R2 via presigned URL
+      await Promise.all(
+        files.map(async (fi) => {
+          const { url, storagePath } = await getUploadUrl(
+            result.id!,
+            workspaceSlug,
+            fi.file.name,
+            fi.file.type,
+          );
+
+          const res = await fetch(url, {
+            method: "PUT",
+            body: fi.file,
+            headers: { "Content-Type": fi.file.type },
+          });
+
+          if (!res.ok) {
+            throw new Error(`Failed to upload ${fi.file.name}: ${res.status} ${res.statusText}`);
+          }
+
+          await registerAttachment(result.id!, storagePath, fi.file.name);
+        }),
+      );
+
+      setSuccess(true);
+      setTimeout(() => router.push(`/admin/workspaces/${workspaceSlug}/expenses`), 1200);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al guardar");
     } finally {

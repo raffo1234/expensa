@@ -6,6 +6,8 @@ import { revalidatePath } from "next/cache";
 import { uploadToR2 } from "@/lib/r2";
 import { DeleteObjectsCommand } from "@aws-sdk/client-s3";
 import { r2 } from "@/lib/r2";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -26,7 +28,6 @@ type CreateExpenseInput = {
   paid_at: string;
   payment_method?: string | null;
   notes?: string | null;
-  files: SerializedFile[];
   invoice_series?: string | null;
   invoice_number?: string | null;
   issued_at?: string | null;
@@ -65,11 +66,35 @@ async function resolveProvider(
 
 // ─── Actions ──────────────────────────────────────────────────────────────────
 
-export async function createExpense(input: CreateExpenseInput): Promise<{ error?: string }> {
+export async function getUploadUrl(
+  expenseId: string,
+  workspaceSlug: string,
+  fileName: string,
+  fileType: string,
+): Promise<{ url: string; storagePath: string }> {
+  const ext = fileName.split(".").pop();
+  const storagePath = `${workspaceSlug}/${expenseId}/${crypto.randomUUID()}.${ext}`;
+
+  const url = await getSignedUrl(
+    r2,
+    new PutObjectCommand({
+      Bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME!,
+      Key: storagePath,
+      ContentType: fileType,
+    }),
+    { expiresIn: 300 }, // no unhoistableHeaders needed
+  );
+
+  return { url, storagePath };
+}
+
+export async function createExpense(
+  input: CreateExpenseInput,
+): Promise<{ id?: string; error?: string }> {
   const user = await getCurrentUser();
   if (!user) return { error: "No autenticado" };
 
-  // 1. Resolve provider (find or create by RUC)
+  // 1. Resolve provider
   let providerId: string | null = null;
   try {
     providerId = await resolveProvider(input.workspace_id, input.provider_ruc, input.provider_name);
@@ -100,23 +125,21 @@ export async function createExpense(input: CreateExpenseInput): Promise<{ error?
 
   if (expenseError) return { error: expenseError.message };
 
-  // 3. Upload files to R2 + insert expense_attachment rows
-  for (const file of input.files) {
-    const ext = file.name.split(".").pop();
-    const uniqueName = `${crypto.randomUUID()}.${ext}`;
-    const storagePath = `${input.workspace_slug}/${expense.id}/${uniqueName}`;
-
-    await uploadToR2(storagePath, Buffer.from(file.buffer), file.type);
-
-    await supabaseAdmin.from("expense_attachment").insert({
-      expense_id: expense.id,
-      storage_path: storagePath,
-      file_name: file.name,
-    });
-  }
-
   revalidatePath(`/admin/workspaces/${input.workspace_slug}/expenses`);
-  return {};
+  return { id: expense.id };
+}
+
+export async function registerAttachment(
+  expenseId: string,
+  storagePath: string,
+  fileName: string,
+): Promise<{ error?: string }> {
+  const { error } = await supabaseAdmin.from("expense_attachment").insert({
+    expense_id: expenseId,
+    storage_path: storagePath,
+    file_name: fileName,
+  });
+  return { error: error?.message };
 }
 
 export async function deleteExpense(id: string, workspaceSlug: string): Promise<void> {

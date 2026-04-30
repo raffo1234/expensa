@@ -48,7 +48,7 @@ export default function ExpenseLanding() {
 
         <div>
           <Image
-            src="/expensa-hero.svg"
+            src="/expensa-hero.png"
             alt="Person managing expenses on their phone"
             width={800}
             height={600}

@@ -7,6 +7,7 @@ import { SessionProvider } from "next-auth/react";
 import AdminLayoutContent from "@/components/AdminLayoutContent";
 import { getCurrentUser } from "@/lib/getCurrentUser";
 import { Suspense } from "react";
+import NoAccess from "@/components/NoAccess";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -26,6 +27,8 @@ export default async function AdminLayout({ children }: Readonly<AdminLayoutProp
       .maybeSingle(),
   ]);
 
+  if (!currentUser?.roleId) return <NoAccess />;
+
   const isMenuContracted = settingData?.setting_value === "true";
 
   return (
@@ -36,10 +39,7 @@ export default async function AdminLayout({ children }: Readonly<AdminLayoutProp
         </Suspense>
       </header>
       <div className="border-t border-gray-200">
-        <main
-          className="flex items-start w-full z-10"
-
-        >
+        <main className="flex items-start w-full z-10">
           <Suspense>
             {currentUser && user?.name ? (
               <Aside

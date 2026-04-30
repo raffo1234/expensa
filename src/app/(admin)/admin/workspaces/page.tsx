@@ -1,7 +1,7 @@
+import NoAccess from "@/components/NoAccess";
 import WorkspaceClient from "@/components/WorkspaceClient";
 import { getCurrentUser } from "@/lib/getCurrentUser";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { redirect } from "next/navigation";
 
 export type Workspace = {
   id: string;
@@ -13,8 +13,8 @@ export type Workspace = {
 
 export default async function WorkspacePage() {
   const user = await getCurrentUser();
-  if (!user) redirect("/session/new");
-
+  console.log("getCurrentUser result:", JSON.stringify(user));
+  if (!user) return <NoAccess />;
   const { data: workspaces, error } = await supabaseAdmin
     .from("workspace")
     .select("id, name, slug, created_by, created_at, expense(*)")

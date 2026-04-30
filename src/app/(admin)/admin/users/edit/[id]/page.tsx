@@ -14,7 +14,7 @@ export default async function Page({ params }: { params: Params }) {
 
   if (!id) return null;
   if (!currentUser) return <NoAccess />;
-
+  if (!currentUser.roleId) return <NoAccess />;
   const [targetUser, allUsers] = await Promise.all([userFetcher(id), usersFetcher()]);
 
   if (!targetUser) return <NoAccess />;

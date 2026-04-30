@@ -26,6 +26,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (account?.provider === "google" && profile) {
         const nameParts = (profile.name || "").split(" ");
 
+        const { data: existingUser } = await supabaseAdmin
+          .from("user")
+          .select("id, role_id")
+          .eq("email", user.email!)
+          .maybeSingle();
+
+        const { data: defaultRole } = !existingUser?.role_id
+          ? await supabaseAdmin.from("role").select("id").eq("name", "viewer").single()
+          : { data: null };
+
         const { data } = await supabaseAdmin
           .from("user")
           .upsert(
@@ -35,6 +45,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               first_name: nameParts[0] || null,
               last_name: nameParts.slice(1).join(" ") || null,
               image_url: profile.picture as string,
+              ...(defaultRole?.id ? { role_id: defaultRole.id } : {}),
             },
             { onConflict: "email" },
           )

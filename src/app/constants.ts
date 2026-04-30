@@ -74,7 +74,7 @@ export const SECONDARY_BUTTON_XS_CLASS =
 // ─── Buttons — CTA (Landing) ──────────────────────────────────────────────────
 
 export const CTA_PRIMARY_CLASS =
-  "whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:pointer-events-none inline-flex items-center gap-2 px-6 py-3 rounded-full bg-violet-600 hover:bg-violet-700 text-white text-base font-semibold tracking-tight transition-colors";
+  "whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:pointer-events-none inline-flex items-center gap-3 px-8 py-3 rounded-full bg-violet-600 hover:bg-violet-700 text-white text-base font-semibold tracking-tight transition-colors";
 
 export const CTA_SECONDARY_CLASS =
-  "whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:pointer-events-none inline-flex items-center gap-2 px-6 py-3 rounded-full border border-violet-200 bg-white hover:bg-violet-50 text-violet-700 hover:text-violet-800 text-base font-semibold tracking-tight transition-colors";
+  "whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:pointer-events-none inline-flex items-center gap-3 px-8 py-3 rounded-full border border-violet-200 bg-white hover:bg-violet-50 text-violet-700 hover:text-violet-800 text-base font-semibold tracking-tight transition-colors";

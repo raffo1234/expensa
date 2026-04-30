@@ -49,7 +49,7 @@ export default function ExpenseLanding() {
               className={CTA_PRIMARY_CLASS}
               disabled={status === "loading"}
             >
-              Upload free →
+              Upload free <span>→</span>
             </button>
           </div>
         </div>
@@ -66,15 +66,17 @@ export default function ExpenseLanding() {
         </div>
       </section>
 
-      <div className="text-sm py-4 text-slate-700 px-10 mt-10 text-center border-t border-purple-200" >
+      <div className="text-sm py-4 text-slate-700 px-10 mt-10 text-center border-t border-purple-200">
         {[
           { icon: "🔒", label: "No credit card needed" },
           { icon: "⚡", label: "Upload in 30 seconds" },
           { icon: "✦", label: "100% private" },
         ].map((item) => (
-          <span key={item.label} className="flex md:inline md:px-4 md:w-full items-center gap-2 text-center justify-center">
-            <span>{item.icon}</span>{" "}
-            {item.label}
+          <span
+            key={item.label}
+            className="flex md:inline md:px-4 md:w-full items-center gap-2 text-center justify-center"
+          >
+            <span>{item.icon}</span> {item.label}
           </span>
         ))}
       </div>

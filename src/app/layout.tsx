@@ -67,6 +67,9 @@ export default async function Layout({ children }: Readonly<LayoutProps>) {
 
   return (
     <html lang={locale} className={`${geist.variable} ${sora.variable}`}>
+      <head>
+        <meta property="og:logo" content="https://expensa-sigma.vercel.app/expensa-hero.png" />
+      </head>
       <body
         style={{ backgroundImage: "url('/shapes.webp')", backgroundSize: "cover" }}
         className="bg-gray-50 font-sans"

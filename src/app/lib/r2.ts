@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client } from "@aws-sdk/client-s3";
 
 export const r2 = new S3Client({
   region: "auto",
@@ -7,18 +7,17 @@ export const r2 = new S3Client({
     accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID!,
     secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY!,
   },
+  requestChecksumCalculation: "WHEN_REQUIRED",
 });
 
-export const BUCKET = process.env.CLOUDFLARE_R2_BUCKET_NAME!;
-
-export async function uploadToR2(key: string, body: Buffer, contentType: string): Promise<string> {
+export async function uploadToR2(key: string, body: Buffer, contentType: string): Promise<void> {
+  const { PutObjectCommand } = await import("@aws-sdk/client-s3");
   await r2.send(
     new PutObjectCommand({
-      Bucket: BUCKET,
+      Bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME!,
       Key: key,
       Body: body,
       ContentType: contentType,
     }),
   );
-  return key;
 }

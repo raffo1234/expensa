@@ -39,7 +39,7 @@ export default function ProfilePopoverDropdown({
   const navItems: NavItem[] = [
     { href: "/", icon: "solar:home-smile-angle-broken", label: t("home") },
     { href: "/admin/profile", icon: "solar:user-linear", label: t("profile") },
-    { href: "/admin/dicom", icon: "solar:cloud-upload-broken", label: t("upload") },
+    { href: "/admin/workspaces", icon: "solar:wallet-2-linear", label: "Workspaces" },
   ];
 
   return (

@@ -141,7 +141,7 @@ export default function AsideMenu({
     {
       href: "/admin/workspaces",
       title: t("my-workspaces"),
-      iconName: "solar:wallet-bold",
+      iconName: "solar:wallet-2-linear",
     },
     ...(checkPermission(Permissions.HANDLE_SETTINGS)
       ? [

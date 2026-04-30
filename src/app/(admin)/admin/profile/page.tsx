@@ -4,10 +4,9 @@ import { getTranslations } from "next-intl/server";
 import Image from "next/image";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { format } from "date-fns";
-import { ICON_SIZE } from "@/constants";
+import { ICON_SIZE, PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from "@/constants";
 import RoleName from "@/components/RoleName";
-import UploadLink from "@/components/UploadLink";
-import SecondaryButton from "@/components/SecondaryButton";
+import Link from "next/link";
 
 type ProfileData = {
   first_name: string | null;
@@ -88,14 +87,14 @@ export default async function Page() {
           <ProfileField icon="solar:calendar-linear" label={t("createdAt")} value={createdAt} />
         </div>
         <div className="px-4 sm:px-8 py-6 bg-slate-50 border-t border-gray-200 flex flex-col sm:flex-row gap-3">
-          <div className="w-full sm:w-fit">
-            <UploadLink label={t("uploadStudy")} />
-          </div>
-          <SecondaryButton
-            href="/admin/my-studies"
-            icon="solar:hand-heart-linear"
-            label={t("myStudies")}
-          />
+          <Link href="/" className={SECONDARY_BUTTON_CLASS}>
+            <Icon icon="solar:home-smile-angle-broken" fontSize={ICON_SIZE} />
+            Home
+          </Link>
+          <Link href="/admin/workspaces" className={PRIMARY_BUTTON_CLASS}>
+            <Icon icon="solar:wallet-2-linear" fontSize={ICON_SIZE} />
+            Workspaces
+          </Link>
         </div>
       </div>
     </div>

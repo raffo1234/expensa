@@ -1,21 +1,25 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
 import { CTA_PRIMARY_CLASS } from "@/constants";
+import { useRouter } from "next/navigation";
 
 export default function ExpenseLanding() {
   const { data: session, status } = useSession();
+  const router = useRouter();
 
-  const href = status === "loading" ? "#" : session ? "/admin/workspaces" : "/session/new";
+  const handleClick = () => {
+    if (status === "loading") return;
+    router.push(session ? "/admin/workspaces" : "/session/new");
+  };
 
   return (
     <main className="min-h-screen">
       <section className="md:grid md:grid-cols-2 items-center px-10 gap-5 min-h-[580px]">
-        <div className="flex text-center md:text-right flex-col justify-end-safe items-start">
+        <div className="flex text-center flex-col justify-end-safe items-start">
           <div
-            className="inline-flex ml-auto items-center gap-2 text-xs font-semibold uppercase tracking-widest px-4 py-1.5 rounded-full mb-7"
+            className="w-fit mx-auto justify-center items-center gap-2 text-[10px] font-semibold uppercase tracking-widest px-4 py-1.5 rounded-full mb-7"
             style={{ background: "#d4ecd4", color: "#3a6b45" }}
           >
             <span
@@ -35,14 +39,18 @@ export default function ExpenseLanding() {
             <span style={{ color: "#f2b97a" }}>money.</span>
           </h1>
 
-          <p className="text-lg w-full leading-relaxed mb-8">
+          <p className="text-sm text-slate-700 w-full leading-relaxed mb-8">
             One app. All your accounts. Total clarity over every dollar — without the spreadsheet.
           </p>
 
-          <div className="w-full justify-center md:justify-end flex">
-            <Link href={href} className={CTA_PRIMARY_CLASS}>
+          <div className="w-fit mx-auto">
+            <button
+              onClick={handleClick}
+              className={CTA_PRIMARY_CLASS}
+              disabled={status === "loading"}
+            >
               Upload free →
-            </Link>
+            </button>
           </div>
         </div>
 
@@ -58,19 +66,16 @@ export default function ExpenseLanding() {
         </div>
       </section>
 
-      <div
-        className="md:flex space-x-6 items-center justify-center mt-2 py-4 px-10"
-        style={{ borderTop: "1px solid #e0d8cc" }}
-      >
+      <div className="text-sm py-4 text-slate-700 px-10 mt-10 text-center border-t border-purple-200" >
         {[
           { icon: "🔒", label: "No credit card needed" },
           { icon: "⚡", label: "Upload in 30 seconds" },
           { icon: "✦", label: "100% private" },
         ].map((item) => (
-          <div key={item.label} className="flex items-center gap-2 px-7 font-medium">
-            <span>{item.icon}</span>
+          <span key={item.label} className="flex md:inline md:px-4 md:w-full items-center gap-2 text-center justify-center">
+            <span>{item.icon}</span>{" "}
             {item.label}
-          </div>
+          </span>
         ))}
       </div>
     </main>

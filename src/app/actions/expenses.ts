@@ -74,6 +74,7 @@ export async function createExpense(input: CreateExpenseInput): Promise<{ error?
   try {
     providerId = await resolveProvider(input.workspace_id, input.provider_ruc, input.provider_name);
   } catch (err) {
+    console.error("createExpense error:", err);
     return { error: err instanceof Error ? err.message : "Error al resolver proveedor" };
   }
 

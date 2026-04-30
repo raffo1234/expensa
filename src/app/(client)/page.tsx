@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
-import { PRIMARY_BUTTON_CLASS } from "@/constants";
+import { CTA_PRIMARY_CLASS, PRIMARY_BUTTON_CLASS } from "@/constants";
 
 export default function ExpenseLanding() {
   const { data: session, status } = useSession();
@@ -40,7 +40,7 @@ export default function ExpenseLanding() {
           </p>
 
           <div className="w-full justify-center md:justify-end flex">
-            <Link href={href} className={PRIMARY_BUTTON_CLASS}>
+            <Link href={href} className={CTA_PRIMARY_CLASS}>
               Upload free →
             </Link>
           </div>

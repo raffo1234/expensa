@@ -3,7 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Workspace } from "@/types/WorkspaceType";
-import { PRIMARY_BUTTON_CLASS, SEARCH_INPUT_CLASS } from "@/constants";
+import {
+  PRIMARY_BUTTON_CLASS,
+  PRIMARY_BUTTON_XS_CLASS,
+  SEARCH_INPUT_CLASS,
+  SECONDARY_BUTTON_XS_CLASS,
+} from "@/constants";
 import FormSection from "./FormSection";
 import DeleteButton from "./DeleteButton";
 import { deleteWorkspace } from "@/actions/workspace";
@@ -82,13 +87,13 @@ function TableView({
                     <div className="flex items-center gap-2 justify-end">
                       <Link
                         href={`/admin/workspaces/${ws.slug}/upload-expense`}
-                        className="text-xs font-semibold text-gray-500 hover:text-gray-600 transition-colors px-3 py-1.5 rounded-full border border-gray-200 hover:border-gray-300"
+                        className={SECONDARY_BUTTON_XS_CLASS}
                       >
                         + Agregar
                       </Link>
                       <Link
                         href={`/admin/workspaces/${ws.slug}/expenses`}
-                        className="text-xs font-bold text-white bg-gray-900 hover:bg-gray-700 transition-colors px-4 py-1.5 rounded-full"
+                        className={PRIMARY_BUTTON_XS_CLASS}
                       >
                         Ver gastos
                       </Link>

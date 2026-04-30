@@ -4,8 +4,8 @@ import { cache } from "react";
 
 type GetCurrentUserData = {
   id: string;
-  role_id: string | null;
   template_id: string | null;
+  role_id: string | null;
   role: {
     name: string;
   } | null;
@@ -17,22 +17,18 @@ export const getCurrentUser = cache(async () => {
 
   if (!user?.id || !user?.email) return null;
 
-  const { data, error } = await supabaseAdmin
+  const { data } = await supabaseAdmin
     .from("user")
-    .select("id, role_id, role(name)")
+    .select("id, role_id, template_id, role(name)")
     .eq("id", user.id)
     .maybeSingle<GetCurrentUserData>();
 
-  console.log("4. db data:", JSON.stringify(data));
-  console.log("5. db error:", JSON.stringify(error));
-
-  if (!data?.role_id || !data?.role) return null;
+  if (!data) return null;
 
   return {
     id: user.id,
     email: user.email,
-    roleId: data.role_id,
-    templateId: data.template_id,
-    roleName: data.role.name,
+    roleId: data.role_id ?? null,
+    roleName: data.role?.name ?? null,
   };
 });

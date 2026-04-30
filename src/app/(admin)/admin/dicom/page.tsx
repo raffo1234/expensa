@@ -45,6 +45,7 @@ export default async function Page() {
 async function UploaderSection() {
   const user = await getCurrentUser();
   if (!user) return <NoAccess />;
+  if (!user.roleId) return <NoAccess />;
   const [permissions] = await Promise.all([
     checkPermissions(user.roleId, [Permissions.UPLOAD_DICOM]),
   ]);

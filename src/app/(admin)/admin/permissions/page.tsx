@@ -26,7 +26,7 @@ async function PermissionsSection() {
   const [user, { data: permissions }] = await Promise.all([getCurrentUser(), permissionsQuery]);
 
   if (!user) return <NoAccess />;
-
+  if (!user.roleId) return <NoAccess />;
   return (
     <PermissionsPage
       userRoleId={user.roleId}

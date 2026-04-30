@@ -21,6 +21,7 @@ function Fallback() {
 export default async function AeRoutesPage() {
   const user = await getCurrentUser();
   if (!user) return <NoAccess />;
+  if (!user.roleId) return <NoAccess />;
 
   const permissions = await checkPermissions(user.roleId, [Permissions.MANAGE_PACS]);
   if (!permissions[Permissions.MANAGE_PACS]) return <NoAccess />;

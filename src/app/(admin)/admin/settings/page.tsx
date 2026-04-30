@@ -24,6 +24,6 @@ async function SettingsSection() {
   ]);
 
   if (!user) return <NoAccess />;
-
+  if (!user.roleId) return <NoAccess />;
   return <SettingsContent userRoleId={user.roleId} roles={roles as RoleType[] | null} />;
 }

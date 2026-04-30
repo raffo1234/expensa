@@ -40,7 +40,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 async function EditHospitalSection({ id }: { id: string }) {
   const user = await getCurrentUser();
   if (!user) return <NoAccess />;
-
+  if (!user.roleId) return <NoAccess />;
   const permissions = await checkPermissions(user.roleId, [Permissions.MANAGE_HOSPITALS]);
   if (!permissions[Permissions.MANAGE_HOSPITALS]) return <NoAccess />;
 

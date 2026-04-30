@@ -82,7 +82,7 @@ export default function EditUserContent({
 
   if (isLoadingUser) return <FallbackEditUser />;
   if (!user) return <NoAccess />;
-
+  
   return (
     <fieldset className="flex flex-col gap-4">
       <FieldsSection>

@@ -9,7 +9,7 @@ import { getCurrentUser } from "@/lib/getCurrentUser";
 async function DicomsTableLoader({ userId }: { userId: string }) {
   const user = await getCurrentUser();
   if (!user) return <NoAccess />;
-
+  if (!user.roleId) return <NoAccess />;
   return <DicomsTable userId={userId} userRoleId={user.roleId} />;
 }
 

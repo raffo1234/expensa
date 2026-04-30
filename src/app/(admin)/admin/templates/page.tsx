@@ -23,7 +23,7 @@ export default async function Page() {
 async function TemplatesSection() {
   const user = await getCurrentUser();
   if (!user) return <NoAccess />;
-
+  if (!user.roleId) return <NoAccess />;
   return (
     <>
       <CheckPermission

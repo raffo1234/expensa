@@ -5,6 +5,6 @@ import { getCurrentUser } from "@/lib/getCurrentUser";
 export default async function Page() {
   const user = await getCurrentUser();
   if (!user) return <NoAccess />;
-
+  if (!user.roleId) return <NoAccess />;
   return <MyStudiesPageContent userId={user.id} userRoleId={user.roleId} />;
 }

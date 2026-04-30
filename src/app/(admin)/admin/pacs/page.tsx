@@ -1,3 +1,4 @@
+import NoAccess from "@/components/NoAccess";
 import PacsPageContent from "@/components/PacsPageContent";
 import { getCurrentUser } from "@/lib/getCurrentUser";
 import { Suspense } from "react";
@@ -22,7 +23,7 @@ export default async function Page() {
 
 async function PacsSection() {
   const user = await getCurrentUser();
-  if (!user) return null;
-
+  if (!user) return <NoAccess />;
+  if (!user.roleId) return <NoAccess />;
   return <PacsPageContent userId={user.id} userRoleId={user.roleId} />;
 }

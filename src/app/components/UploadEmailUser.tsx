@@ -41,7 +41,7 @@ export default async function UploadEmailUser({ link }: { link: string }) {
                 alt="Cadia"
                 className="w-full rounded-[12px] object-cover"
                 height="320"
-                src="https://www.cadia.cc/radiologist.png"
+                src="https://www.cadia.cc/expensa-hero.png"
               />
               <Section className="mt-[32px] text-center">
                 <Link

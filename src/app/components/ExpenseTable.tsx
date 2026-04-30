@@ -112,8 +112,8 @@ export default function ExpenseTable({
   maxHeight = "600px",
 }: ExpenseTableProps) {
   return (
-    <div className="overflow-y-auto" style={{ maxHeight }}>
-      <FormSection padding={false}>
+    <FormSection padding={false}>
+      <div className="overflow-y-auto" style={{ maxHeight }}>
         <table className="w-full border-collapse">
           <thead className="border-b border-gray-100">
             <tr>
@@ -150,7 +150,7 @@ export default function ExpenseTable({
             )}
           </tbody>
         </table>
-      </FormSection>
-    </div>
+      </div>
+    </FormSection>
   );
 }

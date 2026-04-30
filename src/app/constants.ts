@@ -41,7 +41,7 @@ export const SWR_KEY_USER_ROLE = "user-role";
 export const SWR_KEY_PERMISSIONS = "admin-permissions";
 
 export const INPUT_CLASS =
-  "w-full px-4 py-2 rounded-lg bg-white border border-slate-300 focus:outline-none focus:ring-4 focus:ring-purple-200 focus:border-purple-300 transition-all";
+  "w-full px-4 nowrap py-2 rounded-lg bg-white border border-slate-300 focus:outline-none focus:ring-4 focus:ring-purple-200 focus:border-purple-300 transition-all";
 
 export const SEARCH_INPUT_CLASS = `${INPUT_CLASS} pl-9 placeholder:text-gray-400`;
 
@@ -51,10 +51,10 @@ export const DISABLED_INPUT_CLASS =
 export const SELECT_CLASS = `${INPUT_CLASS} appearance-none bg-no-repeat bg-[right_1rem_center] bg-[url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")] pr-10`;
 
 export const PRIMARY_BUTTON_CLASS =
-  "cursor-pointer disabled:opacity-50 disabled:pointer-events-none text-white bg-slate-900 text-lg w-fit flex gap-3 items-center font-display font-semibold px-7 py-3.5 rounded-full hover:bg-slate-700";
+  "whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:pointer-events-none text-white bg-slate-900 text-lg w-fit flex gap-3 items-center font-display font-semibold px-7 py-3.5 rounded-full hover:bg-slate-700";
 
 export const SECONDARY_BUTTON_CLASS =
-  "cursor-pointer disabled:opacity-50 disabled:pointer-events-none rounded-full border border-gray-200 gap-3 font-semibold font-display text-gray-600 hover:bg-gray-50 hover:text-gray-900 px-7 py-3.5";
+  "whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:pointer-events-none rounded-full border border-gray-200 gap-3 font-semibold font-display text-gray-600 hover:bg-gray-50 hover:text-gray-900 px-7 py-3.5";
 
 export const STYLED_ICON_CLASS =
   "text-purple-800 p-2 block bg-gradient-to-b lg:from-white/75 lg:to-purple-100/75 rounded-lg bg-purple-100 border border-purple-200";

@@ -49,7 +49,7 @@ function TableView({
   return (
     <FormSection padding={false}>
       <div className="overflow-hidden">
-        <div className="overflow-y-auto max-h-[60vh]">
+        <div className="overflow-y-auto">
           <table className="w-full border-collapse">
             <thead>
               <tr className="border-b border-gray-200 sticky top-0 z-10">

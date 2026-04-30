@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { format, formatDistanceToNow } from "date-fns";
+import { parseISO, formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import DeleteButton from "@/components/DeleteButton";
 import CategoryBadge from "@/components/CategoryBadge";
@@ -22,6 +22,16 @@ function ExpenseRow({ expense, isLast, onDelete, isDeleting, workspaceSlug }: Ex
   const [hovered, setHovered] = useState(false);
   const router = useRouter();
   const invoiceRef = expense.invoice_ref;
+
+  const parsedDate = expense?.issued_at ? parseISO(expense.issued_at) : null;
+
+  const label = parsedDate
+    ? new Intl.DateTimeFormat("es-PE", {
+        day: "numeric",
+        month: "short",
+        timeZone: "America/Lima",
+      }).format(parsedDate)
+    : "-";
 
   return (
     <tr
@@ -60,18 +70,10 @@ function ExpenseRow({ expense, isLast, onDelete, isDeleting, workspaceSlug }: Ex
       </td>
 
       <td className="px-5 py-3.5 text-right">
-        <p className="text-sm font-medium text-gray-800 whitespace-nowrap">
-          {expense.paid_at ? format(new Date(expense.paid_at), "d MMM yyyy", { locale: es }) : "—"}
+        <p className="text-sm font-medium text-gray-800 whitespace-nowrap">{label}</p>
+        <p className="text-sm text-gray-400 whitespace-nowrap">
+          {parsedDate ? formatDistanceToNow(parsedDate, { addSuffix: true, locale: es }) : "-"}
         </p>
-        {expense.issued_at && expense.issued_at !== expense.paid_at ? (
-          <p className="text-sm text-gray-400 whitespace-nowrap">
-            emitido {format(new Date(expense.issued_at), "d MMM", { locale: es })}
-          </p>
-        ) : (
-          <p className="text-sm text-gray-400 whitespace-nowrap">
-            {formatDistanceToNow(new Date(expense.created_at), { addSuffix: true, locale: es })}
-          </p>
-        )}
       </td>
 
       <td className="px-5 py-3.5 text-sm font-bold text-gray-900 whitespace-nowrap text-right">

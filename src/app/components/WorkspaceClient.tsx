@@ -6,7 +6,7 @@ import { Workspace } from "@/types/WorkspaceType";
 import {
   PRIMARY_BUTTON_CLASS,
   PRIMARY_BUTTON_XS_CLASS,
-  SEARCH_INPUT_CLASS,
+  SEARCH_CLASS,
   SECONDARY_BUTTON_XS_CLASS,
 } from "@/constants";
 import FormSection from "./FormSection";
@@ -163,7 +163,7 @@ export default function WorkspaceClient({ workspaces: initial }: { workspaces: W
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar workspaces…"
-          className={SEARCH_INPUT_CLASS}
+          className={SEARCH_CLASS}
         />
       </div>
 

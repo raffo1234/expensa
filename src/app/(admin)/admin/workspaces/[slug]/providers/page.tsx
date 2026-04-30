@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from "react";
 import useSWR, { mutate } from "swr";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import SectionTitle from "@/components/SectionTitle";
 import PageTitle from "@/components/PageTitle";
 
 // ── Types ────────────────────────────────────────────────────────────────────

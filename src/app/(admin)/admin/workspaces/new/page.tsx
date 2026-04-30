@@ -8,7 +8,6 @@ import Field from "@/components/Field";
 import FormSection from "@/components/FormSection";
 import BackLink from "@/components/BackLink";
 import FormInnerSection from "@/components/FormInnerSection";
-import SectionTitle from "@/components/SectionTitle";
 import TitleWrapper from "@/components/TitleWrapper";
 import PageTitle from "@/components/PageTitle";
 

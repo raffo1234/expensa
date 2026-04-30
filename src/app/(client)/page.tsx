@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
-import { CTA_PRIMARY_CLASS, PRIMARY_BUTTON_CLASS } from "@/constants";
+import { CTA_PRIMARY_CLASS } from "@/constants";
 
 export default function ExpenseLanding() {
   const { data: session, status } = useSession();

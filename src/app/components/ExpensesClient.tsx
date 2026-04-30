@@ -10,7 +10,6 @@ import { Expense, ExpenseRow } from "@/types/ExpenseType";
 import { Workspace } from "@/types/WorkspaceType";
 import { deleteExpense } from "@/actions/expenses";
 import { useState } from "react";
-import SectionTitle from "./SectionTitle";
 import TitleWrapper from "./TitleWrapper";
 import PageTitle from "./PageTitle";
 
@@ -101,7 +100,10 @@ export default function ExpensesClient({ slug, workspace, initialExpenses }: Pro
               {expenses?.length ?? 0} registro{expenses?.length !== 1 ? "s" : ""}
             </span>
           </div>
-          <Link href={`/admin/workspaces/${slug}/upload-expense`} className={` ${PRIMARY_BUTTON_CLASS} mt-8`}>
+          <Link
+            href={`/admin/workspaces/${slug}/upload-expense`}
+            className={` ${PRIMARY_BUTTON_CLASS} mt-8`}
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="14"

@@ -21,3 +21,5 @@ export async function uploadToR2(key: string, body: Buffer, contentType: string)
     }),
   );
 }
+
+export const BUCKET = process.env.CLOUDFLARE_R2_BUCKET_NAME!;

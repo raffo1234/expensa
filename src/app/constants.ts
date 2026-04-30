@@ -40,34 +40,41 @@ export const colorClassMap: Record<string, string> = {
 export const SWR_KEY_USER_ROLE = "user-role";
 export const SWR_KEY_PERMISSIONS = "admin-permissions";
 
-export const INPUT_CLASS =
-  "w-full px-4 nowrap py-2 rounded-lg bg-white border border-slate-300 focus:outline-none focus:ring-4 focus:ring-purple-200 focus:border-purple-300 transition-all";
+export const STYLED_ICON_CLASS =
+  "text-purple-800 p-2 block bg-gradient-to-b lg:from-white/75 lg:to-purple-100/75 rounded-lg bg-purple-100 border border-purple-200";
 
-export const SEARCH_INPUT_CLASS = `${INPUT_CLASS} pl-9 placeholder:text-gray-400`;
+// ─── Inputs ───────────────────────────────────────────────────────────────────
+
+export const INPUT_CLASS =
+  "w-full px-3 py-2 rounded-md bg-white border border-zinc-300 text-zinc-900 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors";
+
+export const SEARCH_INPUT_CLASS = `${INPUT_CLASS} pl-9`;
 
 export const DISABLED_INPUT_CLASS =
-  "w-full px-3 py-2 rounded-xl border border-gray-100 bg-gray-50 text-gray-400 font-mono cursor-not-allowed";
+  "w-full px-3 py-2 rounded-md border border-zinc-200 bg-zinc-50 text-zinc-400 text-sm font-mono cursor-not-allowed";
 
-export const SELECT_CLASS = `${INPUT_CLASS} appearance-none bg-no-repeat bg-[right_1rem_center] bg-[url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")] pr-10`;
+export const SELECT_CLASS = `${INPUT_CLASS} appearance-none bg-no-repeat bg-[right_0.75rem_center] bg-[url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")] pr-10`;
 
-
-export const STYLED_ICON_CLASS =
-"text-purple-800 p-2 block bg-gradient-to-b lg:from-white/75 lg:to-purple-100/75 rounded-lg bg-purple-100 border border-purple-200";
+// ─── Buttons — Dashboard ──────────────────────────────────────────────────────
 
 export const PRIMARY_BUTTON_CLASS =
-  "whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:pointer-events-none inline-flex items-center gap-2 px-4 py-2 rounded-md bg-zinc-900 hover:bg-zinc-700 text-white text-sm font-medium transition-colors";
+  "whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:pointer-events-none inline-flex items-center gap-2 px-4 py-2 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium transition-colors";
 
 export const SECONDARY_BUTTON_CLASS =
-  "whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:pointer-events-none inline-flex items-center gap-2 px-4 py-2 rounded-md border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 hover:text-zinc-900 text-sm font-medium transition-colors";
+  "whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:pointer-events-none inline-flex items-center gap-2 px-4 py-2 rounded-md border border-zinc-200 bg-white hover:bg-violet-50 text-zinc-700 hover:text-violet-700 text-sm font-medium transition-colors";
 
-export const CTA_PRIMARY_CLASS =
-  "whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:pointer-events-none inline-flex items-center gap-2 px-6 py-3 rounded-full bg-zinc-900 hover:bg-zinc-700 text-white text-base font-semibold tracking-tight transition-colors";
-
-export const CTA_SECONDARY_CLASS =
-  "whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:pointer-events-none inline-flex items-center gap-2 px-6 py-3 rounded-full border border-zinc-300 bg-white hover:bg-zinc-50 text-zinc-700 hover:text-zinc-900 text-base font-semibold tracking-tight transition-colors";
+// ─── Buttons — XS ─────────────────────────────────────────────────────────────
 
 export const PRIMARY_BUTTON_XS_CLASS =
-  "whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:pointer-events-none inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-900 hover:bg-zinc-700 text-white text-xs font-medium transition-colors";
+  "whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:pointer-events-none inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-violet-600 hover:bg-violet-700 text-white text-xs font-medium transition-colors";
 
 export const SECONDARY_BUTTON_XS_CLASS =
-  "whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:pointer-events-none inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-600 hover:text-zinc-900 text-xs font-medium transition-colors";
+  "whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:pointer-events-none inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-zinc-200 bg-white hover:bg-violet-50 text-zinc-600 hover:text-violet-700 text-xs font-medium transition-colors";
+
+// ─── Buttons — CTA (Landing) ──────────────────────────────────────────────────
+
+export const CTA_PRIMARY_CLASS =
+  "whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:pointer-events-none inline-flex items-center gap-2 px-6 py-3 rounded-full bg-violet-600 hover:bg-violet-700 text-white text-base font-semibold tracking-tight transition-colors";
+
+export const CTA_SECONDARY_CLASS =
+  "whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:pointer-events-none inline-flex items-center gap-2 px-6 py-3 rounded-full border border-violet-200 bg-white hover:bg-violet-50 text-violet-700 hover:text-violet-800 text-base font-semibold tracking-tight transition-colors";

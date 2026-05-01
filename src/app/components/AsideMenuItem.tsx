@@ -45,7 +45,9 @@ const MenuItemLink = React.forwardRef<
       onMouseEnter={handleMouseEnter}
       onMouseLeave={closePopover}
       className={`${
-        href === currentPath ? "bg-purple-200 font-semibold" : "hover:bg-purple-100 text-purple-800"
+        href === currentPath
+          ? "bg-purple-100 text-purple-900 font-semibold"
+          : "text-gray-600 hover:bg-purple-50 hover:text-purple-800"
       } truncate rounded-xl w-full p-2 gap-3.5 flex items-center text-sm font-semibold transition-colors duration-300`}
       onClick={closeMenu}
       ref={ref}

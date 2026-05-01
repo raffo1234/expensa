@@ -8,7 +8,7 @@ export default async function ClientLayout({
 }>) {
   return (
     <>
-      <header className="w-full h-20">
+      <header className="w-full">
         <Header />
       </header>
       {children}

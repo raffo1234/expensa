@@ -47,7 +47,7 @@ export default function ProfilePopoverDropdown({
       <button
         type="button"
         onClick={togglePopover}
-        className="relative cursor-pointer w-12 h-12 bg-gray-100 rounded-full"
+        className="relative cursor-pointer w-9 h-9 bg-gray-100 rounded-full"
       >
         {userImage ? (
           <Image
@@ -60,7 +60,7 @@ export default function ProfilePopoverDropdown({
             quality={70}
           />
         ) : null}
-        <div className="w-3 h-3 absolute top-9 right-0 rounded-full bg-green-400 border-2 border-white" />
+        <div className="w-3 h-3 absolute top-7 right-0 rounded-full bg-green-400 border-2 border-white" />
       </button>
       <div
         ref={containerRef}

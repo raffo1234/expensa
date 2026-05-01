@@ -33,7 +33,7 @@ export default async function AdminLayout({ children }: Readonly<AdminLayoutProp
 
   return (
     <SessionProvider session={session}>
-      <header className="w-full h-20 pr-16 lg:pr-0 bg-white">
+      <header className="w-full pr-16 lg:pr-0 bg-white">
         <Suspense>
           <Header />
         </Suspense>

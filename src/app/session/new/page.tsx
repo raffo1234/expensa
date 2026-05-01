@@ -8,7 +8,7 @@ export default function Page() {
     <div className="min-h-screen flex">
       {/* Left panel */}
       <div className="flex flex-col flex-1 items-center justify-center px-8 bg-white relative">
-        <div className="absolute top-8 left-8">
+        <div className="absolute top-5 left-8">
           <LogoLink />
         </div>
         <div className="w-full max-w-sm">
@@ -81,9 +81,9 @@ export default function Page() {
         {/* Bottom quote */}
         <div className="absolute bottom-10 left-10 right-10">
           <p className="text-white text-lg font-medium leading-snug mb-2">
-            "One app. All your accounts.
+            One app. All your accounts.
             <br />
-            Total clarity over every dollar."
+            Total clarity over every dollar.
           </p>
           <p className="text-white/50 text-sm">Finolis — Personal finance, simplified</p>
         </div>

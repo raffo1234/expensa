@@ -7,6 +7,7 @@ import {
   PRIMARY_BUTTON_CLASS,
   PRIMARY_BUTTON_XS_CLASS,
   SEARCH_CLASS,
+  SECONDARY_BUTTON_CLASS,
   SECONDARY_BUTTON_XS_CLASS,
 } from "@/constants";
 import FormSection from "./FormSection";
@@ -170,10 +171,8 @@ export default function WorkspaceClient({ workspaces: initial }: { workspaces: W
       {workspaces.length === 0 && (
         <div className="text-center py-20">
           <p className="text-[15px] text-gray-400 mb-4">Aún no tienes workspaces</p>
-          <Link href="/admin/workspaces/new" className="no-underline">
-            <button className="inline-flex items-center gap-2 bg-cyan-500 text-white border-none rounded-[10px] px-[18px] py-2.5 font-semibold text-sm cursor-pointer">
-              <PlusIcon /> Crear mi primer workspace
-            </button>
+          <Link href="/admin/workspaces/new" className={SECONDARY_BUTTON_CLASS}>
+            <PlusIcon /> Crear mi primer workspace
           </Link>
         </div>
       )}

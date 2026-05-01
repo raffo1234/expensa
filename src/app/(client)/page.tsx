@@ -7,8 +7,8 @@ export default async function ExpenseLanding() {
 
   return (
     <main className="min-h-screen">
-      <section className="md:grid md:grid-cols-2 items-start px-10 gap-5 py-16">
-        <div className="flex text-center flex-col justify-end-safe items-start">
+      <section className="md:grid md:grid-cols-2 items-start px-10 gap-5 py-10">
+        <div className="flex text-center flex-col justify-end-safe items-start mb-6">
           <div
             className="w-fit mx-auto justify-center items-center gap-2 text-[10px] font-semibold uppercase tracking-widest px-4 py-1.5 rounded-full mb-7"
             style={{ background: "#d4ecd4", color: "#3a6b45" }}

@@ -9,7 +9,7 @@ export default function CTAButton({ isLoggedIn }: { isLoggedIn: boolean }) {
       onClick={() => router.push(isLoggedIn ? "/admin/workspaces" : "/session/new")}
       className={CTA_PRIMARY_CLASS}
     >
-      Upload free <span>→</span>
+      Upload Free <span>→</span>
     </button>
   );
 }

@@ -13,11 +13,13 @@ export type Workspace = {
 
 export default async function WorkspacePage() {
   const user = await getCurrentUser();
-  console.log("getCurrentUser result:", JSON.stringify(user));
+
   if (!user) return <NoAccess />;
+
   const { data: workspaces, error } = await supabaseAdmin
     .from("workspace")
     .select("id, name, slug, created_by, created_at, expense(*)")
+    .eq("created_by", user.id)
     .order("created_at", { ascending: false });
 
   if (error) {

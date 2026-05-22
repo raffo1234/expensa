@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import useSWR from "swr";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -10,28 +10,102 @@ import { Category } from "@/types/CategoryType";
 import { ExpenseAttachment } from "@/types/ExpenseAttachment";
 import { Provider } from "@/types/ProviderType";
 import FormSection from "@/components/FormSection";
-import { INPUT_CLASS, PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS, SELECT_CLASS } from "@/constants";
+import {
+  INPUT_CLASS,
+  PRIMARY_BUTTON_CLASS,
+  SECONDARY_BUTTON_CLASS,
+  SELECT_CLASS,
+} from "@/constants";
 import FormInnerSection from "@/components/FormInnerSection";
 import SectionTitle from "@/components/SectionTitle";
 import Field from "@/components/Field";
 import BackLink from "@/components/BackLink";
-import { deleteAttachment, uploadAttachment } from "@/actions/expenses";
+import {
+  deleteAttachment,
+  initiateMultipartUpload,
+  getPartPresignedUrl,
+  completeMultipartUpload,
+  abortMultipartUpload,
+  registerAttachment,
+} from "@/actions/expenses";
 import Link from "next/link";
 import TitleWrapper from "@/components/TitleWrapper";
 import PageTitle from "@/components/PageTitle";
 
+// ── Constants ─────────────────────────────────────────────────────────────────
+const PART_SIZE = 5 * 1024 * 1024;
+const CURRENCIES = ["PEN", "USD", "EUR"];
+const PAYMENT_METHODS = ["Efectivo", "Transferencia", "Tarjeta", "Yape", "Plin", "Otro"];
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function isImage(path: string) {
+  return /\.(jpe?g|png|webp|gif)$/i.test(path);
+}
+
+// ── Multipart uploader ────────────────────────────────────────────────────────
+async function uploadFileMultipart(
+  file: File,
+  expenseId: string,
+  workspaceSlug: string,
+  onProgress: (pct: number) => void,
+  signal: AbortSignal,
+): Promise<string> {
+  const { uploadId, key } = await initiateMultipartUpload(
+    expenseId,
+    workspaceSlug,
+    file.name,
+    file.type,
+  );
+
+  const totalParts = Math.ceil(file.size / PART_SIZE);
+  const parts: { PartNumber: number; ETag: string }[] = [];
+
+  try {
+    for (let i = 0; i < totalParts; i++) {
+      if (signal.aborted) throw new Error("Upload cancelado");
+
+      const partNumber = i + 1;
+      const start = i * PART_SIZE;
+      const end = Math.min(start + PART_SIZE, file.size);
+      const chunk = file.slice(start, end);
+
+      const { url } = await getPartPresignedUrl(key, uploadId, partNumber);
+
+      const res = await fetch(url, {
+        method: "PUT",
+        body: chunk,
+        headers: { "Content-Type": file.type },
+        signal,
+      });
+
+      if (!res.ok) throw new Error(`Parte ${partNumber} falló: ${res.status}`);
+
+      const etag = res.headers.get("ETag");
+      if (!etag) throw new Error(`Sin ETag en parte ${partNumber}`);
+
+      parts.push({ PartNumber: partNumber, ETag: etag });
+      onProgress(Math.round((partNumber / totalParts) * 100));
+    }
+
+    await completeMultipartUpload(key, uploadId, parts);
+    return key;
+  } catch (err) {
+    await abortMultipartUpload(key, uploadId).catch(() => {});
+    throw err;
+  }
+}
+
+// ── Fetchers ──────────────────────────────────────────────────────────────────
 async function fetchProviders(workspaceId: string): Promise<Provider[]> {
   const { data, error } = await supabase
     .from("provider")
     .select("id, name")
     .eq("workspace_id", workspaceId)
     .order("name");
-
   if (error) throw error;
   return data ?? [];
 }
 
-// ── Fetchers ──────────────────────────────────────────────────────────────────
 async function fetchExpense(expenseId: string, workspaceId: string): Promise<Expense> {
   const { data, error } = await supabase
     .from("expense")
@@ -70,14 +144,7 @@ async function fetchCategories(): Promise<Category[]> {
   return data ?? [];
 }
 
-// ── Constants ─────────────────────────────────────────────────────────────────
-const CURRENCIES = ["PEN", "USD", "EUR"];
-const PAYMENT_METHODS = ["Efectivo", "Transferencia", "Tarjeta", "Yape", "Plin", "Otro"];
-
-function isImage(path: string) {
-  return /\.(jpe?g|png|webp|gif)$/i.test(path);
-}
-
+// ── Sub-components ────────────────────────────────────────────────────────────
 function Input({
   value,
   onChange,
@@ -123,6 +190,14 @@ export default function EditExpensePage() {
   const expenseId = params.id as string;
   const router = useRouter();
 
+  const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
+
   const { data: workspace } = useSWR(
     workspaceSlug ? ["workspace", workspaceSlug] : null,
     ([, slug]) => fetchWorkspace(slug),
@@ -154,6 +229,7 @@ export default function EditExpensePage() {
   const [existingAttachments, setExistingAttachments] = useState<ExpenseAttachment[]>([]);
   const [deletedIds, setDeletedIds] = useState<string[]>([]);
   const [newFiles, setNewFiles] = useState<File[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<Record<number, number>>({});
 
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -179,7 +255,6 @@ export default function EditExpensePage() {
 
   function addFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
-    console.log("files selected:", files); // ← verifica que llegan
     setNewFiles((prev) => [...prev, ...files]);
   }
 
@@ -191,6 +266,11 @@ export default function EditExpensePage() {
   async function handleSave() {
     setSaving(true);
     setSaveError(null);
+    setUploadProgress({});
+
+    abortRef.current = new AbortController();
+    const { signal } = abortRef.current;
+
     try {
       // 1. Update expense row
       const { error: updateError } = await supabase
@@ -207,7 +287,7 @@ export default function EditExpensePage() {
         .eq("id", expenseId);
       if (updateError) throw updateError;
 
-      // 2. Delete removed attachments via action
+      // 2. Delete removed attachments
       for (const id of deletedIds) {
         const att = expense?.expense_attachment?.find((a) => a.id === id);
         if (att) {
@@ -216,20 +296,30 @@ export default function EditExpensePage() {
         }
       }
 
-      // 3. Upload new files via action
-      for (const file of newFiles) {
-        const buffer = await file.arrayBuffer();
-        const { error } = await uploadAttachment(expenseId, workspaceSlug, {
-          name: file.name,
-          type: file.type,
-          buffer: Array.from(new Uint8Array(buffer)),
-        });
-        if (error) throw new Error(error);
-      }
+      // 3. Upload new files via multipart
+      await Promise.all(
+        newFiles.map(async (file, i) => {
+          setUploadProgress((prev) => ({ ...prev, [i]: 0 }));
+
+          const storagePath = await uploadFileMultipart(
+            file,
+            expenseId,
+            workspaceSlug,
+            (pct) => setUploadProgress((prev) => ({ ...prev, [i]: pct })),
+            signal,
+          );
+
+          await registerAttachment(expenseId, storagePath, file.name);
+        }),
+      );
 
       router.push(`/admin/workspaces/${workspaceSlug}/expenses/${expenseId}`);
     } catch (err: unknown) {
-      setSaveError(err instanceof Error ? err.message : "Error al guardar");
+      if ((err as Error)?.message === "Upload cancelado") {
+        setSaveError("Subida cancelada.");
+      } else {
+        setSaveError(err instanceof Error ? err.message : "Error al guardar");
+      }
     } finally {
       setSaving(false);
     }
@@ -305,6 +395,7 @@ export default function EditExpensePage() {
                 </Field>
               </div>
             </FormInnerSection>
+
             <SectionTitle>Detalles</SectionTitle>
             <FormInnerSection>
               <div className="space-y-6">
@@ -315,7 +406,6 @@ export default function EditExpensePage() {
                     className={SELECT_CLASS}
                   >
                     <option value="">Sin proveedor</option>
-
                     {providers.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.name}
@@ -357,14 +447,16 @@ export default function EditExpensePage() {
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Notas adicionales..."
                     rows={3}
-                    className={`${INPUT_CLASS}`}
+                    className={INPUT_CLASS}
                   />
                 </Field>
               </div>
             </FormInnerSection>
+
             <SectionTitle>Adjuntos</SectionTitle>
             <FormInnerSection>
               <div className="space-y-3">
+                {/* Existing attachments */}
                 {existingAttachments.map((att) => {
                   const url = getAttachmentUrl(att.storage_path);
                   const image = isImage(att.storage_path);
@@ -413,55 +505,66 @@ export default function EditExpensePage() {
                 })}
 
                 {/* New files queued */}
-                {newFiles.map((file, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-3 bg-cyan-50 border border-cyan-200 rounded-xl p-3"
-                  >
-                    <div className="w-10 h-10 rounded-lg bg-cyan-100 flex items-center justify-center flex-shrink-0">
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#0891b2"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                      >
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                        <polyline points="14 2 14 8 20 8" />
-                      </svg>
+                {newFiles.map((file, i) => {
+                  const pct = uploadProgress[i] ?? null;
+                  return (
+                    <div key={i} className="bg-cyan-50 border border-cyan-200 rounded-xl p-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-cyan-100 flex items-center justify-center flex-shrink-0">
+                          <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="#0891b2"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                          >
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                          </svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-cyan-800 truncate">{file.name}</p>
+                          <p className="text-xs text-cyan-400 mt-0.5">
+                            {pct !== null
+                              ? `${pct}%`
+                              : `${(file.size / 1024).toFixed(0)} KB · Por subir`}
+                          </p>
+                        </div>
+                        {pct === null && (
+                          <button
+                            onClick={() => removeNewFile(i)}
+                            className="p-1.5 rounded-lg text-cyan-300 hover:text-red-400 hover:bg-red-50 transition-all"
+                          >
+                            <svg
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                            >
+                              <line x1="18" y1="6" x2="6" y2="18" />
+                              <line x1="6" y1="6" x2="18" y2="18" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                      {pct !== null && (
+                        <div className="mt-2 h-1 rounded-full bg-cyan-200 overflow-hidden">
+                          <div
+                            className="h-full bg-cyan-500 transition-all duration-200"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-cyan-800 truncate">{file.name}</p>
-                      <p className="text-xs text-cyan-400 mt-0.5">
-                        {(file.size / 1024).toFixed(0)} KB · Por subir
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => removeNewFile(i)}
-                      className="p-1.5 rounded-lg text-cyan-300 hover:text-red-400 hover:bg-red-50 transition-all"
-                    >
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                      >
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                      </svg>
-                    </button>
-                  </div>
-                ))}
-                <label
-                  className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed
-             border-gray-200 py-8 text-sm text-gray-400 hover:border-purple-500
-             hover:text-purple-600 hover:bg-purple-50/40 transition-all cursor-pointer"
-                >
+                  );
+                })}
+
+                <label className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-200 py-8 text-sm text-gray-400 hover:border-purple-500 hover:text-purple-600 hover:bg-purple-50/40 transition-all cursor-pointer">
                   <input
                     type="file"
                     multiple
@@ -486,7 +589,6 @@ export default function EditExpensePage() {
               </div>
             </FormInnerSection>
 
-            {/* Error */}
             {saveError && (
               <div className="border border-red-200 bg-red-50 rounded-lg px-4 py-3 text-sm text-red-600">
                 {saveError}

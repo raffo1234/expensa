@@ -1,10 +1,16 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import useSWR from "swr";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { createExpense, getUploadUrl, registerAttachment } from "@/actions/expenses";
+import { createExpense, registerAttachment } from "@/actions/expenses";
+import {
+  initiateMultipartUpload,
+  getPartPresignedUrl,
+  completeMultipartUpload,
+  abortMultipartUpload,
+} from "@/actions/expenses";
 import FormSection from "./FormSection";
 import FormInnerSection from "./FormInnerSection";
 import {
@@ -21,8 +27,20 @@ import PageTitle from "./PageTitle";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type Category = { id: string; name: string; color: string | null };
-type Provider = { id: string; name: string; ruc: string }; // ← added ruc
+type Provider = { id: string; name: string; ruc: string };
 type FileItem = { id: string; file: File; preview?: string };
+
+// ── Constants ─────────────────────────────────────────────────────────────────
+const CURRENCIES = ["PEN", "USD", "EUR"];
+const PAYMENT_METHODS = [
+  "Efectivo",
+  "Tarjeta débito",
+  "Tarjeta crédito",
+  "Transferencia",
+  "Yape / Plin",
+  "Otro",
+];
+const PART_SIZE = 5 * 1024 * 1024; // 5 MB — mínimo requerido por R2/S3
 
 // ── SWR fetchers ─────────────────────────────────────────────────────────────
 async function fetchWorkspace(slug: string): Promise<{ id: string }> {
@@ -44,23 +62,12 @@ async function fetchCategories(workspaceId: string): Promise<Category[]> {
 async function fetchProviders(workspaceId: string): Promise<Provider[]> {
   const { data, error } = await supabase
     .from("provider")
-    .select("id, name, ruc") // ← added ruc
+    .select("id, name, ruc")
     .eq("workspace_id", workspaceId)
     .order("name");
   if (error) throw error;
   return data ?? [];
 }
-
-// ── Constants ─────────────────────────────────────────────────────────────────
-const CURRENCIES = ["PEN", "USD", "EUR"];
-const PAYMENT_METHODS = [
-  "Efectivo",
-  "Tarjeta débito",
-  "Tarjeta crédito",
-  "Transferencia",
-  "Yape / Plin",
-  "Otro",
-];
 
 // ── Receipt extractor ─────────────────────────────────────────────────────────
 async function extractFromReceipt(file: File): Promise<Record<string, string>> {
@@ -81,12 +88,80 @@ async function extractFromReceipt(file: File): Promise<Record<string, string>> {
   return res.json();
 }
 
+// ── Multipart uploader ────────────────────────────────────────────────────────
+async function uploadFileMultipart(
+  file: File,
+  expenseId: string,
+  workspaceSlug: string,
+  onProgress: (pct: number) => void,
+  signal: AbortSignal,
+): Promise<string> {
+  const { uploadId, key } = await initiateMultipartUpload(
+    expenseId,
+    workspaceSlug,
+    file.name,
+    file.type,
+  );
+
+  const totalParts = Math.ceil(file.size / PART_SIZE);
+  const parts: { PartNumber: number; ETag: string }[] = [];
+
+  try {
+    for (let i = 0; i < totalParts; i++) {
+      if (signal.aborted) throw new Error("Upload cancelado");
+
+      const partNumber = i + 1;
+      const start = i * PART_SIZE;
+      const end = Math.min(start + PART_SIZE, file.size);
+      const chunk = file.slice(start, end);
+
+      const { url } = await getPartPresignedUrl(key, uploadId, partNumber);
+
+      const res = await fetch(url, {
+        method: "PUT",
+        body: chunk,
+        headers: { "Content-Type": file.type },
+        signal,
+      });
+
+      if (!res.ok) throw new Error(`Parte ${partNumber} falló: ${res.status}`);
+
+      // R2 debe exponer ETag en CORS: "ExposeHeaders": ["ETag"]
+      const etag = res.headers.get("ETag");
+      if (!etag) throw new Error(`Sin ETag en parte ${partNumber}`);
+
+      parts.push({ PartNumber: partNumber, ETag: etag });
+      onProgress(Math.round((partNumber / totalParts) * 100));
+    }
+
+    await completeMultipartUpload(key, uploadId, parts);
+    return key;
+  } catch (err) {
+    // Abort limpia el multipart incompleto en R2
+    await abortMultipartUpload(key, uploadId).catch(() => {});
+    throw err;
+  }
+}
+
 // ── Component ────────────────────────────────────────────────────────────────
 export default function UploadExpensePage({ userId }: { userId: string }) {
   const params = useParams();
   const workspaceSlug = params.slug as string;
   const router = useRouter();
   const dropRef = useRef<HTMLLabelElement>(null);
+
+  // AbortController para cancelar uploads si el componente se desmonta
+  const abortRef = useRef<AbortController | null>(null);
+
+  // Revocar object URLs al desmontar
+  const filesRef = useRef<FileItem[]>([]);
+
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+      filesRef.current.forEach((f) => f.preview && URL.revokeObjectURL(f.preview));
+    };
+  }, []);
 
   const { data: workspace } = useSWR(
     workspaceSlug ? ["workspace", workspaceSlug] : null,
@@ -105,7 +180,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
   );
 
   const [form, setForm] = useState({
-    provider_id: "", // controls the <select> UI only
+    provider_id: "",
     invoice_series: "",
     invoice_number: "",
     amount: "",
@@ -117,8 +192,6 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
     notes: "",
   });
 
-  // Resolved provider data sent to the server action (ruc + name)
-  // This is what createExpense uses to find-or-create the provider
   const [resolvedProvider, setResolvedProvider] = useState<{
     ruc: string | null;
     name: string | null;
@@ -130,8 +203,13 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
   const [success, setSuccess] = useState(false);
   const [extracting, setExtracting] = useState(false);
   const [isPending, setIsPending] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
 
-  // Whether the extracted provider wasn't found in the list (will be auto-created)
+  // Mantener filesRef sincronizado para el cleanup de unmount
+  useEffect(() => {
+    filesRef.current = files;
+  }, [files]);
+
   const willCreateProvider = resolvedProvider.ruc !== null && !form.provider_id;
 
   const set =
@@ -139,11 +217,9 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
       setForm((f) => ({ ...f, [k]: e.target.value }));
 
-  // When the user manually picks a provider from the dropdown
   const handleProviderChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const id = e.target.value;
     setForm((f) => ({ ...f, provider_id: id }));
-
     if (id) {
       const provider = providers.find((p) => p.id === id);
       setResolvedProvider({ ruc: provider?.ruc ?? null, name: provider?.name ?? null });
@@ -190,7 +266,6 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
             : {}),
         }));
 
-        // Resolve provider: try to match existing, otherwise queue for auto-creation
         if (extracted.provider_ruc || extracted.provider_name) {
           const match = providers.find(
             (p) =>
@@ -200,11 +275,9 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
           );
 
           if (match) {
-            // Already exists — pre-select it in the dropdown
             setForm((f) => ({ ...f, provider_id: match.id }));
             setResolvedProvider({ ruc: match.ruc, name: match.name });
           } else {
-            // Doesn't exist — will be auto-created on submit
             setForm((f) => ({ ...f, provider_id: "" }));
             setResolvedProvider({
               ruc: extracted.provider_ruc ?? null,
@@ -213,7 +286,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
           }
         }
       } catch {
-        // silently fail — user fills manually
+        // silently fail — usuario rellena manualmente
       } finally {
         setExtracting(false);
       }
@@ -255,9 +328,16 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
       return;
     }
 
+    // Resetear progreso de uploads anteriores
+    setUploadProgress({});
+
+    // Crear un AbortController nuevo para este envío
+    abortRef.current = new AbortController();
+    const { signal } = abortRef.current;
+
     setIsPending(true);
     try {
-      // 1. Crear expense sin archivos
+      // 1. Crear el gasto
       const result = await createExpense({
         workspace_id: workspaceId,
         workspace_slug: workspaceSlug,
@@ -280,25 +360,18 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
         return;
       }
 
-      // 2. Subir archivos directo a R2 via presigned URL
+      // 2. Subir cada archivo con multipart
       await Promise.all(
         files.map(async (fi) => {
-          const { url, storagePath } = await getUploadUrl(
+          setUploadProgress((prev) => ({ ...prev, [fi.id]: 0 }));
+
+          const storagePath = await uploadFileMultipart(
+            fi.file,
             result.id!,
             workspaceSlug,
-            fi.file.name,
-            fi.file.type,
+            (pct) => setUploadProgress((prev) => ({ ...prev, [fi.id]: pct })),
+            signal,
           );
-
-          const res = await fetch(url, {
-            method: "PUT",
-            body: fi.file,
-            headers: { "Content-Type": fi.file.type },
-          });
-
-          if (!res.ok) {
-            throw new Error(`Failed to upload ${fi.file.name}: ${res.status} ${res.statusText}`);
-          }
 
           await registerAttachment(result.id!, storagePath, fi.file.name);
         }),
@@ -307,13 +380,22 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
       setSuccess(true);
       setTimeout(() => router.push(`/admin/workspaces/${workspaceSlug}/expenses`), 1200);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al guardar");
+      if ((err as Error)?.name === "AbortError" || (err as Error)?.message === "Upload cancelado") {
+        setError("Subida cancelada.");
+      } else {
+        setError(err instanceof Error ? err.message : "Error al guardar");
+      }
     } finally {
       setIsPending(false);
     }
   };
 
   const currSymbol = form.currency === "PEN" ? "S/" : form.currency === "USD" ? "$" : "€";
+
+  const overallProgress =
+    files.length > 0 && isPending
+      ? Math.round(Object.values(uploadProgress).reduce((a, b) => a + b, 0) / files.length)
+      : null;
 
   return (
     <div>
@@ -326,6 +408,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
           </PageTitle>
         </div>
       </TitleWrapper>
+
       <FormSection>
         <form onSubmit={handleSubmit} className="space-y-8">
           <SectionTitle>Comprobante / Adjuntos</SectionTitle>
@@ -356,8 +439,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                   onChange={(e) => addFiles(Array.from(e.target.files ?? []))}
                 />
                 <div
-                  className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors
-                ${dragging ? "bg-cyan-100" : "bg-gray-100"}`}
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${dragging ? "bg-cyan-100" : "bg-gray-100"}`}
                 >
                   <svg
                     width="18"
@@ -387,12 +469,11 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                     <span className="text-cyan-600 underline underline-offset-2">haz click</span>
                   </p>
                   <p className="text-xs text-gray-400 mt-0.5">
-                    JPG, PNG, WEBP, PDF — máx 10 MB c/u
+                    JPG, PNG, WEBP, PDF — sin límite de tamaño
                   </p>
                 </div>
               </label>
 
-              {/* Extracting indicator */}
               {extracting && (
                 <div className="flex items-center gap-2.5 bg-cyan-50 border border-cyan-200 rounded-lg px-4 py-3">
                   <svg
@@ -424,7 +505,6 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                 </div>
               )}
 
-              {/* New provider — will be auto-created */}
               {!extracting && willCreateProvider && (
                 <div className="flex items-center gap-2.5 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2.5">
                   <svg
@@ -452,7 +532,6 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                 </div>
               )}
 
-              {/* Success extraction hint */}
               {!extracting && files.length > 0 && !willCreateProvider && form.provider_id && (
                 <div className="flex items-center gap-2 text-xs text-cyan-600">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
@@ -470,43 +549,101 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
 
               {files.length > 0 && (
                 <ul className="space-y-2 pt-1">
-                  {files.map((fi) => (
-                    <li
-                      key={fi.id}
-                      className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg px-3.5 py-2.5 group"
-                    >
-                      {fi.preview ? (
-                        <img
-                          src={fi.preview}
-                          alt=""
-                          className="w-8 h-8 rounded-md object-cover flex-shrink-0"
-                        />
-                      ) : (
-                        <div className="w-8 h-8 rounded-md bg-cyan-100 flex items-center justify-center text-[9px] font-bold text-cyan-600 flex-shrink-0">
-                          PDF
-                        </div>
-                      )}
-                      <span className="flex-1 text-sm text-gray-700 truncate">{fi.file.name}</span>
-                      <span className="text-xs text-gray-400 flex-shrink-0">
-                        {(fi.file.size / 1024).toFixed(0)} KB
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => removeFile(fi.id)}
-                        className="text-gray-300 hover:text-red-400 transition-colors ml-1 flex-shrink-0 opacity-0 group-hover:opacity-100"
+                  {files.map((fi) => {
+                    const pct = uploadProgress[fi.id] ?? null;
+                    return (
+                      <li
+                        key={fi.id}
+                        className="bg-gray-50 border border-gray-200 rounded-lg px-3.5 py-2.5 group"
                       >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                          <path
-                            d="M18 6L6 18M6 6l12 12"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                          />
-                        </svg>
-                      </button>
-                    </li>
-                  ))}
+                        <div className="flex items-center gap-3">
+                          {fi.preview ? (
+                            <img
+                              src={fi.preview}
+                              alt=""
+                              className="w-8 h-8 rounded-md object-cover flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-md bg-cyan-100 flex items-center justify-center text-[9px] font-bold text-cyan-600 flex-shrink-0">
+                              PDF
+                            </div>
+                          )}
+                          <span className="flex-1 text-sm text-gray-700 truncate">
+                            {fi.file.name}
+                          </span>
+                          <span className="text-xs text-gray-400 flex-shrink-0">
+                            {(fi.file.size / (1024 * 1024)).toFixed(1)} MB
+                          </span>
+                          {pct !== null && (
+                            <span className="text-xs text-cyan-600 font-medium flex-shrink-0">
+                              {pct}%
+                            </span>
+                          )}
+                          {pct === null && (
+                            <button
+                              type="button"
+                              onClick={() => removeFile(fi.id)}
+                              className="text-gray-300 hover:text-red-400 transition-colors ml-1 flex-shrink-0 opacity-0 group-hover:opacity-100"
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                <path
+                                  d="M18 6L6 18M6 6l12 12"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
+                        {pct !== null && (
+                          <div className="mt-2 h-1 rounded-full bg-gray-200 overflow-hidden">
+                            <div
+                              className="h-full bg-cyan-500 transition-all duration-200"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
+              )}
+
+              {overallProgress !== null && (
+                <div className="flex items-center gap-2.5 bg-cyan-50 border border-cyan-200 rounded-lg px-4 py-3">
+                  <svg
+                    className="animate-spin w-4 h-4 text-cyan-500 flex-shrink-0"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      strokeOpacity="0.25"
+                    />
+                    <path
+                      d="M12 2a10 10 0 0 1 10 10"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <div className="flex-1">
+                    <p className="text-xs font-semibold text-cyan-700">
+                      Subiendo archivos... {overallProgress}%
+                    </p>
+                    <div className="mt-1.5 h-1 rounded-full bg-cyan-200 overflow-hidden">
+                      <div
+                        className="h-full bg-cyan-500 transition-all duration-200"
+                        style={{ width: `${overallProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
               )}
             </section>
           </FormInnerSection>
@@ -533,11 +670,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                   </div>
                 </Field>
                 <Field label="Moneda">
-                  <select
-                    value={form.currency}
-                    onChange={set("currency")}
-                    className={`${SELECT_CLASS}`}
-                  >
+                  <select value={form.currency} onChange={set("currency")} className={SELECT_CLASS}>
                     {CURRENCIES.map((c) => (
                       <option key={c} value={c}>
                         {c}
@@ -546,7 +679,6 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                   </select>
                 </Field>
               </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Fecha de emisión">
                   <input
@@ -589,7 +721,6 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                   ))}
                 </select>
               </Field>
-
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Serie">
                   <input
@@ -612,6 +743,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
               </div>
             </section>
           </FormInnerSection>
+
           <SectionTitle>Detalles</SectionTitle>
           <FormInnerSection>
             <section className="space-y-4">
@@ -646,7 +778,6 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                   </select>
                 </Field>
               </div>
-
               <Field label="Notas">
                 <textarea
                   rows={3}
@@ -680,7 +811,6 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
             </div>
           )}
 
-          {/* Success */}
           {success && (
             <div className="flex items-center gap-3 border border-cyan-200 bg-cyan-50 rounded-lg px-4 py-3 text-sm text-cyan-700">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="flex-shrink-0">
@@ -696,7 +826,6 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
             </div>
           )}
 
-          {/* Actions */}
           <div className="flex items-center gap-3 pt-1">
             <button type="button" onClick={() => router.back()} className={SECONDARY_BUTTON_CLASS}>
               Cancelar

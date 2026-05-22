@@ -1,13 +1,18 @@
 "use server";
 
+import {
+  CreateMultipartUploadCommand,
+  UploadPartCommand,
+  CompleteMultipartUploadCommand,
+  AbortMultipartUploadCommand,
+  DeleteObjectsCommand,
+  PutObjectCommand,
+} from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getCurrentUser } from "@/lib/getCurrentUser";
 import { revalidatePath } from "next/cache";
-import { uploadToR2 } from "@/lib/r2";
-import { DeleteObjectsCommand } from "@aws-sdk/client-s3";
-import { r2 } from "@/lib/r2";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { r2, uploadToR2, BUCKET } from "@/lib/r2";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -78,11 +83,11 @@ export async function getUploadUrl(
   const url = await getSignedUrl(
     r2,
     new PutObjectCommand({
-      Bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME!,
+      Bucket: BUCKET,
       Key: storagePath,
       ContentType: fileType,
     }),
-    { expiresIn: 300 }, // no unhoistableHeaders needed
+    { expiresIn: 300 },
   );
 
   return { url, storagePath };
@@ -155,7 +160,7 @@ export async function deleteExpense(id: string, workspaceSlug: string): Promise<
   if (attachments && attachments.length > 0) {
     await r2.send(
       new DeleteObjectsCommand({
-        Bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME!,
+        Bucket: BUCKET,
         Delete: {
           Objects: attachments.map((a) => ({ Key: a.storage_path })),
         },
@@ -178,7 +183,7 @@ export async function deleteAttachment(
   try {
     await r2.send(
       new DeleteObjectsCommand({
-        Bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME!,
+        Bucket: BUCKET,
         Delete: { Objects: [{ Key: storagePath }] },
       }),
     );
@@ -217,4 +222,57 @@ export async function uploadAttachment(
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Error al subir archivo" };
   }
+}
+
+// ─── Multipart upload actions ─────────────────────────────────────────────────
+// Usa el mismo cliente r2 de @/lib/r2 — mismas credenciales CLOUDFLARE_R2_*
+
+export async function initiateMultipartUpload(
+  expenseId: string,
+  workspaceSlug: string,
+  fileName: string,
+  contentType: string,
+): Promise<{ uploadId: string; key: string }> {
+  // UUID en el key para evitar colisiones si se sube el mismo nombre dos veces
+  const ext = fileName.split(".").pop();
+  const key = `${workspaceSlug}/${expenseId}/${crypto.randomUUID()}.${ext}`;
+
+  const { UploadId } = await r2.send(
+    new CreateMultipartUploadCommand({ Bucket: BUCKET, Key: key, ContentType: contentType }),
+  );
+
+  if (!UploadId) throw new Error("R2 no devolvió UploadId");
+  return { uploadId: UploadId, key };
+}
+
+export async function getPartPresignedUrl(
+  key: string,
+  uploadId: string,
+  partNumber: number,
+): Promise<{ url: string }> {
+  const url = await getSignedUrl(
+    r2,
+    new UploadPartCommand({ Bucket: BUCKET, Key: key, UploadId: uploadId, PartNumber: partNumber }),
+    { expiresIn: 3600 },
+  );
+  return { url };
+}
+
+export async function completeMultipartUpload(
+  key: string,
+  uploadId: string,
+  parts: { PartNumber: number; ETag: string }[],
+): Promise<void> {
+  await r2.send(
+    new CompleteMultipartUploadCommand({
+      Bucket: BUCKET,
+      Key: key,
+      UploadId: uploadId,
+      MultipartUpload: { Parts: parts },
+    }),
+  );
+}
+
+export async function abortMultipartUpload(key: string, uploadId: string): Promise<void> {
+  await r2.send(new AbortMultipartUploadCommand({ Bucket: BUCKET, Key: key, UploadId: uploadId }));
 }

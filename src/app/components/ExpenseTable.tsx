@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { parseISO, formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import DeleteButton from "@/components/DeleteButton";
 import CategoryBadge from "@/components/CategoryBadge";
 import { formatAmount } from "@/utils/formatAmount";
 import FormSection from "./FormSection";
 import { Expense } from "@/types/ExpenseType";
+import { formatSafeDate } from "@/lib/formatSafeDate";
 
 interface ExpenseRowProps {
   expense: Expense;
@@ -26,15 +27,9 @@ function ExpenseRow({ expense, isLast, onDelete, isDeleting, workspaceSlug }: Ex
   const parsedDate = expense?.issued_at
     ? new Date(expense.issued_at.slice(0, 10) + "T12:00:00")
     : null;
-
-  console.log(expense?.issued_at);
-  const label = parsedDate
-    ? new Intl.DateTimeFormat("es-PE", {
-        day: "numeric",
-        month: "short",
-        timeZone: "America/Lima",
-      }).format(parsedDate)
-    : "-";
+  const parsedDatePaid = expense?.paid_at
+    ? new Date(expense.paid_at.slice(0, 10) + "T12:00:00")
+    : null;
 
   return (
     <tr
@@ -73,9 +68,21 @@ function ExpenseRow({ expense, isLast, onDelete, isDeleting, workspaceSlug }: Ex
       </td>
 
       <td className="px-5 py-3.5 text-right">
-        <p className="text-sm font-medium text-gray-800 whitespace-nowrap">{label}</p>
+        <p className="text-sm font-medium text-gray-800 whitespace-nowrap">
+          {expense.issued_at ? formatSafeDate(expense.issued_at, "d 'de' MMMM, yyyy") : "-"}
+        </p>
         <p className="text-sm text-gray-400 whitespace-nowrap">
           {parsedDate ? formatDistanceToNow(parsedDate, { addSuffix: true, locale: es }) : "-"}
+        </p>
+      </td>
+      <td className="px-5 py-3.5 text-right">
+        <p className="text-sm font-medium text-gray-800 whitespace-nowrap">
+          {expense.paid_at ? formatSafeDate(expense.paid_at, "d 'de' MMMM, yyyy") : "-"}
+        </p>
+        <p className="text-sm text-gray-400 whitespace-nowrap">
+          {parsedDatePaid
+            ? formatDistanceToNow(parsedDatePaid, { addSuffix: true, locale: es })
+            : "-"}
         </p>
       </td>
 
@@ -120,7 +127,15 @@ export default function ExpenseTable({
         <table className="w-full border-collapse">
           <thead className="border-b border-gray-100">
             <tr>
-              {["Proveedor", "Categoría", "Método", "Fecha", "Monto", ""].map((h) => (
+              {[
+                "Proveedor",
+                "Categoría",
+                "Método",
+                "Fecha de emision",
+                "Fecha de pago",
+                "Monto",
+                "",
+              ].map((h) => (
                 <th
                   key={h}
                   className={`px-5 py-3 font-semibold text-gray-700 ${

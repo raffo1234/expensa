@@ -15,6 +15,7 @@ import { formatAmount } from "@/utils/formatAmount";
 import BackLink from "@/components/BackLink";
 import TitleWrapper from "@/components/TitleWrapper";
 import PageTitle from "@/components/PageTitle";
+import { formatSafeDate } from "@/lib/formatSafeDate";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type ExpenseAttachment = {
@@ -30,6 +31,7 @@ type Expense = {
   } | null;
   amount: number;
   currency: string;
+  issued_at: string;
   paid_at: string;
   payment_method: string | null;
   notes: string | null;
@@ -216,8 +218,11 @@ export default function ExpenseDetailPage() {
               <DetailRow label="Método de pago">
                 {expense.payment_method ?? <span className="text-gray-400">—</span>}
               </DetailRow>
+              <DetailRow label="Fecha de emision">
+                {formatSafeDate(expense.issued_at, "d 'de' MMMM, yyyy")}
+              </DetailRow>
               <DetailRow label="Fecha de pago">
-                {format(new Date(expense.paid_at), "d MMM yyyy", { locale: es })}
+                {formatSafeDate(expense.paid_at, "d 'de' MMMM, yyyy")}
               </DetailRow>
               <DetailRow label="Registrado">
                 {expense.created_at

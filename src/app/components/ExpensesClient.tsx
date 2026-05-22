@@ -31,6 +31,15 @@ interface FetchResult {
   count: number;
 }
 
+type Filters = {
+  paidFrom: string;
+  paidTo: string;
+  issuedFrom: string;
+  issuedTo: string;
+  amountMin: string;
+  amountMax: string;
+};
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function mapExpenseRow(row: ExpenseRow): Expense {
@@ -59,6 +68,7 @@ const fetchExpenses = async (
   workspaceId: string,
   page: number,
   search: string,
+  filters: Filters,
 ): Promise<FetchResult> => {
   const from = (page - 1) * ITEMS_PER_PAGE;
   const to = from + ITEMS_PER_PAGE - 1;
@@ -77,10 +87,35 @@ const fetchExpenses = async (
     .range(from, to);
 
   if (search.trim()) {
-    query = query.or(
-      `invoice_series.ilike.%${search.trim()}%,invoice_number.ilike.%${search.trim()}%,notes.ilike.%${search.trim()}%`,
-    );
+    const { data: matchingProviders } = await supabase
+      .from("provider")
+      .select("id")
+      .eq("workspace_id", workspaceId)
+      .ilike("name", `%${search.trim()}%`);
+
+    const providerIds = matchingProviders?.map((p) => p.id) ?? [];
+
+    const orClauses = [
+      `invoice_series.ilike.%${search.trim()}%`,
+      `invoice_number.ilike.%${search.trim()}%`,
+      `notes.ilike.%${search.trim()}%`,
+    ];
+
+    if (providerIds.length > 0) {
+      orClauses.push(`provider_id.in.(${providerIds.join(",")})`);
+    }
+
+    query = query.or(orClauses.join(","));
   }
+
+  if (filters.paidFrom) query = query.gte("paid_at", filters.paidFrom);
+  if (filters.paidTo) query = query.lte("paid_at", filters.paidTo);
+  if (filters.issuedFrom) query = query.gte("issued_at", filters.issuedFrom);
+  if (filters.issuedTo) query = query.lte("issued_at", filters.issuedTo);
+  if (filters.amountMin)
+    query = query.gte("amount", Math.round(parseFloat(filters.amountMin) * 100));
+  if (filters.amountMax)
+    query = query.lte("amount", Math.round(parseFloat(filters.amountMax) * 100));
 
   const { data, error, count } = await query;
   if (error) throw error;
@@ -93,10 +128,20 @@ const fetchExpenses = async (
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
+const EMPTY_FILTERS: Filters = {
+  paidFrom: "",
+  paidTo: "",
+  issuedFrom: "",
+  issuedTo: "",
+  amountMin: "",
+  amountMax: "",
+};
+
 export default function ExpensesClient({ slug, workspace, initialExpenses, initialCount }: Props) {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -107,12 +152,28 @@ export default function ExpensesClient({ slug, workspace, initialExpenses, initi
     return () => clearTimeout(t);
   }, [search]);
 
+  function setFilter(key: keyof Filters, value: string) {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+    setPage(1);
+  }
+
+  function clearFilters() {
+    setFilters(EMPTY_FILTERS);
+    setSearch("");
+    setPage(1);
+  }
+
+  const hasActiveFilters =
+    debouncedSearch || Object.values(filters).some((v) => v !== "");
+
   const { data, error, mutate } = useSWR(
-    ["expenses", workspace.id, page, debouncedSearch],
-    () => fetchExpenses(workspace.id, page, debouncedSearch),
+    ["expenses", workspace.id, page, debouncedSearch, filters],
+    () => fetchExpenses(workspace.id, page, debouncedSearch, filters),
     {
       fallbackData:
-        page === 1 && !debouncedSearch ? { data: initialExpenses, count: initialCount } : undefined,
+        page === 1 && !debouncedSearch && !Object.values(filters).some((v) => v !== "")
+          ? { data: initialExpenses, count: initialCount }
+          : undefined,
       revalidateOnFocus: false,
       keepPreviousData: true,
     },
@@ -148,6 +209,10 @@ export default function ExpensesClient({ slug, workspace, initialExpenses, initi
       </div>
     );
   }
+
+  const inputClass =
+    "w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-300 transition";
+  const labelClass = "block text-[11px] font-medium text-gray-400 mb-1";
 
   return (
     <>
@@ -185,15 +250,91 @@ export default function ExpensesClient({ slug, workspace, initialExpenses, initi
         </TitleWrapper>
 
         {/* Buscador */}
-        <div className="mb-4">
+        <div className="mb-3">
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por referencia o notas..."
-            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-300 transition"
+            placeholder="Buscar por referencia, proveedor o notas..."
+            className={inputClass}
           />
         </div>
+
+        {/* Filtros */}
+        <div className="mb-4 grid grid-cols-2 gap-x-3 gap-y-3 sm:grid-cols-3 lg:grid-cols-6">
+          <div>
+            <p className={labelClass}>Pago desde</p>
+            <input
+              type="date"
+              value={filters.paidFrom}
+              onChange={(e) => setFilter("paidFrom", e.target.value)}
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <p className={labelClass}>Pago hasta</p>
+            <input
+              type="date"
+              value={filters.paidTo}
+              onChange={(e) => setFilter("paidTo", e.target.value)}
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <p className={labelClass}>Emisión desde</p>
+            <input
+              type="date"
+              value={filters.issuedFrom}
+              onChange={(e) => setFilter("issuedFrom", e.target.value)}
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <p className={labelClass}>Emisión hasta</p>
+            <input
+              type="date"
+              value={filters.issuedTo}
+              onChange={(e) => setFilter("issuedTo", e.target.value)}
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <p className={labelClass}>Monto mín.</p>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="0.00"
+              value={filters.amountMin}
+              onChange={(e) => setFilter("amountMin", e.target.value)}
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <p className={labelClass}>Monto máx.</p>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="0.00"
+              value={filters.amountMax}
+              onChange={(e) => setFilter("amountMax", e.target.value)}
+              className={inputClass}
+            />
+          </div>
+        </div>
+
+        {hasActiveFilters && (
+          <div className="mb-3 flex items-center gap-2">
+            <span className="text-xs text-gray-400">{totalCount} resultado{totalCount !== 1 ? "s" : ""}</span>
+            <button
+              onClick={clearFilters}
+              className="text-xs text-purple-500 hover:text-purple-700 underline underline-offset-2 transition"
+            >
+              Limpiar filtros
+            </button>
+          </div>
+        )}
       </div>
 
       {totalPages > 1 && (
@@ -227,7 +368,6 @@ export default function ExpensesClient({ slug, workspace, initialExpenses, initi
         workspaceSlug={slug}
       />
 
-      {/* Paginador */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-4 px-1">
           <span className="text-sm text-gray-400">

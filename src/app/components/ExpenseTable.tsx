@@ -24,7 +24,7 @@ function ExpenseRow({ expense, isLast, onDelete, isDeleting, workspaceSlug }: Ex
   const invoiceRef = expense.invoice_ref;
 
   const parsedDate = expense?.issued_at ? parseISO(expense.issued_at) : null;
-
+  console.log(expense?.issued_at);
   const label = parsedDate
     ? new Intl.DateTimeFormat("es-PE", {
         day: "numeric",
@@ -103,7 +103,6 @@ interface ExpenseTableProps {
   onDelete: (id: string) => void;
   deletingId?: string | null;
   workspaceSlug: string;
-  maxHeight?: string;
 }
 
 export default function ExpenseTable({
@@ -111,11 +110,10 @@ export default function ExpenseTable({
   onDelete,
   deletingId,
   workspaceSlug,
-  maxHeight = "600px",
 }: ExpenseTableProps) {
   return (
     <FormSection padding={false}>
-      <div className="overflow-y-auto" style={{ maxHeight }}>
+      <div className="overflow-y-auto">
         <table className="w-full border-collapse">
           <thead className="border-b border-gray-100">
             <tr>

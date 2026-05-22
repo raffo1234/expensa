@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { STYLED_ICON_CLASS } from "@/constants";
+import { ICON_SIZE, STYLED_ICON_CLASS } from "@/constants";
 
 type PageLink = {
   href: string;
@@ -55,7 +55,7 @@ const MenuItemLink = React.forwardRef<
       <span className={STYLED_ICON_CLASS}>
         <Icon
           icon={iconName}
-          fontSize={16}
+          fontSize={ICON_SIZE}
           className={`${href === currentPath ? "text-rose-400" : ""} flex-shrink-0`}
         />
       </span>

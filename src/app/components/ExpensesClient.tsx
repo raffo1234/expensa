@@ -126,7 +126,6 @@ export default function ExpensesClient({ slug, workspace, initialExpenses }: Pro
         onDelete={handleDelete}
         deletingId={deletingId}
         workspaceSlug={slug}
-        maxHeight="calc(100vh - 180px)"
       />
     </>
   );

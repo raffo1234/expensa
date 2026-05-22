@@ -4,7 +4,7 @@ import userFetcher from "@/fetchers/userFetcher";
 import { Permissions } from "@/types/propertyState";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { preload } from "swr";
-import { adminUsersKey } from "@/constants";
+import { adminUsersKey, ICON_SIZE } from "@/constants";
 import { signOut } from "next-auth/react";
 import React from "react";
 import useUserPermissionsMap from "@/hooks/useUserPermissionsMap";
@@ -184,7 +184,7 @@ export default function AsideMenu({
           className="hover:text-rose-400 w-full text-sm font-semibold hover:bg-purple-100 cursor-pointer rounded-xl p-2 gap-3.5 text-purple-800 flex items-center transition-colors duration-300"
         >
           <span className="p-2 bg-gradient-to-b hover:bg-purple-100 text-purple-800 lg:from-white/75 lg:to-purple-100/75 rounded-lg bg-purple-100 border border-purple-200">
-            <Icon icon="solar:inbox-out-linear" fontSize={16} className="-rotate-90" />
+            <Icon icon="solar:inbox-out-linear" fontSize={ICON_SIZE} className="-rotate-90" />
           </span>
           <span className={isContracted ? "lg:hidden" : ""}>{t("sign-out")}</span>
         </button>

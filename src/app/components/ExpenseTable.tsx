@@ -23,7 +23,10 @@ function ExpenseRow({ expense, isLast, onDelete, isDeleting, workspaceSlug }: Ex
   const router = useRouter();
   const invoiceRef = expense.invoice_ref;
 
-  const parsedDate = expense?.issued_at ? parseISO(expense.issued_at) : null;
+  const parsedDate = expense?.issued_at
+    ? new Date(expense.issued_at.slice(0, 10) + "T12:00:00")
+    : null;
+
   console.log(expense?.issued_at);
   const label = parsedDate
     ? new Intl.DateTimeFormat("es-PE", {

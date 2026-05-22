@@ -136,8 +136,6 @@ export default function ExpenseDetailPage() {
     error,
   } = useSWR(expenseId ? ["expense", expenseId] : null, ([, id]) => fetchExpense(id));
 
-  console.log({ error });
-
   const categoryColor = expense?.category?.color ?? "#06b6d4";
 
   return (

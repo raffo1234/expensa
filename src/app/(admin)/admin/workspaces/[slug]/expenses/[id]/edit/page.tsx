@@ -1,5 +1,8 @@
 "use client";
 
+import { useGlobalState } from "@/lib/globalState";
+import { mutate } from "swr";
+import AddProviderModal from "@/components/AddProviderModal";
 import { useState, useEffect, useRef } from "react";
 import useSWR from "swr";
 import { useRouter, useParams } from "next/navigation";
@@ -234,6 +237,20 @@ export default function EditExpensePage() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
+  const { setModalContent, setModalOpen } = useGlobalState();
+
+  const handleProviderCreated = (provider: { id: string; name: string; ruc: string }) => {
+    mutate(["providers", workspaceId]);
+    setProviderId(provider.id);
+  };
+
+  const openAddProvider = () => {
+    setModalContent(
+      <AddProviderModal workspaceId={workspaceId!} onSelect={handleProviderCreated} />,
+    );
+    setModalOpen(true);
+  };
+
   // ── Populate form ──
   useEffect(() => {
     if (!expense) return;
@@ -400,18 +417,34 @@ export default function EditExpensePage() {
             <FormInnerSection>
               <div className="space-y-6">
                 <Field label="Proveedor">
-                  <select
-                    value={provider_id ?? ""}
-                    onChange={(e) => setProviderId(e.target.value)}
-                    className={SELECT_CLASS}
-                  >
-                    <option value="">Sin proveedor</option>
-                    {providers.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={provider_id ?? ""}
+                      onChange={(e) => setProviderId(e.target.value)}
+                      className={SELECT_CLASS}
+                    >
+                      <option value="">Sin proveedor</option>
+                      {providers.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={openAddProvider}
+                      className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-cyan-400 hover:text-cyan-500 transition-colors"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                        <path
+                          d="M12 5v14M5 12h14"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    </button>
+                  </div>
                 </Field>
 
                 <div className="flex items-center gap-3">

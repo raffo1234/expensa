@@ -48,7 +48,7 @@ async function fetchExpense(expenseId: string): Promise<Expense> {
     .from("expense")
     .select(
       `
-      id, amount, currency, paid_at,
+      id, amount, currency, issued_at, paid_at,
       provider:provider_id(name, ruc),
       payment_method, notes, created_at,
       category(id, name, color),
@@ -196,7 +196,7 @@ export default function ExpenseDetailPage() {
                     {formatAmount(expense.amount, expense.currency)}
                   </p>
                   <p className="text-sm text-gray-400 mt-1">
-                    {format(new Date(expense.paid_at), "d 'de' MMMM, yyyy", { locale: es })}
+                    Pagado: {formatSafeDate(expense.paid_at, "d 'de' MMMM, yyyy")}
                   </p>
                 </div>
                 {expense.category && (

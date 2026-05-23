@@ -114,7 +114,7 @@ async function fetchExpense(expenseId: string, workspaceId: string): Promise<Exp
     .from("expense")
     .select(
       `
-      id, amount, currency, paid_at, payment_method, notes, created_at,
+      id, amount, currency, issued_at, paid_at, payment_method, notes, created_at,
       provider:provider_id(id, name),
       category:category_id(id, name, color),
       expense_attachment(id, file_name, storage_path)
@@ -141,9 +141,15 @@ async function fetchWorkspace(slug: string): Promise<{ id: string; name: string 
   return data;
 }
 
-async function fetchCategories(): Promise<Category[]> {
-  const { data, error } = await supabase.from("category").select("id, name, color").order("name");
+async function fetchCategories(workspaceId: string): Promise<Category[]> {
+  console.log("workid", workspaceId);
+  const { data, error } = await supabase
+    .from("category")
+    .select("id, name, color")
+    .eq("workspace_id", workspaceId)
+    .order("name");
   if (error) throw error;
+  console.log({ data });
   return data ?? [];
 }
 
@@ -212,14 +218,19 @@ export default function EditExpensePage() {
     expenseId && workspaceId ? ["expense", expenseId, workspaceId] : null,
     ([, id, wid]) => fetchExpense(id, wid),
   );
-  const { data: categories = [] } = useSWR("categories", fetchCategories);
-
+  const { data: categories = [] } = useSWR(
+    workspaceId ? ["categories", workspaceId] : null,
+    ([, wid]) => fetchCategories(wid),
+  );
+  console.log({ workspaceId });
+  console.log({ categories });
   const { data: providers = [], isLoading: providersLoading } = useSWR(
     workspaceId ? ["providers", workspaceId] : null,
     ([, wid]) => fetchProviders(wid),
   );
 
   // ── Form state ──
+  const [issuedAt, setIssuedAt] = useState("");
   const [provider_id, setProviderId] = useState<string | null>(null);
   const [amount, setAmount] = useState("");
   const [currency, setCurrency] = useState("PEN");
@@ -254,10 +265,11 @@ export default function EditExpensePage() {
   // ── Populate form ──
   useEffect(() => {
     if (!expense) return;
+    setIssuedAt(expense.issued_at ? expense.issued_at.slice(0, 10) : "");
     setProviderId(expense.provider?.id ?? "");
     setAmount(((expense.amount ?? 0) / 100).toFixed(2));
     setCurrency(expense.currency ? expense.currency.trim() : "");
-    setPaidAt(expense.paid_at ?? "");
+    setPaidAt(expense.paid_at ? expense.paid_at.slice(0, 10) : "");
     setPaymentMethod(expense.payment_method ?? "");
     setNotes(expense.notes ?? "");
     setCategoryId(expense.category?.id ?? "");
@@ -296,6 +308,7 @@ export default function EditExpensePage() {
           provider_id: provider_id || null,
           amount: Math.round(parseFloat(amount) * 100),
           currency,
+          issued_at: issuedAt || null,
           paid_at: paidAt,
           payment_method: paymentMethod || null,
           notes: notes.trim() || null,
@@ -341,7 +354,7 @@ export default function EditExpensePage() {
       setSaving(false);
     }
   }
-
+  console.log({ paidAt });
   return (
     <div>
       <BackLink href={`/admin/workspaces/${workspaceSlug}/expenses/${expenseId}`}>Volver</BackLink>
@@ -447,7 +460,10 @@ export default function EditExpensePage() {
                   </div>
                 </Field>
 
-                <div className="flex items-center gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <Field label="Fecha de emisión">
+                    <Input type="date" value={issuedAt} onChange={(v) => setIssuedAt(v)} />
+                  </Field>
                   <Field label="Fecha de pago">
                     <Input type="date" value={paidAt} onChange={setPaidAt} />
                   </Field>
@@ -499,11 +515,18 @@ export default function EditExpensePage() {
                       className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl p-3"
                     >
                       {image ? (
-                        <img
-                          src={url}
-                          alt={att.file_name ?? "adjunto"}
-                          className="w-10 h-10 rounded-lg object-cover flex-shrink-0 border border-gray-200"
-                        />
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-shrink-0"
+                        >
+                          <img
+                            src={url}
+                            alt={att.file_name ?? "adjunto"}
+                            className="w-10 h-10 rounded-lg object-cover flex-shrink-0 border border-gray-200"
+                          />
+                        </a>
                       ) : (
                         <div className="w-10 h-10 rounded-lg bg-cyan-100 flex items-center justify-center flex-shrink-0">
                           <span className="text-[9px] font-bold text-cyan-600">PDF</span>

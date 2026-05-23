@@ -66,12 +66,19 @@ async function ExpensesSection({ slug }: { slug: string }) {
     };
   });
 
+  const { data: categories } = await supabase
+  .from("category")
+  .select("id, name, color")
+  .eq("workspace_id", workspace.id)
+  .order("name");
+
   return (
     <ExpensesClient
       slug={slug}
       workspace={workspace}
       initialExpenses={expenses}
       initialCount={count ?? 0}
+      categories={categories ?? []}
     />
   );
 }

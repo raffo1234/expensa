@@ -12,6 +12,7 @@ import { Workspace } from "@/types/WorkspaceType";
 import { deleteExpense } from "@/actions/expenses";
 import TitleWrapper from "./TitleWrapper";
 import PageTitle from "./PageTitle";
+import CategoryFilter from "./CategoryFilter";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -19,11 +20,14 @@ const ITEMS_PER_PAGE = 10;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
+type Category = { id: string; name: string; color: string | null };
+
 interface Props {
   slug: string;
   workspace: Workspace;
   initialExpenses: Expense[];
   initialCount: number;
+  categories: Category[];
 }
 
 interface FetchResult {
@@ -38,6 +42,7 @@ type Filters = {
   issuedTo: string;
   amountMin: string;
   amountMax: string;
+  categoryId: string;
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -85,6 +90,8 @@ const fetchExpenses = async (
     .eq("workspace_id", workspaceId)
     .order("paid_at", { ascending: false })
     .range(from, to);
+
+  if (filters.categoryId) query = query.eq("category_id", filters.categoryId);
 
   if (search.trim()) {
     const { data: matchingProviders } = await supabase
@@ -135,9 +142,16 @@ const EMPTY_FILTERS: Filters = {
   issuedTo: "",
   amountMin: "",
   amountMax: "",
+  categoryId: "",
 };
 
-export default function ExpensesClient({ slug, workspace, initialExpenses, initialCount }: Props) {
+export default function ExpensesClient({
+  slug,
+  workspace,
+  initialExpenses,
+  initialCount,
+  categories,
+}: Props) {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -163,8 +177,7 @@ export default function ExpensesClient({ slug, workspace, initialExpenses, initi
     setPage(1);
   }
 
-  const hasActiveFilters =
-    debouncedSearch || Object.values(filters).some((v) => v !== "");
+  const hasActiveFilters = debouncedSearch || Object.values(filters).some((v) => v !== "");
 
   const { data, error, mutate } = useSWR(
     ["expenses", workspace.id, page, debouncedSearch, filters],
@@ -322,11 +335,21 @@ export default function ExpensesClient({ slug, workspace, initialExpenses, initi
               className={inputClass}
             />
           </div>
+          <div className="col-span-2 sm:col-span-3 lg:col-span-2">
+            <p className={labelClass}>Categoría</p>
+            <CategoryFilter
+              categories={categories}
+              value={filters.categoryId}
+              onChange={(id) => setFilter("categoryId", id)}
+            />
+          </div>
         </div>
 
         {hasActiveFilters && (
           <div className="mb-3 flex items-center gap-2">
-            <span className="text-xs text-gray-400">{totalCount} resultado{totalCount !== 1 ? "s" : ""}</span>
+            <span className="text-xs text-gray-400">
+              {totalCount} resultado{totalCount !== 1 ? "s" : ""}
+            </span>
             <button
               onClick={clearFilters}
               className="text-xs text-purple-500 hover:text-purple-700 underline underline-offset-2 transition"

@@ -128,9 +128,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<InvoiceData |
               buildFilePart(base64, mimeType),
               {
                 type: "text",
-                text: `Eres un experto en documentos fiscales latinoamericanos.
-Extrae los datos del gasto de este documento.
-Si un campo no existe en el documento usa null. Nunca inventes datos.`,
+                text: `Eres un experto en documentos fiscales peruanos. Extrae los datos del gasto de este documento. Si un campo no existe en el documento usa null. Nunca inventes datos. Para el campo "notes", combina dos cosas: 1) Cualquier nota o descripción literal que aparezca en el documento. 2) Un resumen contextual del servicio/producto en lenguaje natural, inferido de los datos del documento (proveedor, descripción del ítem, destinatario, origen/destino, persona responsable, etc.). Solo incluye lo que puedas leer del documento, no inventes nombres ni datos.`,
               },
             ],
           },

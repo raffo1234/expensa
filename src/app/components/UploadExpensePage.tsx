@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import useSWR from "swr";
+import useSWR, { mutate } from "swr";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { createExpense, registerAttachment } from "@/actions/expenses";
@@ -24,6 +24,8 @@ import BackLink from "./BackLink";
 import TitleWrapper from "./TitleWrapper";
 import Field from "./Field";
 import PageTitle from "./PageTitle";
+import { useGlobalState } from "@/lib/globalState";
+import AddProviderModal from "./AddProviderModal";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type Category = { id: string; name: string; color: string | null };
@@ -204,6 +206,21 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
   const [extracting, setExtracting] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+
+  const { setModalContent, setModalOpen } = useGlobalState();
+
+  const handleProviderCreated = (provider: { id: string; name: string; ruc: string }) => {
+    mutate(["providers", workspaceId]); // refresca el select
+    setForm((f) => ({ ...f, provider_id: provider.id }));
+    setResolvedProvider({ ruc: provider.ruc, name: provider.name });
+  };
+
+  const openAddProvider = () => {
+    setModalContent(
+      <AddProviderModal workspaceId={workspaceId} onSelect={handleProviderCreated} />,
+    );
+    setModalOpen(true);
+  };
 
   // Mantener filesRef sincronizado para el cleanup de unmount
   useEffect(() => {
@@ -705,21 +722,37 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
           <FormInnerSection>
             <section className="space-y-4">
               <Field label="Proveedor">
-                <select
-                  value={form.provider_id}
-                  onChange={handleProviderChange}
-                  disabled={providersLoading}
-                  className={SELECT_CLASS}
-                >
-                  <option value="">
-                    {willCreateProvider ? `✦ ${resolvedProvider.name} (nuevo)` : "Sin proveedor"}
-                  </option>
-                  {providers.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
+                <div className="flex items-center gap-2">
+                  <select
+                    value={form.provider_id}
+                    onChange={handleProviderChange}
+                    disabled={providersLoading}
+                    className={SELECT_CLASS}
+                  >
+                    <option value="">
+                      {willCreateProvider ? `✦ ${resolvedProvider.name} (nuevo)` : "Sin proveedor"}
                     </option>
-                  ))}
-                </select>
+                    {providers.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={openAddProvider}
+                    className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-cyan-400 hover:text-cyan-500 transition-colors"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M12 5v14M5 12h14"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </button>
+                </div>
               </Field>
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Serie">

@@ -28,6 +28,7 @@ type Expense = {
   id: string;
   provider: {
     name: string;
+    ruc: string;
   } | null;
   amount: number;
   currency: string;
@@ -48,7 +49,7 @@ async function fetchExpense(expenseId: string): Promise<Expense> {
     .select(
       `
       id, amount, currency, paid_at,
-      provider:provider_id(name),
+      provider:provider_id(name, ruc),
       payment_method, notes, created_at,
       category(id, name, color),
       user:user(id, email),
@@ -212,7 +213,8 @@ export default function ExpenseDetailPage() {
             <SectionTitle>Detalles</SectionTitle>
             <FormInnerSection padding={false}>
               <DetailRow label="Proveedor">
-                {expense.provider?.name ?? <span className="text-gray-400">—</span>}
+                {expense.provider?.name ?? <span className="text-gray-400">—</span>} <br />
+                <span className="text-gray-600 text-lg">{expense.provider?.ruc}</span>
               </DetailRow>
               <DetailRow label="Moneda">{expense.currency}</DetailRow>
               <DetailRow label="Método de pago">

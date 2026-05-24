@@ -74,7 +74,7 @@ export default function CreateHospitalForm() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7">
       <FieldsSection>
         <div>
           <label className={labelClass}>Hospital Name</label>

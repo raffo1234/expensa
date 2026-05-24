@@ -101,7 +101,7 @@ export default function NewWorkspacePage() {
         }}
       >
         <FormSection>
-          <div className="space-y-6">
+          <div className="space-y-7">
             <Field label="Nombre del workspace" hint="Mínimo 2 caracteres.">
               <input
                 value={name}

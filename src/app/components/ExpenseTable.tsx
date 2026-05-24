@@ -46,7 +46,7 @@ function ExpenseRow({ expense, isLast, onDelete, isDeleting, workspaceSlug }: Ex
             : "cursor-pointer"
       }`}
     >
-      <td className={`${isLast ? "rounded-bl-xl" : ""} px-5 py-3.5 min-w-0 max-w-[200px]`}>
+      <td className={`${isLast ? "rounded-bl-xl" : ""} p-5 min-w-0 max-w-[200px]`}>
         <p className="text-sm font-semibold text-gray-900 truncate">
           {expense.provider?.name ?? (
             <span className="text-gray-400 font-normal">Sin proveedor</span>
@@ -59,15 +59,15 @@ function ExpenseRow({ expense, isLast, onDelete, isDeleting, workspaceSlug }: Ex
         ) : null}
       </td>
 
-      <td className="px-5 py-3.5">
+      <td className="p-5">
         <CategoryBadge category={expense.category?.name} />
       </td>
 
-      <td className="px-5 py-3.5 text-sm text-gray-500 whitespace-nowrap">
+      <td className="p-5 text-sm text-gray-500 whitespace-nowrap">
         {expense.payment_method ?? "—"}
       </td>
 
-      <td className="px-5 py-3.5 text-right">
+      <td className="p-5 text-right">
         <p className="text-sm font-medium text-gray-800 whitespace-nowrap">
           {expense.issued_at ? formatSafeDate(expense.issued_at, "d 'de' MMMM, yyyy") : "-"}
         </p>
@@ -75,7 +75,7 @@ function ExpenseRow({ expense, isLast, onDelete, isDeleting, workspaceSlug }: Ex
           {parsedDate ? formatDistanceToNow(parsedDate, { addSuffix: true, locale: es }) : "-"}
         </p>
       </td>
-      <td className="px-5 py-3.5 text-right">
+      <td className="p-5 text-right">
         <p className="text-sm font-medium text-gray-800 whitespace-nowrap">
           {expense.paid_at ? formatSafeDate(expense.paid_at, "d 'de' MMMM, yyyy") : "-"}
         </p>
@@ -86,12 +86,12 @@ function ExpenseRow({ expense, isLast, onDelete, isDeleting, workspaceSlug }: Ex
         </p>
       </td>
 
-      <td className="px-5 py-3.5 text-sm font-bold text-gray-900 whitespace-nowrap text-right">
+      <td className="p-5 text-sm font-bold text-gray-900 whitespace-nowrap text-right">
         {expense.amount ? formatAmount(expense.amount, expense.currency) : "—"}
       </td>
 
       <td
-        className={`px-5 py-3.5 ${isLast ? "rounded-br-xl" : ""}`}
+        className={`p-5 ${isLast ? "rounded-br-xl" : ""}`}
         onClick={(e) => e.stopPropagation()}
       >
         <DeleteButton
@@ -138,7 +138,7 @@ export default function ExpenseTable({
               ].map((h) => (
                 <th
                   key={h}
-                  className={`px-5 py-3 font-semibold text-gray-700 ${
+                  className={`p-5 font-medium text-gray-600 ${
                     h === "Fecha" || h === "Monto" ? "text-right" : "text-left"
                   }`}
                 >

@@ -246,8 +246,8 @@ export default function EditExpensePage() {
   const { data: stages = [] } = useSWR(workspaceId ? ["stages", workspaceId] : null, ([, wid]) =>
     fetchStages(wid),
   );
-  console.log({stages})
-  console.log({workspaceId})
+  console.log({ stages });
+  console.log({ workspaceId });
 
   const { data: levels = [] } = useSWR(workspaceId ? ["levels", workspaceId] : null, ([, wid]) =>
     fetchLevels(wid),
@@ -450,7 +450,7 @@ export default function EditExpensePage() {
         )}
 
         {expense && (
-          <div className="space-y-6">
+          <div className="space-y-7">
             <SectionTitle>Monto</SectionTitle>
             <FormInnerSection>
               <div className="flex gap-3">
@@ -471,7 +471,7 @@ export default function EditExpensePage() {
 
             <SectionTitle>Detalles</SectionTitle>
             <FormInnerSection>
-              <div className="space-y-6">
+              <div className="space-y-7">
                 <Field label="Proveedor">
                   <div className="flex items-center gap-2">
                     <select

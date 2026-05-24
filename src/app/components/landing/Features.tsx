@@ -19,7 +19,7 @@ export default function Hero() {
       <div className="relative z-10 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center py-20 lg:py-0">
         {/* ── Left ── */}
         <div className="animate-fade-slide">
-          <h1 className="font-display text-5xl md:text-6xl xl:text-7xl leading-[1.05] text-plum">
+          <h1 className="font-title text-5xl md:text-6xl xl:text-7xl leading-[1.05] text-plum">
             Finally in control
             <br />
             <span className="inline-block bg-plum text-white px-3 py-1 mt-2 rounded-sm">
@@ -59,14 +59,14 @@ export default function Hero() {
                 <p className="text-plum/50 text-xs font-semibold uppercase tracking-widest">
                   April 2026
                 </p>
-                <p className="text-plum font-display text-2xl mt-0.5">Total Spent</p>
+                <p className="text-plum font-title text-2xl mt-0.5">Total Spent</p>
               </div>
               <span className="bg-mint text-emerald font-bold text-sm px-3 py-1 rounded-full">
                 ↓ 12%
               </span>
             </div>
 
-            <p className="font-display text-5xl text-plum mb-6">$3,241</p>
+            <p className="font-title text-5xl text-plum mb-6">$3,241</p>
 
             <div className="space-y-3">
               {expenses.map(({ icon, label, amount, pct, color }) => (
@@ -94,7 +94,7 @@ export default function Hero() {
             <p className="text-white/60 text-xs font-semibold uppercase tracking-wide">
               Saved this month
             </p>
-            <p className="font-display text-3xl mt-1">$759</p>
+            <p className="font-title text-3xl mt-1">$759</p>
             <p className="text-emerald text-xs font-bold mt-1">▲ On track 🎯</p>
           </div>
         </div>

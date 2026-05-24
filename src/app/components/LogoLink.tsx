@@ -5,7 +5,7 @@ export default async function LogoLink() {
     <Link
       href="/"
       title="Finolis"
-      className="flex text-3xl items-center font-bold font-display tracking-tight gap-1"
+      className="flex text-3xl items-center font-bold font-title tracking-tight gap-1"
     >
       <svg
         className="text-purple-500 pt-1"

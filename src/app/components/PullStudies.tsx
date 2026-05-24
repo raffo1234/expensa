@@ -157,7 +157,7 @@ export default function PullStudies() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7">
       {/* ── PACS selector ── */}
       <div className="bg-white rounded-xl shadow p-5 space-y-4">
         <h2 className="font-semibold text-sm text-gray-700">PACS Connection</h2>

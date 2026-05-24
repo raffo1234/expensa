@@ -10,7 +10,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getMessages, getLocale } from "next-intl/server";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import Providers from "@/components/Providers";
-import { Geist, Sora } from "next/font/google";
+import { Cormorant, Manrope } from "next/font/google";
 
 const siteName = "Finolis";
 const title = "Finolis - Gestión de Gastos Inteligente";
@@ -47,11 +47,15 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
-const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
-
-const sora = Sora({
+const cormorant = Cormorant({
   subsets: ["latin"],
-  variable: "--font-sora",
+  variable: "--font-title",
+  weight: ["300", "400", "500", "600"],
+});
+
+const manrope = Manrope({
+  subsets: ["latin"],
+  variable: "--font-body",
 });
 
 export default async function Layout({ children }: Readonly<LayoutProps>) {
@@ -66,7 +70,7 @@ export default async function Layout({ children }: Readonly<LayoutProps>) {
   }
 
   return (
-    <html lang={locale} className={`${geist.variable} ${sora.variable}`}>
+    <html lang={locale} className={`${cormorant.variable} ${manrope.variable}`}>
       <head>
         <meta property="og:logo" content="https://expensa-sigma.vercel.app/expensa-hero.png" />
       </head>

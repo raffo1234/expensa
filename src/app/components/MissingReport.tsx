@@ -45,7 +45,7 @@ export default async function MissingReport() {
             </div>
           </div>
           <div className="lg:col-span-7 space-y-12">
-            <div className="space-y-6">
+            <div className="space-y-7">
               <div className="inline-flex items-center gap-3">
                 <span className="h-[1px] w-8 bg-cyan-500" />
                 <span className="text-cyan-600 font-bold text-[10px] tracking-[0.4em] uppercase">

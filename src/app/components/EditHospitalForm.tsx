@@ -33,7 +33,7 @@ export default function EditHospitalForm({ hospitalId }: { hospitalId: string })
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-7">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="h-12 w-full bg-gray-100 animate-pulse rounded-xl" />
         ))}
@@ -54,7 +54,7 @@ export default function EditHospitalForm({ hospitalId }: { hospitalId: string })
           );
         })}
       </div>
-      <div className="space-y-6">
+      <div className="space-y-7">
         {option === OPTION.TAB_1 ? (
           <EditHospitalGeneralInformation mutateHospital={mutateHospital} hospital={hospital} />
         ) : null}

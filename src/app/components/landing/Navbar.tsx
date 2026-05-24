@@ -70,7 +70,7 @@ export default function Navbar() {
         {/* Logo */}
         <Link
           href="/"
-          className="flex-shrink-0 font-display text-2xl text-emerald border-2 border-emerald rounded-lg px-3 py-0.5 tracking-tight"
+          className="flex-shrink-0 font-title text-2xl text-emerald border-2 border-emerald rounded-lg px-3 py-0.5 tracking-tight"
         >
           expensa
         </Link>

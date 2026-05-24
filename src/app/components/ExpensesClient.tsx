@@ -28,6 +28,8 @@ interface Props {
   initialExpenses: Expense[];
   initialCount: number;
   categories: Category[];
+  stages: Stage[];
+  levels: Level[];
 }
 
 interface FetchResult {
@@ -43,7 +45,12 @@ type Filters = {
   amountMin: string;
   amountMax: string;
   categoryId: string;
+  stageId: string;
+  levelId: string;
 };
+
+export type Stage = { id: string; name: string; color: string | null };
+export type Level = { id: string; name: string };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -92,6 +99,9 @@ const fetchExpenses = async (
     .range(from, to);
 
   if (filters.categoryId) query = query.eq("category_id", filters.categoryId);
+
+  if (filters.stageId) query = query.eq("stage_id", filters.stageId);
+  if (filters.levelId) query = query.eq("level_id", filters.levelId);
 
   if (search.trim()) {
     const { data: matchingProviders } = await supabase
@@ -143,6 +153,8 @@ const EMPTY_FILTERS: Filters = {
   amountMin: "",
   amountMax: "",
   categoryId: "",
+  stageId: "",
+  levelId: "",
 };
 
 export default function ExpensesClient({
@@ -151,6 +163,8 @@ export default function ExpensesClient({
   initialExpenses,
   initialCount,
   categories,
+  stages,
+  levels,
 }: Props) {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -342,6 +356,36 @@ export default function ExpensesClient({
               value={filters.categoryId}
               onChange={(id) => setFilter("categoryId", id)}
             />
+          </div>
+          <div className="col-span-2 sm:col-span-3 lg:col-span-2">
+            <p className={labelClass}>Etapa</p>
+            <select
+              value={filters.stageId}
+              onChange={(e) => setFilter("stageId", e.target.value)}
+              className={inputClass}
+            >
+              <option value="">Todas las etapas</option>
+              {stages.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="col-span-2 sm:col-span-3 lg:col-span-2">
+            <p className={labelClass}>Nivel</p>
+            <select
+              value={filters.levelId}
+              onChange={(e) => setFilter("levelId", e.target.value)}
+              className={inputClass}
+            >
+              <option value="">Todos los niveles</option>
+              {levels.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.name}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 

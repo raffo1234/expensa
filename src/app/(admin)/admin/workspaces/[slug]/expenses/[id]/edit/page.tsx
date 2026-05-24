@@ -99,6 +99,31 @@ async function uploadFileMultipart(
 }
 
 // ── Fetchers ──────────────────────────────────────────────────────────────────
+
+async function fetchStages(
+  workspaceId: string,
+): Promise<{ id: string; name: string; order: number; color: string | null }[]> {
+  const { data, error } = await supabase
+    .from("stage")
+    .select("id, name, order, color")
+    .eq("workspace_id", workspaceId)
+    .order("order");
+  if (error) throw error;
+  return data ?? [];
+}
+
+async function fetchLevels(
+  workspaceId: string,
+): Promise<{ id: string; name: string; order: number }[]> {
+  const { data, error } = await supabase
+    .from("level")
+    .select("id, name, order")
+    .eq("workspace_id", workspaceId)
+    .order("order");
+  if (error) throw error;
+  return data ?? [];
+}
+
 async function fetchProviders(workspaceId: string): Promise<Provider[]> {
   const { data, error } = await supabase
     .from("provider")
@@ -117,6 +142,8 @@ async function fetchExpense(expenseId: string, workspaceId: string): Promise<Exp
       id, amount, currency, issued_at, paid_at, payment_method, notes, created_at,
       provider:provider_id(id, name),
       category:category_id(id, name, color),
+      stage:stage_id(id, name, color),
+      level:level_id(id, name),
       expense_attachment(id, file_name, storage_path)
     `,
     )
@@ -198,6 +225,8 @@ export default function EditExpensePage() {
   const workspaceSlug = params.slug as string;
   const expenseId = params.id as string;
   const router = useRouter();
+  const [stageId, setStageId] = useState("");
+  const [levelId, setLevelId] = useState("");
 
   const abortRef = useRef<AbortController | null>(null);
 
@@ -213,6 +242,16 @@ export default function EditExpensePage() {
   );
 
   const workspaceId = workspace?.id;
+
+  const { data: stages = [] } = useSWR(workspaceId ? ["stages", workspaceId] : null, ([, wid]) =>
+    fetchStages(wid),
+  );
+  console.log({stages})
+  console.log({workspaceId})
+
+  const { data: levels = [] } = useSWR(workspaceId ? ["levels", workspaceId] : null, ([, wid]) =>
+    fetchLevels(wid),
+  );
 
   const { data: expense, error } = useSWR(
     expenseId && workspaceId ? ["expense", expenseId, workspaceId] : null,
@@ -274,6 +313,8 @@ export default function EditExpensePage() {
     setNotes(expense.notes ?? "");
     setCategoryId(expense.category?.id ?? "");
     setExistingAttachments(expense.expense_attachment ?? []);
+    setStageId(expense.stage?.id ?? "");
+    setLevelId(expense.level?.id ?? "");
   }, [expense]);
 
   // ── Attachment handlers ──
@@ -313,6 +354,8 @@ export default function EditExpensePage() {
           payment_method: paymentMethod || null,
           notes: notes.trim() || null,
           category_id: categoryId || null,
+          stage_id: stageId || null,
+          level_id: levelId || null,
         })
         .eq("id", expenseId);
       if (updateError) throw updateError;
@@ -354,7 +397,7 @@ export default function EditExpensePage() {
       setSaving(false);
     }
   }
-  console.log({ paidAt });
+
   return (
     <div>
       <BackLink href={`/admin/workspaces/${workspaceSlug}/expenses/${expenseId}`}>Volver</BackLink>
@@ -489,6 +532,29 @@ export default function EditExpensePage() {
                     ))}
                   </Select>
                 </Field>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="Etapa">
+                    <Select value={stageId} onChange={setStageId}>
+                      <option value="">Sin etapa</option>
+                      {stages.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </Select>
+                  </Field>
+                  <Field label="Nivel">
+                    <Select value={levelId} onChange={setLevelId}>
+                      <option value="">Sin nivel</option>
+                      {levels.map((l) => (
+                        <option key={l.id} value={l.id}>
+                          {l.name}
+                        </option>
+                      ))}
+                    </Select>
+                  </Field>
+                </div>
 
                 <Field label="Notas">
                   <textarea

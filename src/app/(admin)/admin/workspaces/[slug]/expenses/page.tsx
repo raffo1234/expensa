@@ -67,10 +67,22 @@ async function ExpensesSection({ slug }: { slug: string }) {
   });
 
   const { data: categories } = await supabase
-  .from("category")
-  .select("id, name, color")
-  .eq("workspace_id", workspace.id)
-  .order("name");
+    .from("category")
+    .select("id, name, color")
+    .eq("workspace_id", workspace.id)
+    .order("name");
+
+  const { data: stages } = await supabase
+    .from("stage")
+    .select("id, name, color")
+    .eq("workspace_id", workspace.id)
+    .order("order");
+
+  const { data: levels } = await supabase
+    .from("level")
+    .select("id, name")
+    .eq("workspace_id", workspace.id)
+    .order("order");
 
   return (
     <ExpensesClient
@@ -79,6 +91,8 @@ async function ExpensesSection({ slug }: { slug: string }) {
       initialExpenses={expenses}
       initialCount={count ?? 0}
       categories={categories ?? []}
+      stages={stages ?? []}
+      levels={levels ?? []}
     />
   );
 }

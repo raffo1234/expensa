@@ -13,6 +13,8 @@ export interface Expense {
   category?: { id: string; name: string; color?: string };
   expense_attachment?: { id: string; url: string; file_name: string; storage_path: string }[];
   invoice_ref?: string;
+  stage?: { id: string; name: string; color?: string | null } | null;
+  level?: { id: string; name: string } | null;
 }
 
 export interface ExpenseRow {
@@ -29,4 +31,6 @@ export interface ExpenseRow {
   created_at: string;
   provider?: { id: string; name: string } | null;
   category?: { id: string; name: string; color?: string | null } | null;
+  stage?: { id: string; name: string; color?: string | null } | null;
+  level?: { id: string; name: string } | null;
 }

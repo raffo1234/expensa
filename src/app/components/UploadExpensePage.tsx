@@ -30,6 +30,8 @@ import AddProviderModal from "./AddProviderModal";
 // ── Types ────────────────────────────────────────────────────────────────────
 type Category = { id: string; name: string; color: string | null };
 type Provider = { id: string; name: string; ruc: string };
+type Stage = { id: string; name: string; order: number; color: string | null };
+type Level = { id: string; name: string; order: number };
 type FileItem = { id: string; file: File; preview?: string };
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -42,7 +44,7 @@ const PAYMENT_METHODS = [
   "Yape / Plin",
   "Otro",
 ];
-const PART_SIZE = 5 * 1024 * 1024; // 5 MB — mínimo requerido por R2/S3
+const PART_SIZE = 5 * 1024 * 1024;
 
 // ── SWR fetchers ─────────────────────────────────────────────────────────────
 async function fetchWorkspace(slug: string): Promise<{ id: string }> {
@@ -67,6 +69,26 @@ async function fetchProviders(workspaceId: string): Promise<Provider[]> {
     .select("id, name, ruc")
     .eq("workspace_id", workspaceId)
     .order("name");
+  if (error) throw error;
+  return data ?? [];
+}
+
+async function fetchStages(workspaceId: string): Promise<Stage[]> {
+  const { data, error } = await supabase
+    .from("stage")
+    .select("id, name, order, color")
+    .eq("workspace_id", workspaceId)
+    .order("order");
+  if (error) throw error;
+  return data ?? [];
+}
+
+async function fetchLevels(workspaceId: string): Promise<Level[]> {
+  const { data, error } = await supabase
+    .from("level")
+    .select("id, name, order")
+    .eq("workspace_id", workspaceId)
+    .order("order");
   if (error) throw error;
   return data ?? [];
 }
@@ -128,7 +150,6 @@ async function uploadFileMultipart(
 
       if (!res.ok) throw new Error(`Parte ${partNumber} falló: ${res.status}`);
 
-      // R2 debe exponer ETag en CORS: "ExposeHeaders": ["ETag"]
       const etag = res.headers.get("ETag");
       if (!etag) throw new Error(`Sin ETag en parte ${partNumber}`);
 
@@ -139,7 +160,6 @@ async function uploadFileMultipart(
     await completeMultipartUpload(key, uploadId, parts);
     return key;
   } catch (err) {
-    // Abort limpia el multipart incompleto en R2
     await abortMultipartUpload(key, uploadId).catch(() => {});
     throw err;
   }
@@ -151,11 +171,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
   const workspaceSlug = params.slug as string;
   const router = useRouter();
   const dropRef = useRef<HTMLLabelElement>(null);
-
-  // AbortController para cancelar uploads si el componente se desmonta
   const abortRef = useRef<AbortController | null>(null);
-
-  // Revocar object URLs al desmontar
   const filesRef = useRef<FileItem[]>([]);
 
   useEffect(() => {
@@ -181,6 +197,14 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
     ([, wid]) => fetchProviders(wid),
   );
 
+  const { data: stages = [] } = useSWR(workspaceId ? ["stages", workspaceId] : null, ([, wid]) =>
+    fetchStages(wid),
+  );
+
+  const { data: levels = [] } = useSWR(workspaceId ? ["levels", workspaceId] : null, ([, wid]) =>
+    fetchLevels(wid),
+  );
+
   const [form, setForm] = useState({
     provider_id: "",
     invoice_series: "",
@@ -191,6 +215,8 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
     paid_at: new Date().toISOString().slice(0, 10),
     payment_method: "",
     category_id: "",
+    stage_id: "",
+    level_id: "",
     notes: "",
   });
 
@@ -210,7 +236,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
   const { setModalContent, setModalOpen } = useGlobalState();
 
   const handleProviderCreated = (provider: { id: string; name: string; ruc: string }) => {
-    mutate(["providers", workspaceId]); // refresca el select
+    mutate(["providers", workspaceId]);
     setForm((f) => ({ ...f, provider_id: provider.id }));
     setResolvedProvider({ ruc: provider.ruc, name: provider.name });
   };
@@ -222,7 +248,6 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
     setModalOpen(true);
   };
 
-  // Mantener filesRef sincronizado para el cleanup de unmount
   useEffect(() => {
     filesRef.current = files;
   }, [files]);
@@ -345,21 +370,19 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
       return;
     }
 
-    // Resetear progreso de uploads anteriores
     setUploadProgress({});
-
-    // Crear un AbortController nuevo para este envío
     abortRef.current = new AbortController();
     const { signal } = abortRef.current;
 
     setIsPending(true);
     try {
-      // 1. Crear el gasto
       const result = await createExpense({
         workspace_id: workspaceId,
         workspace_slug: workspaceSlug,
         created_by: userId,
         category_id: form.category_id || undefined,
+        stage_id: form.stage_id || undefined,
+        level_id: form.level_id || undefined,
         provider_ruc: resolvedProvider.ruc,
         provider_name: resolvedProvider.name,
         invoice_series: form.invoice_series || undefined,
@@ -377,11 +400,9 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
         return;
       }
 
-      // 2. Subir cada archivo con multipart
       await Promise.all(
         files.map(async (fi) => {
           setUploadProgress((prev) => ({ ...prev, [fi.id]: 0 }));
-
           const storagePath = await uploadFileMultipart(
             fi.file,
             result.id!,
@@ -389,7 +410,6 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
             (pct) => setUploadProgress((prev) => ({ ...prev, [fi.id]: pct })),
             signal,
           );
-
           await registerAttachment(result.id!, storagePath, fi.file.name);
         }),
       );
@@ -442,11 +462,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                 onDrop={onDrop}
                 className={`flex flex-col items-center justify-center gap-3 border-2 border-dashed
                 rounded-xl py-9 cursor-pointer transition-all duration-200
-                ${
-                  dragging
-                    ? "border-purple-600 bg-cyan-50"
-                    : "border-gray-200 hover:border-purple-400 hover:bg-purple-50/40"
-                }`}
+                ${dragging ? "border-purple-600 bg-cyan-50" : "border-gray-200 hover:border-purple-400 hover:bg-purple-50/40"}`}
               >
                 <input
                   type="file"
@@ -806,6 +822,28 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                     {PAYMENT_METHODS.map((m) => (
                       <option key={m} value={m}>
                         {m}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Etapa">
+                  <select value={form.stage_id} onChange={set("stage_id")} className={SELECT_CLASS}>
+                    <option value="">Sin etapa</option>
+                    {stages.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Nivel">
+                  <select value={form.level_id} onChange={set("level_id")} className={SELECT_CLASS}>
+                    <option value="">Sin nivel</option>
+                    {levels.map((l) => (
+                      <option key={l.id} value={l.id}>
+                        {l.name}
                       </option>
                     ))}
                   </select>

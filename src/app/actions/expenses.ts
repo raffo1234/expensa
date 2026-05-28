@@ -38,6 +38,8 @@ type CreateExpenseInput = {
   issued_at?: string | null;
   created_by?: string | null;
   provider_id?: string | null;
+  stage_id?: string | null; // ← agregar
+  level_id?: string | null;
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

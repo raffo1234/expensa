@@ -46,6 +46,11 @@ export default function AsideMenu({
       title: t("home"),
       iconName: "solar:home-smile-angle-broken",
     },
+    {
+      href: "/admin/dashboard",
+      title: "Dashboard",
+      iconName: "solar:graph-up-outline",
+    },
 
     ...(checkPermission(Permissions.UPLOAD_DICOM)
       ? [

@@ -27,24 +27,28 @@ async function ExpensesSection({ slug }: { slug: string }) {
 
   if (wsError || !workspace) throw new Error("Workspace not found");
 
-  const {
-    data: rows,
-    error: expError,
-    count,
-  } = await supabase
-    .from("expense")
-    .select(
-      `id, invoice_series, invoice_number, amount, currency,
-       issued_at, paid_at, payment_method, notes, created_at,
-       provider:provider_id(id, name),
-       category:category_id(id, name, color)`,
-      { count: "exact" },
-    )
-    .eq("workspace_id", workspace.id)
-    .order("paid_at", { ascending: false })
-    .range(0, ITEMS_PER_PAGE - 1);
+  const [
+    { data: rows, error: expError, count },
+    { data: allAmounts },
+  ] = await Promise.all([
+    supabase
+      .from("expense")
+      .select(
+        `id, invoice_series, invoice_number, amount, currency,
+         issued_at, paid_at, payment_method, notes, created_at,
+         provider:provider_id(id, name),
+         category:category_id(id, name, color)`,
+        { count: "exact" },
+      )
+      .eq("workspace_id", workspace.id)
+      .order("paid_at", { ascending: false })
+      .range(0, ITEMS_PER_PAGE - 1),
+    supabase.from("expense").select("amount").eq("workspace_id", workspace.id),
+  ]);
 
   if (expError) throw expError;
+
+  const initialTotalAmount = (allAmounts ?? []).reduce((acc, r) => acc + (r.amount ?? 0), 0);
 
   const expenses = (rows ?? []).map((row) => {
     const cat = Array.isArray(row.category) ? row.category[0] : row.category;
@@ -90,6 +94,7 @@ async function ExpensesSection({ slug }: { slug: string }) {
       workspace={workspace}
       initialExpenses={expenses}
       initialCount={count ?? 0}
+      initialTotalAmount={initialTotalAmount}
       categories={categories ?? []}
       stages={stages ?? []}
       levels={levels ?? []}

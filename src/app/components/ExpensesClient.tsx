@@ -13,6 +13,7 @@ import { deleteExpense } from "@/actions/expenses";
 import TitleWrapper from "./TitleWrapper";
 import PageTitle from "./PageTitle";
 import CategoryFilter from "./CategoryFilter";
+import { formatAmount } from "@/utils/formatAmount";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -27,6 +28,7 @@ interface Props {
   workspace: Workspace;
   initialExpenses: Expense[];
   initialCount: number;
+  initialTotalAmount: number;
   categories: Category[];
   stages: Stage[];
   levels: Level[];
@@ -35,6 +37,7 @@ interface Props {
 interface FetchResult {
   data: Expense[];
   count: number;
+  totalAmount: number;
 }
 
 type Filters = {
@@ -85,6 +88,26 @@ const fetchExpenses = async (
   const from = (page - 1) * ITEMS_PER_PAGE;
   const to = from + ITEMS_PER_PAGE - 1;
 
+  // Resolve provider IDs for search once, used in both queries
+  let providerIds: string[] = [];
+  if (search.trim()) {
+    const { data: matchingProviders } = await supabase
+      .from("provider")
+      .select("id")
+      .eq("workspace_id", workspaceId)
+      .ilike("name", `%${search.trim()}%`);
+    providerIds = matchingProviders?.map((p) => p.id) ?? [];
+  }
+
+  const orClause = search.trim()
+    ? [
+        `invoice_series.ilike.%${search.trim()}%`,
+        `invoice_number.ilike.%${search.trim()}%`,
+        `notes.ilike.%${search.trim()}%`,
+        ...(providerIds.length > 0 ? [`provider_id.in.(${providerIds.join(",")})`] : []),
+      ].join(",")
+    : null;
+
   let query = supabase
     .from("expense")
     .select(
@@ -98,48 +121,63 @@ const fetchExpenses = async (
     .order("paid_at", { ascending: false })
     .range(from, to);
 
-  if (filters.categoryId) query = query.eq("category_id", filters.categoryId);
+  let amountsQuery = supabase
+    .from("expense")
+    .select("amount")
+    .eq("workspace_id", workspaceId);
 
-  if (filters.stageId) query = query.eq("stage_id", filters.stageId);
-  if (filters.levelId) query = query.eq("level_id", filters.levelId);
-
-  if (search.trim()) {
-    const { data: matchingProviders } = await supabase
-      .from("provider")
-      .select("id")
-      .eq("workspace_id", workspaceId)
-      .ilike("name", `%${search.trim()}%`);
-
-    const providerIds = matchingProviders?.map((p) => p.id) ?? [];
-
-    const orClauses = [
-      `invoice_series.ilike.%${search.trim()}%`,
-      `invoice_number.ilike.%${search.trim()}%`,
-      `notes.ilike.%${search.trim()}%`,
-    ];
-
-    if (providerIds.length > 0) {
-      orClauses.push(`provider_id.in.(${providerIds.join(",")})`);
-    }
-
-    query = query.or(orClauses.join(","));
+  if (filters.categoryId) {
+    query = query.eq("category_id", filters.categoryId);
+    amountsQuery = amountsQuery.eq("category_id", filters.categoryId);
+  }
+  if (filters.stageId) {
+    query = query.eq("stage_id", filters.stageId);
+    amountsQuery = amountsQuery.eq("stage_id", filters.stageId);
+  }
+  if (filters.levelId) {
+    query = query.eq("level_id", filters.levelId);
+    amountsQuery = amountsQuery.eq("level_id", filters.levelId);
+  }
+  if (orClause) {
+    query = query.or(orClause);
+    amountsQuery = amountsQuery.or(orClause);
+  }
+  if (filters.paidFrom) {
+    query = query.gte("paid_at", filters.paidFrom);
+    amountsQuery = amountsQuery.gte("paid_at", filters.paidFrom);
+  }
+  if (filters.paidTo) {
+    query = query.lte("paid_at", filters.paidTo);
+    amountsQuery = amountsQuery.lte("paid_at", filters.paidTo);
+  }
+  if (filters.issuedFrom) {
+    query = query.gte("issued_at", filters.issuedFrom);
+    amountsQuery = amountsQuery.gte("issued_at", filters.issuedFrom);
+  }
+  if (filters.issuedTo) {
+    query = query.lte("issued_at", filters.issuedTo);
+    amountsQuery = amountsQuery.lte("issued_at", filters.issuedTo);
+  }
+  if (filters.amountMin) {
+    const min = Math.round(parseFloat(filters.amountMin) * 100);
+    query = query.gte("amount", min);
+    amountsQuery = amountsQuery.gte("amount", min);
+  }
+  if (filters.amountMax) {
+    const max = Math.round(parseFloat(filters.amountMax) * 100);
+    query = query.lte("amount", max);
+    amountsQuery = amountsQuery.lte("amount", max);
   }
 
-  if (filters.paidFrom) query = query.gte("paid_at", filters.paidFrom);
-  if (filters.paidTo) query = query.lte("paid_at", filters.paidTo);
-  if (filters.issuedFrom) query = query.gte("issued_at", filters.issuedFrom);
-  if (filters.issuedTo) query = query.lte("issued_at", filters.issuedTo);
-  if (filters.amountMin)
-    query = query.gte("amount", Math.round(parseFloat(filters.amountMin) * 100));
-  if (filters.amountMax)
-    query = query.lte("amount", Math.round(parseFloat(filters.amountMax) * 100));
-
-  const { data, error, count } = await query;
+  const [{ data, error, count }, { data: allAmounts }] = await Promise.all([query, amountsQuery]);
   if (error) throw error;
+
+  const totalAmount = (allAmounts ?? []).reduce((acc, r) => acc + (r.amount ?? 0), 0);
 
   return {
     data: ((data as unknown as ExpenseRow[]) ?? []).map(mapExpenseRow),
     count: count ?? 0,
+    totalAmount,
   };
 };
 
@@ -162,6 +200,7 @@ export default function ExpensesClient({
   workspace,
   initialExpenses,
   initialCount,
+  initialTotalAmount,
   categories,
   stages,
   levels,
@@ -199,7 +238,7 @@ export default function ExpensesClient({
     {
       fallbackData:
         page === 1 && !debouncedSearch && !Object.values(filters).some((v) => v !== "")
-          ? { data: initialExpenses, count: initialCount }
+          ? ({ data: initialExpenses, count: initialCount, totalAmount: initialTotalAmount } as FetchResult)
           : undefined,
       revalidateOnFocus: false,
       keepPreviousData: true,
@@ -208,7 +247,9 @@ export default function ExpensesClient({
 
   const expenses = data?.data ?? [];
   const totalCount = data?.count ?? 0;
+  const totalAmount = data?.totalAmount ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / ITEMS_PER_PAGE));
+  const displayCurrency = expenses[0]?.currency ?? "PEN";
 
   const handleDelete = async (id: string) => {
     const snapshot = data;
@@ -253,6 +294,10 @@ export default function ExpensesClient({
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-400">
               {totalCount} registro{totalCount !== 1 ? "s" : ""}
+            </span>
+            <span className="text-gray-200">·</span>
+            <span className="text-sm font-medium text-gray-700">
+              {formatAmount(totalAmount, displayCurrency)}
             </span>
           </div>
           <Link
@@ -393,6 +438,10 @@ export default function ExpensesClient({
           <div className="mb-3 flex items-center gap-2">
             <span className="text-xs text-gray-400">
               {totalCount} resultado{totalCount !== 1 ? "s" : ""}
+            </span>
+            <span className="text-xs text-gray-300">·</span>
+            <span className="text-xs font-medium text-gray-600">
+              {formatAmount(totalAmount, displayCurrency)}
             </span>
             <button
               onClick={clearFilters}

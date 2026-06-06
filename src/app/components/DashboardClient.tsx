@@ -383,7 +383,7 @@ function ProviderChart({ providers, loading }: { providers: ProviderRow[]; loadi
   );
 }
 
-const TruncatedTick = ({ x, y, payload }: any) => {
+const TruncatedTick = ({ x = 0, y = 0, payload = { value: "" } }: { x?: number; y?: number; payload?: { value: string } }) => {
   const max = 18; // caracteres máximos
   const text = payload.value?.length > max ? `${payload.value.slice(0, max)}…` : payload.value;
   return (

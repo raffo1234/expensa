@@ -13,6 +13,7 @@ import { deleteExpense } from "@/actions/expenses";
 import TitleWrapper from "./TitleWrapper";
 import PageTitle from "./PageTitle";
 import CategoryFilter from "./CategoryFilter";
+import ProviderFilter from "./ProviderFilter";
 import { formatAmount } from "@/utils/formatAmount";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -22,6 +23,7 @@ const ITEMS_PER_PAGE = 10;
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type Category = { id: string; name: string; color: string | null };
+type Provider = { id: string; name: string };
 
 interface Props {
   slug: string;
@@ -32,6 +34,7 @@ interface Props {
   categories: Category[];
   stages: Stage[];
   levels: Level[];
+  providers: Provider[];
 }
 
 interface FetchResult {
@@ -50,6 +53,7 @@ type Filters = {
   categoryId: string;
   stageId: string;
   levelId: string;
+  providerId: string;
 };
 
 export type Stage = { id: string; name: string; color: string | null };
@@ -138,6 +142,10 @@ const fetchExpenses = async (
     query = query.eq("level_id", filters.levelId);
     amountsQuery = amountsQuery.eq("level_id", filters.levelId);
   }
+  if (filters.providerId) {
+    query = query.eq("provider_id", filters.providerId);
+    amountsQuery = amountsQuery.eq("provider_id", filters.providerId);
+  }
   if (orClause) {
     query = query.or(orClause);
     amountsQuery = amountsQuery.or(orClause);
@@ -193,6 +201,7 @@ const EMPTY_FILTERS: Filters = {
   categoryId: "",
   stageId: "",
   levelId: "",
+  providerId: "",
 };
 
 export default function ExpensesClient({
@@ -204,6 +213,7 @@ export default function ExpensesClient({
   categories,
   stages,
   levels,
+  providers,
 }: Props) {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -400,6 +410,14 @@ export default function ExpensesClient({
               categories={categories}
               value={filters.categoryId}
               onChange={(id) => setFilter("categoryId", id)}
+            />
+          </div>
+          <div className="col-span-2 sm:col-span-3 lg:col-span-2">
+            <p className={labelClass}>Proveedor</p>
+            <ProviderFilter
+              providers={providers}
+              value={filters.providerId}
+              onChange={(id) => setFilter("providerId", id)}
             />
           </div>
           <div className="col-span-2 sm:col-span-3 lg:col-span-2">

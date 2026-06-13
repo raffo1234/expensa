@@ -88,6 +88,12 @@ async function ExpensesSection({ slug }: { slug: string }) {
     .eq("workspace_id", workspace.id)
     .order("order");
 
+  const { data: providers } = await supabase
+    .from("provider")
+    .select("id, name")
+    .eq("workspace_id", workspace.id)
+    .order("name");
+
   return (
     <ExpensesClient
       slug={slug}
@@ -98,6 +104,7 @@ async function ExpensesSection({ slug }: { slug: string }) {
       categories={categories ?? []}
       stages={stages ?? []}
       levels={levels ?? []}
+      providers={providers ?? []}
     />
   );
 }

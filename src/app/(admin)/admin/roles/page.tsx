@@ -29,15 +29,23 @@ async function RolesSection() {
 
   if (!user) return <NoAccess />;
   if (!user.roleId) return <NoAccess />;
+
   return (
-    <CheckPermission
-      userRoleId={user.roleId}
-      requiredPermission={Permissions.MANAGE_ROLES}
-      fallback={<FallbackPermission />}
-      loadingComponent={<FallBackRolesList />}
-    >
+    <>
       <AdminRoles rolesFallBack={roles} />
       <AddRole />
-    </CheckPermission>
+    </>
   );
+
+  // return (
+  //   <CheckPermission
+  //     userRoleId={user.roleId}
+  //     requiredPermission={Permissions.MANAGE_ROLES}
+  //     fallback={<FallbackPermission />}
+  //     loadingComponent={<FallBackRolesList />}
+  //   >
+  //     <AdminRoles rolesFallBack={roles} />
+  //     <AddRole />
+  //   </CheckPermission>
+  // );
 }

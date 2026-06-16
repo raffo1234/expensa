@@ -99,7 +99,7 @@ export function Permissions({ roleId }: { roleId: string }) {
 export function RoleItem({ role }: { role: { id: string; name: string; description: string } }) {
   const [isOpen, setIsOpen] = useState(false);
   const { id, name, description } = role;
-
+  
   return (
     <>
       <div className="relative first:rounded-t-xl first:border-0 border-t border-gray-200 hover:bg-gray-50">

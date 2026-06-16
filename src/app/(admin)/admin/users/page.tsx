@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { Permissions } from "@/types/propertyState";
 import { checkPermissions } from "@/lib/checkPermissions";
-import FallbackPermission from "@/components/FallbackPermission";
+
 import UsersTable from "@/components/UsersTable";
 import NoAccess from "@/components/NoAccess";
 import { getCurrentUser } from "@/lib/getCurrentUser";
@@ -38,7 +38,7 @@ async function UsersSection() {
   if (!user.roleId) return <NoAccess />;
   const permissions = await checkPermissions(user.roleId, [Permissions.MANAGE_USERS]);
 
-  if (!permissions[Permissions.MANAGE_USERS]) return <FallbackPermission />;
+  if (!permissions[Permissions.MANAGE_USERS]) return <NoAccess />;
 
   return <UsersTable />;
 }

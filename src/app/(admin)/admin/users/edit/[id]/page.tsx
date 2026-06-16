@@ -1,7 +1,7 @@
 import EditUserContent from "@/components/EditUserContent";
 import NoAccess from "@/components/NoAccess";
 import { getCurrentUser } from "@/lib/getCurrentUser";
-import userFetcher from "@/lib/userFetcher";
+
 
 import Link from "next/link";
 

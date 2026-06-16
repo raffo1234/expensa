@@ -46,38 +46,23 @@ export default function EditUserContent({ userId }: { userId: string }) {
 
   const { data: roles } = useSWR(adminRolesKey, rolesFetcher);
   const { data: allWorkspaces } = useSWR("admin-workspaces", workspacesFetcher);
-  const { data: assignedWorkspaces, mutate: mutateWorkspaces } = useSWR(
+  const { data: assignedWorkspaces } = useSWR(
     `user-workspaces-${userId}`,
     () => userWorkspacesFetcher(userId),
   );
 
-  const toggleWorkspace = async (workspaceId: string) => {
-    const has = assignedWorkspaces?.has(workspaceId);
-
-    const optimistic = new Set(assignedWorkspaces);
-    if (has) optimistic.delete(workspaceId);
-    else optimistic.add(workspaceId);
-    mutateWorkspaces(optimistic, false);
-
-    const { error } = has
+  const toggleWorkspace = async (workspaceId: string, nowChecked: boolean) => {
+    const { error } = nowChecked
       ? await supabase
+          .from("user_workspace")
+          .insert({ user_id: userId, workspace_id: workspaceId })
+      : await supabase
           .from("user_workspace")
           .delete()
           .eq("user_id", userId)
-          .eq("workspace_id", workspaceId)
-      : await supabase
-          .from("user_workspace")
-          .insert({ user_id: userId, workspace_id: workspaceId });
+          .eq("workspace_id", workspaceId);
 
-    if (error) {
-      if (error.code === "23505") {
-        // Row already exists — keep checked, force revalidation
-        mutateWorkspaces();
-      } else {
-        toast.error("Failed to update workspace access.");
-        mutateWorkspaces();
-      }
-    }
+    if (error) toast.error("Failed to update workspace access.");
   };
 
   const updateUser = async (fieldName: string, value: string | null) => {
@@ -152,22 +137,19 @@ export default function EditUserContent({ userId }: { userId: string }) {
 
       <FieldsSection>
         <h2 className="font-semibold">Summary Workspace Access</h2>
-        <div className="flex flex-col gap-2">
+        <div key={assignedWorkspaces ? "loaded" : "loading"} className="flex flex-col gap-2">
           {!allWorkspaces && <p className="text-sm text-gray-400">Loading...</p>}
-          {allWorkspaces?.map((ws) => {
-            const checked = assignedWorkspaces?.has(ws.id) ?? false;
-            return (
-              <label key={ws.id} className="flex items-center gap-3 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={checked}
-                  onChange={() => toggleWorkspace(ws.id)}
-                  className="w-4 h-4 accent-cyan-500 cursor-pointer"
-                />
-                <span className="text-sm">{ws.name}</span>
-              </label>
-            );
-          })}
+          {allWorkspaces?.map((ws) => (
+            <label key={ws.id} className="flex items-center gap-3 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                defaultChecked={assignedWorkspaces?.has(ws.id) ?? false}
+                onChange={(e) => toggleWorkspace(ws.id, e.target.checked)}
+                className="w-4 h-4 accent-cyan-500 cursor-pointer"
+              />
+              <span className="text-sm">{ws.name}</span>
+            </label>
+          ))}
         </div>
       </FieldsSection>
     </fieldset>

@@ -32,9 +32,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           .eq("email", user.email!)
           .maybeSingle();
 
-        const { data: defaultRole } = !existingUser?.role_id
-          ? await supabaseAdmin.from("role").select("id").eq("name", "viewer").single()
+        const { data: defaultRoleSetting } = !existingUser?.role_id
+          ? await supabaseAdmin
+              .from("global_settings")
+              .select("value")
+              .eq("slug", "default_signup_role")
+              .maybeSingle()
           : { data: null };
+
+        const defaultRole = defaultRoleSetting?.value ? { id: defaultRoleSetting.value } : null;
 
         const { data } = await supabaseAdmin
           .from("user")

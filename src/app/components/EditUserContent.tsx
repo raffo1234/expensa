@@ -3,7 +3,6 @@
 import { supabase } from "@/lib/supabase";
 import FieldsSection from "./FieldsSection";
 import useSWR from "swr";
-import { UUIDTypes } from "uuid";
 import { adminRolesKey, SELECT_CLASS } from "@/constants";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import toast from "react-hot-toast";
@@ -23,13 +22,7 @@ const rolesFetcher = async () => {
   return data;
 };
 
-export default function EditUserContent({
-  userId,
-  currentUserId,
-}: {
-  userId: string;
-  currentUserId: string;
-}) {
+export default function EditUserContent({ userId }: { userId: string }) {
   const {
     data: user,
     mutate: mutateUser,

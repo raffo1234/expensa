@@ -22,6 +22,21 @@ const rolesFetcher = async () => {
   return data;
 };
 
+const workspacesFetcher = async () => {
+  const { data, error } = await supabase.from("workspace").select("id, name").order("name");
+  if (error) throw error;
+  return data ?? [];
+};
+
+const userWorkspacesFetcher = async (userId: string) => {
+  const { data, error } = await supabase
+    .from("user_workspace")
+    .select("workspace_id")
+    .eq("user_id", userId);
+  if (error) throw error;
+  return new Set((data ?? []).map((r: { workspace_id: string }) => r.workspace_id));
+};
+
 export default function EditUserContent({ userId }: { userId: string }) {
   const {
     data: user,
@@ -30,6 +45,40 @@ export default function EditUserContent({ userId }: { userId: string }) {
   } = useSWR(`admin-${userId}`, () => userFetcher(userId));
 
   const { data: roles } = useSWR(adminRolesKey, rolesFetcher);
+  const { data: allWorkspaces } = useSWR("admin-workspaces", workspacesFetcher);
+  const { data: assignedWorkspaces, mutate: mutateWorkspaces } = useSWR(
+    `user-workspaces-${userId}`,
+    () => userWorkspacesFetcher(userId),
+  );
+
+  const toggleWorkspace = async (workspaceId: string) => {
+    const has = assignedWorkspaces?.has(workspaceId);
+
+    const optimistic = new Set(assignedWorkspaces);
+    if (has) optimistic.delete(workspaceId);
+    else optimistic.add(workspaceId);
+    mutateWorkspaces(optimistic, false);
+
+    const { error } = has
+      ? await supabase
+          .from("user_workspace")
+          .delete()
+          .eq("user_id", userId)
+          .eq("workspace_id", workspaceId)
+      : await supabase
+          .from("user_workspace")
+          .insert({ user_id: userId, workspace_id: workspaceId });
+
+    if (error) {
+      if (error.code === "23505") {
+        // Row already exists — keep checked, force revalidation
+        mutateWorkspaces();
+      } else {
+        toast.error("Failed to update workspace access.");
+        mutateWorkspaces();
+      }
+    }
+  };
 
   const updateUser = async (fieldName: string, value: string | null) => {
     if (value === "") value = null;
@@ -98,6 +147,27 @@ export default function EditUserContent({ userId }: { userId: string }) {
               </div>
             </div>
           </div>
+        </div>
+      </FieldsSection>
+
+      <FieldsSection>
+        <h2 className="font-semibold">Summary Workspace Access</h2>
+        <div className="flex flex-col gap-2">
+          {!allWorkspaces && <p className="text-sm text-gray-400">Loading...</p>}
+          {allWorkspaces?.map((ws) => {
+            const checked = assignedWorkspaces?.has(ws.id) ?? false;
+            return (
+              <label key={ws.id} className="flex items-center gap-3 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => toggleWorkspace(ws.id)}
+                  className="w-4 h-4 accent-cyan-500 cursor-pointer"
+                />
+                <span className="text-sm">{ws.name}</span>
+              </label>
+            );
+          })}
         </div>
       </FieldsSection>
     </fieldset>

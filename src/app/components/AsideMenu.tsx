@@ -46,11 +46,15 @@ export default function AsideMenu({
       title: t("home"),
       iconName: "solar:home-smile-angle-broken",
     },
-    {
-      href: "/admin/dashboard",
-      title: "Dashboard",
-      iconName: "solar:graph-up-outline",
-    },
+    ...(checkPermission(Permissions.VIEW_DASHBOARD)
+      ? [
+          {
+            href: "/admin/dashboard",
+            title: "Dashboard",
+            iconName: "solar:graph-up-outline",
+          },
+        ]
+      : []),
 
     ...(checkPermission(Permissions.UPLOAD_DICOM)
       ? [
@@ -143,11 +147,24 @@ export default function AsideMenu({
           },
         ]
       : []),
-    {
-      href: "/admin/workspaces",
-      title: t("my-workspaces"),
-      iconName: "solar:wallet-2-linear",
-    },
+    ...(checkPermission(Permissions.HANDLE_WORKSPACES)
+      ? [
+          {
+            href: "/admin/workspaces",
+            title: t("my-workspaces"),
+            iconName: "solar:wallet-2-linear",
+          },
+        ]
+      : []),
+    ...(checkPermission(Permissions.VIEW_EXPENSES_SUMMARY)
+      ? [
+          {
+            href: "/admin/summary",
+            title: "Summary",
+            iconName: "solar:document-text-linear",
+          },
+        ]
+      : []),
     ...(checkPermission(Permissions.HANDLE_SETTINGS)
       ? [
           {

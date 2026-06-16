@@ -55,7 +55,7 @@ export default function SettingsContent({
     updateDefaultSignupRole(event.target.value);
   };
 
-  if (!defaultSignupRole || isLoading || loading) return <SettingsPageFallBack />;
+  if (isLoading || loading) return <SettingsPageFallBack />;
   if (!canViewSettings) return <NoAccess />;
 
   return (
@@ -66,7 +66,7 @@ export default function SettingsContent({
         <div className="relative">
           <select
             disabled={isSaving}
-            defaultValue={defaultSignupRole}
+            defaultValue={defaultSignupRole ?? ""}
             onChange={onChange}
             className="w-full disable:opacity-50 transition-colors duration-300 px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500 bg-white"
           >

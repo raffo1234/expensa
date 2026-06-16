@@ -6,7 +6,7 @@ export async function getSettingValueBySlug(slug: string): Promise<string | null
         .from("global_settings")
         .select("value")
         .eq("slug", slug)
-        .single();
+        .maybeSingle();
   
       if (error) {
         console.error(`Error fetching setting with slug "${slug}":`, error);

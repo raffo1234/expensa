@@ -37,7 +37,7 @@ export default async function Page({ params }: { params: Params }) {
           </svg>
         </Link>
       </div>
-      <EditUserContent userId={id} currentUserId={currentUser.id} />
+      <EditUserContent userId={id}  />
     </>
   );
 }

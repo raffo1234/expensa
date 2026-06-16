@@ -10,14 +10,6 @@ async function userFetcher(userId: string) {
       role (
         id,
         name
-      ),
-      template: user_template_id_fkey (
-        id,
-        name
-      ),
-      residents: user (
-        id,
-        first_name
       )
     `,
     )

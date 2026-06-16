@@ -1,5 +1,3 @@
-"server-only";
-
 import { SupabaseClient } from "@supabase/supabase-js";
 import { UserType } from "@/types/userType";
 import useSWR from "swr";
@@ -10,9 +8,12 @@ interface FetchUserOptions {
   search?: string;
 }
 
-const userFetcher = async (args: [string, number, number, SupabaseClient, FetchUserOptions?]) => {
-  const [, page, pageSize, supabaseClient, options] = args;
-
+export const userFetcher = async (
+  page: number,
+  pageSize: number,
+  supabaseClient: SupabaseClient,
+  options?: FetchUserOptions,
+) => {
   const from = page * pageSize;
   const to = from + pageSize - 1;
 
@@ -20,15 +21,7 @@ const userFetcher = async (args: [string, number, number, SupabaseClient, FetchU
     .from("user")
     .select(
       `
-        id,
-        image_url,
-        first_name,
-        last_name,
-        username,
-        email,
-        role_id,
-        archived_at,
-        created_at,
+        *,
         role(id, name)
       `,
       { count: "exact" },
@@ -76,9 +69,9 @@ export const useGetUsers = (
   supabaseClient: SupabaseClient,
   options?: FetchUserOptions,
 ) => {
-  const swrKey = options
-    ? ["admin-users", page, pageSize, supabaseClient, options]
-    : ["admin-users", page, pageSize, supabaseClient];
+  const swrKey = ["admin-users", page, pageSize, options ?? null];
 
-  return useSWR<{ data: UserType[] | null; count: number | null } | null>(swrKey, userFetcher);
+  return useSWR<{ data: UserType[] | null; count: number | null } | null>(swrKey, () =>
+    userFetcher(page, pageSize, supabaseClient, options),
+  );
 };

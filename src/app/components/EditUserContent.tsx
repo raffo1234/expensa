@@ -4,16 +4,15 @@ import { supabase } from "@/lib/supabase";
 import FieldsSection from "./FieldsSection";
 import useSWR from "swr";
 import { UUIDTypes } from "uuid";
-import { adminRolesKey, adminUsersKey, SELECT_CLASS } from "@/constants";
+import { adminRolesKey, SELECT_CLASS } from "@/constants";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import toast from "react-hot-toast";
-import ResidentList from "./ResidentList";
+
 import EditUserHeader from "./EditUserHeader";
-import usersFetcher from "@/lib/usersFetcher";
+
 import userFetcher from "@/lib/userFetcher";
 import NoAccess from "./NoAccess";
 import FallbackEditUser from "./FallbackEditUser";
-import { UserType } from "@/types/userType";
 
 const rolesFetcher = async () => {
   const { data, error } = await supabase
@@ -24,30 +23,12 @@ const rolesFetcher = async () => {
   return data;
 };
 
-const templatesByUserFetcher = async (userId: UUIDTypes) => {
-  const { data, error } = await supabase
-    .from("template")
-    .select("*")
-    .eq("user_id", userId)
-    .order("name", { ascending: true });
-  if (error) throw error;
-  return data;
-};
-
 export default function EditUserContent({
   userId,
   currentUserId,
-  canAssignResident,
-  canHaveResident,
-  assignableRoleIds,
-  initialUsers,
 }: {
   userId: string;
   currentUserId: string;
-  canAssignResident: boolean;
-  canHaveResident: boolean;
-  assignableRoleIds: string[];
-  initialUsers: UserType[] | null;
 }) {
   const {
     data: user,
@@ -55,15 +36,7 @@ export default function EditUserContent({
     isLoading: isLoadingUser,
   } = useSWR(`admin-${userId}`, () => userFetcher(userId));
 
-  const { data: users } = useSWR(adminUsersKey, usersFetcher, {
-    fallbackData: initialUsers ?? undefined,
-  });
-
   const { data: roles } = useSWR(adminRolesKey, rolesFetcher);
-
-  const { data: templates } = useSWR(`admin-templates-by-user-${currentUserId}`, () =>
-    templatesByUserFetcher(currentUserId),
-  );
 
   const updateUser = async (fieldName: string, value: string | null) => {
     if (value === "") value = null;
@@ -82,7 +55,7 @@ export default function EditUserContent({
 
   if (isLoadingUser) return <FallbackEditUser />;
   if (!user) return <NoAccess />;
-  
+
   return (
     <fieldset className="flex flex-col gap-4">
       <FieldsSection>
@@ -132,44 +105,8 @@ export default function EditUserContent({
               </div>
             </div>
           </div>
-
-          <div className="flex-grow">
-            <label htmlFor="template_id" className="inline-block mb-2 text-sm">
-              Locations
-            </label>
-            <div className="relative">
-              <select
-                id="template_id"
-                value={(user.template_id as string) ?? ""}
-                onChange={(e) => updateUser("template_id", e.target.value)}
-                disabled={!templates}
-                className={SELECT_CLASS}
-              >
-                <option value="">{templates ? "Select ..." : "Loading..."}</option>
-                {templates?.map(({ id, name }) => (
-                  <option value={id} key={id}>
-                    {name}
-                  </option>
-                ))}
-              </select>
-              <div className="absolute top-1/2 -translate-y-1/2 right-1 pr-3 pointer-events-none bg-white">
-                <Icon icon="solar:alt-arrow-down-linear" fontSize={16} />
-              </div>
-            </div>
-          </div>
         </div>
       </FieldsSection>
-
-      {users && user.role_id && (
-        <ResidentList
-          currentUserId={user.id}
-          userRoleId={user.role_id}
-          users={users}
-          canAssignResident={canAssignResident}
-          canHaveResident={canHaveResident}
-          assignableRoleIds={assignableRoleIds}
-        />
-      )}
     </fieldset>
   );
 }

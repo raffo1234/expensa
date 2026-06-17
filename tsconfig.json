@@ -37,6 +37,8 @@
     "public/dicom-upload.sw.js"
   ],
   "exclude": [
+    "dist",
+    "build",
     "node_modules",
     "workers"
   ]

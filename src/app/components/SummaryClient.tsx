@@ -5,7 +5,7 @@ import useSWR from "swr";
 import { supabase } from "@/lib/supabase";
 import { useDebouncedCallback } from "use-debounce";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { ICON_SIZE } from "@/constants";
+import { ICON_SIZE, INPUT_CLASS, SELECT_CLASS } from "@/constants";
 import { formatAmount } from "@/utils/formatAmount";
 import getAttachmentUrl from "@/lib/getAttachmentUrl";
 
@@ -131,7 +131,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
             setWorkspaceId(e.target.value);
             setPage(0);
           }}
-          className="w-full appearance-none px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100 focus:border-cyan-500 bg-white pr-8"
+          className={SELECT_CLASS + " pr-10"}
         >
           {workspaces.map((ws) => (
             <option key={ws.id} value={ws.id}>
@@ -150,8 +150,9 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
           type="text"
           placeholder="Search invoice, provider, notes..."
           onChange={(e) => debouncedSearch(e.target.value)}
-          className="flex-1 min-w-[200px] rounded-lg border border-gray-200 px-4 py-2 focus:outline-none focus:ring-4 focus:ring-cyan-100 focus:border-cyan-500 bg-white"
+          className={INPUT_CLASS}
         />
+        <div>
         <input
           type="date"
           value={dateFrom}
@@ -159,8 +160,10 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
             setDateFrom(e.target.value);
             setPage(0);
           }}
-          className="rounded-lg border border-gray-200 px-4 py-2 focus:outline-none focus:ring-4 focus:ring-cyan-100 focus:border-cyan-500 bg-white"
+          className={INPUT_CLASS}
         />
+        </div>
+        <div>
         <input
           type="date"
           value={dateTo}
@@ -168,8 +171,9 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
             setDateTo(e.target.value);
             setPage(0);
           }}
-          className="rounded-lg border border-gray-200 px-4 py-2 focus:outline-none focus:ring-4 focus:ring-cyan-100 focus:border-cyan-500 bg-white"
+          className={INPUT_CLASS}
         />
+        </div>
         <button
           onClick={clearFilters}
           disabled={!hasFilters}

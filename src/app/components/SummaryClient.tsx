@@ -8,6 +8,7 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import { ICON_SIZE } from "@/constants";
 import { formatAmount } from "@/utils/formatAmount";
 import getAttachmentUrl from "@/lib/getAttachmentUrl";
+import FormSection from "./FormSection";
 
 const PAGE_SIZE = 10;
 
@@ -22,7 +23,10 @@ type SummaryExpense = {
   paid_at?: string | null;
   notes?: string | null;
   provider?: { id: string; name: string } | { id: string; name: string }[] | null;
-  category?: { id: string; name: string; color?: string | null } | { id: string; name: string; color?: string | null }[] | null;
+  category?:
+    | { id: string; name: string; color?: string | null }
+    | { id: string; name: string; color?: string | null }[]
+    | null;
   expense_attachment?: Attachment[];
 };
 
@@ -281,9 +285,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
                             className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-cyan-50 text-cyan-600 hover:bg-cyan-100 text-xs transition-colors"
                           >
                             <Icon icon="solar:file-download-linear" fontSize={14} />
-                            <span className="max-w-[80px] truncate">
-                              {att.file_name ?? "file"}
-                            </span>
+                            <span className="max-w-[80px] truncate">{att.file_name ?? "file"}</span>
                           </a>
                         ))}
                       </div>

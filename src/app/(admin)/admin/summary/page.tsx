@@ -6,16 +6,15 @@ import { checkPermissions } from "@/lib/checkPermissions";
 import { Permissions } from "@/types/propertyState";
 import NoAccess from "@/components/NoAccess";
 import SummaryClient from "@/components/SummaryClient";
-import PageTitle from "@/components/PageTitle";
+import FormSection from "@/components/FormSection";
 
 export default async function Page() {
   return (
-    <>
-      <PageTitle>Summary</PageTitle>
+    <FormSection title="Expenses summary">
       <Suspense fallback={<div className="h-96 bg-gray-100 rounded-xl animate-pulse" />}>
         <SummarySection />
       </Suspense>
-    </>
+    </FormSection>
   );
 }
 

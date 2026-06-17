@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { supabaseAdmin } from "./supabaseAdmin";
+import { supabase } from "./supabase";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -64,16 +65,34 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       return true;
     },
-    async jwt({ token, user }) {
-      // `user` is only defined on the first sign-in — persist the DB id into the JWT
-      if (user?.id) {
-        token.user_id = user.id;
+    async jwt({ token }) {
+      if (!token.user_id) {
+        try {
+          const { data: dbUser, error } = await supabase
+            .from("user")
+            .select("id, role_id")
+            .eq("email", token.email)
+            .single();
+
+          if (error) {
+            console.error("Error fetching user role in JWT callback:", error);
+          } else if (dbUser?.id) {
+            token.user_id = dbUser.id;
+            token.user_role_id = dbUser.role_id;
+          }
+        } catch (error) {
+          console.error("Error fetching user role in JWT callback:", error);
+        }
       }
       return token;
     },
     async session({ session, token }) {
       if (token?.user_id) {
         session.user.id = token.user_id as string;
+        session.user.role_id = token.user_role_id as string;
+      }
+      if (token?.picture) {
+        session.user.image = token.picture;
       }
       return session;
     },

@@ -3,10 +3,7 @@ import { getSettingValueBySlug } from "@/utils/getSettingValueBySlug";
 import { supabase } from "./supabase";
 import { Profile, User } from "next-auth";
 
-export default async function syncUserWithDatabase(
-  userSession: User,
-  profile: Profile
-) {
+export default async function syncUserWithDatabase(userSession: User, profile: Profile) {
   const userId = userSession.id;
   const userEmail = userSession.email;
   const profileFirstName = profile.given_name;
@@ -21,21 +18,17 @@ export default async function syncUserWithDatabase(
       .single();
 
     if (selectError && selectError.code !== "PGRST116") {
-      console.error(
-        "syncUserWithDatabase: Error checking user existence:",
-        selectError
-      );
+      console.error("syncUserWithDatabase: Error checking user existence:", selectError);
       return true;
     }
 
     if (data) {
       console.log(
-        `syncUserWithDatabase: User with ID ${userId} already exists in custom table. Checking for updates...`
+        `syncUserWithDatabase: User with ID ${userId} already exists in custom table. Checking for updates...`,
       );
       const updates: {
         provider_id?: string;
         email?: string;
-        username?: string;
         first_name?: string;
         last_name?: string;
         image_url?: string;
@@ -62,36 +55,26 @@ export default async function syncUserWithDatabase(
       }
 
       if (Object.keys(updates).length > 0) {
-        console.log(
-          `syncUserWithDatabase: Updating user ${userId} with:`,
-          updates
-        );
+        console.log(`syncUserWithDatabase: Updating user ${userId} with:`, updates);
         const { error: updateError } = await supabase
           .from("user")
           .update(updates)
           .eq("email", userEmail);
 
         if (updateError) {
-          console.error(
-            "syncUserWithDatabase: Error updating user data:",
-            updateError
-          );
+          console.error("syncUserWithDatabase: Error updating user data:", updateError);
         } else {
           console.log(`syncUserWithDatabase: User data updated for ${userId}.`);
         }
       } else {
-        console.log(
-          `syncUserWithDatabase: No updates needed for user ${userId}.`
-        );
+        console.log(`syncUserWithDatabase: No updates needed for user ${userId}.`);
       }
     } else {
       console.log(
-        `syncUserWithDatabase: User with ID ${userId} not found in custom table. Inserting new user...`
+        `syncUserWithDatabase: User with ID ${userId} not found in custom table. Inserting new user...`,
       );
 
-      const defaultSignupRole = await getSettingValueBySlug(
-        "default_signup_role"
-      );
+      const defaultSignupRole = await getSettingValueBySlug("default_signup_role");
 
       const { data: role } = await supabase
         .from("role")
@@ -105,32 +88,24 @@ export default async function syncUserWithDatabase(
         email: userEmail,
         first_name: profileFirstName,
         last_name: profileLastName,
-        username: userEmail,
         image_url: userImage,
         created_at: new Date().toISOString(),
         role_id: role ? role.id : null,
       };
 
-      const { error: insertError } = await supabase
-        .from("user")
-        .insert([insertData]);
+      const { error: insertError } = await supabase.from("user").insert([insertData]);
 
       if (insertError) {
         console.error(
           "syncUserWithDatabase: Error inserting new user into custom table:",
-          insertError
+          insertError,
         );
       } else {
-        console.log(
-          `syncUserWithDatabase: New user inserted into custom table with ID ${userId}.`
-        );
+        console.log(`syncUserWithDatabase: New user inserted into custom table with ID ${userId}.`);
       }
     }
   } catch (error) {
-    console.error(
-      "syncUserWithDatabase: An unexpected error occurred during user sync:",
-      error
-    );
+    console.error("syncUserWithDatabase: An unexpected error occurred during user sync:", error);
     return true;
   } finally {
     return true;

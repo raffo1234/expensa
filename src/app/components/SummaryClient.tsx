@@ -8,7 +8,6 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import { ICON_SIZE } from "@/constants";
 import { formatAmount } from "@/utils/formatAmount";
 import getAttachmentUrl from "@/lib/getAttachmentUrl";
-import FormSection from "./FormSection";
 
 const PAGE_SIZE = 10;
 
@@ -180,9 +179,9 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
         </button>
       </div>
 
-      <div className="flex justify-between items-center text-xs font-semibold">
+      <div className="flex justify-between items-center font-semibold">
         <span>Total: {total}</span>
-        <div className="flex items-center gap-2">
+        <div className="flex text-sm items-center gap-2">
           <button
             disabled={page === 0}
             onClick={() => setPage((p) => p - 1)}
@@ -206,13 +205,13 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
       <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-100 text-left text-xs uppercase text-gray-500">
-              <th className="px-4 py-3">Fecha pago</th>
-              <th className="px-4 py-3">Factura</th>
-              <th className="px-4 py-3">Proveedor</th>
-              <th className="px-4 py-3">Categoría</th>
-              <th className="px-4 py-3 text-right">Monto</th>
-              <th className="px-4 py-3">Adjuntos</th>
+            <tr className="border-b bg-slate-50 border-gray-200 text-left text-xs uppercase text-gray-800">
+              <th className="p-6">Fecha pago</th>
+              <th className="p-6">Factura</th>
+              <th className="p-6">Proveedor</th>
+              <th className="p-6">Categoría</th>
+              <th className="p-6 text-right">Monto</th>
+              <th className="p-6">Adjuntos</th>
             </tr>
           </thead>
           <tbody>
@@ -220,7 +219,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
               Array.from({ length: PAGE_SIZE }, (_, i) => (
                 <tr key={i} className="border-b border-gray-50">
                   {Array.from({ length: 6 }, (_, j) => (
-                    <td key={j} className="px-4 py-3">
+                    <td key={j} className="p-6">
                       <div className="h-4 bg-gray-100 rounded animate-pulse" />
                     </td>
                   ))}
@@ -228,7 +227,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
               ))
             ) : expenses.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-gray-400">
+                <td colSpan={6} className="px-6 py-10 text-center text-gray-400">
                   No expenses found
                 </td>
               </tr>
@@ -250,10 +249,10 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
                     key={expense.id}
                     className="border-b border-gray-50 hover:bg-gray-50 transition-colors"
                   >
-                    <td className="px-4 py-3 whitespace-nowrap">{formatDate(expense.paid_at)}</td>
-                    <td className="px-4 py-3 font-mono text-xs">{invoiceRef}</td>
-                    <td className="px-4 py-3">{prov?.name ?? "—"}</td>
-                    <td className="px-4 py-3">
+                    <td className="p-6 whitespace-nowrap">{formatDate(expense.paid_at)}</td>
+                    <td className="p-6 font-mono text-sm">{invoiceRef}</td>
+                    <td className="p-6">{prov?.name ?? "—"}</td>
+                    <td className="p-6">
                       {cat ? (
                         <span
                           className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
@@ -268,12 +267,12 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
                         "—"
                       )}
                     </td>
-                    <td className="px-4 py-3 text-right font-medium whitespace-nowrap">
+                    <td className="p-6 text-right font-medium whitespace-nowrap">
                       {expense.amount != null
                         ? formatAmount(expense.amount, expense.currency)
                         : "—"}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="p-6">
                       <div className="flex flex-wrap gap-1">
                         {expense.expense_attachment?.map((att) => (
                           <a
@@ -282,9 +281,9 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
                             target="_blank"
                             rel="noopener noreferrer"
                             title={att.file_name ?? "attachment"}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-cyan-50 text-cyan-600 hover:bg-cyan-100 text-xs transition-colors"
+                            className="inline-flex items-center gap-2 p-2 rounded-lg bg-cyan-50 text-cyan-600 hover:bg-cyan-100 text-sm transition-colors"
                           >
-                            <Icon icon="solar:file-download-linear" fontSize={14} />
+                            <Icon icon="solar:file-download-linear" fontSize={24} />
                             <span className="max-w-[80px] truncate">{att.file_name ?? "file"}</span>
                           </a>
                         ))}

@@ -5,7 +5,7 @@ import useSWR from "swr";
 import { supabase } from "@/lib/supabase";
 import { useDebouncedCallback } from "use-debounce";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { ICON_SIZE, INPUT_CLASS, SELECT_CLASS } from "@/constants";
+import { ICON_SIZE, INPUT_CLASS, SECONDARY_BUTTON_CLASS, SELECT_CLASS } from "@/constants";
 import { formatAmount } from "@/utils/formatAmount";
 import getAttachmentUrl from "@/lib/getAttachmentUrl";
 
@@ -177,7 +177,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
         <button
           onClick={clearFilters}
           disabled={!hasFilters}
-          className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+          className={SECONDARY_BUTTON_CLASS}
         >
           Clear filters
         </button>

@@ -5,11 +5,11 @@ import { checkPermissions } from "@/lib/checkPermissions";
 import UsersTable from "@/components/UsersTable";
 import NoAccess from "@/components/NoAccess";
 import { getCurrentUser } from "@/lib/getCurrentUser";
+import FormSection from "@/components/FormSection";
 
 export default async function Page() {
   return (
-    <>
-      <h1 className="mb-6 font-semibold text-lg block">Users</h1>
+    <FormSection title="Users">
       <Suspense
         fallback={
           <>
@@ -28,7 +28,7 @@ export default async function Page() {
       >
         <UsersSection />
       </Suspense>
-    </>
+    </FormSection>
   );
 }
 

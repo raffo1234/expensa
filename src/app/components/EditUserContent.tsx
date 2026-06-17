@@ -106,7 +106,7 @@ export default function EditUserContent({ userId }: { userId: string }) {
       </FieldsSection>
 
       <FieldsSection>
-        <h2 className="font-semibold">Role and Location</h2>
+        <h2 className="font-semibold">Role</h2>
         <div className="flex items-center gap-4 w-full">
           <div className="flex-grow">
             <label htmlFor="role_id" className="inline-block mb-2 text-sm">

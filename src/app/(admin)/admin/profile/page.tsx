@@ -7,6 +7,8 @@ import { format } from "date-fns";
 import { ICON_SIZE, PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from "@/constants";
 import RoleName from "@/components/RoleName";
 import Link from "next/link";
+import { Permissions } from "@/types/propertyState";
+import { checkPermissions } from "@/lib/checkPermissions";
 
 type ProfileData = {
   first_name: string | null;
@@ -14,7 +16,7 @@ type ProfileData = {
   email: string | null;
   image_url: string | null;
   created_at: string | null;
-  role: { name: string } | null;
+  role: { id: string; name: string } | null;
 };
 
 export default async function Page() {
@@ -24,7 +26,7 @@ export default async function Page() {
 
   const { data: profile } = await supabase
     .from("user")
-    .select("first_name, last_name, email, image_url, created_at, role(name)")
+    .select("first_name, last_name, email, image_url, created_at, role(id, name)")
     .eq("id", user?.id)
     .single<ProfileData>();
 
@@ -34,6 +36,10 @@ export default async function Page() {
       : (user?.name ?? "—");
 
   const createdAt = profile?.created_at ? format(new Date(profile.created_at), "MMM d, yyyy") : "—";
+
+  if (!profile?.role?.id) return null;
+
+  const permissions = await checkPermissions(profile.role.id, [Permissions.HANDLE_WORKSPACES]);
 
   return (
     <div className="max-w-2xl mx-auto py-10">
@@ -91,10 +97,12 @@ export default async function Page() {
             <Icon icon="solar:home-smile-angle-broken" fontSize={ICON_SIZE} />
             Home
           </Link>
-          <Link href="/admin/workspaces" className={PRIMARY_BUTTON_CLASS}>
-            <Icon icon="solar:wallet-2-linear" fontSize={ICON_SIZE} />
-            Workspaces
-          </Link>
+          {permissions[Permissions.HANDLE_WORKSPACES] ? (
+            <Link href="/admin/workspaces" className={PRIMARY_BUTTON_CLASS}>
+              <Icon icon="solar:wallet-2-linear" fontSize={ICON_SIZE} />
+              Workspaces
+            </Link>
+          ) : null}
         </div>
       </div>
     </div>

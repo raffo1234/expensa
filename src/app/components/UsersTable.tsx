@@ -7,7 +7,7 @@ import UserCard from "./UserCard";
 import { supabase } from "@/lib/supabase";
 import { useGetUsers } from "@/actions/useGetUsers";
 import { useDebouncedCallback } from "use-debounce";
-import { ICON_SIZE } from "@/constants";
+import { ICON_SIZE, INPUT_CLASS } from "@/constants";
 
 const PAGE_SIZE = 9;
 
@@ -66,13 +66,11 @@ export default function UsersTable() {
           </OptionButton>
         ))}
       </div>
-
       <input
         onChange={debouncedSearchInput}
         placeholder="Search users"
-        className="bg-white mb-6 w-full rounded-lg border border-gray-200 outline-0 px-5 py-2 focus:outline-none focus:ring-4 focus:ring-cyan-100 focus:border-cyan-500"
+        className={INPUT_CLASS}
       />
-
       <div className="my-3 flex justify-end items-center gap-2">
         <span className="text-xs font-semibold">Total: {total}</span>
         <button

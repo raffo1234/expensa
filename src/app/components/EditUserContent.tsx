@@ -3,7 +3,7 @@
 import { supabase } from "@/lib/supabase";
 import FieldsSection from "./FieldsSection";
 import useSWR from "swr";
-import { adminRolesKey, SELECT_CLASS } from "@/constants";
+import { adminRolesKey, INPUT_CLASS, SELECT_CLASS } from "@/constants";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import toast from "react-hot-toast";
 
@@ -46,16 +46,13 @@ export default function EditUserContent({ userId }: { userId: string }) {
 
   const { data: roles } = useSWR(adminRolesKey, rolesFetcher);
   const { data: allWorkspaces } = useSWR("admin-workspaces", workspacesFetcher);
-  const { data: assignedWorkspaces } = useSWR(
-    `user-workspaces-${userId}`,
-    () => userWorkspacesFetcher(userId),
+  const { data: assignedWorkspaces } = useSWR(`user-workspaces-${userId}`, () =>
+    userWorkspacesFetcher(userId),
   );
 
   const toggleWorkspace = async (workspaceId: string, nowChecked: boolean) => {
     const { error } = nowChecked
-      ? await supabase
-          .from("user_workspace")
-          .insert({ user_id: userId, workspace_id: workspaceId })
+      ? await supabase.from("user_workspace").insert({ user_id: userId, workspace_id: workspaceId })
       : await supabase
           .from("user_workspace")
           .delete()
@@ -100,7 +97,7 @@ export default function EditUserContent({ userId }: { userId: string }) {
             disabled
             type="email"
             id="email"
-            className="disabled:bg-gray-50 disabled:text-gray-500 w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100 focus:border-cyan-500"
+            className={INPUT_CLASS}
           />
         </div>
       </FieldsSection>

@@ -3,9 +3,6 @@ import FormSection from "@/components/FormSection";
 import NoAccess from "@/components/NoAccess";
 import { getCurrentUser } from "@/lib/getCurrentUser";
 
-
-import Link from "next/link";
-
 type Params = Promise<{ id: string }>;
 
 export default async function Page({ params }: { params: Params }) {

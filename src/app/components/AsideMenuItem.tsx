@@ -46,9 +46,9 @@ const MenuItemLink = React.forwardRef<
       onMouseLeave={closePopover}
       className={`${
         href === currentPath
-          ? "bg-purple-100 text-purple-900 font-semibold"
-          : "text-gray-600 hover:bg-purple-50 hover:text-purple-800"
-      } truncate rounded-xl w-full p-2 gap-3.5 flex items-center text-sm font-semibold transition-colors duration-300`}
+          ? "text-purple-800 bg-purple-50"
+          : "text-gray-800 hover:text-purple-600"
+      } truncate rounded-lg w-full p-1 gap-3.5 flex items-center text-sm font-semibold transition-colors duration-300`}
       onClick={closeMenu}
       ref={ref}
     >
@@ -56,7 +56,7 @@ const MenuItemLink = React.forwardRef<
         <Icon
           icon={iconName}
           fontSize={ICON_SIZE}
-          className={`${href === currentPath ? "text-rose-400" : ""} flex-shrink-0`}
+          className="flex-shrink-0"
         />
       </span>
       <span

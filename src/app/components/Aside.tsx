@@ -103,7 +103,7 @@ export default function Aside({
           </div>
         </header>
         <nav>
-          <ul className="flex flex-col">
+          <ul className="flex flex-col gap-[1px]">
             <AsideMenu
               isContracted={isMenuContracted}
               closeMenu={closeMenu}

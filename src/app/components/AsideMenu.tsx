@@ -203,9 +203,9 @@ export default function AsideMenu({
       <li>
         <button
           onClick={() => signOut()}
-          className="hover:text-rose-400 w-full text-sm font-semibold hover:bg-purple-100 cursor-pointer rounded-xl p-2 gap-3.5 text-purple-800 flex items-center transition-colors duration-300"
+          className="hover:text-purple-600 truncate cursor-pointer rounded-lg w-full p-1 gap-3.5 flex items-center text-sm font-semibold transition-colors duration-300"
         >
-          <span className="p-2 bg-gradient-to-b hover:bg-purple-100 text-purple-800 lg:from-white/75 lg:to-purple-100/75 rounded-lg bg-purple-100 border border-purple-200">
+          <span className="p-1.5 bg-gradient-to-b hover:bg-purple-100 text-purple-800 lg:from-white/75 lg:to-purple-100/75 rounded-lg bg-purple-100 border border-purple-200">
             <Icon icon="solar:inbox-out-linear" fontSize={ICON_SIZE} className="-rotate-90" />
           </span>
           <span className={isContracted ? "lg:hidden" : ""}>{t("sign-out")}</span>

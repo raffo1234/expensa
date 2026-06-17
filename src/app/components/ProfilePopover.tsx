@@ -16,8 +16,9 @@ export default async function ProfilePopover() {
         <ProfilePopoverDropdown
           userImage={session.user?.image}
           userName={session.user?.name}
-          userRole={user.roleName}
+          userRoleName={user.roleName}
           userEmail={session.user?.email}
+          userRoleId={user.roleId}
         />
       ) : (
         <Link

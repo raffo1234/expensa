@@ -9,6 +9,8 @@ import { useTranslations } from "next-intl";
 import { signOut } from "next-auth/react";
 import { useRef, useState } from "react";
 import { useClickOutside } from "@/hooks/useClickOutside";
+import { Permissions } from "@/types/propertyState";
+import useCheckPermission from "@/hooks/useCheckPermission";
 
 type NavItem = {
   href: string;
@@ -21,17 +23,21 @@ const navItemClassName = "py-2 px-6 hover:bg-gray-50 flex items-center gap-3.5";
 export default function ProfilePopoverDropdown({
   userImage,
   userName,
-  userRole,
+  userRoleName,
+  userRoleId,
   userEmail,
 }: {
   userImage: string | null | undefined;
   userName: string | null | undefined;
-  userRole: string | null | undefined;
+  userRoleName: string | null | undefined;
+  userRoleId: string | null | undefined;
   userEmail: string | null | undefined;
 }) {
   const t = useTranslations("Popover");
   const [isOpen, setIsOpen] = useState(false);
   const togglePopover = () => setIsOpen((next) => !next);
+
+  const { hasPermission } = useCheckPermission(userRoleId, Permissions.HANDLE_WORKSPACES);
 
   const containerRef = useRef<HTMLDivElement>(null);
   useClickOutside(containerRef, () => setIsOpen(false), isOpen);
@@ -39,7 +45,15 @@ export default function ProfilePopoverDropdown({
   const navItems: NavItem[] = [
     { href: "/", icon: "solar:home-smile-angle-broken", label: t("home") },
     { href: "/admin/profile", icon: "solar:user-linear", label: t("profile") },
-    { href: "/admin/workspaces", icon: "solar:wallet-2-linear", label: "Workspaces" },
+    ...(hasPermission
+      ? [
+          {
+            href: "/admin/workspaces",
+            icon: "solar:wallet-2-linear",
+            label: "Workspaces",
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -83,7 +97,7 @@ export default function ProfilePopoverDropdown({
             </div>
             <p className="text-center text-sm font-semibold w-full mb-0.5">{userName}</p>
             <p className="text-slate-500 text-xs mb-2">{userEmail}</p>
-            {userRole ? <RoleName roleName={userRole} /> : null}
+            {userRoleName ? <RoleName roleName={userRoleName} /> : null}
           </li>
           {navItems.map(({ href, icon, label }) => (
             <li key={href}>

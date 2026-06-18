@@ -20,6 +20,7 @@ type SummaryExpense = {
   amount: number;
   currency: string;
   paid_at?: string | null;
+  payment_method?: string | null;
   notes?: string | null;
   provider?: { id: string; name: string } | { id: string; name: string }[] | null;
   category?:
@@ -62,7 +63,7 @@ const fetcher = async ([, workspaceId, page, search, dateFrom, dateTo]: [
   let query = supabase
     .from("expense")
     .select(
-      `id, invoice_series, invoice_number, amount, currency, paid_at, notes,
+      `id, invoice_series, invoice_number, amount, currency, paid_at, payment_method, notes,
        provider:provider_id(id, name),
        category:category_id(id, name, color),
        expense_attachment(id, file_name, storage_path)`,
@@ -211,9 +212,11 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
           <thead>
             <tr className="border-b bg-slate-50 border-gray-200 text-left text-xs uppercase text-gray-800">
               <th className="p-6">Fecha pago</th>
-              <th className="p-6">Factura</th>
+              <th className="p-6">Serie</th>
+              <th className="p-6">Number</th>
               <th className="p-6">Proveedor</th>
               <th className="p-6">Categoría</th>
+              <th className="p-6">Método de pago</th>
               <th className="p-6 text-right">Monto</th>
               <th className="p-6">Adjuntos</th>
             </tr>
@@ -222,7 +225,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
             {isLoading ? (
               Array.from({ length: PAGE_SIZE }, (_, i) => (
                 <tr key={i} className="border-b border-gray-50">
-                  {Array.from({ length: 6 }, (_, j) => (
+                  {Array.from({ length: 8 }, (_, j) => (
                     <td key={j} className="p-6">
                       <div className="h-4 bg-gray-100 rounded animate-pulse" />
                     </td>
@@ -231,7 +234,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
               ))
             ) : expenses.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-6 py-10 text-center text-gray-400">
+                <td colSpan={8} className="px-6 py-10 text-center text-gray-400">
                   No expenses found
                 </td>
               </tr>
@@ -243,10 +246,6 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
                 const cat = Array.isArray(expense.category)
                   ? expense.category[0]
                   : expense.category;
-                const invoiceRef =
-                  expense.invoice_series && expense.invoice_number
-                    ? `${expense.invoice_series}-${expense.invoice_number}`
-                    : expense.invoice_series || expense.invoice_number || "—";
 
                 return (
                   <tr
@@ -254,7 +253,8 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
                     className="border-b border-gray-50 hover:bg-gray-50 transition-colors"
                   >
                     <td className="p-6 whitespace-nowrap">{formatDate(expense.paid_at)}</td>
-                    <td className="p-6 font-mono text-sm">{invoiceRef}</td>
+                    <td className="p-6 font-mono text-sm">{expense.invoice_series ?? "—"}</td>
+                    <td className="p-6 font-mono text-sm">{expense.invoice_number ?? "—"}</td>
                     <td className="p-6">{prov?.name ?? "—"}</td>
                     <td className="p-6">
                       {cat ? (
@@ -271,6 +271,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
                         "—"
                       )}
                     </td>
+                    <td className="p-6 whitespace-nowrap">{expense.payment_method ?? "—"}</td>
                     <td className="p-6 text-right font-medium whitespace-nowrap">
                       {expense.amount != null
                         ? formatAmount(expense.amount, expense.currency)

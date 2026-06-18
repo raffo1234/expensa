@@ -22,7 +22,7 @@ type SummaryExpense = {
   paid_at?: string | null;
   payment_method?: string | null;
   notes?: string | null;
-  provider?: { id: string; name: string } | { id: string; name: string }[] | null;
+  provider?: { id: string; name: string; ruc?: string | null } | { id: string; name: string; ruc?: string | null }[] | null;
   category?:
     | { id: string; name: string; color?: string | null }
     | { id: string; name: string; color?: string | null }[]
@@ -64,7 +64,7 @@ const fetcher = async ([, workspaceId, page, search, dateFrom, dateTo]: [
     .from("expense")
     .select(
       `id, invoice_series, invoice_number, amount, currency, paid_at, payment_method, notes,
-       provider:provider_id(id, name),
+       provider:provider_id(id, name, ruc),
        category:category_id(id, name, color),
        expense_attachment(id, file_name, storage_path)`,
       { count: "exact" },
@@ -255,7 +255,10 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
                     <td className="p-6 whitespace-nowrap">{formatDate(expense.paid_at)}</td>
                     <td className="p-6 font-mono text-sm">{expense.invoice_series ?? "—"}</td>
                     <td className="p-6 font-mono text-sm">{expense.invoice_number ?? "—"}</td>
-                    <td className="p-6">{prov?.name ?? "—"}</td>
+                    <td className="p-6">
+                      <div>{prov?.name ?? "—"}</div>
+                      {prov?.ruc && <div className="text-sm text-gray-400">{prov.ruc}</div>}
+                    </td>
                     <td className="p-6">
                       {cat ? (
                         <span

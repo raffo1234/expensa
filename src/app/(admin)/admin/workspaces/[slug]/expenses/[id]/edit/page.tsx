@@ -139,7 +139,7 @@ async function fetchExpense(expenseId: string, workspaceId: string): Promise<Exp
     .from("expense")
     .select(
       `
-      id, amount, currency, issued_at, paid_at, payment_method, notes, created_at,
+      id, amount, currency, issued_at, paid_at, payment_method, notes, created_at, invoice_series, invoice_number,
       provider:provider_id(id, name),
       category:category_id(id, name, color),
       stage:stage_id(id, name, color),
@@ -277,6 +277,8 @@ export default function EditExpensePage() {
   const [paymentMethod, setPaymentMethod] = useState("");
   const [notes, setNotes] = useState("");
   const [categoryId, setCategoryId] = useState("");
+  const [invoiceSeries, setInvoiceSeries] = useState("");
+  const [invoiceNumber, setInvoiceNumber] = useState("");
 
   // ── Attachment state ──
   const [existingAttachments, setExistingAttachments] = useState<ExpenseAttachment[]>([]);
@@ -312,6 +314,8 @@ export default function EditExpensePage() {
     setPaymentMethod(expense.payment_method ?? "");
     setNotes(expense.notes ?? "");
     setCategoryId(expense.category?.id ?? "");
+    setInvoiceSeries(expense.invoice_series ?? "");
+    setInvoiceNumber(expense.invoice_number ?? "");
     setExistingAttachments(expense.expense_attachment ?? []);
     setStageId(expense.stage?.id ?? "");
     setLevelId(expense.level?.id ?? "");
@@ -354,6 +358,8 @@ export default function EditExpensePage() {
           payment_method: paymentMethod || null,
           notes: notes.trim() || null,
           category_id: categoryId || null,
+          invoice_series: invoiceSeries.trim() || null,
+          invoice_number: invoiceNumber.trim() || null,
           stage_id: stageId || null,
           level_id: levelId || null,
         })
@@ -502,6 +508,25 @@ export default function EditExpensePage() {
                     </button>
                   </div>
                 </Field>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="Serie">
+                    <Input
+                      type="text"
+                      value={invoiceSeries}
+                      onChange={setInvoiceSeries}
+                      placeholder="Ej: F001"
+                    />
+                  </Field>
+                  <Field label="Número">
+                    <Input
+                      type="text"
+                      value={invoiceNumber}
+                      onChange={setInvoiceNumber}
+                      placeholder="Ej: 00012345"
+                    />
+                  </Field>
+                </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <Field label="Fecha de emisión">

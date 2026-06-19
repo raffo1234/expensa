@@ -8,6 +8,7 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import { ICON_SIZE, INPUT_CLASS, SECONDARY_BUTTON_CLASS, SELECT_CLASS } from "@/constants";
 import { formatAmount } from "@/utils/formatAmount";
 import getAttachmentUrl from "@/lib/getAttachmentUrl";
+import Link from "next/link";
 
 const PAGE_SIZE = 10;
 
@@ -22,7 +23,10 @@ type SummaryExpense = {
   paid_at?: string | null;
   payment_method?: string | null;
   notes?: string | null;
-  provider?: { id: string; name: string; ruc?: string | null } | { id: string; name: string; ruc?: string | null }[] | null;
+  provider?:
+    | { id: string; name: string; ruc?: string | null }
+    | { id: string; name: string; ruc?: string | null }[]
+    | null;
   category?:
     | { id: string; name: string; color?: string | null }
     | { id: string; name: string; color?: string | null }[]
@@ -154,32 +158,28 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
           className={INPUT_CLASS}
         />
         <div>
-        <input
-          type="date"
-          value={dateFrom}
-          onChange={(e) => {
-            setDateFrom(e.target.value);
-            setPage(0);
-          }}
-          className={INPUT_CLASS}
-        />
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => {
+              setDateFrom(e.target.value);
+              setPage(0);
+            }}
+            className={INPUT_CLASS}
+          />
         </div>
         <div>
-        <input
-          type="date"
-          value={dateTo}
-          onChange={(e) => {
-            setDateTo(e.target.value);
-            setPage(0);
-          }}
-          className={INPUT_CLASS}
-        />
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => {
+              setDateTo(e.target.value);
+              setPage(0);
+            }}
+            className={INPUT_CLASS}
+          />
         </div>
-        <button
-          onClick={clearFilters}
-          disabled={!hasFilters}
-          className={SECONDARY_BUTTON_CLASS}
-        >
+        <button onClick={clearFilters} disabled={!hasFilters} className={SECONDARY_BUTTON_CLASS}>
           Clear filters
         </button>
       </div>
@@ -247,38 +247,62 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
                   ? expense.category[0]
                   : expense.category;
 
+                const href = `/admin/summary/${expense.id}`;
+
                 return (
                   <tr
                     key={expense.id}
                     className="border-b border-gray-50 hover:bg-gray-50 transition-colors"
                   >
-                    <td className="p-6 whitespace-nowrap">{formatDate(expense.paid_at)}</td>
-                    <td className="p-6 font-mono text-sm">{expense.invoice_series ?? "—"}</td>
-                    <td className="p-6 font-mono text-sm">{expense.invoice_number ?? "—"}</td>
-                    <td className="p-6">
-                      <div>{prov?.name ?? "—"}</div>
-                      {prov?.ruc && <div className="text-sm text-gray-400">{prov.ruc}</div>}
+                    <td className="whitespace-nowrap">
+                      <Link href={href} target="_blank" className="block p-6">
+                        {formatDate(expense.paid_at)}
+                      </Link>
                     </td>
-                    <td className="p-6">
-                      {cat ? (
-                        <span
-                          className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-                          style={{
-                            backgroundColor: cat.color ? `${cat.color}20` : "#f3f4f6",
-                            color: cat.color ?? "#374151",
-                          }}
-                        >
-                          {cat.name}
-                        </span>
-                      ) : (
-                        "—"
-                      )}
+                    <td className="font-mono text-sm">
+                      <Link href={href} target="_blank" className="block p-6">
+                        {expense.invoice_series ?? "—"}
+                      </Link>
                     </td>
-                    <td className="p-6 whitespace-nowrap">{expense.payment_method ?? "—"}</td>
-                    <td className="p-6 text-right font-medium whitespace-nowrap">
-                      {expense.amount != null
-                        ? formatAmount(expense.amount, expense.currency)
-                        : "—"}
+                    <td className="font-mono text-sm">
+                      <Link href={href} target="_blank" className="block p-6">
+                        {expense.invoice_number ?? "—"}
+                      </Link>
+                    </td>
+                    <td>
+                      <Link href={href} target="_blank" className="block p-6">
+                        <div>{prov?.name ?? "—"}</div>
+                        {prov?.ruc && <div className="text-sm text-gray-400">{prov.ruc}</div>}
+                      </Link>
+                    </td>
+                    <td>
+                      <Link href={href} target="_blank" className="block p-6">
+                        {cat ? (
+                          <span
+                            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                            style={{
+                              backgroundColor: cat.color ? `${cat.color}20` : "#f3f4f6",
+                              color: cat.color ?? "#374151",
+                            }}
+                          >
+                            {cat.name}
+                          </span>
+                        ) : (
+                          "—"
+                        )}
+                      </Link>
+                    </td>
+                    <td className="whitespace-nowrap">
+                      <Link href={href} target="_blank" className="block p-6">
+                        {expense.payment_method ?? "—"}
+                      </Link>
+                    </td>
+                    <td className="text-right font-medium whitespace-nowrap">
+                      <Link href={href} target="_blank" className="block p-6">
+                        {expense.amount != null
+                          ? formatAmount(expense.amount, expense.currency)
+                          : "—"}
+                      </Link>
                     </td>
                     <td className="p-6">
                       <div className="flex flex-wrap gap-1">

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Workspace } from "@/types/WorkspaceType";
 import {
   PRIMARY_BUTTON_CLASS,
-  PRIMARY_BUTTON_XS_CLASS,
   SEARCH_CLASS,
   SECONDARY_BUTTON_CLASS,
   SECONDARY_BUTTON_XS_CLASS,
@@ -72,17 +71,41 @@ function TableView({
                   key={ws.id}
                   className="border-b border-purple-100 last:border-0 hover:bg-violet-50/60 transition-colors duration-150"
                 >
-                  <td className="px-6 py-5 font-semibold text-[15px] text-gray-800">{ws.name}</td>
-                  <td className="px-6 py-5 text-sm text-gray-500 font-medium">/{ws.slug}</td>
-                  <td className="px-6 py-5 text-sm text-gray-500 font-medium">
-                    {ws.expense?.length ?? 0} gasto{ws.expense?.length === 1 ? "" : "s"}
+                  <td className="font-semibold text-[15px] text-gray-800">
+                    <Link
+                      href={`/admin/workspaces/${ws.slug}/expenses`}
+                      className="block px-6 py-5"
+                    >
+                      {ws.name}
+                    </Link>
                   </td>
-                  <td className="px-6 py-5 text-sm text-gray-500 font-medium">
-                    {new Date(ws.created_at).toLocaleDateString("es-PE", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "numeric",
-                    })}
+                  <td className="text-sm text-gray-500 font-medium">
+                    <Link
+                      href={`/admin/workspaces/${ws.slug}/expenses`}
+                      className="block px-6 py-5"
+                    >
+                      /{ws.slug}
+                    </Link>
+                  </td>
+                  <td className="text-sm text-gray-500 font-medium">
+                    <Link
+                      href={`/admin/workspaces/${ws.slug}/expenses`}
+                      className="block px-6 py-5"
+                    >
+                      {ws.expense?.length ?? 0} gasto{ws.expense?.length === 1 ? "" : "s"}
+                    </Link>
+                  </td>
+                  <td className="text-sm text-gray-500 font-medium">
+                    <Link
+                      href={`/admin/workspaces/${ws.slug}/expenses`}
+                      className="block px-6 py-5"
+                    >
+                      {new Date(ws.created_at).toLocaleDateString("es-PE", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                      })}
+                    </Link>
                   </td>
                   <td className="px-6 py-5">
                     <div className="flex items-center gap-2 justify-end">
@@ -91,12 +114,6 @@ function TableView({
                         className={SECONDARY_BUTTON_XS_CLASS}
                       >
                         + Agregar
-                      </Link>
-                      <Link
-                        href={`/admin/workspaces/${ws.slug}/expenses`}
-                        className={PRIMARY_BUTTON_XS_CLASS}
-                      >
-                        Ver gastos
                       </Link>
                       <DeleteButton
                         title="Eliminar workspace"

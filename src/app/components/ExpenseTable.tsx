@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import DeleteButton from "@/components/DeleteButton";
@@ -20,9 +19,8 @@ interface ExpenseRowProps {
 }
 
 function ExpenseRow({ expense, isLast, onDelete, isDeleting, workspaceSlug }: ExpenseRowProps) {
-  const [hovered, setHovered] = useState(false);
-  const router = useRouter();
   const invoiceRef = expense.invoice_ref;
+  const href = `/admin/workspaces/${workspaceSlug}/expenses/${expense.id}`;
 
   const parsedDate = expense?.issued_at
     ? new Date(expense.issued_at.slice(0, 10) + "T12:00:00")
@@ -33,67 +31,68 @@ function ExpenseRow({ expense, isLast, onDelete, isDeleting, workspaceSlug }: Ex
 
   return (
     <tr
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      onClick={() =>
-        !isDeleting && router.push(`/admin/workspaces/${workspaceSlug}/expenses/${expense.id}`)
-      }
       className={`transition-all duration-200 ${!isLast ? "border-b border-gray-100" : ""} ${
-        isDeleting
-          ? "opacity-40 pointer-events-none"
-          : hovered
-            ? "bg-purple-50 cursor-pointer"
-            : "cursor-pointer"
+        isDeleting ? "opacity-40 pointer-events-none" : "hover:bg-purple-50"
       }`}
     >
-      <td className={`${isLast ? "rounded-bl-xl" : ""} p-5 min-w-0 max-w-[200px]`}>
-        <p className="text-sm font-semibold text-gray-900 truncate">
-          {expense.provider?.name ?? (
-            <span className="text-gray-400 font-normal">Sin proveedor</span>
-          )}
-        </p>
-        {invoiceRef ? (
-          <p className="text-sm text-gray-400 truncate mt-0.5 font-mono">{invoiceRef}</p>
-        ) : expense.notes ? (
-          <p className="text-xs text-gray-400 truncate mt-0.5">{expense.notes}</p>
-        ) : null}
+      <td className={`${isLast ? "rounded-bl-xl" : ""} min-w-0 max-w-[200px]`}>
+        <Link href={href} className="block p-5">
+          <p className="text-sm font-semibold text-gray-900 truncate">
+            {expense.provider?.name ?? (
+              <span className="text-gray-400 font-normal">Sin proveedor</span>
+            )}
+          </p>
+          {invoiceRef ? (
+            <p className="text-sm text-gray-400 truncate mt-0.5 font-mono">{invoiceRef}</p>
+          ) : expense.notes ? (
+            <p className="text-xs text-gray-400 truncate mt-0.5">{expense.notes}</p>
+          ) : null}
+        </Link>
       </td>
 
-      <td className="p-5">
-        <CategoryBadge category={expense.category?.name} />
+      <td>
+        <Link href={href} className="block p-5">
+          <CategoryBadge category={expense.category?.name} />
+        </Link>
       </td>
 
-      <td className="p-5 text-sm text-gray-500 whitespace-nowrap">
-        {expense.payment_method ?? "—"}
+      <td className="text-sm text-gray-500 whitespace-nowrap">
+        <Link href={href} className="block p-5">
+          {expense.payment_method ?? "—"}
+        </Link>
       </td>
 
-      <td className="p-5 text-right">
-        <p className="text-sm font-medium text-gray-800 whitespace-nowrap">
-          {expense.issued_at ? formatSafeDate(expense.issued_at, "d 'de' MMMM, yyyy") : "-"}
-        </p>
-        <p className="text-sm text-gray-400 whitespace-nowrap">
-          {parsedDate ? formatDistanceToNow(parsedDate, { addSuffix: true, locale: es }) : "-"}
-        </p>
-      </td>
-      <td className="p-5 text-right">
-        <p className="text-sm font-medium text-gray-800 whitespace-nowrap">
-          {expense.paid_at ? formatSafeDate(expense.paid_at, "d 'de' MMMM, yyyy") : "-"}
-        </p>
-        <p className="text-sm text-gray-400 whitespace-nowrap">
-          {parsedDatePaid
-            ? formatDistanceToNow(parsedDatePaid, { addSuffix: true, locale: es })
-            : "-"}
-        </p>
+      <td className="text-right">
+        <Link href={href} className="block p-5">
+          <p className="text-sm font-medium text-gray-800 whitespace-nowrap">
+            {expense.issued_at ? formatSafeDate(expense.issued_at, "d 'de' MMMM, yyyy") : "-"}
+          </p>
+          <p className="text-sm text-gray-400 whitespace-nowrap">
+            {parsedDate ? formatDistanceToNow(parsedDate, { addSuffix: true, locale: es }) : "-"}
+          </p>
+        </Link>
       </td>
 
-      <td className="p-5 text-sm font-bold text-gray-900 whitespace-nowrap text-right">
-        {expense.amount ? formatAmount(expense.amount, expense.currency) : "—"}
+      <td className="text-right">
+        <Link href={href} className="block p-5">
+          <p className="text-sm font-medium text-gray-800 whitespace-nowrap">
+            {expense.paid_at ? formatSafeDate(expense.paid_at, "d 'de' MMMM, yyyy") : "-"}
+          </p>
+          <p className="text-sm text-gray-400 whitespace-nowrap">
+            {parsedDatePaid
+              ? formatDistanceToNow(parsedDatePaid, { addSuffix: true, locale: es })
+              : "-"}
+          </p>
+        </Link>
       </td>
 
-      <td
-        className={`p-5 ${isLast ? "rounded-br-xl" : ""}`}
-        onClick={(e) => e.stopPropagation()}
-      >
+      <td className="text-sm font-bold text-gray-900 whitespace-nowrap text-right">
+        <Link href={href} className="block p-5">
+          {expense.amount ? formatAmount(expense.amount, expense.currency) : "—"}
+        </Link>
+      </td>
+
+      <td className={`p-5 ${isLast ? "rounded-br-xl" : ""}`}>
         <DeleteButton
           onClick={() => onDelete(expense.id)}
           isDeleting={isDeleting}

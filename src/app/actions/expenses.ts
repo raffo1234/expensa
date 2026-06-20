@@ -95,6 +95,46 @@ export async function getUploadUrl(
   return { url, storagePath };
 }
 
+export type DuplicateCandidate = {
+  id: string;
+  amount: number;
+  paid_at: string;
+  provider_name: string | null;
+  invoice_series: string | null;
+  invoice_number: string | null;
+};
+
+export async function checkDuplicateExpenses(
+  workspaceId: string,
+  amount: number,
+  paidAt: string,
+  providerId?: string | null,
+): Promise<DuplicateCandidate[]> {
+  let query = supabaseAdmin
+    .from("expense")
+    .select("id, amount, paid_at, invoice_series, invoice_number, provider:provider_id(name)")
+    .eq("workspace_id", workspaceId)
+    .eq("amount", amount)
+    .eq("paid_at", paidAt);
+
+  if (providerId) {
+    query = query.eq("provider_id", providerId);
+  }
+
+  const { data } = await query.limit(5);
+  return (data ?? []).map((r) => {
+    const prov = Array.isArray(r.provider) ? r.provider[0] : r.provider;
+    return {
+      id: r.id,
+      amount: r.amount,
+      paid_at: r.paid_at,
+      provider_name: (prov as { name: string } | null)?.name ?? null,
+      invoice_series: r.invoice_series,
+      invoice_number: r.invoice_number,
+    };
+  });
+}
+
 export async function createExpense(
   input: CreateExpenseInput,
 ): Promise<{ id?: string; error?: string }> {

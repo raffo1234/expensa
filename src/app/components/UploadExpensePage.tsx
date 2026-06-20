@@ -4,7 +4,8 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import useSWR, { mutate } from "swr";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { createExpense, registerAttachment } from "@/actions/expenses";
+import { createExpense, registerAttachment, checkDuplicateExpenses } from "@/actions/expenses";
+import type { DuplicateCandidate } from "@/actions/expenses";
 import {
   initiateMultipartUpload,
   getPartPresignedUrl,
@@ -233,6 +234,8 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
   const [isPending, setIsPending] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
 
+  const [skipDupCheck, setSkipDupCheck] = useState(false);
+
   const { setModalContent, setModalOpen } = useGlobalState();
 
   const handleProviderCreated = (provider: { id: string; name: string; ruc: string }) => {
@@ -351,24 +354,8 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
     setFiles((prev) => prev.filter((f) => f.id !== id));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    if (!workspaceId) {
-      setError("No se pudo obtener el workspace.");
-      return;
-    }
-    if (!userId) {
-      setError("No se pudo obtener el usuario.");
-      return;
-    }
-
+  const saveExpense = async () => {
     const amountCents = Math.round(parseFloat(form.amount) * 100);
-    if (isNaN(amountCents) || amountCents <= 0) {
-      setError("El monto debe ser mayor a 0.");
-      return;
-    }
 
     setUploadProgress({});
     abortRef.current = new AbortController();
@@ -425,6 +412,115 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
     } finally {
       setIsPending(false);
     }
+  };
+
+  const showDuplicateModal = (dupes: DuplicateCandidate[]) => {
+    setModalContent(
+      <div className="space-y-4">
+        <h2 className="text-lg font-semibold text-gray-900">Posible duplicado</h2>
+        <p className="text-sm text-gray-600">
+          Se encontraron gastos con el mismo monto y fecha de pago. ¿Deseas guardar de todos modos?
+        </p>
+        <ul className="space-y-2">
+          {dupes.map((d) => (
+            <li key={d.id} className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+              <div className="flex-1 text-sm">
+                <span className="font-medium text-gray-800">
+                  {form.currency === "PEN" ? "S/" : form.currency === "USD" ? "$" : "€"}
+                  {(d.amount / 100).toFixed(2)}
+                </span>
+                <span className="text-gray-400 mx-2">·</span>
+                <span className="text-gray-600">{d.paid_at}</span>
+                {d.provider_name && (
+                  <>
+                    <span className="text-gray-400 mx-2">·</span>
+                    <span className="text-gray-600">{d.provider_name}</span>
+                  </>
+                )}
+                {d.invoice_series && d.invoice_number && (
+                  <>
+                    <span className="text-gray-400 mx-2">·</span>
+                    <span className="text-gray-500 text-xs">{d.invoice_series}-{d.invoice_number}</span>
+                  </>
+                )}
+              </div>
+              <a
+                href={`/admin/workspaces/${workspaceSlug}/expenses/${d.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-cyan-600 hover:text-cyan-800 underline underline-offset-2 flex-shrink-0"
+              >
+                Ver
+              </a>
+            </li>
+          ))}
+        </ul>
+        <div className="flex gap-3 pt-2">
+          <button
+            type="button"
+            onClick={() => setModalOpen(false)}
+            className={SECONDARY_BUTTON_CLASS}
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setModalOpen(false);
+              setSkipDupCheck(true);
+            }}
+            className={PRIMARY_BUTTON_CLASS}
+          >
+            Guardar de todos modos
+          </button>
+        </div>
+      </div>,
+    );
+    setModalOpen(true);
+  };
+
+  useEffect(() => {
+    if (skipDupCheck) {
+      setSkipDupCheck(false);
+      saveExpense();
+    }
+  }, [skipDupCheck]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!workspaceId) {
+      setError("No se pudo obtener el workspace.");
+      return;
+    }
+    if (!userId) {
+      setError("No se pudo obtener el usuario.");
+      return;
+    }
+
+    const amountCents = Math.round(parseFloat(form.amount) * 100);
+    if (isNaN(amountCents) || amountCents <= 0) {
+      setError("El monto debe ser mayor a 0.");
+      return;
+    }
+
+    try {
+      const dupes = await checkDuplicateExpenses(
+        workspaceId,
+        amountCents,
+        form.paid_at,
+        form.provider_id || null,
+      );
+      if (dupes.length > 0) {
+        showDuplicateModal(dupes);
+        return;
+      }
+    } catch {
+      // ponytail: if duplicate check fails, proceed anyway
+    }
+
+    await saveExpense();
   };
 
   const currSymbol = form.currency === "PEN" ? "S/" : form.currency === "USD" ? "$" : "€";

@@ -189,6 +189,110 @@ const fetchExpenses = async (
   };
 };
 
+// ── CSV Export ───────────────────────────────────────────────────────────────
+
+const csvEscape = (v: unknown) => {
+  if (v == null) return "";
+  const s = String(v);
+  return s.includes(",") || s.includes('"') || s.includes("\n")
+    ? `"${s.replace(/"/g, '""')}"` : s;
+};
+
+const exportExpensesCsv = async (
+  workspaceId: string,
+  search: string,
+  filters: Filters,
+) => {
+  let providerIds: string[] = [];
+  if (search.trim()) {
+    const { data: providers } = await supabase
+      .from("provider")
+      .select("id")
+      .eq("workspace_id", workspaceId)
+      .ilike("name", `%${search.trim()}%`);
+    providerIds = (providers ?? []).map((p: { id: string }) => p.id);
+  }
+
+  const orClause = search.trim()
+    ? [
+        `invoice_series.ilike.%${search.trim()}%`,
+        `invoice_number.ilike.%${search.trim()}%`,
+        `notes.ilike.%${search.trim()}%`,
+        ...(providerIds.length > 0 ? [`provider_id.in.(${providerIds.join(",")})`] : []),
+      ].join(",")
+    : null;
+
+  const all: ExpenseRow[] = [];
+  let page = 0;
+  const size = 1000;
+  while (true) {
+    let query = supabase
+      .from("expense")
+      .select(
+        `id, invoice_series, invoice_number, amount, currency,
+         issued_at, paid_at, payment_method, notes,
+         provider:provider_id(id, name, ruc),
+         category:category_id(id, name, color)`,
+      )
+      .eq("workspace_id", workspaceId)
+      .order("paid_at", { ascending: true })
+      .range(page * size, (page + 1) * size - 1);
+
+    if (orClause) query = query.or(orClause);
+    if (filters.categoryId) query = query.eq("category_id", filters.categoryId);
+    if (filters.stageId) query = query.eq("stage_id", filters.stageId);
+    if (filters.levelId) query = query.eq("level_id", filters.levelId);
+    if (filters.providerId) query = query.eq("provider_id", filters.providerId);
+    if (filters.paidFrom) query = query.gte("paid_at", filters.paidFrom);
+    if (filters.paidTo) query = query.lte("paid_at", filters.paidTo);
+    if (filters.issuedFrom) query = query.gte("issued_at", filters.issuedFrom);
+    if (filters.issuedTo) query = query.lte("issued_at", filters.issuedTo);
+    if (filters.amountMin) query = query.gte("amount", Math.round(parseFloat(filters.amountMin) * 100));
+    if (filters.amountMax) query = query.lte("amount", Math.round(parseFloat(filters.amountMax) * 100));
+
+    const { data } = await query;
+    if (!data || data.length === 0) break;
+    all.push(...(data as unknown as ExpenseRow[]));
+    if (data.length < size) break;
+    page++;
+  }
+
+  let csv = "﻿";
+  csv += "Mes,Fecha Pago,Fecha Emisión,Serie,Numero,Proveedor,RUC,Categoria,Metodo Pago,Monto,Moneda,Notas\n";
+
+  const byMonth: Record<string, ExpenseRow[]> = {};
+  for (const e of all) {
+    const month = e.paid_at ? e.paid_at.slice(0, 7) : "sin-fecha";
+    (byMonth[month] ??= []).push(e);
+  }
+
+  for (const month of Object.keys(byMonth).sort()) {
+    const expenses = byMonth[month];
+    for (const e of expenses) {
+      const prov = Array.isArray(e.provider) ? e.provider[0] : e.provider;
+      const cat = Array.isArray(e.category) ? e.category[0] : e.category;
+      csv += [
+        csvEscape(month), csvEscape(e.paid_at?.slice(0, 10)), csvEscape(e.issued_at?.slice(0, 10)),
+        csvEscape(e.invoice_series), csvEscape(e.invoice_number),
+        csvEscape(prov?.name), csvEscape((prov as { ruc?: string })?.ruc),
+        csvEscape(cat?.name), csvEscape(e.payment_method),
+        csvEscape((e.amount / 100).toFixed(2)), csvEscape(e.currency),
+        csvEscape(e.notes),
+      ].join(",") + "\n";
+    }
+    const total = expenses.reduce((s, e) => s + (e.amount || 0), 0);
+    csv += `${csvEscape(month)},,,,,,,,,${(total / 100).toFixed(2)},,TOTAL ${month}\n\n`;
+  }
+
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `gastos-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 const EMPTY_FILTERS: Filters = {
@@ -452,23 +556,31 @@ export default function ExpensesClient({
           </div>
         </div>
 
-        {hasActiveFilters && (
-          <div className="mb-3 flex items-center gap-2">
-            <span className="text-xs text-gray-400">
-              {totalCount} resultado{totalCount !== 1 ? "s" : ""}
-            </span>
-            <span className="text-xs text-gray-300">·</span>
-            <span className="text-xs font-medium text-gray-600">
-              {formatAmount(totalAmount, displayCurrency)}
-            </span>
-            <button
-              onClick={clearFilters}
-              className="text-xs text-purple-500 hover:text-purple-700 underline underline-offset-2 transition"
-            >
-              Limpiar filtros
-            </button>
-          </div>
-        )}
+        <div className="mb-3 flex items-center gap-2">
+          {hasActiveFilters && (
+            <>
+              <span className="text-xs text-gray-400">
+                {totalCount} resultado{totalCount !== 1 ? "s" : ""}
+              </span>
+              <span className="text-xs text-gray-300">·</span>
+              <span className="text-xs font-medium text-gray-600">
+                {formatAmount(totalAmount, displayCurrency)}
+              </span>
+              <button
+                onClick={clearFilters}
+                className="text-xs text-purple-500 hover:text-purple-700 underline underline-offset-2 transition"
+              >
+                Limpiar filtros
+              </button>
+            </>
+          )}
+          <button
+            onClick={() => exportExpensesCsv(workspace.id, debouncedSearch, filters)}
+            className="text-xs text-purple-500 hover:text-purple-700 underline underline-offset-2 transition"
+          >
+            Export CSV
+          </button>
+        </div>
       </div>
 
       {totalPages > 1 && (

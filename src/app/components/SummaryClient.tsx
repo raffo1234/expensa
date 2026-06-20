@@ -160,12 +160,12 @@ const exportCsv = async (workspaceId: string, search: string, dateFrom: string, 
         csvEscape(month), csvEscape(e.paid_at?.slice(0, 10)),
         csvEscape(e.invoice_series), csvEscape(e.invoice_number),
         csvEscape(p?.name), csvEscape(p?.ruc), csvEscape(c?.name),
-        csvEscape(e.payment_method), csvEscape(e.amount), csvEscape(e.currency),
+        csvEscape(e.payment_method), csvEscape((e.amount / 100).toFixed(2)), csvEscape(e.currency),
         csvEscape(e.notes),
       ].join(",") + "\n";
     }
     const total = expenses.reduce((s, e) => s + (e.amount || 0), 0);
-    csv += `${csvEscape(month)},,,,,,,,${total},,TOTAL ${month}\n\n`;
+    csv += `${csvEscape(month)},,,,,,,,${(total / 100).toFixed(2)},,TOTAL ${month}\n\n`;
   }
 
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });

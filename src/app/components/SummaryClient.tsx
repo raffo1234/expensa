@@ -86,6 +86,12 @@ const fetcher = async ([, workspaceId, page, search, dateFrom, dateTo]: [
   return { data: (data ?? []) as SummaryExpense[], count: count ?? 0 };
 };
 
+const fmtDate = (d?: string | null) => {
+  if (!d) return "";
+  const [y, m, day] = d.slice(0, 10).split("-");
+  return `${day}-${m}-${y}`;
+};
+
 const csvEscape = (v: unknown) => {
   if (v == null) return "";
   const s = String(v);
@@ -157,7 +163,7 @@ const exportCsv = async (workspaceId: string, search: string, dateFrom: string, 
       const p = prov(e);
       const c = cat(e);
       csv += [
-        csvEscape(month), csvEscape(e.paid_at?.slice(0, 10)),
+        csvEscape(month), csvEscape(fmtDate(e.paid_at)),
         csvEscape(e.invoice_series), csvEscape(e.invoice_number),
         csvEscape(p?.name), csvEscape(p?.ruc), csvEscape(c?.name),
         csvEscape(e.payment_method), csvEscape((e.amount / 100).toFixed(2)), csvEscape(e.currency),

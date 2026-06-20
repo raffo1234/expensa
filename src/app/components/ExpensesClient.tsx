@@ -191,6 +191,12 @@ const fetchExpenses = async (
 
 // ── CSV Export ───────────────────────────────────────────────────────────────
 
+const fmtDate = (d?: string | null) => {
+  if (!d) return "";
+  const [y, m, day] = d.slice(0, 10).split("-");
+  return `${day}-${m}-${y}`;
+};
+
 const csvEscape = (v: unknown) => {
   if (v == null) return "";
   const s = String(v);
@@ -272,7 +278,7 @@ const exportExpensesCsv = async (
       const prov = Array.isArray(e.provider) ? e.provider[0] : e.provider;
       const cat = Array.isArray(e.category) ? e.category[0] : e.category;
       csv += [
-        csvEscape(month), csvEscape(e.paid_at?.slice(0, 10)), csvEscape(e.issued_at?.slice(0, 10)),
+        csvEscape(month), csvEscape(fmtDate(e.paid_at)), csvEscape(fmtDate(e.issued_at)),
         csvEscape(e.invoice_series), csvEscape(e.invoice_number),
         csvEscape(prov?.name), csvEscape((prov as { ruc?: string })?.ruc),
         csvEscape(cat?.name), csvEscape(e.payment_method),

@@ -86,6 +86,97 @@ const fetcher = async ([, workspaceId, page, search, dateFrom, dateTo]: [
   return { data: (data ?? []) as SummaryExpense[], count: count ?? 0 };
 };
 
+const csvEscape = (v: unknown) => {
+  if (v == null) return "";
+  const s = String(v);
+  return s.includes(",") || s.includes('"') || s.includes("\n")
+    ? `"${s.replace(/"/g, '""')}"` : s;
+};
+
+const exportCsv = async (workspaceId: string, search: string, dateFrom: string, dateTo: string) => {
+  let providerIds: string[] = [];
+  if (search.trim()) {
+    const { data: providers } = await supabase
+      .from("provider")
+      .select("id")
+      .eq("workspace_id", workspaceId)
+      .ilike("name", `%${search.trim()}%`);
+    providerIds = (providers ?? []).map((p: { id: string }) => p.id);
+  }
+
+  const orClause = search.trim()
+    ? [
+        `invoice_series.ilike.%${search.trim()}%`,
+        `invoice_number.ilike.%${search.trim()}%`,
+        `notes.ilike.%${search.trim()}%`,
+        ...(providerIds.length > 0 ? [`provider_id.in.(${providerIds.join(",")})`] : []),
+      ].join(",")
+    : null;
+
+  const all: SummaryExpense[] = [];
+  let page = 0;
+  const size = 1000;
+  while (true) {
+    let query = supabase
+      .from("expense")
+      .select(
+        `id, invoice_series, invoice_number, amount, currency, paid_at, payment_method, notes,
+         provider:provider_id(id, name, ruc),
+         category:category_id(id, name, color)`,
+      )
+      .eq("workspace_id", workspaceId)
+      .order("paid_at", { ascending: true })
+      .range(page * size, (page + 1) * size - 1);
+
+    if (orClause) query = query.or(orClause);
+    if (dateFrom) query = query.gte("paid_at", dateFrom);
+    if (dateTo) query = query.lte("paid_at", dateTo);
+
+    const { data } = await query;
+    if (!data || data.length === 0) break;
+    all.push(...(data as SummaryExpense[]));
+    if (data.length < size) break;
+    page++;
+  }
+
+  const prov = (e: SummaryExpense) => Array.isArray(e.provider) ? e.provider[0] : e.provider;
+  const cat = (e: SummaryExpense) => Array.isArray(e.category) ? e.category[0] : e.category;
+
+  let csv = "﻿";
+  csv += "Mes,Fecha,Serie,Numero,Proveedor,RUC,Categoria,Metodo Pago,Monto,Moneda,Notas\n";
+
+  const byMonth: Record<string, SummaryExpense[]> = {};
+  for (const e of all) {
+    const month = e.paid_at ? e.paid_at.slice(0, 7) : "sin-fecha";
+    (byMonth[month] ??= []).push(e);
+  }
+
+  for (const month of Object.keys(byMonth).sort()) {
+    const expenses = byMonth[month];
+    for (const e of expenses) {
+      const p = prov(e);
+      const c = cat(e);
+      csv += [
+        csvEscape(month), csvEscape(e.paid_at?.slice(0, 10)),
+        csvEscape(e.invoice_series), csvEscape(e.invoice_number),
+        csvEscape(p?.name), csvEscape(p?.ruc), csvEscape(c?.name),
+        csvEscape(e.payment_method), csvEscape(e.amount), csvEscape(e.currency),
+        csvEscape(e.notes),
+      ].join(",") + "\n";
+    }
+    const total = expenses.reduce((s, e) => s + (e.amount || 0), 0);
+    csv += `${csvEscape(month)},,,,,,,,${total},,TOTAL ${month}\n\n`;
+  }
+
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `gastos-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
 const formatDate = (val?: string | null) =>
   val
     ? new Date(val).toLocaleDateString("es-PE", {
@@ -181,6 +272,14 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
         </div>
         <button onClick={clearFilters} disabled={!hasFilters} className={SECONDARY_BUTTON_CLASS}>
           Clear filters
+        </button>
+        <button
+          onClick={() => exportCsv(workspaceId, search, dateFrom, dateTo)}
+          disabled={!workspaceId}
+          className={SECONDARY_BUTTON_CLASS}
+        >
+          <Icon icon="solar:download-linear" fontSize={ICON_SIZE} />
+          Export CSV
         </button>
       </div>
 

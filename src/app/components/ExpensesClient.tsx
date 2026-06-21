@@ -15,6 +15,8 @@ import PageTitle from "./PageTitle";
 import CategoryFilter from "./CategoryFilter";
 import ProviderFilter from "./ProviderFilter";
 import { formatAmount } from "@/utils/formatAmount";
+import { useGlobalState } from "@/lib/globalState";
+import ManageCategoriesModal from "./ManageCategoriesModal";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -330,6 +332,19 @@ export default function ExpensesClient({
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [localCategories, setLocalCategories] = useState(categories);
+  const { setModalContent, setModalOpen } = useGlobalState();
+
+  const openCategoriesModal = () => {
+    setModalContent(
+      <ManageCategoriesModal
+        workspaceId={workspace.id}
+        categories={localCategories}
+        onUpdate={setLocalCategories}
+      />,
+    );
+    setModalOpen(true);
+  };
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -441,15 +456,26 @@ export default function ExpensesClient({
           </Link>
         </TitleWrapper>
 
-        {/* Buscador */}
-        <div className="mb-3">
+        {/* Buscador + Categorías */}
+        <div className="mb-3 flex gap-2">
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por referencia, proveedor o notas..."
-            className={inputClass}
+            className={`${inputClass} flex-1`}
           />
+          <button
+            type="button"
+            onClick={openCategoriesModal}
+            className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600 hover:border-purple-300 hover:text-purple-600 transition flex-shrink-0"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+            Categorias
+          </button>
         </div>
 
         {/* Filtros */}
@@ -517,7 +543,7 @@ export default function ExpensesClient({
           <div className="col-span-2 sm:col-span-3 lg:col-span-2">
             <p className={labelClass}>Categoría</p>
             <CategoryFilter
-              categories={categories}
+              categories={localCategories}
               value={filters.categoryId}
               onChange={(id) => setFilter("categoryId", id)}
             />

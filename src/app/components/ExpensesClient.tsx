@@ -127,10 +127,7 @@ const fetchExpenses = async (
     .order("paid_at", { ascending: false })
     .range(from, to);
 
-  let amountsQuery = supabase
-    .from("expense")
-    .select("amount")
-    .eq("workspace_id", workspaceId);
+  let amountsQuery = supabase.from("expense").select("amount").eq("workspace_id", workspaceId);
 
   if (filters.categoryId) {
     query = query.eq("category_id", filters.categoryId);
@@ -202,15 +199,10 @@ const fmtDate = (d?: string | null) => {
 const csvEscape = (v: unknown) => {
   if (v == null) return "";
   const s = String(v);
-  return s.includes(",") || s.includes('"') || s.includes("\n")
-    ? `"${s.replace(/"/g, '""')}"` : s;
+  return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s;
 };
 
-const exportExpensesCsv = async (
-  workspaceId: string,
-  search: string,
-  filters: Filters,
-) => {
+const exportExpensesCsv = async (workspaceId: string, search: string, filters: Filters) => {
   let providerIds: string[] = [];
   if (search.trim()) {
     const { data: providers } = await supabase
@@ -255,8 +247,10 @@ const exportExpensesCsv = async (
     if (filters.paidTo) query = query.lte("paid_at", filters.paidTo);
     if (filters.issuedFrom) query = query.gte("issued_at", filters.issuedFrom);
     if (filters.issuedTo) query = query.lte("issued_at", filters.issuedTo);
-    if (filters.amountMin) query = query.gte("amount", Math.round(parseFloat(filters.amountMin) * 100));
-    if (filters.amountMax) query = query.lte("amount", Math.round(parseFloat(filters.amountMax) * 100));
+    if (filters.amountMin)
+      query = query.gte("amount", Math.round(parseFloat(filters.amountMin) * 100));
+    if (filters.amountMax)
+      query = query.lte("amount", Math.round(parseFloat(filters.amountMax) * 100));
 
     const { data } = await query;
     if (!data || data.length === 0) break;
@@ -266,7 +260,8 @@ const exportExpensesCsv = async (
   }
 
   let csv = "﻿";
-  csv += "Mes,Fecha Pago,Fecha Emisión,Serie,Numero,Proveedor,RUC,Categoria,Metodo Pago,Monto,Moneda,Notas\n";
+  csv +=
+    "Mes,Fecha Pago,Fecha Emisión,Serie,Numero,Proveedor,RUC,Categoria,Metodo Pago,Monto,Moneda,Notas\n";
 
   const byMonth: Record<string, ExpenseRow[]> = {};
   for (const e of all) {
@@ -279,14 +274,21 @@ const exportExpensesCsv = async (
     for (const e of expenses) {
       const prov = Array.isArray(e.provider) ? e.provider[0] : e.provider;
       const cat = Array.isArray(e.category) ? e.category[0] : e.category;
-      csv += [
-        csvEscape(month), csvEscape(fmtDate(e.paid_at)), csvEscape(fmtDate(e.issued_at)),
-        csvEscape(e.invoice_series), csvEscape(e.invoice_number),
-        csvEscape(prov?.name), csvEscape((prov as { ruc?: string })?.ruc),
-        csvEscape(cat?.name), csvEscape(e.payment_method),
-        csvEscape((e.amount / 100).toFixed(2)), csvEscape(e.currency),
-        csvEscape(e.notes),
-      ].join(",") + "\n";
+      csv +=
+        [
+          csvEscape(month),
+          csvEscape(fmtDate(e.paid_at)),
+          csvEscape(fmtDate(e.issued_at)),
+          csvEscape(e.invoice_series),
+          csvEscape(e.invoice_number),
+          csvEscape(prov?.name),
+          csvEscape((prov as { ruc?: string })?.ruc),
+          csvEscape(cat?.name),
+          csvEscape(e.payment_method),
+          csvEscape((e.amount / 100).toFixed(2)),
+          csvEscape(e.currency),
+          csvEscape(e.notes),
+        ].join(",") + "\n";
     }
     const total = expenses.reduce((s, e) => s + (e.amount || 0), 0);
     csv += `${csvEscape(month)},,,,,,,,,${(total / 100).toFixed(2)},,TOTAL ${month}\n\n`;
@@ -373,7 +375,11 @@ export default function ExpensesClient({
     {
       fallbackData:
         page === 1 && !debouncedSearch && !Object.values(filters).some((v) => v !== "")
-          ? ({ data: initialExpenses, count: initialCount, totalAmount: initialTotalAmount } as FetchResult)
+          ? ({
+              data: initialExpenses,
+              count: initialCount,
+              totalAmount: initialTotalAmount,
+            } as FetchResult)
           : undefined,
       revalidateOnFocus: false,
       keepPreviousData: true,
@@ -470,7 +476,15 @@ export default function ExpensesClient({
             onClick={openCategoriesModal}
             className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600 hover:border-purple-300 hover:text-purple-600 transition flex-shrink-0"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            >
               <circle cx="12" cy="12" r="3" />
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
             </svg>

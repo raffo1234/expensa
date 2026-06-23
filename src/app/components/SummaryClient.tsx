@@ -11,9 +11,30 @@ import getAttachmentUrl from "@/lib/getAttachmentUrl";
 import Link from "next/link";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import OptionButton from "./OptionButton";
+import { Popover } from "react-tiny-popover";
 
 const PAGE_SIZE = 10;
 type SummaryTab = "facturas" | "gastos";
+
+function InputWithTooltip({ label, children }: { label: string; children: React.ReactElement }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <Popover
+      isOpen={hovered}
+      positions={["top", "bottom"]}
+      padding={8}
+      content={
+        <div className="pointer-events-none font-semibold text-white px-3 py-2 bg-slate-800 rounded-lg text-sm">
+          {label}
+        </div>
+      }
+    >
+      <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
+        {children}
+      </div>
+    </Popover>
+  );
+}
 
 type Workspace = { id: string; name: string; slug: string };
 type Attachment = { id: string; file_name: string | null; storage_path: string };
@@ -322,19 +343,17 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
           onChange={(e) => debouncedSearch(e.target.value)}
           className={INPUT_CLASS}
         />
-        <div>
+        <InputWithTooltip label="Mes de emisión">
           <input
             type="month"
-            title="Mes de emisión"
             value={month}
             onChange={(e) => handleMonthChange(e.target.value)}
             className={INPUT_CLASS}
           />
-        </div>
-        <div>
+        </InputWithTooltip>
+        <InputWithTooltip label="Emisión desde">
           <input
             type="date"
-            title="Emisión desde"
             value={dateFrom}
             onChange={(e) => {
               setDateFrom(e.target.value);
@@ -343,11 +362,10 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
             }}
             className={INPUT_CLASS}
           />
-        </div>
-        <div>
+        </InputWithTooltip>
+        <InputWithTooltip label="Emisión hasta">
           <input
             type="date"
-            title="Emisión hasta"
             value={dateTo}
             onChange={(e) => {
               setDateTo(e.target.value);
@@ -356,7 +374,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
             }}
             className={INPUT_CLASS}
           />
-        </div>
+        </InputWithTooltip>
         <button onClick={clearFilters} disabled={!hasFilters} className={SECONDARY_BUTTON_CLASS}>
           Clear filters
         </button>

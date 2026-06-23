@@ -5,7 +5,14 @@ import useSWR from "swr";
 import { supabase } from "@/lib/supabase";
 import { useDebouncedCallback } from "use-debounce";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { ICON_SIZE, INPUT_CLASS, SECONDARY_BUTTON_CLASS, SELECT_CLASS, NO_FACTURA_PROVIDER } from "@/constants";
+import {
+  ICON_SIZE,
+  INPUT_CLASS,
+  SECONDARY_BUTTON_CLASS,
+  SELECT_CLASS,
+  NO_FACTURA_PROVIDER,
+  PRIMARY_BUTTON_CLASS,
+} from "@/constants";
 import { formatAmount } from "@/utils/formatAmount";
 import getAttachmentUrl from "@/lib/getAttachmentUrl";
 import Link from "next/link";
@@ -137,11 +144,16 @@ const fmtDate = (d?: string | null) => {
 const csvEscape = (v: unknown) => {
   if (v == null) return "";
   const s = String(v);
-  return s.includes(",") || s.includes('"') || s.includes("\n")
-    ? `"${s.replace(/"/g, '""')}"` : s;
+  return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s;
 };
 
-const exportCsv = async (workspaceId: string, search: string, dateFrom: string, dateTo: string, tab: SummaryTab) => {
+const exportCsv = async (
+  workspaceId: string,
+  search: string,
+  dateFrom: string,
+  dateTo: string,
+  tab: SummaryTab,
+) => {
   const noFacturaId = await resolveNoFacturaId(workspaceId);
 
   let providerIds: string[] = [];
@@ -194,8 +206,8 @@ const exportCsv = async (workspaceId: string, search: string, dateFrom: string, 
     page++;
   }
 
-  const prov = (e: SummaryExpense) => Array.isArray(e.provider) ? e.provider[0] : e.provider;
-  const cat = (e: SummaryExpense) => Array.isArray(e.category) ? e.category[0] : e.category;
+  const prov = (e: SummaryExpense) => (Array.isArray(e.provider) ? e.provider[0] : e.provider);
+  const cat = (e: SummaryExpense) => (Array.isArray(e.category) ? e.category[0] : e.category);
 
   let csv = "﻿";
   csv += "Mes,Fecha,Serie,Numero,Proveedor,RUC,Categoria,Metodo Pago,Monto,Moneda,Notas\n";
@@ -211,13 +223,20 @@ const exportCsv = async (workspaceId: string, search: string, dateFrom: string, 
     for (const e of expenses) {
       const p = prov(e);
       const c = cat(e);
-      csv += [
-        csvEscape(month), csvEscape(fmtDate(e.paid_at)),
-        csvEscape(e.invoice_series), csvEscape(e.invoice_number),
-        csvEscape(p?.name), csvEscape(p?.ruc), csvEscape(c?.name),
-        csvEscape(e.payment_method), csvEscape((e.amount / 100).toFixed(2)), csvEscape(e.currency),
-        csvEscape(e.notes),
-      ].join(",") + "\n";
+      csv +=
+        [
+          csvEscape(month),
+          csvEscape(fmtDate(e.paid_at)),
+          csvEscape(e.invoice_series),
+          csvEscape(e.invoice_number),
+          csvEscape(p?.name),
+          csvEscape(p?.ruc),
+          csvEscape(c?.name),
+          csvEscape(e.payment_method),
+          csvEscape((e.amount / 100).toFixed(2)),
+          csvEscape(e.currency),
+          csvEscape(e.notes),
+        ].join(",") + "\n";
     }
     const total = expenses.reduce((s, e) => s + (e.amount || 0), 0);
     csv += `${csvEscape(month)},,,,,,,,${(total / 100).toFixed(2)},,TOTAL ${month}\n\n`;
@@ -314,28 +333,36 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
           Gastos
         </OptionButton>
       </div>
-
-      <div className="relative max-w-xs">
-        <select
-          value={workspaceId}
-          onChange={(e) => {
-            setWorkspaceId(e.target.value);
-            setPage(0);
-          }}
-          className={SELECT_CLASS + " pr-10"}
-        >
-          {workspaces.map((ws) => (
-            <option key={ws.id} value={ws.id}>
-              {ws.name}
-            </option>
-          ))}
-        </select>
-        <div className="absolute top-1/2 -translate-y-1/2 right-3 pointer-events-none">
-          <Icon icon="solar:alt-arrow-down-linear" fontSize={16} />
+      <div className="flex gap-2 items-center justify-between">
+        <div className="relative max-w-xs">
+          <select
+            value={workspaceId}
+            onChange={(e) => {
+              setWorkspaceId(e.target.value);
+              setPage(0);
+            }}
+            className={SELECT_CLASS + " pr-10"}
+          >
+            {workspaces.map((ws) => (
+              <option key={ws.id} value={ws.id}>
+                {ws.name}
+              </option>
+            ))}
+          </select>
+          <div className="absolute top-1/2 -translate-y-1/2 right-3 pointer-events-none">
+            <Icon icon="solar:alt-arrow-down-linear" fontSize={16} />
+          </div>
         </div>
+        <button
+          onClick={() => exportCsv(workspaceId, search, dateFrom, dateTo, tab)}
+          disabled={!workspaceId}
+          className={PRIMARY_BUTTON_CLASS}
+        >
+          <Icon icon="solar:download-linear" fontSize={ICON_SIZE} />
+          Export CSV
+        </button>
       </div>
-
-      <div className="flex flex-wrap gap-3 items-center">
+      <div className="flex gap-2 items-center">
         <input
           ref={searchInputRef}
           type="text"
@@ -343,51 +370,47 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
           onChange={(e) => debouncedSearch(e.target.value)}
           className={INPUT_CLASS}
         />
-        <InputWithTooltip label="Mes de emisión">
-          <input
-            type="month"
-            value={month}
-            onChange={(e) => handleMonthChange(e.target.value)}
-            className={INPUT_CLASS}
-          />
-        </InputWithTooltip>
-        <InputWithTooltip label="Emisión desde">
-          <input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => {
-              setDateFrom(e.target.value);
-              setMonth("");
-              setPage(0);
-            }}
-            className={INPUT_CLASS}
-          />
-        </InputWithTooltip>
-        <InputWithTooltip label="Emisión hasta">
-          <input
-            type="date"
-            value={dateTo}
-            onChange={(e) => {
-              setDateTo(e.target.value);
-              setMonth("");
-              setPage(0);
-            }}
-            className={INPUT_CLASS}
-          />
-        </InputWithTooltip>
         <button onClick={clearFilters} disabled={!hasFilters} className={SECONDARY_BUTTON_CLASS}>
           Clear filters
         </button>
-        <button
-          onClick={() => exportCsv(workspaceId, search, dateFrom, dateTo, tab)}
-          disabled={!workspaceId}
-          className={SECONDARY_BUTTON_CLASS}
-        >
-          <Icon icon="solar:download-linear" fontSize={ICON_SIZE} />
-          Export CSV
-        </button>
       </div>
-
+      <div className="flex flex-wrap gap-3 items-center">
+        <div className="flex gap-2 items-center border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
+          <span className="text-sm font-medium text-gray-400 pl-1">Emisión</span>
+          <InputWithTooltip label="Mes de emisión">
+            <input
+              type="month"
+              value={month}
+              onChange={(e) => handleMonthChange(e.target.value)}
+              className={INPUT_CLASS}
+            />
+          </InputWithTooltip>
+          <InputWithTooltip label="Emisión desde">
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => {
+                setDateFrom(e.target.value);
+                setMonth("");
+                setPage(0);
+              }}
+              className={INPUT_CLASS}
+            />
+          </InputWithTooltip>
+          <InputWithTooltip label="Emisión hasta">
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => {
+                setDateTo(e.target.value);
+                setMonth("");
+                setPage(0);
+              }}
+              className={INPUT_CLASS}
+            />
+          </InputWithTooltip>
+        </div>
+      </div>
       <div className="flex justify-between items-center font-semibold">
         <span>Total: {total}</span>
         <div className="flex text-sm items-center gap-2">

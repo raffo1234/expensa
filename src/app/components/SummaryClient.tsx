@@ -260,12 +260,24 @@ const formatDate = (val?: string | null) =>
       })
     : "—";
 
+const STORAGE_TAB = "summary-tab";
+const STORAGE_WS = "summary-workspace";
+
+function readStorage(key: string): string | null {
+  try { return localStorage.getItem(key); } catch { return null; }
+}
+
 export default function SummaryClient({ workspaces }: { workspaces: Workspace[] }) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
 
-  const tab = (searchParams.get("tab") === "gastos" ? "gastos" : "facturas") as SummaryTab;
+  const tab = ((): SummaryTab => {
+    const fromUrl = searchParams.get("tab");
+    if (fromUrl === "gastos" || fromUrl === "facturas") return fromUrl;
+    const stored = readStorage(STORAGE_TAB);
+    return stored === "gastos" ? "gastos" : "facturas";
+  })();
 
   const setParam = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -274,9 +286,22 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
     router.replace(`${pathname}?${params.toString()}`);
   };
 
-  const setTab = (t: SummaryTab) => setParam("tab", t);
+  const setTab = (t: SummaryTab) => {
+    localStorage.setItem(STORAGE_TAB, t);
+    setParam("tab", t);
+  };
 
-  const [workspaceId, setWorkspaceId] = useState(workspaces[0]?.id ?? "");
+  const [workspaceId, setWorkspaceId] = useState(() => {
+    const stored = readStorage(STORAGE_WS);
+    if (stored && workspaces.some((w) => w.id === stored)) return stored;
+    return workspaces[0]?.id ?? "";
+  });
+
+  const handleWorkspaceChange = (id: string) => {
+    setWorkspaceId(id);
+    localStorage.setItem(STORAGE_WS, id);
+    setPage(0);
+  };
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
@@ -337,10 +362,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
         <div className="relative max-w-xs">
           <select
             value={workspaceId}
-            onChange={(e) => {
-              setWorkspaceId(e.target.value);
-              setPage(0);
-            }}
+            onChange={(e) => handleWorkspaceChange(e.target.value)}
             className={SELECT_CLASS + " pr-10"}
           >
             {workspaces.map((ws) => (

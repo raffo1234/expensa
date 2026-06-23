@@ -99,8 +99,8 @@ const fetcher = async ([, workspaceId, page, search, dateFrom, dateTo, tab]: [
   }
 
   if (orClause) query = query.or(orClause);
-  if (dateFrom) query = query.gte("paid_at", dateFrom);
-  if (dateTo) query = query.lte("paid_at", dateTo);
+  if (dateFrom) query = query.gte("issued_at", dateFrom);
+  if (dateTo) query = query.lte("issued_at", dateTo);
 
   const { data, count, error } = await query;
   if (error) throw error;
@@ -163,8 +163,8 @@ const exportCsv = async (workspaceId: string, search: string, dateFrom: string, 
     }
 
     if (orClause) query = query.or(orClause);
-    if (dateFrom) query = query.gte("paid_at", dateFrom);
-    if (dateTo) query = query.lte("paid_at", dateTo);
+    if (dateFrom) query = query.gte("issued_at", dateFrom);
+    if (dateTo) query = query.lte("issued_at", dateTo);
 
     const { data } = await query;
     if (!data || data.length === 0) break;
@@ -241,14 +241,30 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [month, setMonth] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const hasFilters = !!search || !!dateFrom || !!dateTo;
+  const hasFilters = !!search || !!dateFrom || !!dateTo || !!month;
+
+  const handleMonthChange = (value: string) => {
+    setMonth(value);
+    if (value) {
+      const [y, m] = value.split("-").map(Number);
+      const lastDay = new Date(y, m, 0).getDate();
+      setDateFrom(`${value}-01`);
+      setDateTo(`${value}-${String(lastDay).padStart(2, "0")}`);
+    } else {
+      setDateFrom("");
+      setDateTo("");
+    }
+    setPage(0);
+  };
 
   const clearFilters = () => {
     setSearch("");
     setDateFrom("");
     setDateTo("");
+    setMonth("");
     setPage(0);
     if (searchInputRef.current) searchInputRef.current.value = "";
   };
@@ -308,10 +324,21 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
         />
         <div>
           <input
+            type="month"
+            title="Mes de emisión"
+            value={month}
+            onChange={(e) => handleMonthChange(e.target.value)}
+            className={INPUT_CLASS}
+          />
+        </div>
+        <div>
+          <input
             type="date"
+            title="Emisión desde"
             value={dateFrom}
             onChange={(e) => {
               setDateFrom(e.target.value);
+              setMonth("");
               setPage(0);
             }}
             className={INPUT_CLASS}
@@ -320,9 +347,11 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
         <div>
           <input
             type="date"
+            title="Emisión hasta"
             value={dateTo}
             onChange={(e) => {
               setDateTo(e.target.value);
+              setMonth("");
               setPage(0);
             }}
             className={INPUT_CLASS}

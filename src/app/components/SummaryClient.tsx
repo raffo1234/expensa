@@ -10,7 +10,6 @@ import {
   INPUT_CLASS,
   SECONDARY_BUTTON_CLASS,
   SELECT_CLASS,
-  NO_FACTURA_PROVIDER,
   PRIMARY_BUTTON_CLASS,
 } from "@/constants";
 import { formatAmount } from "@/utils/formatAmount";
@@ -65,14 +64,12 @@ type SummaryExpense = {
   expense_attachment?: Attachment[];
 };
 
-async function resolveNoFacturaId(workspaceId: string): Promise<string | null> {
-  const { data } = await supabase
-    .from("provider")
-    .select("id")
-    .eq("workspace_id", workspaceId)
-    .eq("name", NO_FACTURA_PROVIDER)
-    .single();
-  return data?.id ?? null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyTabFilter<T extends { not: any; is: any }>(query: T, tab: SummaryTab): T {
+  if (tab === "facturas") {
+    return query.not("invoice_series", "is", null).not("invoice_number", "is", null);
+  }
+  return query.is("invoice_series", null).is("invoice_number", null);
 }
 
 const fetcher = async ([, workspaceId, page, search, dateFrom, dateTo, tab]: [
@@ -86,8 +83,6 @@ const fetcher = async ([, workspaceId, page, search, dateFrom, dateTo, tab]: [
 ]) => {
   const from = page * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
-
-  const noFacturaId = await resolveNoFacturaId(workspaceId);
 
   let providerIds: string[] = [];
   if (search.trim()) {
@@ -121,10 +116,7 @@ const fetcher = async ([, workspaceId, page, search, dateFrom, dateTo, tab]: [
     .order("paid_at", { ascending: false })
     .range(from, to);
 
-  if (noFacturaId) {
-    if (tab === "facturas") query = query.neq("provider_id", noFacturaId);
-    else query = query.eq("provider_id", noFacturaId);
-  }
+  query = applyTabFilter(query, tab);
 
   if (orClause) query = query.or(orClause);
   if (dateFrom) query = query.gte("issued_at", dateFrom);
@@ -154,8 +146,6 @@ const exportCsv = async (
   dateTo: string,
   tab: SummaryTab,
 ) => {
-  const noFacturaId = await resolveNoFacturaId(workspaceId);
-
   let providerIds: string[] = [];
   if (search.trim()) {
     const { data: providers } = await supabase
@@ -190,10 +180,7 @@ const exportCsv = async (
       .order("paid_at", { ascending: true })
       .range(page * size, (page + 1) * size - 1);
 
-    if (noFacturaId) {
-      if (tab === "facturas") query = query.neq("provider_id", noFacturaId);
-      else query = query.eq("provider_id", noFacturaId);
-    }
+    query = applyTabFilter(query, tab);
 
     if (orClause) query = query.or(orClause);
     if (dateFrom) query = query.gte("issued_at", dateFrom);

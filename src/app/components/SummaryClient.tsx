@@ -551,7 +551,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
                             title={att.file_name ?? "attachment"}
                             className="inline-flex items-center gap-2 p-2 rounded-lg bg-cyan-50 text-cyan-600 hover:bg-cyan-100 text-sm transition-colors"
                           >
-                            <Icon icon="solar:file-download-linear" fontSize={24} />
+                            <Icon icon={/\.pdf$/i.test(att.file_name ?? "") ? "hugeicons:pdf-02" : "solar:gallery-minimalistic-linear"} fontSize={24} />
                             <span className="max-w-[80px] truncate">{att.file_name ?? "file"}</span>
                           </a>
                         ))}

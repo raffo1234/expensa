@@ -5,12 +5,15 @@ import useSWR from "swr";
 import { supabase } from "@/lib/supabase";
 import { useDebouncedCallback } from "use-debounce";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { ICON_SIZE, INPUT_CLASS, SECONDARY_BUTTON_CLASS, SELECT_CLASS } from "@/constants";
+import { ICON_SIZE, INPUT_CLASS, SECONDARY_BUTTON_CLASS, SELECT_CLASS, NO_FACTURA_PROVIDER } from "@/constants";
 import { formatAmount } from "@/utils/formatAmount";
 import getAttachmentUrl from "@/lib/getAttachmentUrl";
 import Link from "next/link";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import OptionButton from "./OptionButton";
 
 const PAGE_SIZE = 10;
+type SummaryTab = "facturas" | "gastos";
 
 type Workspace = { id: string; name: string; slug: string };
 type Attachment = { id: string; file_name: string | null; storage_path: string };
@@ -34,16 +37,29 @@ type SummaryExpense = {
   expense_attachment?: Attachment[];
 };
 
-const fetcher = async ([, workspaceId, page, search, dateFrom, dateTo]: [
+async function resolveNoFacturaId(workspaceId: string): Promise<string | null> {
+  const { data } = await supabase
+    .from("provider")
+    .select("id")
+    .eq("workspace_id", workspaceId)
+    .eq("name", NO_FACTURA_PROVIDER)
+    .single();
+  return data?.id ?? null;
+}
+
+const fetcher = async ([, workspaceId, page, search, dateFrom, dateTo, tab]: [
   string,
   string,
   number,
   string,
   string,
   string,
+  SummaryTab,
 ]) => {
   const from = page * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
+
+  const noFacturaId = await resolveNoFacturaId(workspaceId);
 
   let providerIds: string[] = [];
   if (search.trim()) {
@@ -77,6 +93,11 @@ const fetcher = async ([, workspaceId, page, search, dateFrom, dateTo]: [
     .order("paid_at", { ascending: false })
     .range(from, to);
 
+  if (noFacturaId) {
+    if (tab === "facturas") query = query.neq("provider_id", noFacturaId);
+    else query = query.eq("provider_id", noFacturaId);
+  }
+
   if (orClause) query = query.or(orClause);
   if (dateFrom) query = query.gte("paid_at", dateFrom);
   if (dateTo) query = query.lte("paid_at", dateTo);
@@ -99,7 +120,9 @@ const csvEscape = (v: unknown) => {
     ? `"${s.replace(/"/g, '""')}"` : s;
 };
 
-const exportCsv = async (workspaceId: string, search: string, dateFrom: string, dateTo: string) => {
+const exportCsv = async (workspaceId: string, search: string, dateFrom: string, dateTo: string, tab: SummaryTab) => {
+  const noFacturaId = await resolveNoFacturaId(workspaceId);
+
   let providerIds: string[] = [];
   if (search.trim()) {
     const { data: providers } = await supabase
@@ -133,6 +156,11 @@ const exportCsv = async (workspaceId: string, search: string, dateFrom: string, 
       .eq("workspace_id", workspaceId)
       .order("paid_at", { ascending: true })
       .range(page * size, (page + 1) * size - 1);
+
+    if (noFacturaId) {
+      if (tab === "facturas") query = query.neq("provider_id", noFacturaId);
+      else query = query.eq("provider_id", noFacturaId);
+    }
 
     if (orClause) query = query.or(orClause);
     if (dateFrom) query = query.gte("paid_at", dateFrom);
@@ -193,6 +221,21 @@ const formatDate = (val?: string | null) =>
     : "—";
 
 export default function SummaryClient({ workspaces }: { workspaces: Workspace[] }) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const tab = (searchParams.get("tab") === "gastos" ? "gastos" : "facturas") as SummaryTab;
+
+  const setParam = (key: string, value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set(key, value);
+    params.delete("page");
+    router.replace(`${pathname}?${params.toString()}`);
+  };
+
+  const setTab = (t: SummaryTab) => setParam("tab", t);
+
   const [workspaceId, setWorkspaceId] = useState(workspaces[0]?.id ?? "");
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
@@ -216,7 +259,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
   }, 350);
 
   const { data, isLoading } = useSWR(
-    workspaceId ? ["summary", workspaceId, page, search, dateFrom, dateTo] : null,
+    workspaceId ? ["summary", workspaceId, page, search, dateFrom, dateTo, tab] : null,
     fetcher,
   );
 
@@ -226,6 +269,15 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
 
   return (
     <div className="flex flex-col gap-4">
+      <div className="flex gap-2">
+        <OptionButton isActive={tab === "facturas"} onClick={() => setTab("facturas")}>
+          Facturas
+        </OptionButton>
+        <OptionButton isActive={tab === "gastos"} onClick={() => setTab("gastos")}>
+          Gastos
+        </OptionButton>
+      </div>
+
       <div className="relative max-w-xs">
         <select
           value={workspaceId}
@@ -280,7 +332,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
           Clear filters
         </button>
         <button
-          onClick={() => exportCsv(workspaceId, search, dateFrom, dateTo)}
+          onClick={() => exportCsv(workspaceId, search, dateFrom, dateTo, tab)}
           disabled={!workspaceId}
           className={SECONDARY_BUTTON_CLASS}
         >

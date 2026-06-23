@@ -43,6 +43,10 @@ export const SWR_KEY_PERMISSIONS = "admin-permissions";
 export const STYLED_ICON_CLASS =
   "text-purple-800 p-1.5 block bg-gradient-to-b lg:from-white/75 lg:to-purple-100/75 rounded-lg bg-purple-100 border border-purple-200";
 
+// ─── Providers ───────────────────────────────────────────────────────────────
+
+export const NO_FACTURA_PROVIDER = "NO FACTURA";
+
 // ─── Inputs ───────────────────────────────────────────────────────────────────
 
 export const INPUT_CLASS =

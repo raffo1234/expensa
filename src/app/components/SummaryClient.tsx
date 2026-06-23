@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import useSWR from "swr";
 import { supabase } from "@/lib/supabase";
 import { useDebouncedCallback } from "use-debounce";
@@ -259,44 +259,58 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
   const router = useRouter();
   const pathname = usePathname();
 
-  const tab = ((): SummaryTab => {
+  const [tab, setTabLocal] = useState<SummaryTab>(() => {
     const fromUrl = searchParams.get("tab");
     if (fromUrl === "gastos" || fromUrl === "facturas") return fromUrl;
-    const stored = readStorage(STORAGE_TAB);
-    return stored === "gastos" ? "gastos" : "facturas";
-  })();
-
-  const setParam = (key: string, value: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set(key, value);
-    params.delete("page");
-    router.replace(`${pathname}?${params.toString()}`);
-  };
-
-  const setTab = (t: SummaryTab) => {
-    localStorage.setItem(STORAGE_TAB, t);
-    setParam("tab", t);
-  };
+    return readStorage(STORAGE_TAB) === "gastos" ? "gastos" : "facturas";
+  });
 
   const [workspaceId, setWorkspaceId] = useState(() => {
+    const fromUrl = searchParams.get("ws");
+    if (fromUrl && workspaces.some((w) => w.id === fromUrl)) return fromUrl;
     const stored = readStorage(STORAGE_WS);
     if (stored && workspaces.some((w) => w.id === stored)) return stored;
     return workspaces[0]?.id ?? "";
   });
 
-  const handleWorkspaceChange = (id: string) => {
-    setWorkspaceId(id);
-    localStorage.setItem(STORAGE_WS, id);
-    setPage(0);
-  };
-  const [page, setPage] = useState(0);
-  const [search, setSearch] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [month, setMonth] = useState("");
+  const [page, setPage] = useState(() => Number(searchParams.get("page") ?? "0"));
+  const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
+  const [dateFrom, setDateFrom] = useState(() => searchParams.get("from") ?? "");
+  const [dateTo, setDateTo] = useState(() => searchParams.get("to") ?? "");
+  const [month, setMonth] = useState(() => searchParams.get("month") ?? "");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const hasFilters = !!search || !!dateFrom || !!dateTo || !!month;
+
+  const syncUrl = useCallback(() => {
+    const params = new URLSearchParams();
+    if (tab !== "facturas") params.set("tab", tab);
+    if (workspaceId) params.set("ws", workspaceId);
+    if (search) params.set("q", search);
+    if (dateFrom) params.set("from", dateFrom);
+    if (dateTo) params.set("to", dateTo);
+    if (month) params.set("month", month);
+    if (page > 0) params.set("page", String(page));
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname);
+  }, [tab, workspaceId, search, dateFrom, dateTo, month, page, router, pathname]);
+
+  useEffect(() => {
+    const t = setTimeout(syncUrl, 300);
+    return () => clearTimeout(t);
+  }, [syncUrl]);
+
+  const setTab = (t: SummaryTab) => {
+    localStorage.setItem(STORAGE_TAB, t);
+    setTabLocal(t);
+    setPage(0);
+  };
+
+  const handleWorkspaceChange = (id: string) => {
+    localStorage.setItem(STORAGE_WS, id);
+    setWorkspaceId(id);
+    setPage(0);
+  };
 
   const handleMonthChange = (value: string) => {
     setMonth(value);
@@ -375,6 +389,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
         <input
           ref={searchInputRef}
           type="text"
+          defaultValue={search}
           placeholder="Search invoice, provider, notes..."
           onChange={(e) => debouncedSearch(e.target.value)}
           className={INPUT_CLASS}
@@ -398,11 +413,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
             <input
               type="date"
               value={dateFrom}
-              onChange={(e) => {
-                setDateFrom(e.target.value);
-                setMonth("");
-                setPage(0);
-              }}
+              onChange={(e) => { setDateFrom(e.target.value); setMonth(""); setPage(0); }}
               className={INPUT_CLASS}
             />
           </InputWithTooltip>
@@ -410,11 +421,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
             <input
               type="date"
               value={dateTo}
-              onChange={(e) => {
-                setDateTo(e.target.value);
-                setMonth("");
-                setPage(0);
-              }}
+              onChange={(e) => { setDateTo(e.target.value); setMonth(""); setPage(0); }}
               className={INPUT_CLASS}
             />
           </InputWithTooltip>

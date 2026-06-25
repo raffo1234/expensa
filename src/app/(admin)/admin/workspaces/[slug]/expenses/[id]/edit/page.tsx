@@ -22,7 +22,6 @@ import {
 import FormInnerSection from "@/components/FormInnerSection";
 import SectionTitle from "@/components/SectionTitle";
 import Field from "@/components/Field";
-import BackLink from "@/components/BackLink";
 import {
   deleteAttachment,
   initiateMultipartUpload,
@@ -31,9 +30,6 @@ import {
   abortMultipartUpload,
   registerAttachment,
 } from "@/actions/expenses";
-import Link from "next/link";
-import TitleWrapper from "@/components/TitleWrapper";
-import PageTitle from "@/components/PageTitle";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const PART_SIZE = 5 * 1024 * 1024;
@@ -405,381 +401,362 @@ export default function EditExpensePage() {
   }
 
   return (
-    <div>
-      <BackLink href={`/admin/workspaces/${workspaceSlug}/expenses/${expenseId}`}>Volver</BackLink>
-      <TitleWrapper>
-        <PageTitle>
-          <Link
-            href={`/admin/workspaces/${workspaceSlug}/expenses`}
-            className="text-gray-500 hover:text-cyan-600 transition-colors px-2 py-1 rounded-md hover:bg-cyan-50"
-          >
-            Gastos
-          </Link>
-          <span className="text-gray-300">/</span>
-          <Link
-            href={`/admin/workspaces/${workspaceSlug}/expenses/${expenseId}`}
-            className="text-gray-500 hover:text-cyan-600 transition-colors px-2 py-1 rounded-md hover:bg-cyan-50 truncate max-w-[120px]"
-          >
-            {providersLoading ? "..." : (expense?.provider?.name ?? "Sin proveedor")}
-          </Link>
-          <span className="text-gray-300">/</span>
-          <span className="text-gray-900 font-medium px-2 py-1">Editar</span>
-        </PageTitle>
-      </TitleWrapper>
-      <FormSection>
-        {providersLoading && (
-          <div className="flex items-center justify-center py-32 text-gray-400 text-sm gap-2">
-            <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-              <circle
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="3"
-                strokeOpacity="0.25"
-              />
-              <path
-                d="M12 2a10 10 0 0 1 10 10"
-                stroke="currentColor"
-                strokeWidth="3"
-                strokeLinecap="round"
-              />
-            </svg>
-            Cargando gasto...
-          </div>
-        )}
+    <FormSection
+      title={providersLoading ? "..." : (expense?.provider?.name ?? "Sin proveedor")}
+      backUrl={`/admin/workspaces/${workspaceSlug}/expenses/${expenseId}`}
+    >
+      {providersLoading && (
+        <div className="flex items-center justify-center py-32 text-gray-400 text-sm gap-2">
+          <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+            <circle
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeOpacity="0.25"
+            />
+            <path
+              d="M12 2a10 10 0 0 1 10 10"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
+            />
+          </svg>
+          Cargando gasto...
+        </div>
+      )}
 
-        {error && (
-          <div className="border border-red-200 bg-red-50 rounded-lg px-4 py-3 text-sm text-red-600">
-            No se pudo cargar el gasto. Intenta recargar la página.
-          </div>
-        )}
+      {error && (
+        <div className="border border-red-200 bg-red-50 rounded-lg px-4 py-3 text-sm text-red-600">
+          No se pudo cargar el gasto. Intenta recargar la página.
+        </div>
+      )}
 
-        {expense && (
-          <div className="space-y-7">
-            <SectionTitle>Monto</SectionTitle>
-            <FormInnerSection>
-              <div className="flex gap-3">
-                <Field label="Importe">
-                  <Input type="number" value={amount} onChange={setAmount} placeholder="0.00" />
-                </Field>
-                <Field label="Moneda">
-                  <Select value={currency} onChange={setCurrency}>
-                    {CURRENCIES.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
+      {expense && (
+        <div className="space-y-7">
+          <SectionTitle>Monto</SectionTitle>
+          <FormInnerSection>
+            <div className="flex gap-3">
+              <Field label="Importe">
+                <Input type="number" value={amount} onChange={setAmount} placeholder="0.00" />
+              </Field>
+              <Field label="Moneda">
+                <Select value={currency} onChange={setCurrency}>
+                  {CURRENCIES.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+            </div>
+          </FormInnerSection>
+
+          <SectionTitle>Detalles</SectionTitle>
+          <FormInnerSection>
+            <div className="space-y-7">
+              <Field label="Proveedor">
+                <div className="flex items-center gap-2">
+                  <select
+                    value={provider_id ?? ""}
+                    onChange={(e) => setProviderId(e.target.value)}
+                    className={SELECT_CLASS}
+                  >
+                    <option value="">Sin proveedor</option>
+                    {providers.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
                       </option>
                     ))}
-                  </Select>
-                </Field>
-              </div>
-            </FormInnerSection>
-
-            <SectionTitle>Detalles</SectionTitle>
-            <FormInnerSection>
-              <div className="space-y-7">
-                <Field label="Proveedor">
-                  <div className="flex items-center gap-2">
-                    <select
-                      value={provider_id ?? ""}
-                      onChange={(e) => setProviderId(e.target.value)}
-                      className={SELECT_CLASS}
-                    >
-                      <option value="">Sin proveedor</option>
-                      {providers.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      type="button"
-                      onClick={openAddProvider}
-                      className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-cyan-400 hover:text-cyan-500 transition-colors"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                        <path
-                          d="M12 5v14M5 12h14"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                </Field>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <Field label="Serie">
-                    <Input
-                      type="text"
-                      value={invoiceSeries}
-                      onChange={setInvoiceSeries}
-                      placeholder="Ej: F001"
-                    />
-                  </Field>
-                  <Field label="Número">
-                    <Input
-                      type="text"
-                      value={invoiceNumber}
-                      onChange={setInvoiceNumber}
-                      placeholder="Ej: 00012345"
-                    />
-                  </Field>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={openAddProvider}
+                    className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-cyan-400 hover:text-cyan-500 transition-colors"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M12 5v14M5 12h14"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </button>
                 </div>
+              </Field>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <Field label="Fecha de emisión">
-                    <Input type="date" value={issuedAt} onChange={(v) => setIssuedAt(v)} />
-                  </Field>
-                  <Field label="Fecha de pago">
-                    <Input type="date" value={paidAt} onChange={setPaidAt} />
-                  </Field>
-                  <Field label="Método de pago">
-                    <Select value={paymentMethod} onChange={setPaymentMethod}>
-                      <option value="">Sin especificar</option>
-                      {PAYMENT_METHODS.map((m) => (
-                        <option key={m} value={m}>
-                          {m}
-                        </option>
-                      ))}
-                    </Select>
-                  </Field>
-                </div>
-
-                <Field label="Categoría" hint="Clasifica tus gastos para un mejor análisis.">
-                  <Select value={categoryId} onChange={setCategoryId}>
-                    <option value="">Sin categoría</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </Select>
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Serie">
+                  <Input
+                    type="text"
+                    value={invoiceSeries}
+                    onChange={setInvoiceSeries}
+                    placeholder="Ej: F001"
+                  />
                 </Field>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <Field label="Etapa">
-                    <Select value={stageId} onChange={setStageId}>
-                      <option value="">Sin etapa</option>
-                      {stages.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.name}
-                        </option>
-                      ))}
-                    </Select>
-                  </Field>
-                  <Field label="Nivel">
-                    <Select value={levelId} onChange={setLevelId}>
-                      <option value="">Sin nivel</option>
-                      {levels.map((l) => (
-                        <option key={l.id} value={l.id}>
-                          {l.name}
-                        </option>
-                      ))}
-                    </Select>
-                  </Field>
-                </div>
-
-                <Field label="Notas">
-                  <textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Notas adicionales..."
-                    rows={3}
-                    className={INPUT_CLASS}
+                <Field label="Número">
+                  <Input
+                    type="text"
+                    value={invoiceNumber}
+                    onChange={setInvoiceNumber}
+                    placeholder="Ej: 00012345"
                   />
                 </Field>
               </div>
-            </FormInnerSection>
 
-            <SectionTitle>Adjuntos</SectionTitle>
-            <FormInnerSection>
-              <div className="space-y-3">
-                {/* Existing attachments */}
-                {existingAttachments.map((att) => {
-                  const url = getAttachmentUrl(att.storage_path);
-                  const image = isImage(att.storage_path);
-                  return (
-                    <div
-                      key={att.id}
-                      className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl p-3"
-                    >
-                      {image ? (
-                        <a
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex-shrink-0"
-                        >
-                          <img
-                            src={url}
-                            alt={att.file_name ?? "adjunto"}
-                            className="w-10 h-10 rounded-lg object-cover flex-shrink-0 border border-gray-200"
-                          />
-                        </a>
-                      ) : (
-                        <div className="w-10 h-10 rounded-lg bg-cyan-100 flex items-center justify-center flex-shrink-0">
-                          <span className="text-[9px] font-bold text-cyan-600">PDF</span>
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-800 truncate">
-                          {att.file_name ?? att.storage_path.split("/").pop()}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-0.5">{image ? "Imagen" : "PDF"}</p>
-                      </div>
-                      <button
-                        onClick={() => removeExisting(att.id)}
-                        className="p-1.5 rounded-lg text-gray-300 hover:text-red-400 hover:bg-red-50 transition-all"
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <Field label="Fecha de emisión">
+                  <Input type="date" value={issuedAt} onChange={(v) => setIssuedAt(v)} />
+                </Field>
+                <Field label="Fecha de pago">
+                  <Input type="date" value={paidAt} onChange={setPaidAt} />
+                </Field>
+                <Field label="Método de pago">
+                  <Select value={paymentMethod} onChange={setPaymentMethod}>
+                    <option value="">Sin especificar</option>
+                    {PAYMENT_METHODS.map((m) => (
+                      <option key={m} value={m}>
+                        {m}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+              </div>
+
+              <Field label="Categoría" hint="Clasifica tus gastos para un mejor análisis.">
+                <Select value={categoryId} onChange={setCategoryId}>
+                  <option value="">Sin categoría</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Etapa">
+                  <Select value={stageId} onChange={setStageId}>
+                    <option value="">Sin etapa</option>
+                    {stages.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+                <Field label="Nivel">
+                  <Select value={levelId} onChange={setLevelId}>
+                    <option value="">Sin nivel</option>
+                    {levels.map((l) => (
+                      <option key={l.id} value={l.id}>
+                        {l.name}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+              </div>
+
+              <Field label="Notas">
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Notas adicionales..."
+                  rows={3}
+                  className={INPUT_CLASS}
+                />
+              </Field>
+            </div>
+          </FormInnerSection>
+
+          <SectionTitle>Adjuntos</SectionTitle>
+          <FormInnerSection>
+            <div className="space-y-3">
+              {/* Existing attachments */}
+              {existingAttachments.map((att) => {
+                const url = getAttachmentUrl(att.storage_path);
+                const image = isImage(att.storage_path);
+                return (
+                  <div
+                    key={att.id}
+                    className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl p-3"
+                  >
+                    {image ? (
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-shrink-0"
                       >
+                        <img
+                          src={url}
+                          alt={att.file_name ?? "adjunto"}
+                          className="w-10 h-10 rounded-lg object-cover flex-shrink-0 border border-gray-200"
+                        />
+                      </a>
+                    ) : (
+                      <div className="w-10 h-10 rounded-lg bg-cyan-100 flex items-center justify-center flex-shrink-0">
+                        <span className="text-[9px] font-bold text-cyan-600">PDF</span>
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-800 truncate">
+                        {att.file_name ?? att.storage_path.split("/").pop()}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-0.5">{image ? "Imagen" : "PDF"}</p>
+                    </div>
+                    <button
+                      onClick={() => removeExisting(att.id)}
+                      className="p-1.5 rounded-lg text-gray-300 hover:text-red-400 hover:bg-red-50 transition-all"
+                    >
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      >
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                        <path d="M10 11v6M14 11v6" />
+                      </svg>
+                    </button>
+                  </div>
+                );
+              })}
+
+              {/* New files queued */}
+              {newFiles.map((file, i) => {
+                const pct = uploadProgress[i] ?? null;
+                return (
+                  <div key={i} className="bg-cyan-50 border border-cyan-200 rounded-xl p-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-cyan-100 flex items-center justify-center flex-shrink-0">
                         <svg
                           width="14"
                           height="14"
                           viewBox="0 0 24 24"
                           fill="none"
-                          stroke="currentColor"
+                          stroke="#0891b2"
                           strokeWidth="2"
                           strokeLinecap="round"
                         >
-                          <polyline points="3 6 5 6 21 6" />
-                          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                          <path d="M10 11v6M14 11v6" />
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                          <polyline points="14 2 14 8 20 8" />
                         </svg>
-                      </button>
-                    </div>
-                  );
-                })}
-
-                {/* New files queued */}
-                {newFiles.map((file, i) => {
-                  const pct = uploadProgress[i] ?? null;
-                  return (
-                    <div key={i} className="bg-cyan-50 border border-cyan-200 rounded-xl p-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-cyan-100 flex items-center justify-center flex-shrink-0">
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-cyan-800 truncate">{file.name}</p>
+                        <p className="text-xs text-cyan-400 mt-0.5">
+                          {pct !== null
+                            ? `${pct}%`
+                            : `${(file.size / 1024).toFixed(0)} KB · Por subir`}
+                        </p>
+                      </div>
+                      {pct === null && (
+                        <button
+                          onClick={() => removeNewFile(i)}
+                          className="p-1.5 rounded-lg text-cyan-300 hover:text-red-400 hover:bg-red-50 transition-all"
+                        >
                           <svg
                             width="14"
                             height="14"
                             viewBox="0 0 24 24"
                             fill="none"
-                            stroke="#0891b2"
+                            stroke="currentColor"
                             strokeWidth="2"
                             strokeLinecap="round"
                           >
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                            <polyline points="14 2 14 8 20 8" />
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
                           </svg>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-cyan-800 truncate">{file.name}</p>
-                          <p className="text-xs text-cyan-400 mt-0.5">
-                            {pct !== null
-                              ? `${pct}%`
-                              : `${(file.size / 1024).toFixed(0)} KB · Por subir`}
-                          </p>
-                        </div>
-                        {pct === null && (
-                          <button
-                            onClick={() => removeNewFile(i)}
-                            className="p-1.5 rounded-lg text-cyan-300 hover:text-red-400 hover:bg-red-50 transition-all"
-                          >
-                            <svg
-                              width="14"
-                              height="14"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                            >
-                              <line x1="18" y1="6" x2="6" y2="18" />
-                              <line x1="6" y1="6" x2="18" y2="18" />
-                            </svg>
-                          </button>
-                        )}
-                      </div>
-                      {pct !== null && (
-                        <div className="mt-2 h-1 rounded-full bg-cyan-200 overflow-hidden">
-                          <div
-                            className="h-full bg-cyan-500 transition-all duration-200"
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
+                        </button>
                       )}
                     </div>
-                  );
-                })}
+                    {pct !== null && (
+                      <div className="mt-2 h-1 rounded-full bg-cyan-200 overflow-hidden">
+                        <div
+                          className="h-full bg-cyan-500 transition-all duration-200"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
 
-                <label className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-200 py-8 text-sm text-gray-400 hover:border-purple-500 hover:text-purple-600 hover:bg-purple-50/40 transition-all cursor-pointer">
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/*,application/pdf"
-                    className="hidden"
-                    onChange={addFiles}
-                  />
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  >
-                    <line x1="12" y1="5" x2="12" y2="19" />
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                  </svg>
-                  Agregar archivo
-                </label>
-              </div>
-            </FormInnerSection>
-
-            {saveError && (
-              <div className="border border-red-200 bg-red-50 rounded-lg px-4 py-3 text-sm text-red-600">
-                {saveError}
-              </div>
-            )}
-
-            <div className="flex gap-3 pt-1">
-              <button
-                onClick={() =>
-                  router.push(`/admin/workspaces/${workspaceSlug}/expenses/${expenseId}`)
-                }
-                className={SECONDARY_BUTTON_CLASS}
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving || !amount || !paidAt}
-                className={PRIMARY_BUTTON_CLASS}
-              >
-                {saving && (
-                  <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      strokeOpacity="0.25"
-                    />
-                    <path
-                      d="M12 2a10 10 0 0 1 10 10"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                )}
-                {saving ? "Guardando..." : "Guardar cambios"}
-              </button>
+              <label className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-200 py-8 text-sm text-gray-400 hover:border-purple-500 hover:text-purple-600 hover:bg-purple-50/40 transition-all cursor-pointer">
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*,application/pdf"
+                  className="hidden"
+                  onChange={addFiles}
+                />
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                >
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                Agregar archivo
+              </label>
             </div>
+          </FormInnerSection>
+
+          {saveError && (
+            <div className="border border-red-200 bg-red-50 rounded-lg px-4 py-3 text-sm text-red-600">
+              {saveError}
+            </div>
+          )}
+
+          <div className="flex gap-3 pt-1">
+            <button
+              onClick={() =>
+                router.push(`/admin/workspaces/${workspaceSlug}/expenses/${expenseId}`)
+              }
+              className={SECONDARY_BUTTON_CLASS}
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving || !amount || !paidAt}
+              className={PRIMARY_BUTTON_CLASS}
+            >
+              {saving && (
+                <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeOpacity="0.25"
+                  />
+                  <path
+                    d="M12 2a10 10 0 0 1 10 10"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              )}
+              {saving ? "Guardando..." : "Guardar cambios"}
+            </button>
           </div>
-        )}
-      </FormSection>
-    </div>
+        </div>
+      )}
+    </FormSection>
   );
 }

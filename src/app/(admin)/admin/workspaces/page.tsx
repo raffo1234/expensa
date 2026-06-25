@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/getCurrentUser";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { Permissions } from "@/types/propertyState";
 import { checkPermissions } from "@/lib/checkPermissions";
+import FormSection from "@/components/FormSection";
 
 export type Workspace = {
   id: string;
@@ -33,5 +34,9 @@ export default async function WorkspacePage() {
 
   if (!permissions[Permissions.HANDLE_WORKSPACES]) return <NoAccess />;
 
-  return <WorkspaceClient workspaces={workspaces ?? []} />;
+  return (
+    <FormSection title="Workspaces">
+      <WorkspaceClient workspaces={workspaces ?? []} />
+    </FormSection>
+  );
 }

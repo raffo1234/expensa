@@ -12,9 +12,6 @@ import SectionTitle from "@/components/SectionTitle";
 import { PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from "@/constants";
 import Link from "next/link";
 import { formatAmount } from "@/utils/formatAmount";
-import BackLink from "@/components/BackLink";
-import TitleWrapper from "@/components/TitleWrapper";
-import PageTitle from "@/components/PageTitle";
 import { formatSafeDate } from "@/lib/formatSafeDate";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -144,147 +141,137 @@ export default function ExpenseDetailPage() {
   const categoryColor = expense?.category?.color ?? "#06b6d4";
 
   return (
-    <div>
-      <BackLink href={`/admin/workspaces/${workspaceSlug}/expenses`}>Volver</BackLink>
-      <TitleWrapper>
-        <PageTitle>
-          <Link href={`/admin/workspaces/${workspaceSlug}/expenses`} className="text-gray-500">
-            Gastos{" "}
-          </Link>
-          <span className="text-gray-300">/</span>
-          <span className="text-gray-900 font-medium px-2 py-1 truncate max-w-[160px]">
-            {isLoading ? "..." : (expense?.provider?.name ?? "Sin proveedor")}
-          </span>
-        </PageTitle>
-      </TitleWrapper>
+    <FormSection
+      title={isLoading ? "..." : (expense?.provider?.name ?? "Sin proveedor")}
+      backUrl={`/admin/workspaces/${workspaceSlug}/expenses`}
+    >
+      {isLoading && (
+        <div className="flex items-center justify-center py-32 text-gray-400 text-sm gap-2">
+          <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+            <circle
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeOpacity="0.25"
+            />
+            <path
+              d="M12 2a10 10 0 0 1 10 10"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
+            />
+          </svg>
+          Cargando gasto...
+        </div>
+      )}
 
-      <FormSection>
-        {isLoading && (
-          <div className="flex items-center justify-center py-32 text-gray-400 text-sm gap-2">
-            <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-              <circle
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="3"
-                strokeOpacity="0.25"
-              />
-              <path
-                d="M12 2a10 10 0 0 1 10 10"
-                stroke="currentColor"
-                strokeWidth="3"
-                strokeLinecap="round"
-              />
-            </svg>
-            Cargando gasto...
-          </div>
-        )}
+      {error && (
+        <div className="flex items-center gap-3 border border-red-200 bg-red-50 rounded-lg px-4 py-3 text-sm text-red-600">
+          No se pudo cargar el gasto. Intenta recargar la página.
+        </div>
+      )}
 
-        {error && (
-          <div className="flex items-center gap-3 border border-red-200 bg-red-50 rounded-lg px-4 py-3 text-sm text-red-600">
-            No se pudo cargar el gasto. Intenta recargar la página.
-          </div>
-        )}
-
-        {expense && (
-          <div className="space-y-8">
-            {/* Amount hero */}
-            <SectionTitle>Monto</SectionTitle>
-            <FormInnerSection>
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-4xl font-bold tracking-tight" style={{ color: "#06b6d4" }}>
-                    {formatAmount(expense.amount, expense.currency)}
-                  </p>
-                  <p className="text-sm text-gray-400 mt-1">
-                    Pagado: {formatSafeDate(expense.paid_at, "d 'de' MMMM, yyyy")}
-                  </p>
-                </div>
-                {expense.category && (
-                  <span
-                    className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold flex-shrink-0"
-                    style={{ background: `${categoryColor}18`, color: categoryColor }}
-                  >
-                    {expense.category.name}
-                  </span>
-                )}
+      {expense && (
+        <div className="space-y-8">
+          {/* Amount hero */}
+          <SectionTitle>Monto</SectionTitle>
+          <FormInnerSection>
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-4xl font-bold tracking-tight" style={{ color: "#06b6d4" }}>
+                  {formatAmount(expense.amount, expense.currency)}
+                </p>
+                <p className="text-sm text-gray-400 mt-1">
+                  Pagado: {formatSafeDate(expense.paid_at, "d 'de' MMMM, yyyy")}
+                </p>
               </div>
-            </FormInnerSection>
-
-            <SectionTitle>Detalles</SectionTitle>
-            <FormInnerSection padding={false}>
-              <DetailRow label="Referencia">
-                {expense.invoice_series || expense.invoice_number ? (
-                  <span className="font-mono">
-                    {expense.invoice_series}{expense.invoice_series && expense.invoice_number ? "-" : ""}{expense.invoice_number}
-                  </span>
-                ) : (
-                  <span className="text-gray-400">—</span>
-                )}
-              </DetailRow>
-              <DetailRow label="Proveedor">
-                {expense.provider?.name ?? <span className="text-gray-400">—</span>} <br />
-                <span className="text-gray-600 text-lg">{expense.provider?.ruc}</span>
-              </DetailRow>
-              <DetailRow label="Moneda">{expense.currency}</DetailRow>
-              <DetailRow label="Método de pago">
-                {expense.payment_method ?? <span className="text-gray-400">—</span>}
-              </DetailRow>
-              <DetailRow label="Fecha de emision">
-                {formatSafeDate(expense.issued_at, "d 'de' MMMM, yyyy")}
-              </DetailRow>
-              <DetailRow label="Fecha de pago">
-                {formatSafeDate(expense.paid_at, "d 'de' MMMM, yyyy")}
-              </DetailRow>
-              <DetailRow label="Registrado">
-                {expense.created_at
-                  ? format(new Date(expense.created_at), "d MMM yyyy · HH:mm", { locale: es })
-                  : "—"}
-              </DetailRow>
-              {expense.created_by_user && (
-                <DetailRow label="Creado por">{expense.created_by_user.email}</DetailRow>
+              {expense.category && (
+                <span
+                  className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold flex-shrink-0"
+                  style={{ background: `${categoryColor}18`, color: categoryColor }}
+                >
+                  {expense.category.name}
+                </span>
               )}
-              {expense.notes && (
-                <DetailRow label="Notas">
-                  <span className="text-gray-500 whitespace-pre-wrap text-right">
-                    {expense.notes}
-                  </span>
-                </DetailRow>
-              )}
-            </FormInnerSection>
-
-            <SectionTitle>Adjuntos ({expense.expense_attachment.length})</SectionTitle>
-            {(expense.expense_attachment ?? []).length > 0 && (
-              <FormInnerSection>
-                <section className="space-y-4">
-                  {expense.expense_attachment.map((att) => (
-                    <FilePreview key={att.id} attachment={att} />
-                  ))}
-                </section>
-              </FormInnerSection>
-            )}
-
-            {/* Actions */}
-            <div className="flex gap-3 pt-1">
-              <Link
-                href={`/admin/workspaces/${workspaceSlug}/expenses`}
-                className={SECONDARY_BUTTON_CLASS}
-              >
-                ← Volver a gastos
-              </Link>
-              <button
-                onClick={() =>
-                  router.push(`/admin/workspaces/${workspaceSlug}/expenses/${expense.id}/edit`)
-                }
-                className={PRIMARY_BUTTON_CLASS}
-              >
-                Editar
-              </button>
             </div>
+          </FormInnerSection>
+
+          <SectionTitle>Detalles</SectionTitle>
+          <FormInnerSection padding={false}>
+            <DetailRow label="Referencia">
+              {expense.invoice_series || expense.invoice_number ? (
+                <span className="font-mono">
+                  {expense.invoice_series}
+                  {expense.invoice_series && expense.invoice_number ? "-" : ""}
+                  {expense.invoice_number}
+                </span>
+              ) : (
+                <span className="text-gray-400">—</span>
+              )}
+            </DetailRow>
+            <DetailRow label="Proveedor">
+              {expense.provider?.name ?? <span className="text-gray-400">—</span>} <br />
+              <span className="text-gray-600 text-lg">{expense.provider?.ruc}</span>
+            </DetailRow>
+            <DetailRow label="Moneda">{expense.currency}</DetailRow>
+            <DetailRow label="Método de pago">
+              {expense.payment_method ?? <span className="text-gray-400">—</span>}
+            </DetailRow>
+            <DetailRow label="Fecha de emision">
+              {formatSafeDate(expense.issued_at, "d 'de' MMMM, yyyy")}
+            </DetailRow>
+            <DetailRow label="Fecha de pago">
+              {formatSafeDate(expense.paid_at, "d 'de' MMMM, yyyy")}
+            </DetailRow>
+            <DetailRow label="Registrado">
+              {expense.created_at
+                ? format(new Date(expense.created_at), "d MMM yyyy · HH:mm", { locale: es })
+                : "—"}
+            </DetailRow>
+            {expense.created_by_user && (
+              <DetailRow label="Creado por">{expense.created_by_user.email}</DetailRow>
+            )}
+            {expense.notes && (
+              <DetailRow label="Notas">
+                <span className="text-gray-500 whitespace-pre-wrap text-right">
+                  {expense.notes}
+                </span>
+              </DetailRow>
+            )}
+          </FormInnerSection>
+
+          <SectionTitle>Adjuntos ({expense.expense_attachment.length})</SectionTitle>
+          {(expense.expense_attachment ?? []).length > 0 && (
+            <FormInnerSection>
+              <section className="space-y-4">
+                {expense.expense_attachment.map((att) => (
+                  <FilePreview key={att.id} attachment={att} />
+                ))}
+              </section>
+            </FormInnerSection>
+          )}
+
+          {/* Actions */}
+          <div className="flex gap-3 pt-1">
+            <Link
+              href={`/admin/workspaces/${workspaceSlug}/expenses`}
+              className={SECONDARY_BUTTON_CLASS}
+            >
+              ← Volver a gastos
+            </Link>
+            <button
+              onClick={() =>
+                router.push(`/admin/workspaces/${workspaceSlug}/expenses/${expense.id}/edit`)
+              }
+              className={PRIMARY_BUTTON_CLASS}
+            >
+              Editar
+            </button>
           </div>
-        )}
-      </FormSection>
-    </div>
+        </div>
+      )}
+    </FormSection>
   );
 }

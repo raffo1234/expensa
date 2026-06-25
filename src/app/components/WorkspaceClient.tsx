@@ -153,13 +153,6 @@ export default function WorkspaceClient({ workspaces: initial }: { workspaces: W
 
   return (
     <div>
-      <BackLink href="/">Home</BackLink>
-      <TitleWrapper>
-        <SectionTitle>Workspaces</SectionTitle>
-        <p className="text-sm text-gray-500">
-          {workspaces.length} workspace{workspaces.length !== 1 ? "s" : ""}
-        </p>
-      </TitleWrapper>
       <Link href="/admin/workspaces/new" className={PRIMARY_BUTTON_CLASS}>
         <PlusIcon /> Nuevo Workspace
       </Link>
@@ -200,7 +193,14 @@ export default function WorkspaceClient({ workspaces: initial }: { workspaces: W
         </div>
       )}
 
-      {filtered.length > 0 && <TableView workspaces={filtered} onDelete={handleDelete} />}
+      {filtered.length > 0 ? (
+        <>
+          <p className="text-gray-600 mb-4">
+            {filtered.length} workspace{filtered.length !== 1 ? "s" : ""}
+          </p>
+          <TableView workspaces={filtered} onDelete={handleDelete} />
+        </>
+      ) : null}
     </div>
   );
 }

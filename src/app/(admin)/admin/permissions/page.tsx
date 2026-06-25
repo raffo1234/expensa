@@ -1,3 +1,4 @@
+import FormSection from "@/components/FormSection";
 import NoAccess from "@/components/NoAccess";
 import PermissionsPage from "@/components/PermissionsPage";
 import SkeletonPermissionsPage from "@/components/SkeletonPermissionsPage";
@@ -8,12 +9,11 @@ import { Suspense } from "react";
 
 export default async function Page() {
   return (
-    <>
-      <h1 className="mb-6 font-semibold text-lg block">Permissions</h1>
+    <FormSection title="Permissions">
       <Suspense fallback={<SkeletonPermissionsPage />}>
         <PermissionsSection />
       </Suspense>
-    </>
+    </FormSection>
   );
 }
 

@@ -93,7 +93,7 @@ async function ExpensesSection({ slug }: { slug: string }) {
     .order("name");
 
   return (
-    <FormSection title={workspace.name} backUrl={`/admin/workspaces/${slug}`}>
+    <FormSection title={workspace.name} backUrl="/admin/workspaces">
       <ExpensesClient
         slug={slug}
         workspace={workspace}

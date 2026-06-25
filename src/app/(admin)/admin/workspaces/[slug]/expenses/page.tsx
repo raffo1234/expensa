@@ -28,7 +28,14 @@ async function ExpensesSection({ slug }: { slug: string }) {
 
   if (wsError || !workspace) throw new Error("Workspace not found");
 
-  const [{ data: rows, error: expError, count }, { data: allAmounts }] = await Promise.all([
+  const [
+    { data: rows, error: expError, count },
+    { data: sumRow },
+    { data: categories },
+    { data: stages },
+    { data: levels },
+    { data: providers },
+  ] = await Promise.all([
     supabase
       .from("expense")
       .select(
@@ -41,12 +48,24 @@ async function ExpensesSection({ slug }: { slug: string }) {
       .eq("workspace_id", workspace.id)
       .order("paid_at", { ascending: false })
       .range(0, ITEMS_PER_PAGE - 1),
-    supabase.from("expense").select("amount").eq("workspace_id", workspace.id),
+    supabase.from("expense").select("amount.sum()").eq("workspace_id", workspace.id).single(),
+    supabase
+      .from("category")
+      .select("id, name, color")
+      .eq("workspace_id", workspace.id)
+      .order("name"),
+    supabase
+      .from("stage")
+      .select("id, name, color")
+      .eq("workspace_id", workspace.id)
+      .order("order"),
+    supabase.from("level").select("id, name").eq("workspace_id", workspace.id).order("order"),
+    supabase.from("provider").select("id, name").eq("workspace_id", workspace.id).order("name"),
   ]);
 
   if (expError) throw expError;
 
-  const initialTotalAmount = (allAmounts ?? []).reduce((acc, r) => acc + (r.amount ?? 0), 0);
+  const initialTotalAmount = (sumRow as Record<string, number> | null)?.sum ?? 0;
 
   const expenses = (rows ?? []).map((row) => {
     const cat = Array.isArray(row.category) ? row.category[0] : row.category;
@@ -67,30 +86,6 @@ async function ExpensesSection({ slug }: { slug: string }) {
       category: cat ? { ...cat, color: cat.color ?? undefined } : { id: "other", name: "other" },
     };
   });
-
-  const { data: categories } = await supabase
-    .from("category")
-    .select("id, name, color")
-    .eq("workspace_id", workspace.id)
-    .order("name");
-
-  const { data: stages } = await supabase
-    .from("stage")
-    .select("id, name, color")
-    .eq("workspace_id", workspace.id)
-    .order("order");
-
-  const { data: levels } = await supabase
-    .from("level")
-    .select("id, name")
-    .eq("workspace_id", workspace.id)
-    .order("order");
-
-  const { data: providers } = await supabase
-    .from("provider")
-    .select("id, name")
-    .eq("workspace_id", workspace.id)
-    .order("name");
 
   return (
     <FormSection title={workspace.name} backUrl="/admin/workspaces">

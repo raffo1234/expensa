@@ -9,7 +9,7 @@ export interface Expense {
   payment_method?: string;
   notes?: string;
   created_at: string;
-  provider?: { id: string; name: string };
+  provider?: { id: string; name: string; ruc?: string };
   category?: { id: string; name: string; color?: string };
   expense_attachment?: { id: string; url: string; file_name: string; storage_path: string }[];
   invoice_ref?: string;
@@ -29,7 +29,7 @@ export interface ExpenseRow {
   payment_method?: string | null;
   notes?: string | null;
   created_at: string;
-  provider?: { id: string; name: string } | null;
+  provider?: { id: string; name: string; ruc?: string | null } | null;
   category?: { id: string; name: string; color?: string | null } | null;
   stage?: { id: string; name: string; color?: string | null } | null;
   level?: { id: string; name: string } | null;

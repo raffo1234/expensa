@@ -24,12 +24,11 @@ const PAGE_SIZE = 10;
 type SummaryTab = "facturas" | "gastos";
 
 const SUMMARY_COLUMNS = [
-  { label: "Fecha pago" },
-  { label: "Serie" },
-  { label: "Number" },
+  { label: "Referencia" },
   { label: "Proveedor" },
   { label: "Categoría" },
   { label: "Método de pago" },
+  { label: "Fecha emisión" },
   { label: "Monto", className: "text-right" },
   { label: "Adjuntos" },
 ];
@@ -43,6 +42,7 @@ type SummaryExpense = {
   invoice_number?: string | null;
   amount: number;
   currency: string;
+  issued_at?: string | null;
   paid_at?: string | null;
   payment_method?: string | null;
   notes?: string | null;
@@ -99,7 +99,7 @@ const fetcher = async ([, workspaceId, page, search, dateFrom, dateTo, tab]: [
   let query = supabase
     .from("expense")
     .select(
-      `id, invoice_series, invoice_number, amount, currency, paid_at, payment_method, notes,
+      `id, invoice_series, invoice_number, amount, currency, issued_at, paid_at, payment_method, notes,
        provider:provider_id(id, name, ruc),
        category:category_id(id, name, color),
        expense_attachment(id, file_name, storage_path)`,
@@ -461,19 +461,11 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
 
           return (
             <DataTableRow key={expense.id}>
-              <td className="whitespace-nowrap">
+              <td className="font-mono text-sm whitespace-nowrap">
                 <Link href={href} target="_blank" className="block p-6">
-                  {formatDate(expense.paid_at)}
-                </Link>
-              </td>
-              <td className="font-mono text-sm">
-                <Link href={href} target="_blank" className="block p-6">
-                  {expense.invoice_series ?? "—"}
-                </Link>
-              </td>
-              <td className="font-mono text-sm">
-                <Link href={href} target="_blank" className="block p-6">
-                  {expense.invoice_number ?? "—"}
+                  {expense.invoice_series && expense.invoice_number
+                    ? `${expense.invoice_series}-${expense.invoice_number}`
+                    : "—"}
                 </Link>
               </td>
               <td>
@@ -502,6 +494,11 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
               <td className="whitespace-nowrap">
                 <Link href={href} target="_blank" className="block p-6">
                   {expense.payment_method ?? "—"}
+                </Link>
+              </td>
+              <td className="whitespace-nowrap">
+                <Link href={href} target="_blank" className="block p-6">
+                  {formatDate(expense.issued_at)}
                 </Link>
               </td>
               <td className="text-right font-medium whitespace-nowrap">

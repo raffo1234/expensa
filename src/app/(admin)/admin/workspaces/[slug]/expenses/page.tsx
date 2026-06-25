@@ -41,7 +41,7 @@ async function ExpensesSection({ slug }: { slug: string }) {
       .select(
         `id, invoice_series, invoice_number, amount, currency,
          issued_at, paid_at, payment_method, notes, created_at,
-         provider:provider_id(id, name),
+         provider:provider_id(id, name, ruc),
          category:category_id(id, name, color)`,
         { count: "exact" },
       )

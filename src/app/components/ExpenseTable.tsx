@@ -70,8 +70,8 @@ export default function ExpenseTable({
                     <span className="text-gray-400 font-normal">Sin proveedor</span>
                   )}
                 </p>
-                {expense.notes && (
-                  <p className="text-xs text-gray-400 truncate mt-0.5">{expense.notes}</p>
+                {expense.provider?.ruc && (
+                  <p className="text-sm text-gray-500 truncate mt-0.5">{expense.provider.ruc}</p>
                 )}
               </Link>
             </td>

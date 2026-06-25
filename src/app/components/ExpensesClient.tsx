@@ -11,12 +11,10 @@ import {
   SELECT_CLASS,
 } from "@/constants";
 import Link from "next/link";
-import BackLink from "@/components/BackLink";
 import { Expense, ExpenseRow } from "@/types/ExpenseType";
 import { Workspace } from "@/types/WorkspaceType";
 import { deleteExpense } from "@/actions/expenses";
 import TitleWrapper from "./TitleWrapper";
-import PageTitle from "./PageTitle";
 import CategoryFilter from "./CategoryFilter";
 import ProviderFilter from "./ProviderFilter";
 import { formatAmount } from "@/utils/formatAmount";
@@ -133,7 +131,7 @@ const fetchExpenses = async (
     .select(
       `id, invoice_series, invoice_number, amount, currency,
        issued_at, paid_at, payment_method, notes, created_at,
-       provider:provider_id(id, name),
+       provider:provider_id(id, name, ruc),
        category:category_id(id, name, color)`,
       { count: "exact" },
     )

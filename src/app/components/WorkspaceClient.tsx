@@ -12,9 +12,6 @@ import {
 import FormSection from "./FormSection";
 import DeleteButton from "./DeleteButton";
 import { deleteWorkspace } from "@/actions/workspace";
-import SectionTitle from "./SectionTitle";
-import TitleWrapper from "./TitleWrapper";
-import BackLink from "./BackLink";
 
 const PlusIcon = () => (
   <svg

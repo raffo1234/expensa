@@ -30,7 +30,7 @@ async function ExpensesSection({ slug }: { slug: string }) {
 
   const [
     { data: rows, error: expError, count },
-    { data: sumRow },
+    { data: allAmounts },
     { data: categories },
     { data: stages },
     { data: levels },
@@ -48,7 +48,7 @@ async function ExpensesSection({ slug }: { slug: string }) {
       .eq("workspace_id", workspace.id)
       .order("paid_at", { ascending: false })
       .range(0, ITEMS_PER_PAGE - 1),
-    supabase.from("expense").select("amount.sum()").eq("workspace_id", workspace.id).single(),
+    supabase.from("expense").select("amount").eq("workspace_id", workspace.id),
     supabase
       .from("category")
       .select("id, name, color")
@@ -65,7 +65,7 @@ async function ExpensesSection({ slug }: { slug: string }) {
 
   if (expError) throw expError;
 
-  const initialTotalAmount = (sumRow as Record<string, number> | null)?.sum ?? 0;
+  const initialTotalAmount = (allAmounts ?? []).reduce((acc, r) => acc + (r.amount ?? 0), 0);
 
   const expenses = (rows ?? []).map((row) => {
     const cat = Array.isArray(row.category) ? row.category[0] : row.category;

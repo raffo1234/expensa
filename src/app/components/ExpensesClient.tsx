@@ -141,7 +141,7 @@ const fetchExpenses = async (
     .order("paid_at", { ascending: false })
     .range(from, to);
 
-  let amountsQuery = supabase.from("expense").select("amount.sum()").eq("workspace_id", workspaceId);
+  let amountsQuery = supabase.from("expense").select("amount").eq("workspace_id", workspaceId);
 
   if (filters.categoryId) {
     query = query.eq("category_id", filters.categoryId);
@@ -182,10 +182,10 @@ const fetchExpenses = async (
     amountsQuery = amountsQuery.lte("amount", max);
   }
 
-  const [{ data, error, count }, { data: sumRow }] = await Promise.all([query, amountsQuery.single()]);
+  const [{ data, error, count }, { data: allAmounts }] = await Promise.all([query, amountsQuery]);
   if (error) throw error;
 
-  const totalAmount = (sumRow as Record<string, number> | null)?.sum ?? 0;
+  const totalAmount = (allAmounts ?? []).reduce((acc, r) => acc + (r.amount ?? 0), 0);
 
   return {
     data: ((data as unknown as ExpenseRow[]) ?? []).map(mapExpenseRow),

@@ -21,10 +21,7 @@ import {
   SELECT_CLASS,
 } from "@/constants";
 import SectionTitle from "./SectionTitle";
-import BackLink from "./BackLink";
-import TitleWrapper from "./TitleWrapper";
 import Field from "./Field";
-import PageTitle from "./PageTitle";
 import { useGlobalState } from "@/lib/globalState";
 import AddProviderModal from "./AddProviderModal";
 
@@ -423,7 +420,10 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
         </p>
         <ul className="space-y-2">
           {dupes.map((d) => (
-            <li key={d.id} className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+            <li
+              key={d.id}
+              className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3"
+            >
               <div className="flex-1 text-sm">
                 <span className="font-medium text-gray-800">
                   {form.currency === "PEN" ? "S/" : form.currency === "USD" ? "$" : "€"}
@@ -440,7 +440,9 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                 {d.invoice_series && d.invoice_number && (
                   <>
                     <span className="text-gray-400 mx-2">·</span>
-                    <span className="text-gray-500 text-xs">{d.invoice_series}-{d.invoice_number}</span>
+                    <span className="text-gray-500 text-xs">
+                      {d.invoice_series}-{d.invoice_number}
+                    </span>
                   </>
                 )}
               </div>
@@ -531,118 +533,318 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
       : null;
 
   return (
-    <div>
-      <BackLink href={`/admin/workspaces/${workspaceSlug}/expenses`}>Volver</BackLink>
-      <TitleWrapper>
-        <div className="flex items-center gap-3">
-          <PageTitle>
-            Gastos <span className="text-gray-300">/</span>
-            <span className="text-gray-900 font-medium px-2 py-1">Nuevo</span>
-          </PageTitle>
-        </div>
-      </TitleWrapper>
-
-      <FormSection>
-        <form onSubmit={handleSubmit} className="space-y-8">
-          <SectionTitle>Comprobante / Adjuntos</SectionTitle>
-          <FormInnerSection>
-            <section className="space-y-4">
-              <div className="text-xs text-gray-500 mb-2">Se rellena automáticamente ✦</div>
-              <label
-                ref={dropRef}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setDragging(true);
-                }}
-                onDragLeave={() => setDragging(false)}
-                onDrop={onDrop}
-                className={`flex flex-col items-center justify-center gap-3 border-2 border-dashed
+    <FormSection title="New Expense" backUrl={`/admin/workspaces/${workspaceSlug}/expenses`}>
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <SectionTitle>Comprobante / Adjuntos</SectionTitle>
+        <FormInnerSection>
+          <section className="space-y-4">
+            <div className="text-xs text-gray-500 mb-2">Se rellena automáticamente ✦</div>
+            <label
+              ref={dropRef}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragging(true);
+              }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={onDrop}
+              className={`flex flex-col items-center justify-center gap-3 border-2 border-dashed
                 rounded-xl py-9 cursor-pointer transition-all duration-200
                 ${dragging ? "border-purple-600 bg-cyan-50" : "border-gray-200 hover:border-purple-400 hover:bg-purple-50/40"}`}
+            >
+              <input
+                type="file"
+                multiple
+                accept="image/*,application/pdf"
+                className="hidden"
+                onChange={(e) => addFiles(Array.from(e.target.files ?? []))}
+              />
+              <div
+                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${dragging ? "bg-cyan-100" : "bg-gray-100"}`}
               >
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*,application/pdf"
-                  className="hidden"
-                  onChange={(e) => addFiles(Array.from(e.target.files ?? []))}
-                />
-                <div
-                  className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${dragging ? "bg-cyan-100" : "bg-gray-100"}`}
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className={dragging ? "text-cyan-500" : "text-gray-400"}
+                  stroke="currentColor"
                 >
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    className={dragging ? "text-cyan-500" : "text-gray-400"}
-                    stroke="currentColor"
-                  >
-                    <path
-                      d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                    />
-                    <polyline
-                      points="17 8 12 3 7 8"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <line x1="12" y1="3" x2="12" y2="15" strokeWidth="1.8" strokeLinecap="round" />
-                  </svg>
-                </div>
-                <div className="text-center">
-                  <p className="text-sm font-medium text-gray-700">
-                    Arrastra archivos o{" "}
-                    <span className="text-cyan-600 underline underline-offset-2">haz click</span>
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    JPG, PNG, WEBP, PDF — sin límite de tamaño
-                  </p>
-                </div>
-              </label>
+                  <path
+                    d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                  />
+                  <polyline
+                    points="17 8 12 3 7 8"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <line x1="12" y1="3" x2="12" y2="15" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-medium text-gray-700">
+                  Arrastra archivos o{" "}
+                  <span className="text-cyan-600 underline underline-offset-2">haz click</span>
+                </p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  JPG, PNG, WEBP, PDF — sin límite de tamaño
+                </p>
+              </div>
+            </label>
 
-              {extracting && (
-                <div className="flex items-center gap-2.5 bg-cyan-50 border border-cyan-200 rounded-lg px-4 py-3">
-                  <svg
-                    className="animate-spin w-4 h-4 text-cyan-500 flex-shrink-0"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                  >
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      strokeOpacity="0.25"
+            {extracting && (
+              <div className="flex items-center gap-2.5 bg-cyan-50 border border-cyan-200 rounded-lg px-4 py-3">
+                <svg
+                  className="animate-spin w-4 h-4 text-cyan-500 flex-shrink-0"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeOpacity="0.25"
+                  />
+                  <path
+                    d="M12 2a10 10 0 0 1 10 10"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <div>
+                  <p className="text-xs font-semibold text-cyan-700">Analizando comprobante...</p>
+                  <p className="text-[11px] text-cyan-500">Extrayendo monto, fechas y proveedor</p>
+                </div>
+              </div>
+            )}
+
+            {!extracting && willCreateProvider && (
+              <div className="flex items-center gap-2.5 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2.5">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className="text-emerald-500 flex-shrink-0"
+                >
+                  <path
+                    d="M12 5v14M5 12h14"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <p className="text-xs text-emerald-700">
+                  Nuevo proveedor detectado:{" "}
+                  <span className="font-semibold">{resolvedProvider.name}</span>
+                  {resolvedProvider.ruc && (
+                    <span className="text-emerald-500"> · RUC {resolvedProvider.ruc}</span>
+                  )}{" "}
+                  — se creará automáticamente al guardar.
+                </p>
+              </div>
+            )}
+
+            {!extracting && files.length > 0 && !willCreateProvider && form.provider_id && (
+              <div className="flex items-center gap-2 text-xs text-cyan-600">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M20 6L9 17l-5-5"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                Campos rellenados desde el comprobante
+              </div>
+            )}
+
+            {files.length > 0 && (
+              <ul className="space-y-2 pt-1">
+                {files.map((fi) => {
+                  const pct = uploadProgress[fi.id] ?? null;
+                  return (
+                    <li
+                      key={fi.id}
+                      className="bg-gray-50 border border-gray-200 rounded-lg px-3.5 py-2.5 group"
+                    >
+                      <div className="flex items-center gap-3">
+                        {fi.preview ? (
+                          <img
+                            src={fi.preview}
+                            alt=""
+                            className="w-8 h-8 rounded-md object-cover flex-shrink-0"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-md bg-cyan-100 flex items-center justify-center text-[9px] font-bold text-cyan-600 flex-shrink-0">
+                            PDF
+                          </div>
+                        )}
+                        <span className="flex-1 text-sm text-gray-700 truncate">
+                          {fi.file.name}
+                        </span>
+                        <span className="text-xs text-gray-400 flex-shrink-0">
+                          {(fi.file.size / (1024 * 1024)).toFixed(1)} MB
+                        </span>
+                        {pct !== null && (
+                          <span className="text-xs text-cyan-600 font-medium flex-shrink-0">
+                            {pct}%
+                          </span>
+                        )}
+                        {pct === null && (
+                          <button
+                            type="button"
+                            onClick={() => removeFile(fi.id)}
+                            className="text-gray-300 hover:text-red-400 transition-colors ml-1 flex-shrink-0 opacity-0 group-hover:opacity-100"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                              <path
+                                d="M18 6L6 18M6 6l12 12"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                              />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                      {pct !== null && (
+                        <div className="mt-2 h-1 rounded-full bg-gray-200 overflow-hidden">
+                          <div
+                            className="h-full bg-cyan-500 transition-all duration-200"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+
+            {overallProgress !== null && (
+              <div className="flex items-center gap-2.5 bg-cyan-50 border border-cyan-200 rounded-lg px-4 py-3">
+                <svg
+                  className="animate-spin w-4 h-4 text-cyan-500 flex-shrink-0"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeOpacity="0.25"
+                  />
+                  <path
+                    d="M12 2a10 10 0 0 1 10 10"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <div className="flex-1">
+                  <p className="text-xs font-semibold text-cyan-700">
+                    Subiendo archivos... {overallProgress}%
+                  </p>
+                  <div className="mt-1.5 h-1 rounded-full bg-cyan-200 overflow-hidden">
+                    <div
+                      className="h-full bg-cyan-500 transition-all duration-200"
+                      style={{ width: `${overallProgress}%` }}
                     />
-                    <path
-                      d="M12 2a10 10 0 0 1 10 10"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  <div>
-                    <p className="text-xs font-semibold text-cyan-700">Analizando comprobante...</p>
-                    <p className="text-[11px] text-cyan-500">
-                      Extrayendo monto, fechas y proveedor
-                    </p>
                   </div>
                 </div>
-              )}
+              </div>
+            )}
+          </section>
+        </FormInnerSection>
 
-              {!extracting && willCreateProvider && (
-                <div className="flex items-center gap-2.5 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2.5">
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    className="text-emerald-500 flex-shrink-0"
-                  >
+        <SectionTitle>Importe</SectionTitle>
+        <FormInnerSection>
+          <section className="space-y-4">
+            <div className="flex gap-3">
+              <Field label="Monto *">
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-500 font-bold text-base select-none">
+                    {currSymbol}
+                  </span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    required
+                    placeholder="0.00"
+                    value={form.amount}
+                    onChange={set("amount")}
+                    className={`${INPUT_CLASS} pl-10`}
+                  />
+                </div>
+              </Field>
+              <Field label="Moneda">
+                <select value={form.currency} onChange={set("currency")} className={SELECT_CLASS}>
+                  {CURRENCIES.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Fecha de emisión">
+                <input
+                  type="date"
+                  value={form.issued_at}
+                  onChange={set("issued_at")}
+                  className={INPUT_CLASS}
+                />
+              </Field>
+              <Field label="Fecha de pago *">
+                <input
+                  type="date"
+                  required
+                  value={form.paid_at}
+                  onChange={set("paid_at")}
+                  className={INPUT_CLASS}
+                />
+              </Field>
+            </div>
+          </section>
+        </FormInnerSection>
+
+        <SectionTitle>Datos del comprobante</SectionTitle>
+        <FormInnerSection>
+          <section className="space-y-4">
+            <Field label="Proveedor">
+              <div className="flex items-center gap-2">
+                <select
+                  value={form.provider_id}
+                  onChange={handleProviderChange}
+                  disabled={providersLoading}
+                  className={SELECT_CLASS}
+                >
+                  <option value="">
+                    {willCreateProvider ? `✦ ${resolvedProvider.name} (nuevo)` : "Sin proveedor"}
+                  </option>
+                  {providers.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={openAddProvider}
+                  className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-cyan-400 hover:text-cyan-500 transition-colors"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                     <path
                       d="M12 5v14M5 12h14"
                       stroke="currentColor"
@@ -650,402 +852,188 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                       strokeLinecap="round"
                     />
                   </svg>
-                  <p className="text-xs text-emerald-700">
-                    Nuevo proveedor detectado:{" "}
-                    <span className="font-semibold">{resolvedProvider.name}</span>
-                    {resolvedProvider.ruc && (
-                      <span className="text-emerald-500"> · RUC {resolvedProvider.ruc}</span>
-                    )}{" "}
-                    — se creará automáticamente al guardar.
-                  </p>
-                </div>
-              )}
-
-              {!extracting && files.length > 0 && !willCreateProvider && form.provider_id && (
-                <div className="flex items-center gap-2 text-xs text-cyan-600">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M20 6L9 17l-5-5"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                  Campos rellenados desde el comprobante
-                </div>
-              )}
-
-              {files.length > 0 && (
-                <ul className="space-y-2 pt-1">
-                  {files.map((fi) => {
-                    const pct = uploadProgress[fi.id] ?? null;
-                    return (
-                      <li
-                        key={fi.id}
-                        className="bg-gray-50 border border-gray-200 rounded-lg px-3.5 py-2.5 group"
-                      >
-                        <div className="flex items-center gap-3">
-                          {fi.preview ? (
-                            <img
-                              src={fi.preview}
-                              alt=""
-                              className="w-8 h-8 rounded-md object-cover flex-shrink-0"
-                            />
-                          ) : (
-                            <div className="w-8 h-8 rounded-md bg-cyan-100 flex items-center justify-center text-[9px] font-bold text-cyan-600 flex-shrink-0">
-                              PDF
-                            </div>
-                          )}
-                          <span className="flex-1 text-sm text-gray-700 truncate">
-                            {fi.file.name}
-                          </span>
-                          <span className="text-xs text-gray-400 flex-shrink-0">
-                            {(fi.file.size / (1024 * 1024)).toFixed(1)} MB
-                          </span>
-                          {pct !== null && (
-                            <span className="text-xs text-cyan-600 font-medium flex-shrink-0">
-                              {pct}%
-                            </span>
-                          )}
-                          {pct === null && (
-                            <button
-                              type="button"
-                              onClick={() => removeFile(fi.id)}
-                              className="text-gray-300 hover:text-red-400 transition-colors ml-1 flex-shrink-0 opacity-0 group-hover:opacity-100"
-                            >
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                                <path
-                                  d="M18 6L6 18M6 6l12 12"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                />
-                              </svg>
-                            </button>
-                          )}
-                        </div>
-                        {pct !== null && (
-                          <div className="mt-2 h-1 rounded-full bg-gray-200 overflow-hidden">
-                            <div
-                              className="h-full bg-cyan-500 transition-all duration-200"
-                              style={{ width: `${pct}%` }}
-                            />
-                          </div>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-
-              {overallProgress !== null && (
-                <div className="flex items-center gap-2.5 bg-cyan-50 border border-cyan-200 rounded-lg px-4 py-3">
-                  <svg
-                    className="animate-spin w-4 h-4 text-cyan-500 flex-shrink-0"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                  >
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      strokeOpacity="0.25"
-                    />
-                    <path
-                      d="M12 2a10 10 0 0 1 10 10"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  <div className="flex-1">
-                    <p className="text-xs font-semibold text-cyan-700">
-                      Subiendo archivos... {overallProgress}%
-                    </p>
-                    <div className="mt-1.5 h-1 rounded-full bg-cyan-200 overflow-hidden">
-                      <div
-                        className="h-full bg-cyan-500 transition-all duration-200"
-                        style={{ width: `${overallProgress}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </section>
-          </FormInnerSection>
-
-          <SectionTitle>Importe</SectionTitle>
-          <FormInnerSection>
-            <section className="space-y-4">
-              <div className="flex gap-3">
-                <Field label="Monto *">
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-500 font-bold text-base select-none">
-                      {currSymbol}
-                    </span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      required
-                      placeholder="0.00"
-                      value={form.amount}
-                      onChange={set("amount")}
-                      className={`${INPUT_CLASS} pl-10`}
-                    />
-                  </div>
-                </Field>
-                <Field label="Moneda">
-                  <select value={form.currency} onChange={set("currency")} className={SELECT_CLASS}>
-                    {CURRENCIES.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
+                </button>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <Field label="Fecha de emisión">
-                  <input
-                    type="date"
-                    value={form.issued_at}
-                    onChange={set("issued_at")}
-                    className={INPUT_CLASS}
-                  />
-                </Field>
-                <Field label="Fecha de pago *">
-                  <input
-                    type="date"
-                    required
-                    value={form.paid_at}
-                    onChange={set("paid_at")}
-                    className={INPUT_CLASS}
-                  />
-                </Field>
-              </div>
-            </section>
-          </FormInnerSection>
+            </Field>
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Serie">
+                <input
+                  type="text"
+                  placeholder="Ej: F001"
+                  value={form.invoice_series}
+                  onChange={set("invoice_series")}
+                  className={INPUT_CLASS}
+                />
+              </Field>
+              <Field label="Número">
+                <input
+                  type="text"
+                  placeholder="Ej: 00012345"
+                  value={form.invoice_number}
+                  onChange={set("invoice_number")}
+                  className={INPUT_CLASS}
+                />
+              </Field>
+            </div>
+          </section>
+        </FormInnerSection>
 
-          <SectionTitle>Datos del comprobante</SectionTitle>
-          <FormInnerSection>
-            <section className="space-y-4">
-              <Field label="Proveedor">
-                <div className="flex items-center gap-2">
-                  <select
-                    value={form.provider_id}
-                    onChange={handleProviderChange}
-                    disabled={providersLoading}
-                    className={SELECT_CLASS}
-                  >
-                    <option value="">
-                      {willCreateProvider ? `✦ ${resolvedProvider.name} (nuevo)` : "Sin proveedor"}
+        <SectionTitle>Detalles</SectionTitle>
+        <FormInnerSection>
+          <section className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Categoría">
+                <select
+                  value={form.category_id}
+                  onChange={set("category_id")}
+                  disabled={catsLoading}
+                  className={SELECT_CLASS}
+                >
+                  <option value="">Sin categoría</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
                     </option>
-                    {providers.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={openAddProvider}
-                    className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-cyan-400 hover:text-cyan-500 transition-colors"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                      <path
-                        d="M12 5v14M5 12h14"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </button>
-                </div>
+                  ))}
+                </select>
               </Field>
-              <div className="grid grid-cols-2 gap-4">
-                <Field label="Serie">
-                  <input
-                    type="text"
-                    placeholder="Ej: F001"
-                    value={form.invoice_series}
-                    onChange={set("invoice_series")}
-                    className={INPUT_CLASS}
-                  />
-                </Field>
-                <Field label="Número">
-                  <input
-                    type="text"
-                    placeholder="Ej: 00012345"
-                    value={form.invoice_number}
-                    onChange={set("invoice_number")}
-                    className={INPUT_CLASS}
-                  />
-                </Field>
-              </div>
-            </section>
-          </FormInnerSection>
-
-          <SectionTitle>Detalles</SectionTitle>
-          <FormInnerSection>
-            <section className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <Field label="Categoría">
-                  <select
-                    value={form.category_id}
-                    onChange={set("category_id")}
-                    disabled={catsLoading}
-                    className={SELECT_CLASS}
-                  >
-                    <option value="">Sin categoría</option>
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label="Método de pago">
-                  <select
-                    value={form.payment_method}
-                    onChange={set("payment_method")}
-                    className={SELECT_CLASS}
-                  >
-                    <option value="">Seleccionar</option>
-                    {PAYMENT_METHODS.map((m) => (
-                      <option key={m} value={m}>
-                        {m}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <Field label="Etapa">
-                  <select value={form.stage_id} onChange={set("stage_id")} className={SELECT_CLASS}>
-                    <option value="">Sin etapa</option>
-                    {stages.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label="Nivel">
-                  <select value={form.level_id} onChange={set("level_id")} className={SELECT_CLASS}>
-                    <option value="">Sin nivel</option>
-                    {levels.map((l) => (
-                      <option key={l.id} value={l.id}>
-                        {l.name}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-              </div>
-              <Field label="Notas">
-                <textarea
-                  rows={3}
-                  placeholder="Observaciones adicionales..."
-                  value={form.notes}
-                  onChange={set("notes")}
-                  className={`${INPUT_CLASS} resize-none`}
-                />
+              <Field label="Método de pago">
+                <select
+                  value={form.payment_method}
+                  onChange={set("payment_method")}
+                  className={SELECT_CLASS}
+                >
+                  <option value="">Seleccionar</option>
+                  {PAYMENT_METHODS.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
               </Field>
-            </section>
-          </FormInnerSection>
-
-          {error && (
-            <div className="flex items-start gap-3 border border-red-200 bg-red-50 rounded-lg px-4 py-3 text-sm text-red-600">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                className="flex-shrink-0 mt-0.5"
-              >
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.8" />
-                <path
-                  d="M12 8v4M12 16h.01"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              </svg>
-              {error}
             </div>
-          )}
-
-          {success && (
-            <div className="flex items-center gap-3 border border-cyan-200 bg-cyan-50 rounded-lg px-4 py-3 text-sm text-cyan-700">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="flex-shrink-0">
-                <path
-                  d="M20 6L9 17l-5-5"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              Gasto registrado correctamente — redirigiendo...
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Etapa">
+                <select value={form.stage_id} onChange={set("stage_id")} className={SELECT_CLASS}>
+                  <option value="">Sin etapa</option>
+                  {stages.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Nivel">
+                <select value={form.level_id} onChange={set("level_id")} className={SELECT_CLASS}>
+                  <option value="">Sin nivel</option>
+                  {levels.map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
             </div>
-          )}
+            <Field label="Notas">
+              <textarea
+                rows={3}
+                placeholder="Observaciones adicionales..."
+                value={form.notes}
+                onChange={set("notes")}
+                className={`${INPUT_CLASS} resize-none`}
+              />
+            </Field>
+          </section>
+        </FormInnerSection>
 
-          <div className="flex items-center gap-3 pt-1">
-            <button type="button" onClick={() => router.back()} className={SECONDARY_BUTTON_CLASS}>
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={isPending || success || !workspaceId || !userId || extracting}
-              className={PRIMARY_BUTTON_CLASS}
+        {error && (
+          <div className="flex items-start gap-3 border border-red-200 bg-red-50 rounded-lg px-4 py-3 text-sm text-red-600">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              className="flex-shrink-0 mt-0.5"
             >
-              {isPending ? (
-                <>
-                  <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      strokeOpacity="0.25"
-                    />
-                    <path
-                      d="M12 2a10 10 0 0 1 10 10"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  Guardando...
-                </>
-              ) : (
-                <>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M17 21v-8H7v8M7 3v5h8"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  Guardar gasto
-                </>
-              )}
-            </button>
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.8" />
+              <path
+                d="M12 8v4M12 16h.01"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+            {error}
           </div>
-        </form>
-      </FormSection>
-    </div>
+        )}
+
+        {success && (
+          <div className="flex items-center gap-3 border border-cyan-200 bg-cyan-50 rounded-lg px-4 py-3 text-sm text-cyan-700">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="flex-shrink-0">
+              <path
+                d="M20 6L9 17l-5-5"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            Gasto registrado correctamente — redirigiendo...
+          </div>
+        )}
+
+        <div className="flex items-center gap-3 pt-1">
+          <button type="button" onClick={() => router.back()} className={SECONDARY_BUTTON_CLASS}>
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={isPending || success || !workspaceId || !userId || extracting}
+            className={PRIMARY_BUTTON_CLASS}
+          >
+            {isPending ? (
+              <>
+                <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeOpacity="0.25"
+                  />
+                  <path
+                    d="M12 2a10 10 0 0 1 10 10"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                Guardando...
+              </>
+            ) : (
+              <>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M17 21v-8H7v8M7 3v5h8"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                Guardar gasto
+              </>
+            )}
+          </button>
+        </div>
+      </form>
+    </FormSection>
   );
 }

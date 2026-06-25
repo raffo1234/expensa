@@ -19,6 +19,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import OptionButton from "./OptionButton";
 import InputWithTooltip from "./InputWithTooltip";
 import DataTable, { DataTableRow } from "./DataTable";
+import CategoryFilter from "./CategoryFilter";
 
 const PAGE_SIZE = 10;
 type SummaryTab = "facturas" | "gastos";
@@ -65,7 +66,7 @@ function applyTabFilter<T extends { not: any; is: any }>(query: T, tab: SummaryT
   return query.is("invoice_series", null).is("invoice_number", null);
 }
 
-const fetcher = async ([, workspaceId, page, search, dateFrom, dateTo, tab]: [
+const fetcher = async ([, workspaceId, page, search, dateFrom, dateTo, tab, categoryId]: [
   string,
   string,
   number,
@@ -73,6 +74,7 @@ const fetcher = async ([, workspaceId, page, search, dateFrom, dateTo, tab]: [
   string,
   string,
   SummaryTab,
+  string,
 ]) => {
   const from = page * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
@@ -111,6 +113,7 @@ const fetcher = async ([, workspaceId, page, search, dateFrom, dateTo, tab]: [
 
   query = applyTabFilter(query, tab);
 
+  if (categoryId) query = query.eq("category_id", categoryId);
   if (orClause) query = query.or(orClause);
   if (dateFrom) query = query.gte("issued_at", dateFrom);
   if (dateTo) query = query.lte("issued_at", dateTo);
@@ -138,6 +141,7 @@ const exportCsv = async (
   dateFrom: string,
   dateTo: string,
   tab: SummaryTab,
+  categoryId: string,
 ) => {
   let providerIds: string[] = [];
   if (search.trim()) {
@@ -175,6 +179,7 @@ const exportCsv = async (
 
     query = applyTabFilter(query, tab);
 
+    if (categoryId) query = query.eq("category_id", categoryId);
     if (orClause) query = query.or(orClause);
     if (dateFrom) query = query.gte("issued_at", dateFrom);
     if (dateTo) query = query.lte("issued_at", dateTo);
@@ -240,6 +245,18 @@ const formatDate = (val?: string | null) =>
       })
     : "—";
 
+type CategoryOption = { id: string; name: string; color: string | null };
+
+async function fetchCategories(workspaceId: string): Promise<CategoryOption[]> {
+  const { data, error } = await supabase
+    .from("category")
+    .select("id, name, color")
+    .eq("workspace_id", workspaceId)
+    .order("name");
+  if (error) throw error;
+  return data ?? [];
+}
+
 const STORAGE_TAB = "summary-tab";
 const STORAGE_WS = "summary-workspace";
 
@@ -271,9 +288,15 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
   const [dateFrom, setDateFrom] = useState(() => searchParams.get("from") ?? "");
   const [dateTo, setDateTo] = useState(() => searchParams.get("to") ?? "");
   const [month, setMonth] = useState(() => searchParams.get("month") ?? "");
+  const [categoryId, setCategoryId] = useState(() => searchParams.get("cat") ?? "");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const hasFilters = !!search || !!dateFrom || !!dateTo || !!month;
+  const { data: categories = [] } = useSWR(
+    workspaceId ? ["summary-categories", workspaceId] : null,
+    ([, wid]) => fetchCategories(wid),
+  );
+
+  const hasFilters = !!search || !!dateFrom || !!dateTo || !!month || !!categoryId;
 
   const syncUrl = useCallback(() => {
     const params = new URLSearchParams();
@@ -283,10 +306,11 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
     if (dateFrom) params.set("from", dateFrom);
     if (dateTo) params.set("to", dateTo);
     if (month) params.set("month", month);
+    if (categoryId) params.set("cat", categoryId);
     if (page > 0) params.set("page", String(page));
     const qs = params.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname);
-  }, [tab, workspaceId, search, dateFrom, dateTo, month, page, router, pathname]);
+  }, [tab, workspaceId, search, dateFrom, dateTo, month, categoryId, page, router, pathname]);
 
   useEffect(() => {
     const t = setTimeout(syncUrl, 300);
@@ -324,6 +348,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
     setDateFrom("");
     setDateTo("");
     setMonth("");
+    setCategoryId("");
     setPage(0);
     if (searchInputRef.current) searchInputRef.current.value = "";
   };
@@ -334,7 +359,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
   }, 350);
 
   const { data, isLoading } = useSWR(
-    workspaceId ? ["summary", workspaceId, page, search, dateFrom, dateTo, tab] : null,
+    workspaceId ? ["summary", workspaceId, page, search, dateFrom, dateTo, tab, categoryId] : null,
     fetcher,
   );
 
@@ -370,7 +395,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
           </div>
         </div>
         <button
-          onClick={() => exportCsv(workspaceId, search, dateFrom, dateTo, tab)}
+          onClick={() => exportCsv(workspaceId, search, dateFrom, dateTo, tab, categoryId)}
           disabled={!workspaceId}
           className={PRIMARY_BUTTON_CLASS}
         >
@@ -392,6 +417,16 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
         </button>
       </div>
       <div className="flex flex-wrap gap-3 items-center">
+        <div className="flex gap-2 items-end border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
+          <div className="flex-1">
+            <p className="block text-[11px] font-medium text-gray-400 mb-1">Categoría</p>
+            <CategoryFilter
+              categories={categories}
+              value={categoryId}
+              onChange={(id) => { setCategoryId(id); setPage(0); }}
+            />
+          </div>
+        </div>
         <div className="flex gap-2 items-center border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
           <span className="text-sm font-medium text-gray-400 pl-1">Emisión</span>
           <InputWithTooltip label="Mes de emisión">

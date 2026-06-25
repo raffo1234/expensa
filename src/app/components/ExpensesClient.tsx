@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import useSWR from "swr";
 import ExpenseTable from "@/components/ExpenseTable";
 import { supabase } from "@/lib/supabase";
@@ -17,6 +17,7 @@ import ProviderFilter from "./ProviderFilter";
 import { formatAmount } from "@/utils/formatAmount";
 import { useGlobalState } from "@/lib/globalState";
 import ManageCategoriesModal from "./ManageCategoriesModal";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -329,13 +330,44 @@ export default function ExpensesClient({
   levels,
   providers,
 }: Props) {
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const [page, setPage] = useState(() => Number(searchParams.get("page") ?? "1") || 1);
+  const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
+  const [debouncedSearch, setDebouncedSearch] = useState(() => searchParams.get("q") ?? "");
+  const [filters, setFilters] = useState<Filters>(() => ({
+    paidFrom: searchParams.get("paidFrom") ?? "",
+    paidTo: searchParams.get("paidTo") ?? "",
+    issuedFrom: searchParams.get("issuedFrom") ?? "",
+    issuedTo: searchParams.get("issuedTo") ?? "",
+    amountMin: searchParams.get("amountMin") ?? "",
+    amountMax: searchParams.get("amountMax") ?? "",
+    categoryId: searchParams.get("categoryId") ?? "",
+    stageId: searchParams.get("stageId") ?? "",
+    levelId: searchParams.get("levelId") ?? "",
+    providerId: searchParams.get("providerId") ?? "",
+  }));
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [localCategories, setLocalCategories] = useState(categories);
   const { setModalContent, setModalOpen } = useGlobalState();
+
+  const syncUrl = useCallback(() => {
+    const params = new URLSearchParams();
+    if (page > 1) params.set("page", String(page));
+    if (debouncedSearch) params.set("q", debouncedSearch);
+    for (const [k, v] of Object.entries(filters)) {
+      if (v) params.set(k, v);
+    }
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname);
+  }, [page, debouncedSearch, filters, router, pathname]);
+
+  useEffect(() => {
+    const t = setTimeout(syncUrl, 300);
+    return () => clearTimeout(t);
+  }, [syncUrl]);
 
   const openCategoriesModal = () => {
     setModalContent(

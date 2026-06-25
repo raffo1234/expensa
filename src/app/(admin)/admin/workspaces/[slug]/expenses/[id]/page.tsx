@@ -26,6 +26,8 @@ type ExpenseAttachment = {
 
 type Expense = {
   id: string;
+  invoice_series: string | null;
+  invoice_number: string | null;
   provider: {
     name: string;
     ruc: string;
@@ -48,7 +50,7 @@ async function fetchExpense(expenseId: string): Promise<Expense> {
     .from("expense")
     .select(
       `
-      id, amount, currency, issued_at, paid_at,
+      id, invoice_series, invoice_number, amount, currency, issued_at, paid_at,
       provider:provider_id(name, ruc),
       payment_method, notes, created_at,
       category(id, name, color),
@@ -212,6 +214,15 @@ export default function ExpenseDetailPage() {
 
             <SectionTitle>Detalles</SectionTitle>
             <FormInnerSection padding={false}>
+              <DetailRow label="Referencia">
+                {expense.invoice_series || expense.invoice_number ? (
+                  <span className="font-mono">
+                    {expense.invoice_series}{expense.invoice_series && expense.invoice_number ? "-" : ""}{expense.invoice_number}
+                  </span>
+                ) : (
+                  <span className="text-gray-400">—</span>
+                )}
+              </DetailRow>
               <DetailRow label="Proveedor">
                 {expense.provider?.name ?? <span className="text-gray-400">—</span>} <br />
                 <span className="text-gray-600 text-lg">{expense.provider?.ruc}</span>

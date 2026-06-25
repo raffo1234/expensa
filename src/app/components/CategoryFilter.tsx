@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { INPUT_CLASS } from "@/constants";
 
 type Category = { id: string; name: string; color: string | null };
 
@@ -29,7 +30,7 @@ export default function CategoryFilter({ categories, value, onChange }: Props) {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-300 transition"
+        className={`${INPUT_CLASS} flex items-center justify-between gap-2 cursor-pointer`}
       >
         {selected ? (
           <span className="flex items-center gap-2">

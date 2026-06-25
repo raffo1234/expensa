@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { INPUT_CLASS } from "@/constants";
 
 type Provider = { id: string; name: string };
 
@@ -82,7 +83,7 @@ export default function ProviderFilter({ providers, value, onChange }: Props) {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-300 transition"
+        className={`${INPUT_CLASS} flex items-center justify-between gap-2 cursor-pointer`}
       >
         {selected ? (
           <span className="font-medium text-gray-700 truncate">{selected.name}</span>
@@ -116,7 +117,7 @@ export default function ProviderFilter({ providers, value, onChange }: Props) {
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Buscar proveedor..."
-              className="w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-300 transition"
+              className={INPUT_CLASS}
             />
           </div>
           <div ref={listRef} className="overflow-y-auto">

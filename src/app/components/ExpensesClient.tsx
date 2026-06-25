@@ -23,7 +23,7 @@ import { formatAmount } from "@/utils/formatAmount";
 import { useGlobalState } from "@/lib/globalState";
 import ManageCategoriesModal from "./ManageCategoriesModal";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { Popover } from "react-tiny-popover";
+import InputWithTooltip from "./InputWithTooltip";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -291,26 +291,6 @@ const exportExpensesCsv = async (workspaceId: string, search: string, filters: F
 };
 
 // ── Component ─────────────────────────────────────────────────────────────────
-
-function InputWithTooltip({ label, children }: { label: string; children: React.ReactElement }) {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <Popover
-      isOpen={hovered}
-      positions={["top", "bottom"]}
-      padding={8}
-      content={
-        <div className="pointer-events-none font-semibold text-white px-3 py-2 bg-slate-800 rounded-lg text-sm">
-          {label}
-        </div>
-      }
-    >
-      <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
-        {children}
-      </div>
-    </Popover>
-  );
-}
 
 const EMPTY_FILTERS: Filters = {
   issuedFrom: "",

@@ -17,30 +17,23 @@ import getAttachmentUrl from "@/lib/getAttachmentUrl";
 import Link from "next/link";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import OptionButton from "./OptionButton";
-import { Popover } from "react-tiny-popover";
+import InputWithTooltip from "./InputWithTooltip";
+import DataTable, { DataTableRow } from "./DataTable";
 
 const PAGE_SIZE = 10;
 type SummaryTab = "facturas" | "gastos";
 
-function InputWithTooltip({ label, children }: { label: string; children: React.ReactElement }) {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <Popover
-      isOpen={hovered}
-      positions={["top", "bottom"]}
-      padding={8}
-      content={
-        <div className="pointer-events-none font-semibold text-white px-3 py-2 bg-slate-800 rounded-lg text-sm">
-          {label}
-        </div>
-      }
-    >
-      <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
-        {children}
-      </div>
-    </Popover>
-  );
-}
+const SUMMARY_COLUMNS = [
+  { label: "Fecha pago" },
+  { label: "Serie" },
+  { label: "Number" },
+  { label: "Proveedor" },
+  { label: "Categoría" },
+  { label: "Método de pago" },
+  { label: "Monto", className: "text-right" },
+  { label: "Adjuntos" },
+];
+
 
 type Workspace = { id: string; name: string; slug: string };
 type Attachment = { id: string; file_name: string | null; storage_path: string };
@@ -450,127 +443,95 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b bg-slate-50 border-gray-200 text-left text-xs uppercase text-gray-800">
-              <th className="p-6">Fecha pago</th>
-              <th className="p-6">Serie</th>
-              <th className="p-6">Number</th>
-              <th className="p-6">Proveedor</th>
-              <th className="p-6">Categoría</th>
-              <th className="p-6">Método de pago</th>
-              <th className="p-6 text-right">Monto</th>
-              <th className="p-6">Adjuntos</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              Array.from({ length: PAGE_SIZE }, (_, i) => (
-                <tr key={i} className="border-b border-gray-50">
-                  {Array.from({ length: 8 }, (_, j) => (
-                    <td key={j} className="p-6">
-                      <div className="h-4 bg-gray-100 rounded animate-pulse" />
-                    </td>
+      <DataTable
+        columns={SUMMARY_COLUMNS}
+        isLoading={isLoading}
+        isEmpty={expenses.length === 0}
+        emptyMessage="No expenses found"
+      >
+        {expenses.map((expense) => {
+          const prov = Array.isArray(expense.provider)
+            ? expense.provider[0]
+            : expense.provider;
+          const cat = Array.isArray(expense.category)
+            ? expense.category[0]
+            : expense.category;
+
+          const href = `/admin/summary/${expense.id}`;
+
+          return (
+            <DataTableRow key={expense.id}>
+              <td className="whitespace-nowrap">
+                <Link href={href} target="_blank" className="block p-6">
+                  {formatDate(expense.paid_at)}
+                </Link>
+              </td>
+              <td className="font-mono text-sm">
+                <Link href={href} target="_blank" className="block p-6">
+                  {expense.invoice_series ?? "—"}
+                </Link>
+              </td>
+              <td className="font-mono text-sm">
+                <Link href={href} target="_blank" className="block p-6">
+                  {expense.invoice_number ?? "—"}
+                </Link>
+              </td>
+              <td>
+                <Link href={href} target="_blank" className="block p-6">
+                  <div>{prov?.name ?? "—"}</div>
+                  {prov?.ruc && <div className="text-sm text-gray-400">{prov.ruc}</div>}
+                </Link>
+              </td>
+              <td>
+                <Link href={href} target="_blank" className="block p-6">
+                  {cat ? (
+                    <span
+                      className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                      style={{
+                        backgroundColor: cat.color ? `${cat.color}20` : "#f3f4f6",
+                        color: cat.color ?? "#374151",
+                      }}
+                    >
+                      {cat.name}
+                    </span>
+                  ) : (
+                    "—"
+                  )}
+                </Link>
+              </td>
+              <td className="whitespace-nowrap">
+                <Link href={href} target="_blank" className="block p-6">
+                  {expense.payment_method ?? "—"}
+                </Link>
+              </td>
+              <td className="text-right font-medium whitespace-nowrap">
+                <Link href={href} target="_blank" className="block p-6">
+                  {expense.amount != null
+                    ? formatAmount(expense.amount, expense.currency)
+                    : "—"}
+                </Link>
+              </td>
+              <td className="p-6">
+                <div className="flex flex-wrap gap-1">
+                  {expense.expense_attachment?.map((att) => (
+                    <a
+                      key={att.id}
+                      href={getAttachmentUrl(att.storage_path)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={att.file_name ?? "attachment"}
+                      className="inline-flex items-center gap-2 p-2 rounded-lg bg-cyan-50 text-cyan-600 hover:bg-cyan-100 text-sm transition-colors"
+                    >
+                      <Icon icon={/\.pdf$/i.test(att.file_name ?? "") ? "hugeicons:pdf-02" : "solar:gallery-minimalistic-linear"} fontSize={24} />
+                      <span className="max-w-[80px] truncate">{att.file_name ?? "file"}</span>
+                    </a>
                   ))}
-                </tr>
-              ))
-            ) : expenses.length === 0 ? (
-              <tr>
-                <td colSpan={8} className="px-6 py-10 text-center text-gray-400">
-                  No expenses found
-                </td>
-              </tr>
-            ) : (
-              expenses.map((expense) => {
-                const prov = Array.isArray(expense.provider)
-                  ? expense.provider[0]
-                  : expense.provider;
-                const cat = Array.isArray(expense.category)
-                  ? expense.category[0]
-                  : expense.category;
-
-                const href = `/admin/summary/${expense.id}`;
-
-                return (
-                  <tr
-                    key={expense.id}
-                    className="border-b border-gray-50 hover:bg-gray-50 transition-colors"
-                  >
-                    <td className="whitespace-nowrap">
-                      <Link href={href} target="_blank" className="block p-6">
-                        {formatDate(expense.paid_at)}
-                      </Link>
-                    </td>
-                    <td className="font-mono text-sm">
-                      <Link href={href} target="_blank" className="block p-6">
-                        {expense.invoice_series ?? "—"}
-                      </Link>
-                    </td>
-                    <td className="font-mono text-sm">
-                      <Link href={href} target="_blank" className="block p-6">
-                        {expense.invoice_number ?? "—"}
-                      </Link>
-                    </td>
-                    <td>
-                      <Link href={href} target="_blank" className="block p-6">
-                        <div>{prov?.name ?? "—"}</div>
-                        {prov?.ruc && <div className="text-sm text-gray-400">{prov.ruc}</div>}
-                      </Link>
-                    </td>
-                    <td>
-                      <Link href={href} target="_blank" className="block p-6">
-                        {cat ? (
-                          <span
-                            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-                            style={{
-                              backgroundColor: cat.color ? `${cat.color}20` : "#f3f4f6",
-                              color: cat.color ?? "#374151",
-                            }}
-                          >
-                            {cat.name}
-                          </span>
-                        ) : (
-                          "—"
-                        )}
-                      </Link>
-                    </td>
-                    <td className="whitespace-nowrap">
-                      <Link href={href} target="_blank" className="block p-6">
-                        {expense.payment_method ?? "—"}
-                      </Link>
-                    </td>
-                    <td className="text-right font-medium whitespace-nowrap">
-                      <Link href={href} target="_blank" className="block p-6">
-                        {expense.amount != null
-                          ? formatAmount(expense.amount, expense.currency)
-                          : "—"}
-                      </Link>
-                    </td>
-                    <td className="p-6">
-                      <div className="flex flex-wrap gap-1">
-                        {expense.expense_attachment?.map((att) => (
-                          <a
-                            key={att.id}
-                            href={getAttachmentUrl(att.storage_path)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            title={att.file_name ?? "attachment"}
-                            className="inline-flex items-center gap-2 p-2 rounded-lg bg-cyan-50 text-cyan-600 hover:bg-cyan-100 text-sm transition-colors"
-                          >
-                            <Icon icon={/\.pdf$/i.test(att.file_name ?? "") ? "hugeicons:pdf-02" : "solar:gallery-minimalistic-linear"} fontSize={24} />
-                            <span className="max-w-[80px] truncate">{att.file_name ?? "file"}</span>
-                          </a>
-                        ))}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
+                </div>
+              </td>
+            </DataTableRow>
+          );
+        })}
+      </DataTable>
     </div>
   );
 }

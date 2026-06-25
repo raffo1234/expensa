@@ -25,28 +25,32 @@ function ExpenseRow({ expense, isLast, onDelete, isDeleting, workspaceSlug }: Ex
   const parsedDate = expense?.issued_at
     ? new Date(expense.issued_at.slice(0, 10) + "T12:00:00")
     : null;
-  const parsedDatePaid = expense?.paid_at
-    ? new Date(expense.paid_at.slice(0, 10) + "T12:00:00")
-    : null;
-
   return (
     <tr
       className={`transition-all duration-200 ${!isLast ? "border-b border-gray-100" : ""} ${
         isDeleting ? "opacity-40 pointer-events-none" : "hover:bg-purple-50"
       }`}
     >
-      <td className={`${isLast ? "rounded-bl-xl" : ""} min-w-0 max-w-[200px]`}>
+      <td className={`${isLast ? "rounded-bl-xl" : ""}`}>
+        <Link href={href} className="block p-5">
+          {invoiceRef ? (
+            <p className="text-sm text-gray-600 font-mono whitespace-nowrap">{invoiceRef}</p>
+          ) : (
+            <span className="text-sm text-gray-300">—</span>
+          )}
+        </Link>
+      </td>
+
+      <td className="min-w-0 max-w-[200px]">
         <Link href={href} className="block p-5">
           <p className="text-sm font-semibold text-gray-900 truncate">
             {expense.provider?.name ?? (
               <span className="text-gray-400 font-normal">Sin proveedor</span>
             )}
           </p>
-          {invoiceRef ? (
-            <p className="text-sm text-gray-400 truncate mt-0.5 font-mono">{invoiceRef}</p>
-          ) : expense.notes ? (
+          {expense.notes && (
             <p className="text-xs text-gray-400 truncate mt-0.5">{expense.notes}</p>
-          ) : null}
+          )}
         </Link>
       </td>
 
@@ -73,18 +77,6 @@ function ExpenseRow({ expense, isLast, onDelete, isDeleting, workspaceSlug }: Ex
         </Link>
       </td>
 
-      <td className="text-right">
-        <Link href={href} className="block p-5">
-          <p className="text-sm font-medium text-gray-800 whitespace-nowrap">
-            {expense.paid_at ? formatSafeDate(expense.paid_at, "d 'de' MMMM, yyyy") : "-"}
-          </p>
-          <p className="text-sm text-gray-400 whitespace-nowrap">
-            {parsedDatePaid
-              ? formatDistanceToNow(parsedDatePaid, { addSuffix: true, locale: es })
-              : "-"}
-          </p>
-        </Link>
-      </td>
 
       <td className="text-sm font-bold text-gray-900 whitespace-nowrap text-right">
         <Link href={href} className="block p-5">
@@ -127,11 +119,11 @@ export default function ExpenseTable({
           <thead className="border-b border-gray-100">
             <tr>
               {[
+                "Ref.",
                 "Proveedor",
                 "Categoría",
                 "Método",
                 "Fecha de emision",
-                "Fecha de pago",
                 "Monto",
                 "",
               ].map((h) => (

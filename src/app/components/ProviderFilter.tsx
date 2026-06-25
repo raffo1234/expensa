@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 type Provider = { id: string; name: string };
 
@@ -13,13 +13,26 @@ interface Props {
 export default function ProviderFilter({ providers, value, onChange }: Props) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [highlighted, setHighlighted] = useState(-1);
   const ref = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   const selected = providers.find((p) => p.id === value);
 
   const filtered = providers.filter((p) =>
     p.name.toLowerCase().includes(search.trim().toLowerCase()),
+  );
+
+  // "Todos" counts as index 0, providers start at 1
+  const itemCount = filtered.length + 1;
+
+  const select = useCallback(
+    (index: number) => {
+      onChange(index === 0 ? "" : filtered[index - 1]?.id ?? "");
+      setOpen(false);
+    },
+    [filtered, onChange],
   );
 
   useEffect(() => {
@@ -31,9 +44,38 @@ export default function ProviderFilter({ providers, value, onChange }: Props) {
   }, []);
 
   useEffect(() => {
-    if (open) inputRef.current?.focus();
-    else setSearch("");
+    if (open) {
+      inputRef.current?.focus();
+      setHighlighted(-1);
+    } else {
+      setSearch("");
+    }
   }, [open]);
+
+  useEffect(() => {
+    setHighlighted(-1);
+  }, [search]);
+
+  useEffect(() => {
+    if (highlighted < 0 || !listRef.current) return;
+    const el = listRef.current.children[highlighted] as HTMLElement | undefined;
+    el?.scrollIntoView({ block: "nearest" });
+  }, [highlighted]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlighted((h) => (h + 1 >= itemCount ? 0 : h + 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlighted((h) => (h <= 0 ? itemCount - 1 : h - 1));
+    } else if (e.key === "Enter" && highlighted >= 0) {
+      e.preventDefault();
+      select(highlighted);
+    } else if (e.key === "Escape") {
+      setOpen(false);
+    }
+  };
 
   return (
     <div ref={ref} className="relative">
@@ -72,30 +114,29 @@ export default function ProviderFilter({ providers, value, onChange }: Props) {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={handleKeyDown}
               placeholder="Buscar proveedor..."
               className="w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-300 transition"
             />
           </div>
-          <div className="overflow-y-auto">
+          <div ref={listRef} className="overflow-y-auto">
             <button
               type="button"
-              onClick={() => {
-                onChange("");
-                setOpen(false);
-              }}
-              className={`w-full text-left px-4 py-2 text-sm transition hover:bg-gray-50 ${!value ? "font-semibold text-gray-900" : "text-gray-500"}`}
+              onClick={() => select(0)}
+              className={`w-full text-left px-4 py-2 text-sm transition ${
+                highlighted === 0 ? "bg-purple-50" : "hover:bg-gray-50"
+              } ${!value ? "font-semibold text-gray-900" : "text-gray-500"}`}
             >
               Todos los proveedores
             </button>
-            {filtered.map((provider) => (
+            {filtered.map((provider, i) => (
               <button
                 key={provider.id}
                 type="button"
-                onClick={() => {
-                  onChange(provider.id);
-                  setOpen(false);
-                }}
-                className={`w-full text-left px-4 py-2 text-sm transition hover:bg-gray-50 ${value === provider.id ? "font-semibold text-gray-900" : "text-gray-600"}`}
+                onClick={() => select(i + 1)}
+                className={`w-full text-left px-4 py-2 text-sm transition ${
+                  highlighted === i + 1 ? "bg-purple-50" : "hover:bg-gray-50"
+                } ${value === provider.id ? "font-semibold text-gray-900" : "text-gray-600"}`}
               >
                 {provider.name}
               </button>

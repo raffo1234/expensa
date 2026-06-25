@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import useSWR from "swr";
 import ExpenseTable from "@/components/ExpenseTable";
 import { supabase } from "@/lib/supabase";
-import { PRIMARY_BUTTON_CLASS } from "@/constants";
+import { PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS, INPUT_CLASS, SELECT_CLASS } from "@/constants";
 import Link from "next/link";
 import BackLink from "@/components/BackLink";
 import { Expense, ExpenseRow } from "@/types/ExpenseType";
@@ -18,6 +18,7 @@ import { formatAmount } from "@/utils/formatAmount";
 import { useGlobalState } from "@/lib/globalState";
 import ManageCategoriesModal from "./ManageCategoriesModal";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { Popover } from "react-tiny-popover";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -47,8 +48,6 @@ interface FetchResult {
 }
 
 type Filters = {
-  paidFrom: string;
-  paidTo: string;
   issuedFrom: string;
   issuedTo: string;
   amountMin: string;
@@ -150,14 +149,6 @@ const fetchExpenses = async (
     query = query.or(orClause);
     amountsQuery = amountsQuery.or(orClause);
   }
-  if (filters.paidFrom) {
-    query = query.gte("paid_at", filters.paidFrom);
-    amountsQuery = amountsQuery.gte("paid_at", filters.paidFrom);
-  }
-  if (filters.paidTo) {
-    query = query.lte("paid_at", filters.paidTo);
-    amountsQuery = amountsQuery.lte("paid_at", filters.paidTo);
-  }
   if (filters.issuedFrom) {
     query = query.gte("issued_at", filters.issuedFrom);
     amountsQuery = amountsQuery.gte("issued_at", filters.issuedFrom);
@@ -244,8 +235,6 @@ const exportExpensesCsv = async (workspaceId: string, search: string, filters: F
     if (filters.stageId) query = query.eq("stage_id", filters.stageId);
     if (filters.levelId) query = query.eq("level_id", filters.levelId);
     if (filters.providerId) query = query.eq("provider_id", filters.providerId);
-    if (filters.paidFrom) query = query.gte("paid_at", filters.paidFrom);
-    if (filters.paidTo) query = query.lte("paid_at", filters.paidTo);
     if (filters.issuedFrom) query = query.gte("issued_at", filters.issuedFrom);
     if (filters.issuedTo) query = query.lte("issued_at", filters.issuedTo);
     if (filters.amountMin)
@@ -306,9 +295,27 @@ const exportExpensesCsv = async (workspaceId: string, search: string, filters: F
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
+function InputWithTooltip({ label, children }: { label: string; children: React.ReactElement }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <Popover
+      isOpen={hovered}
+      positions={["top", "bottom"]}
+      padding={8}
+      content={
+        <div className="pointer-events-none font-semibold text-white px-3 py-2 bg-slate-800 rounded-lg text-sm">
+          {label}
+        </div>
+      }
+    >
+      <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
+        {children}
+      </div>
+    </Popover>
+  );
+}
+
 const EMPTY_FILTERS: Filters = {
-  paidFrom: "",
-  paidTo: "",
   issuedFrom: "",
   issuedTo: "",
   amountMin: "",
@@ -338,8 +345,6 @@ export default function ExpensesClient({
   const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
   const [debouncedSearch, setDebouncedSearch] = useState(() => searchParams.get("q") ?? "");
   const [filters, setFilters] = useState<Filters>(() => ({
-    paidFrom: searchParams.get("paidFrom") ?? "",
-    paidTo: searchParams.get("paidTo") ?? "",
     issuedFrom: searchParams.get("issuedFrom") ?? "",
     issuedTo: searchParams.get("issuedTo") ?? "",
     amountMin: searchParams.get("amountMin") ?? "",
@@ -349,6 +354,11 @@ export default function ExpensesClient({
     levelId: searchParams.get("levelId") ?? "",
     providerId: searchParams.get("providerId") ?? "",
   }));
+  const [issuedMonth, setIssuedMonth] = useState(() => searchParams.get("issuedMonth") ?? "");
+  const [showFilters, setShowFilters] = useState(() => {
+    const f = ["issuedFrom", "issuedTo", "amountMin", "amountMax", "categoryId", "stageId", "levelId"] as const;
+    return f.some((k) => searchParams.get(k));
+  });
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [localCategories, setLocalCategories] = useState(categories);
   const { setModalContent, setModalOpen } = useGlobalState();
@@ -357,12 +367,13 @@ export default function ExpensesClient({
     const params = new URLSearchParams();
     if (page > 1) params.set("page", String(page));
     if (debouncedSearch) params.set("q", debouncedSearch);
+    if (issuedMonth) params.set("issuedMonth", issuedMonth);
     for (const [k, v] of Object.entries(filters)) {
       if (v) params.set(k, v);
     }
     const qs = params.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname);
-  }, [page, debouncedSearch, filters, router, pathname]);
+  }, [page, debouncedSearch, filters, issuedMonth, router, pathname]);
 
   useEffect(() => {
     const t = setTimeout(syncUrl, 300);
@@ -393,9 +404,26 @@ export default function ExpensesClient({
     setPage(1);
   }
 
+  const handleIssuedMonthChange = (value: string) => {
+    setIssuedMonth(value);
+    if (value) {
+      const [y, m] = value.split("-").map(Number);
+      const lastDay = new Date(y, m, 0).getDate();
+      setFilters((prev) => ({
+        ...prev,
+        issuedFrom: `${value}-01`,
+        issuedTo: `${value}-${String(lastDay).padStart(2, "0")}`,
+      }));
+    } else {
+      setFilters((prev) => ({ ...prev, issuedFrom: "", issuedTo: "" }));
+    }
+    setPage(1);
+  };
+
   function clearFilters() {
     setFilters(EMPTY_FILTERS);
     setSearch("");
+    setIssuedMonth("");
     setPage(1);
   }
 
@@ -451,8 +479,6 @@ export default function ExpensesClient({
     );
   }
 
-  const inputClass =
-    "w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-300 transition";
   const labelClass = "block text-[11px] font-medium text-gray-400 mb-1";
 
   return (
@@ -473,192 +499,203 @@ export default function ExpensesClient({
               {formatAmount(totalAmount, displayCurrency)}
             </span>
           </div>
-          <Link
-            href={`/admin/workspaces/${slug}/upload-expense`}
-            className={`${PRIMARY_BUTTON_CLASS} mt-8`}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+          <div className="flex items-center justify-between mt-8">
+            <Link
+              href={`/admin/workspaces/${slug}/upload-expense`}
+              className={PRIMARY_BUTTON_CLASS}
             >
-              <path d="M5 12h14M12 5v14" />
-            </svg>
-            Agregar
-          </Link>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M5 12h14M12 5v14" />
+              </svg>
+              Agregar
+            </Link>
+            <button
+              onClick={() => exportExpensesCsv(workspace.id, debouncedSearch, filters)}
+              className={SECONDARY_BUTTON_CLASS}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              Export CSV
+            </button>
+          </div>
         </TitleWrapper>
 
-        {/* Buscador + Categorías */}
+        {/* Buscador */}
         <div className="mb-3 flex gap-2">
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por referencia, proveedor o notas..."
-            className={`${inputClass} flex-1`}
+            className={`${INPUT_CLASS} flex-1`}
           />
-          <button
-            type="button"
-            onClick={openCategoriesModal}
-            className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600 hover:border-purple-300 hover:text-purple-600 transition flex-shrink-0"
-          >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-            >
-              <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-            </svg>
-            Categorias
-          </button>
-        </div>
-
-        {/* Filtros */}
-        <div className="mb-4 grid grid-cols-2 gap-x-3 gap-y-3 sm:grid-cols-3 lg:grid-cols-6">
-          <div>
-            <p className={labelClass}>Pago desde</p>
-            <input
-              type="date"
-              value={filters.paidFrom}
-              onChange={(e) => setFilter("paidFrom", e.target.value)}
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <p className={labelClass}>Pago hasta</p>
-            <input
-              type="date"
-              value={filters.paidTo}
-              onChange={(e) => setFilter("paidTo", e.target.value)}
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <p className={labelClass}>Emisión desde</p>
-            <input
-              type="date"
-              value={filters.issuedFrom}
-              onChange={(e) => setFilter("issuedFrom", e.target.value)}
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <p className={labelClass}>Emisión hasta</p>
-            <input
-              type="date"
-              value={filters.issuedTo}
-              onChange={(e) => setFilter("issuedTo", e.target.value)}
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <p className={labelClass}>Monto mín.</p>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="0.00"
-              value={filters.amountMin}
-              onChange={(e) => setFilter("amountMin", e.target.value)}
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <p className={labelClass}>Monto máx.</p>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="0.00"
-              value={filters.amountMax}
-              onChange={(e) => setFilter("amountMax", e.target.value)}
-              className={inputClass}
-            />
-          </div>
-          <div className="col-span-2 sm:col-span-3 lg:col-span-2">
-            <p className={labelClass}>Categoría</p>
-            <CategoryFilter
-              categories={localCategories}
-              value={filters.categoryId}
-              onChange={(id) => setFilter("categoryId", id)}
-            />
-          </div>
-          <div className="col-span-2 sm:col-span-3 lg:col-span-2">
-            <p className={labelClass}>Proveedor</p>
-            <ProviderFilter
-              providers={providers}
-              value={filters.providerId}
-              onChange={(id) => setFilter("providerId", id)}
-            />
-          </div>
-          <div className="col-span-2 sm:col-span-3 lg:col-span-2">
-            <p className={labelClass}>Etapa</p>
-            <select
-              value={filters.stageId}
-              onChange={(e) => setFilter("stageId", e.target.value)}
-              className={inputClass}
-            >
-              <option value="">Todas las etapas</option>
-              {stages.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="col-span-2 sm:col-span-3 lg:col-span-2">
-            <p className={labelClass}>Nivel</p>
-            <select
-              value={filters.levelId}
-              onChange={(e) => setFilter("levelId", e.target.value)}
-              className={inputClass}
-            >
-              <option value="">Todos los niveles</option>
-              {levels.map((l) => (
-                <option key={l.id} value={l.id}>
-                  {l.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div className="mb-3 flex items-center gap-2">
           {hasActiveFilters && (
-            <>
-              <span className="text-xs text-gray-400">
-                {totalCount} resultado{totalCount !== 1 ? "s" : ""}
-              </span>
-              <span className="text-xs text-gray-300">·</span>
-              <span className="text-xs font-medium text-gray-600">
-                {formatAmount(totalAmount, displayCurrency)}
-              </span>
+            <InputWithTooltip label="Limpiar filtros">
               <button
+                type="button"
                 onClick={clearFilters}
-                className="text-xs text-purple-500 hover:text-purple-700 underline underline-offset-2 transition"
+                className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-purple-400 hover:text-purple-500 transition-colors"
               >
-                Limpiar filtros
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                  <line x1="4" y1="21" x2="21" y2="4" />
+                </svg>
               </button>
-            </>
+            </InputWithTooltip>
           )}
-          <button
-            onClick={() => exportExpensesCsv(workspace.id, debouncedSearch, filters)}
-            className="text-xs text-purple-500 hover:text-purple-700 underline underline-offset-2 transition"
-          >
-            Export CSV
-          </button>
         </div>
+        <div className="mb-3">
+          <ProviderFilter
+            providers={providers}
+            value={filters.providerId}
+            onChange={(id) => setFilter("providerId", id)}
+          />
+        </div>
+
+        {/* Toggle filtros */}
+        <button
+          type="button"
+          onClick={() => setShowFilters((v) => !v)}
+          className="mb-3 text-xs text-purple-500 hover:text-purple-700 underline underline-offset-2 transition"
+        >
+          {showFilters ? "Cerrar filtros" : "Más filtros"}
+        </button>
+
+        {showFilters && (
+          <div className="mb-4 grid grid-cols-2 gap-x-3 gap-y-3 sm:grid-cols-3 lg:grid-cols-6">
+            <div className="col-span-2 sm:col-span-3 lg:col-span-3 flex gap-2 items-center border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
+              <span className="text-[11px] font-medium text-gray-400 pl-1">Emisión</span>
+              <InputWithTooltip label="Mes de emisión">
+                <input
+                  type="month"
+                  value={issuedMonth}
+                  onChange={(e) => handleIssuedMonthChange(e.target.value)}
+                  className={INPUT_CLASS}
+                />
+              </InputWithTooltip>
+              <InputWithTooltip label="Emisión desde">
+                <input
+                  type="date"
+                  value={filters.issuedFrom}
+                  onChange={(e) => { setFilter("issuedFrom", e.target.value); setIssuedMonth(""); }}
+                  className={INPUT_CLASS}
+                />
+              </InputWithTooltip>
+              <InputWithTooltip label="Emisión hasta">
+                <input
+                  type="date"
+                  value={filters.issuedTo}
+                  onChange={(e) => { setFilter("issuedTo", e.target.value); setIssuedMonth(""); }}
+                  className={INPUT_CLASS}
+                />
+              </InputWithTooltip>
+            </div>
+            <div className="col-span-2 sm:col-span-3 lg:col-span-3 flex gap-2 items-center border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
+              <span className="text-[11px] font-medium text-gray-400 pl-1">Monto</span>
+              <InputWithTooltip label="Monto mínimo">
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={filters.amountMin}
+                  onChange={(e) => setFilter("amountMin", e.target.value)}
+                  className={INPUT_CLASS}
+                />
+              </InputWithTooltip>
+              <InputWithTooltip label="Monto máximo">
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={filters.amountMax}
+                  onChange={(e) => setFilter("amountMax", e.target.value)}
+                  className={INPUT_CLASS}
+                />
+              </InputWithTooltip>
+            </div>
+            <div className="col-span-2 sm:col-span-3 lg:col-span-2 flex gap-2 items-end border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
+              <div className="flex-1">
+                <p className={labelClass}>Categoría</p>
+                <CategoryFilter
+                  categories={localCategories}
+                  value={filters.categoryId}
+                  onChange={(id) => setFilter("categoryId", id)}
+                />
+              </div>
+              <InputWithTooltip label="Gestionar categorías">
+                <button
+                  type="button"
+                  onClick={openCategoriesModal}
+                  className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-purple-400 hover:text-purple-500 transition-colors mb-0.5"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                  </svg>
+                </button>
+              </InputWithTooltip>
+            </div>
+            <div className="col-span-2 sm:col-span-3 lg:col-span-2 flex gap-2 items-end border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
+              <div className="flex-1">
+                <p className={labelClass}>Etapa</p>
+                <select
+                  value={filters.stageId}
+                  onChange={(e) => setFilter("stageId", e.target.value)}
+                  className={SELECT_CLASS}
+                >
+                  <option value="">Todas</option>
+                  {stages.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1">
+                <p className={labelClass}>Nivel</p>
+                <select
+                  value={filters.levelId}
+                  onChange={(e) => setFilter("levelId", e.target.value)}
+                  className={SELECT_CLASS}
+                >
+                  <option value="">Todos</option>
+                  {levels.map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {hasActiveFilters && (
+          <div className="mb-3 flex items-center gap-2">
+            <span className="text-xs text-gray-400">
+              {totalCount} resultado{totalCount !== 1 ? "s" : ""}
+            </span>
+            <span className="text-xs text-gray-300">·</span>
+            <span className="text-xs font-medium text-gray-600">
+              {formatAmount(totalAmount, displayCurrency)}
+            </span>
+          </div>
+        )}
       </div>
 
       {totalPages > 1 && (

@@ -4,7 +4,12 @@ import { useState, useEffect, useCallback } from "react";
 import useSWR from "swr";
 import ExpenseTable from "@/components/ExpenseTable";
 import { supabase } from "@/lib/supabase";
-import { PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS, INPUT_CLASS, SELECT_CLASS } from "@/constants";
+import {
+  PRIMARY_BUTTON_CLASS,
+  SECONDARY_BUTTON_CLASS,
+  INPUT_CLASS,
+  SELECT_CLASS,
+} from "@/constants";
 import Link from "next/link";
 import BackLink from "@/components/BackLink";
 import { Expense, ExpenseRow } from "@/types/ExpenseType";
@@ -348,7 +353,15 @@ export default function ExpensesClient({
   }));
   const [issuedMonth, setIssuedMonth] = useState(() => searchParams.get("issuedMonth") ?? "");
   const [showFilters, setShowFilters] = useState(() => {
-    const f = ["issuedFrom", "issuedTo", "amountMin", "amountMax", "categoryId", "stageId", "levelId"] as const;
+    const f = [
+      "issuedFrom",
+      "issuedTo",
+      "amountMin",
+      "amountMax",
+      "categoryId",
+      "stageId",
+      "levelId",
+    ] as const;
     return f.some((k) => searchParams.get(k));
   });
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -476,22 +489,8 @@ export default function ExpensesClient({
   return (
     <>
       <div>
-        <BackLink href="/admin/workspaces">Workspaces</BackLink>
         <TitleWrapper>
-          <PageTitle>
-            Gastos
-            <span className="text-gray-400 font-normal ml-2">— {workspace.name}</span>
-          </PageTitle>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-400">
-              {totalCount} registro{totalCount !== 1 ? "s" : ""}
-            </span>
-            <span className="text-gray-200">·</span>
-            <span className="text-sm font-medium text-gray-700">
-              {formatAmount(totalAmount, displayCurrency)}
-            </span>
-          </div>
-          <div className="flex items-center justify-between mt-8">
+          <div className="flex mb-6 items-center justify-between mt-8">
             <Link
               href={`/admin/workspaces/${slug}/upload-expense`}
               className={PRIMARY_BUTTON_CLASS}
@@ -515,13 +514,31 @@ export default function ExpensesClient({
               onClick={() => exportExpensesCsv(workspace.id, debouncedSearch, filters)}
               className={SECONDARY_BUTTON_CLASS}
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="7 10 12 15 17 10" />
                 <line x1="12" y1="15" x2="12" y2="3" />
               </svg>
               Export CSV
             </button>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-gray-700">
+              {formatAmount(totalAmount, displayCurrency)}
+            </span>
+            <span className="text-gray-800">·</span>
+            <span className="text-gray-400">
+              {totalCount} registro{totalCount !== 1 ? "s" : ""}
+            </span>
           </div>
         </TitleWrapper>
 
@@ -541,7 +558,16 @@ export default function ExpensesClient({
                 onClick={clearFilters}
                 className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-purple-400 hover:text-purple-500 transition-colors"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
                   <line x1="4" y1="21" x2="21" y2="4" />
                 </svg>
@@ -582,7 +608,10 @@ export default function ExpensesClient({
                 <input
                   type="date"
                   value={filters.issuedFrom}
-                  onChange={(e) => { setFilter("issuedFrom", e.target.value); setIssuedMonth(""); }}
+                  onChange={(e) => {
+                    setFilter("issuedFrom", e.target.value);
+                    setIssuedMonth("");
+                  }}
                   className={INPUT_CLASS}
                 />
               </InputWithTooltip>
@@ -590,7 +619,10 @@ export default function ExpensesClient({
                 <input
                   type="date"
                   value={filters.issuedTo}
-                  onChange={(e) => { setFilter("issuedTo", e.target.value); setIssuedMonth(""); }}
+                  onChange={(e) => {
+                    setFilter("issuedTo", e.target.value);
+                    setIssuedMonth("");
+                  }}
                   className={INPUT_CLASS}
                 />
               </InputWithTooltip>
@@ -635,7 +667,15 @@ export default function ExpensesClient({
                   onClick={openCategoriesModal}
                   className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-purple-400 hover:text-purple-500 transition-colors mb-0.5"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  >
                     <circle cx="12" cy="12" r="3" />
                     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
                   </svg>

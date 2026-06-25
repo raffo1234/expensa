@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { supabase } from "@/lib/supabase";
 import ExpensesClient from "@/components/ExpensesClient";
 import FallbackExpenses from "@/components/FallbackExpenses";
+import FormSection from "@/components/FormSection";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -27,10 +28,7 @@ async function ExpensesSection({ slug }: { slug: string }) {
 
   if (wsError || !workspace) throw new Error("Workspace not found");
 
-  const [
-    { data: rows, error: expError, count },
-    { data: allAmounts },
-  ] = await Promise.all([
+  const [{ data: rows, error: expError, count }, { data: allAmounts }] = await Promise.all([
     supabase
       .from("expense")
       .select(
@@ -95,16 +93,18 @@ async function ExpensesSection({ slug }: { slug: string }) {
     .order("name");
 
   return (
-    <ExpensesClient
-      slug={slug}
-      workspace={workspace}
-      initialExpenses={expenses}
-      initialCount={count ?? 0}
-      initialTotalAmount={initialTotalAmount}
-      categories={categories ?? []}
-      stages={stages ?? []}
-      levels={levels ?? []}
-      providers={providers ?? []}
-    />
+    <FormSection title={workspace.name} backUrl={`/admin/workspaces/${slug}`}>
+      <ExpensesClient
+        slug={slug}
+        workspace={workspace}
+        initialExpenses={expenses}
+        initialCount={count ?? 0}
+        initialTotalAmount={initialTotalAmount}
+        categories={categories ?? []}
+        stages={stages ?? []}
+        levels={levels ?? []}
+        providers={providers ?? []}
+      />
+    </FormSection>
   );
 }

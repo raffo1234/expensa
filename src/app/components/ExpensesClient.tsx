@@ -85,6 +85,33 @@ function mapExpenseRow(row: ExpenseRow): Expense {
 
 // ── Fetcher ───────────────────────────────────────────────────────────────────
 
+async function buildSearchClause(workspaceId: string, search: string): Promise<string | null> {
+  const q = search.trim();
+  if (!q) return null;
+
+  const clauses: string[] = [
+    `invoice_series.ilike.%${q}%`,
+    `invoice_number.ilike.%${q}%`,
+    `notes.ilike.%${q}%`,
+  ];
+
+  const { data: matchingProviders } = await supabase
+    .from("provider")
+    .select("id")
+    .eq("workspace_id", workspaceId)
+    .or(`name.ilike.%${q}%,ruc.ilike.%${q}%`);
+  const providerIds = (matchingProviders ?? []).map((p) => p.id);
+  if (providerIds.length > 0) clauses.push(`provider_id.in.(${providerIds.join(",")})`);
+
+  const num = parseFloat(q);
+  if (!isNaN(num) && num > 0) {
+    const cents = Math.round(num * 100);
+    clauses.push(`amount.eq.${cents}`);
+  }
+
+  return clauses.join(",");
+}
+
 const fetchExpenses = async (
   workspaceId: string,
   page: number,
@@ -94,25 +121,7 @@ const fetchExpenses = async (
   const from = (page - 1) * ITEMS_PER_PAGE;
   const to = from + ITEMS_PER_PAGE - 1;
 
-  // Resolve provider IDs for search once, used in both queries
-  let providerIds: string[] = [];
-  if (search.trim()) {
-    const { data: matchingProviders } = await supabase
-      .from("provider")
-      .select("id")
-      .eq("workspace_id", workspaceId)
-      .ilike("name", `%${search.trim()}%`);
-    providerIds = matchingProviders?.map((p) => p.id) ?? [];
-  }
-
-  const orClause = search.trim()
-    ? [
-        `invoice_series.ilike.%${search.trim()}%`,
-        `invoice_number.ilike.%${search.trim()}%`,
-        `notes.ilike.%${search.trim()}%`,
-        ...(providerIds.length > 0 ? [`provider_id.in.(${providerIds.join(",")})`] : []),
-      ].join(",")
-    : null;
+  const orClause = await buildSearchClause(workspaceId, search);
 
   let query = supabase
     .from("expense")
@@ -195,24 +204,7 @@ const csvEscape = (v: unknown) => {
 };
 
 const exportExpensesCsv = async (workspaceId: string, search: string, filters: Filters) => {
-  let providerIds: string[] = [];
-  if (search.trim()) {
-    const { data: providers } = await supabase
-      .from("provider")
-      .select("id")
-      .eq("workspace_id", workspaceId)
-      .ilike("name", `%${search.trim()}%`);
-    providerIds = (providers ?? []).map((p: { id: string }) => p.id);
-  }
-
-  const orClause = search.trim()
-    ? [
-        `invoice_series.ilike.%${search.trim()}%`,
-        `invoice_number.ilike.%${search.trim()}%`,
-        `notes.ilike.%${search.trim()}%`,
-        ...(providerIds.length > 0 ? [`provider_id.in.(${providerIds.join(",")})`] : []),
-      ].join(",")
-    : null;
+  const orClause = await buildSearchClause(workspaceId, search);
 
   const all: ExpenseRow[] = [];
   let page = 0;

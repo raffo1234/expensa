@@ -19,7 +19,7 @@ import CategoryFilter from "./CategoryFilter";
 import ProviderFilter from "./ProviderFilter";
 import { formatAmount } from "@/utils/formatAmount";
 import { useGlobalState } from "@/lib/globalState";
-import ManageCategoriesModal from "./ManageCategoriesModal";
+import CategoryManagerModal from "./CategoryManagerModal";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import InputWithTooltip from "./InputWithTooltip";
 
@@ -365,7 +365,7 @@ export default function ExpensesClient({
 
   const openCategoriesModal = () => {
     setModalContent(
-      <ManageCategoriesModal
+      <CategoryManagerModal
         workspaceId={workspace.id}
         categories={localCategories}
         onUpdate={setLocalCategories}

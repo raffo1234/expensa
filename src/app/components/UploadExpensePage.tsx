@@ -24,6 +24,7 @@ import SectionTitle from "./SectionTitle";
 import Field from "./Field";
 import { useGlobalState } from "@/lib/globalState";
 import AddProviderModal from "./AddProviderModal";
+import CategoryManagerModal from "./CategoryManagerModal";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type Category = { id: string; name: string; color: string | null };
@@ -244,6 +245,17 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
   const openAddProvider = () => {
     setModalContent(
       <AddProviderModal workspaceId={workspaceId} onSelect={handleProviderCreated} />,
+    );
+    setModalOpen(true);
+  };
+
+  const openCategoryManager = () => {
+    setModalContent(
+      <CategoryManagerModal
+        workspaceId={workspaceId}
+        categories={categories}
+        onUpdate={() => mutate(["categories", workspaceId])}
+      />,
     );
     setModalOpen(true);
   };
@@ -883,19 +895,39 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
           <section className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <Field label="Categoría">
-                <select
-                  value={form.category_id}
-                  onChange={set("category_id")}
-                  disabled={catsLoading}
-                  className={SELECT_CLASS}
-                >
-                  <option value="">Sin categoría</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={form.category_id}
+                    onChange={set("category_id")}
+                    disabled={catsLoading}
+                    className={SELECT_CLASS}
+                  >
+                    <option value="">Sin categoría</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={openCategoryManager}
+                    className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-cyan-400 hover:text-cyan-500 transition-colors"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    >
+                      <circle cx="12" cy="12" r="3" />
+                      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                    </svg>
+                  </button>
+                </div>
               </Field>
               <Field label="Método de pago">
                 <select

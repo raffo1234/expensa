@@ -13,7 +13,7 @@ const COLORS = [
   "#3b82f6", "#8b5cf6", "#ec4899", "#6b7280",
 ];
 
-export default function ManageCategoriesModal({
+export default function CategoryManagerModal({
   workspaceId,
   categories: initial,
   onUpdate,

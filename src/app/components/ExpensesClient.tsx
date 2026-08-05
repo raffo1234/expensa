@@ -17,7 +17,7 @@ import { Expense, ExpenseRow } from "@/types/ExpenseType";
 import { Workspace } from "@/types/WorkspaceType";
 import { deleteExpense } from "@/actions/expenses";
 import TitleWrapper from "./TitleWrapper";
-import CategoryFilter from "./CategoryFilter";
+import CategoryMultiFilter from "./CategoryMultiFilter";
 import ProviderFilter from "./ProviderFilter";
 import { formatAmount } from "@/utils/formatAmount";
 import { useGlobalState } from "@/lib/globalState";
@@ -59,11 +59,24 @@ type Filters = {
   issuedTo: string;
   amountMin: string;
   amountMax: string;
+  // ponytail: comma-joined category ids, avoids widening Filters to string | string[] everywhere
   categoryId: string;
   stageId: string;
   levelId: string;
   providerId: string;
 };
+
+function categoryIdList(categoryId: string): string[] {
+  return categoryId ? categoryId.split(",").filter(Boolean) : [];
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyCategoryFilter<T extends { eq: any; in: any }>(query: T, categoryId: string): T {
+  const ids = categoryIdList(categoryId);
+  if (ids.length === 1) return query.eq("category_id", ids[0]);
+  if (ids.length > 1) return query.in("category_id", ids);
+  return query;
+}
 
 export type Stage = { id: string; name: string; color: string | null };
 export type Level = { id: string; name: string };
@@ -145,10 +158,8 @@ const fetchExpenses = async (
 
   let amountsQuery = supabase.from("expense").select("amount").eq("workspace_id", workspaceId);
 
-  if (filters.categoryId) {
-    query = query.eq("category_id", filters.categoryId);
-    amountsQuery = amountsQuery.eq("category_id", filters.categoryId);
-  }
+  query = applyCategoryFilter(query, filters.categoryId);
+  amountsQuery = applyCategoryFilter(amountsQuery, filters.categoryId);
   if (filters.stageId) {
     query = query.eq("stage_id", filters.stageId);
     amountsQuery = amountsQuery.eq("stage_id", filters.stageId);
@@ -234,7 +245,7 @@ const fetchAllFilteredExpenses = async (
       .range(page * size, (page + 1) * size - 1);
 
     if (orClause) query = query.or(orClause);
-    if (filters.categoryId) query = query.eq("category_id", filters.categoryId);
+    query = applyCategoryFilter(query, filters.categoryId);
     if (filters.stageId) query = query.eq("stage_id", filters.stageId);
     if (filters.levelId) query = query.eq("level_id", filters.levelId);
     if (filters.providerId) query = query.eq("provider_id", filters.providerId);
@@ -318,7 +329,10 @@ const exportExpensesPdf = async (
 
   const filterParts = [
     filters.categoryId
-      ? `Categoría: ${categories.find((c) => c.id === filters.categoryId)?.name ?? ""}`
+      ? `Categoría: ${categoryIdList(filters.categoryId)
+          .map((id) => categories.find((c) => c.id === id)?.name)
+          .filter(Boolean)
+          .join(", ")}`
       : null,
     filters.stageId ? `Etapa: ${stages.find((s) => s.id === filters.stageId)?.name ?? ""}` : null,
     filters.levelId ? `Nivel: ${levels.find((l) => l.id === filters.levelId)?.name ?? ""}` : null,
@@ -563,44 +577,46 @@ export default function ExpensesClient({
               </svg>
               Agregar
             </Link>
-            <button
-              onClick={() => exportExpensesCsv(workspace.id, debouncedSearch, filters)}
-              className={SECONDARY_BUTTON_CLASS}
-            >
-              <svg
-                width="15"
-                height="15"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+            <div className="flex gap-2 items-center">
+              <button
+                onClick={() => exportExpensesCsv(workspace.id, debouncedSearch, filters)}
+                className={SECONDARY_BUTTON_CLASS}
               >
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-              Export CSV
-            </button>
-            <button
-              onClick={() =>
-                exportExpensesPdf(
-                  workspace.id,
-                  workspace.name,
-                  debouncedSearch,
-                  filters,
-                  localCategories,
-                  stages,
-                  levels,
-                  providers,
-                )
-              }
-              className={SECONDARY_BUTTON_CLASS}
-            >
-              <Icon icon="hugeicons:pdf-02" fontSize={ICON_SIZE} />
-              Descargar PDF
-            </button>
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Export CSV
+              </button>
+              <button
+                onClick={() =>
+                  exportExpensesPdf(
+                    workspace.id,
+                    workspace.name,
+                    debouncedSearch,
+                    filters,
+                    localCategories,
+                    stages,
+                    levels,
+                    providers,
+                  )
+                }
+                className={SECONDARY_BUTTON_CLASS}
+              >
+                <Icon icon="hugeicons:pdf-02" fontSize={ICON_SIZE} />
+                Download PDF
+              </button>
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium text-gray-700">
@@ -726,10 +742,10 @@ export default function ExpensesClient({
             <div className="col-span-2 sm:col-span-3 lg:col-span-2 flex gap-2 items-end border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
               <div className="flex-1">
                 <p className={labelClass}>Categoría</p>
-                <CategoryFilter
+                <CategoryMultiFilter
                   categories={localCategories}
-                  value={filters.categoryId}
-                  onChange={(id) => setFilter("categoryId", id)}
+                  value={categoryIdList(filters.categoryId)}
+                  onChange={(ids) => setFilter("categoryId", ids.join(","))}
                 />
               </div>
               <InputWithTooltip label="Gestionar categorías">

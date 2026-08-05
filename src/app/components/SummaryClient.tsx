@@ -20,6 +20,8 @@ import OptionButton from "./OptionButton";
 import InputWithTooltip from "./InputWithTooltip";
 import DataTable, { DataTableRow } from "./DataTable";
 import CategoryFilter from "./CategoryFilter";
+import { pdf } from "@react-pdf/renderer";
+import SummaryReportPDF, { SummaryReportRow } from "./SummaryReportPDF";
 
 const PAGE_SIZE = 10;
 type SummaryTab = "facturas" | "gastos";
@@ -135,14 +137,14 @@ const csvEscape = (v: unknown) => {
   return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s;
 };
 
-const exportCsv = async (
+const fetchAllFiltered = async (
   workspaceId: string,
   search: string,
   dateFrom: string,
   dateTo: string,
   tab: SummaryTab,
   categoryId: string,
-) => {
+): Promise<SummaryExpense[]> => {
   let providerIds: string[] = [];
   if (search.trim()) {
     const { data: providers } = await supabase
@@ -191,8 +193,21 @@ const exportCsv = async (
     page++;
   }
 
-  const prov = (e: SummaryExpense) => (Array.isArray(e.provider) ? e.provider[0] : e.provider);
-  const cat = (e: SummaryExpense) => (Array.isArray(e.category) ? e.category[0] : e.category);
+  return all;
+};
+
+const prov = (e: SummaryExpense) => (Array.isArray(e.provider) ? e.provider[0] : e.provider);
+const cat = (e: SummaryExpense) => (Array.isArray(e.category) ? e.category[0] : e.category);
+
+const exportCsv = async (
+  workspaceId: string,
+  search: string,
+  dateFrom: string,
+  dateTo: string,
+  tab: SummaryTab,
+  categoryId: string,
+) => {
+  const all = await fetchAllFiltered(workspaceId, search, dateFrom, dateTo, tab, categoryId);
 
   let csv = "﻿";
   csv += "Mes,Fecha,Serie,Numero,Proveedor,RUC,Categoria,Metodo Pago,Monto,Moneda,Notas\n";
@@ -232,6 +247,52 @@ const exportCsv = async (
   const a = document.createElement("a");
   a.href = url;
   a.download = `gastos-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+const exportPdf = async (
+  workspaceId: string,
+  workspaceName: string,
+  search: string,
+  dateFrom: string,
+  dateTo: string,
+  tab: SummaryTab,
+  categoryId: string,
+  categoryName: string,
+) => {
+  const all = await fetchAllFiltered(workspaceId, search, dateFrom, dateTo, tab, categoryId);
+
+  const filters = [
+    `Tipo: ${tab === "facturas" ? "Facturas" : "Gastos"}`,
+    categoryId ? `Categoría: ${categoryName}` : null,
+    dateFrom || dateTo ? `Emisión: ${dateFrom || "…"} a ${dateTo || "…"}` : null,
+    search ? `Búsqueda: "${search}"` : null,
+  ]
+    .filter(Boolean)
+    .join("  •  ");
+
+  const rows: SummaryReportRow[] = all.map((e) => {
+    const p = prov(e);
+    const c = cat(e);
+    return {
+      id: e.id,
+      paid_at: e.paid_at,
+      provider_name: p?.name,
+      category_name: c?.name,
+      payment_method: e.payment_method,
+      amount: e.amount,
+      currency: e.currency,
+    };
+  });
+
+  const blob = await pdf(
+    <SummaryReportPDF workspaceName={workspaceName} filtersLabel={filters} rows={rows} />,
+  ).toBlob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `reporte-gastos-${new Date().toISOString().slice(0, 10)}.pdf`;
   a.click();
   URL.revokeObjectURL(url);
 };
@@ -394,14 +455,35 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
             <Icon icon="solar:alt-arrow-down-linear" fontSize={16} />
           </div>
         </div>
-        <button
-          onClick={() => exportCsv(workspaceId, search, dateFrom, dateTo, tab, categoryId)}
-          disabled={!workspaceId}
-          className={PRIMARY_BUTTON_CLASS}
-        >
-          <Icon icon="solar:download-linear" fontSize={ICON_SIZE} />
-          Export CSV
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => exportCsv(workspaceId, search, dateFrom, dateTo, tab, categoryId)}
+            disabled={!workspaceId}
+            className={PRIMARY_BUTTON_CLASS}
+          >
+            <Icon icon="solar:download-linear" fontSize={ICON_SIZE} />
+            Export CSV
+          </button>
+          <button
+            onClick={() =>
+              exportPdf(
+                workspaceId,
+                workspaces.find((w) => w.id === workspaceId)?.name ?? "",
+                search,
+                dateFrom,
+                dateTo,
+                tab,
+                categoryId,
+                categories.find((c) => c.id === categoryId)?.name ?? "",
+              )
+            }
+            disabled={!workspaceId}
+            className={SECONDARY_BUTTON_CLASS}
+          >
+            <Icon icon="hugeicons:pdf-02" fontSize={ICON_SIZE} />
+            Descargar PDF
+          </button>
+        </div>
       </div>
       <div className="flex gap-2 items-center">
         <input

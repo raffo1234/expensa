@@ -165,6 +165,8 @@ export async function createExpense(
       invoice_series: input.invoice_series ?? null,
       invoice_number: input.invoice_number ?? null,
       issued_at: input.issued_at ?? null,
+      stage_id: input.stage_id ?? null,
+      level_id: input.level_id ?? null,
       created_by: user.id,
     })
     .select("id")

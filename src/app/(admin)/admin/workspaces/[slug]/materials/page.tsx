@@ -259,14 +259,13 @@ function MaterialsReportPage() {
                   <option key={id} value={id}>{name}</option>
                 ))}
               </select>
-              {(search || materialFilter || brandFilter || levelFilter) && (
+              {(search || materialFilter || brandFilter) && (
                 <button
                   type="button"
                   onClick={() => {
                     setSearch("");
                     setMaterialFilter("");
                     setBrandFilter("");
-                    setLevelFilter("");
                   }}
                   className={`${SECONDARY_BUTTON_CLASS} justify-center flex-shrink-0`}
                 >

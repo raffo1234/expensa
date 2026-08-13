@@ -25,6 +25,10 @@ import Field from "./Field";
 import { useGlobalState } from "@/lib/globalState";
 import AddProviderModal from "./AddProviderModal";
 import CategoryManagerModal from "./CategoryManagerModal";
+import ExpenseItemsEditor, { type ExpenseItemLine } from "./ExpenseItemsEditor";
+import { getMaterials } from "@/actions/materials";
+import { getBrands } from "@/actions/brands";
+import { getUnits } from "@/actions/units";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type Category = { id: string; name: string; color: string | null };
@@ -90,6 +94,18 @@ async function fetchLevels(workspaceId: string): Promise<Level[]> {
     .order("order");
   if (error) throw error;
   return data ?? [];
+}
+
+async function fetchMaterials(workspaceId: string) {
+  return getMaterials(workspaceId);
+}
+
+async function fetchBrands(workspaceId: string) {
+  return getBrands(workspaceId);
+}
+
+async function fetchUnits(workspaceId: string) {
+  return getUnits(workspaceId);
 }
 
 // ── Receipt extractor ─────────────────────────────────────────────────────────
@@ -203,6 +219,21 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
   const { data: levels = [] } = useSWR(workspaceId ? ["levels", workspaceId] : null, ([, wid]) =>
     fetchLevels(wid),
   );
+
+  const { data: materials = [] } = useSWR(
+    workspaceId ? ["materials", workspaceId] : null,
+    ([, wid]) => fetchMaterials(wid),
+  );
+
+  const { data: brands = [] } = useSWR(workspaceId ? ["brands", workspaceId] : null, ([, wid]) =>
+    fetchBrands(wid),
+  );
+
+  const { data: units = [] } = useSWR(workspaceId ? ["units", workspaceId] : null, ([, wid]) =>
+    fetchUnits(wid),
+  );
+
+  const [itemLines, setItemLines] = useState<ExpenseItemLine[]>([]);
 
   const [form, setForm] = useState({
     provider_id: "",
@@ -366,6 +397,16 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
   const saveExpense = async () => {
     const amountCents = Math.round(parseFloat(form.amount) * 100);
 
+    const items = itemLines
+      .filter((l) => l.material_id && l.unit_id && l.quantity)
+      .map((l) => ({
+        material_id: l.material_id,
+        brand_id: l.brand_id || null,
+        unit_id: l.unit_id,
+        quantity: parseFloat(l.quantity),
+        unit_price: l.unit_price ? Math.round(parseFloat(l.unit_price) * 100) : null,
+      }));
+
     setUploadProgress({});
     abortRef.current = new AbortController();
     const { signal } = abortRef.current;
@@ -389,6 +430,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
         paid_at: form.paid_at,
         payment_method: form.payment_method || undefined,
         notes: form.notes || undefined,
+        items: items.length ? items : undefined,
       });
 
       if (result.error) {
@@ -976,6 +1018,21 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
               />
             </Field>
           </section>
+        </FormInnerSection>
+
+        <SectionTitle>Materiales</SectionTitle>
+        <FormInnerSection>
+          <ExpenseItemsEditor
+            workspaceId={workspaceId}
+            lines={itemLines}
+            onChange={setItemLines}
+            materials={materials}
+            brands={brands}
+            units={units}
+            onMaterialsChange={() => mutate(["materials", workspaceId])}
+            onBrandsChange={() => mutate(["brands", workspaceId])}
+            onUnitsChange={() => mutate(["units", workspaceId])}
+          />
         </FormInnerSection>
 
         {error && (

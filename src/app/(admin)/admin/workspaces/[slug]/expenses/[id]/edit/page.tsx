@@ -4,6 +4,10 @@ import { useGlobalState } from "@/lib/globalState";
 import { mutate } from "swr";
 import AddProviderModal from "@/components/AddProviderModal";
 import CategoryManagerModal from "@/components/CategoryManagerModal";
+import ExpenseItemsEditor, { type ExpenseItemLine } from "@/components/ExpenseItemsEditor";
+import { getMaterials } from "@/actions/materials";
+import { getBrands } from "@/actions/brands";
+import { getUnits } from "@/actions/units";
 import { useState, useEffect, useRef } from "react";
 import useSWR from "swr";
 import { useRouter, useParams } from "next/navigation";
@@ -30,6 +34,8 @@ import {
   completeMultipartUpload,
   abortMultipartUpload,
   registerAttachment,
+  getExpenseItems,
+  saveExpenseItems,
 } from "@/actions/expenses";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -165,6 +171,18 @@ async function fetchWorkspace(slug: string): Promise<{ id: string; name: string 
   return data;
 }
 
+async function fetchMaterials(workspaceId: string) {
+  return getMaterials(workspaceId);
+}
+
+async function fetchBrands(workspaceId: string) {
+  return getBrands(workspaceId);
+}
+
+async function fetchUnits(workspaceId: string) {
+  return getUnits(workspaceId);
+}
+
 async function fetchCategories(workspaceId: string): Promise<Category[]> {
   console.log("workid", workspaceId);
   const { data, error } = await supabase
@@ -264,6 +282,40 @@ export default function EditExpensePage() {
     workspaceId ? ["providers", workspaceId] : null,
     ([, wid]) => fetchProviders(wid),
   );
+
+  const { data: materials = [] } = useSWR(
+    workspaceId ? ["materials", workspaceId] : null,
+    ([, wid]) => fetchMaterials(wid),
+  );
+
+  const { data: brands = [] } = useSWR(workspaceId ? ["brands", workspaceId] : null, ([, wid]) =>
+    fetchBrands(wid),
+  );
+
+  const { data: units = [] } = useSWR(workspaceId ? ["units", workspaceId] : null, ([, wid]) =>
+    fetchUnits(wid),
+  );
+
+  const { data: existingItems } = useSWR(
+    expenseId ? ["expense-items", expenseId] : null,
+    ([, id]) => getExpenseItems(id),
+  );
+
+  const [itemLines, setItemLines] = useState<ExpenseItemLine[]>([]);
+
+  useEffect(() => {
+    if (!existingItems) return;
+    setItemLines(
+      existingItems.map((item) => ({
+        id: item.id,
+        material_id: item.material.id,
+        brand_id: item.brand?.id ?? "",
+        unit_id: item.unit.id,
+        quantity: String(item.quantity),
+        unit_price: item.unit_price != null ? (item.unit_price / 100).toFixed(2) : "",
+      })),
+    );
+  }, [existingItems]);
 
   // ── Form state ──
   const [issuedAt, setIssuedAt] = useState("");
@@ -373,6 +425,19 @@ export default function EditExpensePage() {
         })
         .eq("id", expenseId);
       if (updateError) throw updateError;
+
+      // 1b. Save material line items
+      const items = itemLines
+        .filter((l) => l.material_id && l.unit_id && l.quantity)
+        .map((l) => ({
+          material_id: l.material_id,
+          brand_id: l.brand_id || null,
+          unit_id: l.unit_id,
+          quantity: parseFloat(l.quantity),
+          unit_price: l.unit_price ? Math.round(parseFloat(l.unit_price) * 100) : null,
+        }));
+      const { error: itemsError } = await saveExpenseItems(expenseId, items);
+      if (itemsError) throw new Error(itemsError);
 
       // 2. Delete removed attachments
       for (const id of deletedIds) {
@@ -601,6 +666,21 @@ export default function EditExpensePage() {
                 />
               </Field>
             </div>
+          </FormInnerSection>
+
+          <SectionTitle>Materiales</SectionTitle>
+          <FormInnerSection>
+            <ExpenseItemsEditor
+              workspaceId={workspaceId ?? ""}
+              lines={itemLines}
+              onChange={setItemLines}
+              materials={materials}
+              brands={brands}
+              units={units}
+              onMaterialsChange={() => mutate(["materials", workspaceId])}
+              onBrandsChange={() => mutate(["brands", workspaceId])}
+              onUnitsChange={() => mutate(["units", workspaceId])}
+            />
           </FormInnerSection>
 
           <SectionTitle>Adjuntos</SectionTitle>

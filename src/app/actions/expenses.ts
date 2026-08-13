@@ -40,6 +40,25 @@ type CreateExpenseInput = {
   provider_id?: string | null;
   stage_id?: string | null; // ← agregar
   level_id?: string | null;
+  items?: ExpenseItemInput[];
+};
+
+export type ExpenseItemInput = {
+  material_id: string;
+  brand_id?: string | null;
+  unit_id: string;
+  quantity: number;
+  unit_price?: number | null;
+};
+
+export type ExpenseItem = {
+  id: string;
+  quantity: number;
+  unit_price: number | null;
+  subtotal: number | null;
+  material: { id: string; name: string };
+  brand: { id: string; name: string } | null;
+  unit: { id: string; name: string };
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -174,8 +193,63 @@ export async function createExpense(
 
   if (expenseError) return { error: expenseError.message };
 
+  if (input.items?.length) {
+    const itemsError = await insertExpenseItems(expense.id, input.items);
+    if (itemsError) return { error: itemsError };
+  }
+
   revalidatePath(`/admin/workspaces/${input.workspace_slug}/expenses`);
   return { id: expense.id };
+}
+
+async function insertExpenseItems(
+  expenseId: string,
+  items: ExpenseItemInput[],
+): Promise<string | null> {
+  const rows = items.map((item) => ({
+    expense_id: expenseId,
+    material_id: item.material_id,
+    brand_id: item.brand_id || null,
+    unit_id: item.unit_id,
+    quantity: item.quantity,
+    unit_price: item.unit_price ?? null,
+    subtotal: item.unit_price != null ? Math.round(item.quantity * item.unit_price) : null,
+  }));
+
+  const { error } = await supabaseAdmin.from("expense_item").insert(rows);
+  return error ? error.message : null;
+}
+
+export async function getExpenseItems(expenseId: string): Promise<ExpenseItem[]> {
+  const { data, error } = await supabaseAdmin
+    .from("expense_item")
+    .select(
+      "id, quantity, unit_price, subtotal, material:material_id(id, name), brand:brand_id(id, name), unit:unit_id(id, name)",
+    )
+    .eq("expense_id", expenseId)
+    .order("created_at");
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as unknown as ExpenseItem[];
+}
+
+export async function saveExpenseItems(
+  expenseId: string,
+  items: ExpenseItemInput[],
+): Promise<{ error?: string }> {
+  const { error: deleteError } = await supabaseAdmin
+    .from("expense_item")
+    .delete()
+    .eq("expense_id", expenseId);
+
+  if (deleteError) return { error: deleteError.message };
+
+  if (items.length) {
+    const itemsError = await insertExpenseItems(expenseId, items);
+    if (itemsError) return { error: itemsError };
+  }
+
+  return {};
 }
 
 export async function registerAttachment(

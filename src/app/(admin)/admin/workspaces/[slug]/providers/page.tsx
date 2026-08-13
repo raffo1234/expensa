@@ -421,6 +421,13 @@ export default function ProvidersPage() {
             </button>
             <span className="text-gray-300">/</span>
             <span className="text-gray-900 font-medium px-2 py-1">Proveedores</span>
+            <span className="text-gray-300">/</span>
+            <button
+              onClick={() => router.push(`/admin/workspaces/${workspaceSlug}/materials`)}
+              className="text-gray-500 hover:text-cyan-600 transition-colors px-2 py-1 rounded-md hover:bg-cyan-50"
+            >
+              Materiales
+            </button>
           </div>
         </div>
       </nav>

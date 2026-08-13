@@ -709,9 +709,14 @@ export default function EditExpensePage() {
                         />
                       </a>
                     ) : (
-                      <div className="w-10 h-10 rounded-lg bg-cyan-100 flex items-center justify-center flex-shrink-0">
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-10 h-10 rounded-lg bg-cyan-100 flex items-center justify-center flex-shrink-0"
+                      >
                         <span className="text-[9px] font-bold text-cyan-600">PDF</span>
-                      </div>
+                      </a>
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-800 truncate">

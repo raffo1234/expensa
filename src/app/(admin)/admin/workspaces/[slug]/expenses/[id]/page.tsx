@@ -13,6 +13,7 @@ import { PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from "@/constants";
 import Link from "next/link";
 import { formatAmount } from "@/utils/formatAmount";
 import { formatSafeDate } from "@/lib/formatSafeDate";
+import { getExpenseItems, type ExpenseItem } from "@/actions/expenses";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type ExpenseAttachment = {
@@ -125,6 +126,30 @@ function FilePreview({ attachment }: { attachment: ExpenseAttachment }) {
   );
 }
 
+function MaterialRow({ item, currency }: { item: ExpenseItem; currency: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3 bg-gray-50 border border-gray-200 rounded-xl p-3">
+      <div className="min-w-0">
+        <p className="text-sm font-medium text-gray-800 truncate">
+          {item.material.name}
+          {item.brand && <span className="text-gray-400 font-normal"> · {item.brand.name}</span>}
+        </p>
+        <p className="text-xs text-gray-400 mt-0.5">
+          {item.quantity} {item.unit.name}
+        </p>
+      </div>
+      <div className="flex-shrink-0 text-right">
+        {item.unit_price != null && (
+          <p className="text-xs text-gray-400">P. unit. {formatAmount(item.unit_price, currency)}</p>
+        )}
+        {item.subtotal != null && (
+          <p className="text-sm font-semibold text-gray-700">{formatAmount(item.subtotal, currency)}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function ExpenseDetailPage() {
   const params = useParams();
@@ -137,6 +162,11 @@ export default function ExpenseDetailPage() {
     isLoading,
     error,
   } = useSWR(expenseId ? ["expense", expenseId] : null, ([, id]) => fetchExpense(id));
+
+  const { data: materialItems = [] } = useSWR(
+    expenseId ? ["expense-items", expenseId] : null,
+    ([, id]) => getExpenseItems(id),
+  );
 
   const categoryColor = expense?.category?.color ?? "#06b6d4";
 
@@ -241,6 +271,19 @@ export default function ExpenseDetailPage() {
               </DetailRow>
             )}
           </FormInnerSection>
+
+          {materialItems.length > 0 && (
+            <>
+              <SectionTitle>Materiales ({materialItems.length})</SectionTitle>
+              <FormInnerSection>
+                <section className="space-y-3">
+                  {materialItems.map((item) => (
+                    <MaterialRow key={item.id} item={item} currency={expense.currency} />
+                  ))}
+                </section>
+              </FormInnerSection>
+            </>
+          )}
 
           <SectionTitle>Adjuntos ({expense.expense_attachment.length})</SectionTitle>
           {(expense.expense_attachment ?? []).length > 0 && (

@@ -53,3 +53,57 @@ export async function deleteMaterial(id: string): Promise<{ error?: string }> {
   if (error) return { error: error.message };
   return {};
 }
+
+export type MaterialReportRow = {
+  id: string;
+  expense_id: string;
+  paid_at: string;
+  currency: string;
+  quantity: number;
+  unit_price: number | null;
+  subtotal: number | null;
+  material: { id: string; name: string };
+  brand: { id: string; name: string } | null;
+  unit: { id: string; name: string };
+};
+
+export async function getMaterialsReport(workspaceId: string): Promise<MaterialReportRow[]> {
+  const { data, error } = await supabaseAdmin
+    .from("expense_item")
+    .select(
+      `id, expense_id, quantity, unit_price, subtotal,
+       material:material_id(id, name),
+       brand:brand_id(id, name),
+       unit:unit_id(id, name),
+       expense:expense_id!inner(workspace_id, paid_at, currency)`,
+    )
+    .eq("expense.workspace_id", workspaceId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+
+  type Row = {
+    id: string;
+    expense_id: string;
+    quantity: number;
+    unit_price: number | null;
+    subtotal: number | null;
+    material: { id: string; name: string };
+    brand: { id: string; name: string } | null;
+    unit: { id: string; name: string };
+    expense: { workspace_id: string; paid_at: string; currency: string };
+  };
+
+  return ((data ?? []) as unknown as Row[]).map((row) => ({
+    id: row.id,
+    expense_id: row.expense_id,
+    paid_at: row.expense.paid_at,
+    currency: row.expense.currency,
+    quantity: row.quantity,
+    unit_price: row.unit_price,
+    subtotal: row.subtotal,
+    material: row.material,
+    brand: row.brand,
+    unit: row.unit,
+  }));
+}

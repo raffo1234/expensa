@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -52,6 +52,21 @@ function MaterialsReportPage() {
   const [search, setSearch] = useState("");
   const [materialFilter, setMaterialFilter] = useState("");
   const [brandFilter, setBrandFilter] = useState("");
+  const [levelFilter, setLevelFilter] = useState("");
+  const [levelFilterHydrated, setLevelFilterHydrated] = useState(false);
+
+  // Restore the last selected level filter for this workspace (persists until changed).
+  useEffect(() => {
+    if (!workspaceId) return;
+    const saved = localStorage.getItem(`materials-level-filter:${workspaceId}`);
+    if (saved) setLevelFilter(saved);
+    setLevelFilterHydrated(true);
+  }, [workspaceId]);
+
+  useEffect(() => {
+    if (!workspaceId || !levelFilterHydrated) return;
+    localStorage.setItem(`materials-level-filter:${workspaceId}`, levelFilter);
+  }, [levelFilter, workspaceId, levelFilterHydrated]);
 
   const materialOptions = useMemo(() => {
     const map = new Map<string, string>();
@@ -65,18 +80,25 @@ function MaterialsReportPage() {
     return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1]));
   }, [rows]);
 
+  const levelOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    rows.forEach((r) => r.level && map.set(r.level.id, r.level.name));
+    return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+  }, [rows]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return rows.filter((r) => {
       if (materialFilter && r.material.id !== materialFilter) return false;
       if (brandFilter && r.brand?.id !== brandFilter) return false;
+      if (levelFilter && r.level?.id !== levelFilter) return false;
       if (q) {
         const hay = `${r.material.name} ${r.brand?.name ?? ""}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
     });
-  }, [rows, search, materialFilter, brandFilter]);
+  }, [rows, search, materialFilter, brandFilter, levelFilter]);
 
   const totals = useMemo(() => {
     const map = new Map<
@@ -127,6 +149,24 @@ function MaterialsReportPage() {
           <span className="text-gray-900 font-medium px-2 py-1">Materiales</span>
         </div>
       </nav>
+
+      {levelOptions.length > 0 && (
+        <div className="max-w-4xl mx-auto px-6">
+          <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">
+            Nivel
+          </label>
+          <select
+            value={levelFilter}
+            onChange={(e) => setLevelFilter(e.target.value)}
+            className={`${selectCls} max-w-xs`}
+          >
+            <option value="">Todos los niveles</option>
+            {levelOptions.map(([id, name]) => (
+              <option key={id} value={id}>{name}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className="max-w-4xl mx-auto px-6 py-10">
         <div className="mb-8">
@@ -219,13 +259,14 @@ function MaterialsReportPage() {
                   <option key={id} value={id}>{name}</option>
                 ))}
               </select>
-              {(search || materialFilter || brandFilter) && (
+              {(search || materialFilter || brandFilter || levelFilter) && (
                 <button
                   type="button"
                   onClick={() => {
                     setSearch("");
                     setMaterialFilter("");
                     setBrandFilter("");
+                    setLevelFilter("");
                   }}
                   className={`${SECONDARY_BUTTON_CLASS} justify-center flex-shrink-0`}
                 >
@@ -255,6 +296,9 @@ function MaterialsReportPage() {
                     }`}
                   >
                     <div className="min-w-0">
+                      <p className="text-[10px] font-semibold text-cyan-600 uppercase tracking-wide mb-0.5">
+                        {r.level?.name ?? "Sin nivel"}
+                      </p>
                       <p className="text-sm font-medium text-gray-800 truncate">
                         {r.material.name}
                         {r.brand && <span className="text-gray-400 font-normal"> · {r.brand.name}</span>}

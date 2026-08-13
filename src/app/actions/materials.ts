@@ -65,6 +65,7 @@ export type MaterialReportRow = {
   material: { id: string; name: string };
   brand: { id: string; name: string } | null;
   unit: { id: string; name: string };
+  level: { id: string; name: string } | null;
 };
 
 export async function getMaterialsReport(workspaceId: string): Promise<MaterialReportRow[]> {
@@ -75,7 +76,7 @@ export async function getMaterialsReport(workspaceId: string): Promise<MaterialR
        material:material_id(id, name),
        brand:brand_id(id, name),
        unit:unit_id(id, name),
-       expense:expense_id!inner(workspace_id, paid_at, currency)`,
+       expense:expense_id!inner(workspace_id, paid_at, currency, level:level_id(id, name))`,
     )
     .eq("expense.workspace_id", workspaceId)
     .order("created_at", { ascending: false });
@@ -91,7 +92,12 @@ export async function getMaterialsReport(workspaceId: string): Promise<MaterialR
     material: { id: string; name: string };
     brand: { id: string; name: string } | null;
     unit: { id: string; name: string };
-    expense: { workspace_id: string; paid_at: string; currency: string };
+    expense: {
+      workspace_id: string;
+      paid_at: string;
+      currency: string;
+      level: { id: string; name: string } | null;
+    };
   };
 
   return ((data ?? []) as unknown as Row[]).map((row) => ({
@@ -105,5 +111,6 @@ export async function getMaterialsReport(workspaceId: string): Promise<MaterialR
     material: row.material,
     brand: row.brand,
     unit: row.unit,
+    level: row.expense.level,
   }));
 }

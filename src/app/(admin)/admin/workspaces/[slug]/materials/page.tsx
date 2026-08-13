@@ -12,6 +12,7 @@ import { Permissions } from "@/types/propertyState";
 import { getMaterialsReport, type MaterialReportRow } from "@/actions/materials";
 import { formatAmount } from "@/utils/formatAmount";
 import { formatSafeDate } from "@/lib/formatSafeDate";
+import { SECONDARY_BUTTON_CLASS } from "@/constants";
 
 // ── Fetchers ──────────────────────────────────────────────────────────────────
 async function fetchWorkspace(slug: string): Promise<{ id: string; name: string }> {
@@ -218,6 +219,19 @@ function MaterialsReportPage() {
                   <option key={id} value={id}>{name}</option>
                 ))}
               </select>
+              {(search || materialFilter || brandFilter) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearch("");
+                    setMaterialFilter("");
+                    setBrandFilter("");
+                  }}
+                  className={`${SECONDARY_BUTTON_CLASS} justify-center flex-shrink-0`}
+                >
+                  Limpiar filtros
+                </button>
+              )}
             </div>
 
             {/* Detail list */}

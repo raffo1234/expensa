@@ -54,6 +54,18 @@ export async function deleteMaterial(id: string): Promise<{ error?: string }> {
   return {};
 }
 
+export async function getExpenseIdsWithMaterials(expenseIds: string[]): Promise<string[]> {
+  if (!expenseIds.length) return [];
+
+  const { data, error } = await supabaseAdmin
+    .from("expense_item")
+    .select("expense_id")
+    .in("expense_id", expenseIds);
+
+  if (error) throw new Error(error.message);
+  return [...new Set((data ?? []).map((r) => r.expense_id))];
+}
+
 export type MaterialReportRow = {
   id: string;
   expense_id: string;

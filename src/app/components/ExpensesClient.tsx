@@ -16,6 +16,7 @@ import Link from "next/link";
 import { Expense, ExpenseRow } from "@/types/ExpenseType";
 import { Workspace } from "@/types/WorkspaceType";
 import { deleteExpense } from "@/actions/expenses";
+import { getExpenseIdsWithMaterials } from "@/actions/materials";
 import TitleWrapper from "./TitleWrapper";
 import CategoryMultiFilter from "./CategoryMultiFilter";
 import ProviderFilter from "./ProviderFilter";
@@ -524,6 +525,13 @@ export default function ExpensesClient({
   const totalPages = Math.max(1, Math.ceil(totalCount / ITEMS_PER_PAGE));
   const displayCurrency = expenses[0]?.currency ?? "PEN";
 
+  const expenseIdsKey = expenses.map((e) => e.id).sort().join(",");
+  const { data: materialExpenseIds = [] } = useSWR(
+    expenseIdsKey ? ["expenses-with-materials", expenseIdsKey] : null,
+    () => getExpenseIdsWithMaterials(expenses.map((e) => e.id)),
+  );
+  const materialExpenseIdSet = new Set(materialExpenseIds);
+
   const handleDelete = async (id: string) => {
     const snapshot = data;
     setDeletingId(id);
@@ -863,6 +871,7 @@ export default function ExpensesClient({
         onDelete={handleDelete}
         deletingId={deletingId}
         workspaceSlug={slug}
+        materialExpenseIds={materialExpenseIdSet}
       />
 
       {totalPages > 1 && (

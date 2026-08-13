@@ -17,6 +17,7 @@ const COLUMNS = [
   { label: "Método" },
   { label: "Fecha de emision", className: "text-right" },
   { label: "Monto", className: "text-right" },
+  { label: "Materiales", className: "text-center" },
   { label: "" },
 ];
 
@@ -25,6 +26,7 @@ interface ExpenseTableProps {
   onDelete: (id: string) => void;
   deletingId?: string | null;
   workspaceSlug: string;
+  materialExpenseIds?: Set<string>;
 }
 
 export default function ExpenseTable({
@@ -32,6 +34,7 @@ export default function ExpenseTable({
   onDelete,
   deletingId,
   workspaceSlug,
+  materialExpenseIds,
 }: ExpenseTableProps) {
   return (
     <DataTable
@@ -102,6 +105,25 @@ export default function ExpenseTable({
             <td className="text-sm font-bold text-gray-900 whitespace-nowrap text-right">
               <Link href={href} className="block p-6">
                 {expense.amount ? formatAmount(expense.amount, expense.currency) : "—"}
+              </Link>
+            </td>
+
+            <td className="text-center">
+              <Link href={href} className="flex items-center justify-center p-6">
+                {materialExpenseIds?.has(expense.id) ? (
+                  <span
+                    title="Tiene materiales registrados"
+                    className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-cyan-100 text-cyan-600"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                      <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                      <line x1="12" y1="22.08" x2="12" y2="12" />
+                    </svg>
+                  </span>
+                ) : (
+                  <span className="text-sm text-gray-300">—</span>
+                )}
               </Link>
             </td>
 

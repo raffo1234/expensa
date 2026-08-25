@@ -68,7 +68,18 @@ function applyTabFilter<T extends { not: any; is: any }>(query: T, tab: SummaryT
   return query.is("invoice_series", null).is("invoice_number", null);
 }
 
-const fetcher = async ([, workspaceId, page, search, dateFrom, dateTo, tab, categoryId]: [
+const fetcher = async ([
+  ,
+  workspaceId,
+  page,
+  search,
+  dateFrom,
+  dateTo,
+  tab,
+  categoryId,
+  invoiceSeries,
+  invoiceNumber,
+]: [
   string,
   string,
   number,
@@ -76,6 +87,8 @@ const fetcher = async ([, workspaceId, page, search, dateFrom, dateTo, tab, cate
   string,
   string,
   SummaryTab,
+  string,
+  string,
   string,
 ]) => {
   const from = page * PAGE_SIZE;
@@ -116,6 +129,8 @@ const fetcher = async ([, workspaceId, page, search, dateFrom, dateTo, tab, cate
   query = applyTabFilter(query, tab);
 
   if (categoryId) query = query.eq("category_id", categoryId);
+  if (invoiceSeries) query = query.ilike("invoice_series", `%${invoiceSeries}%`);
+  if (invoiceNumber) query = query.ilike("invoice_number", `%${invoiceNumber}%`);
   if (orClause) query = query.or(orClause);
   if (dateFrom) query = query.gte("issued_at", dateFrom);
   if (dateTo) query = query.lte("issued_at", dateTo);
@@ -144,6 +159,8 @@ const fetchAllFiltered = async (
   dateTo: string,
   tab: SummaryTab,
   categoryId: string,
+  invoiceSeries: string,
+  invoiceNumber: string,
 ): Promise<SummaryExpense[]> => {
   let providerIds: string[] = [];
   if (search.trim()) {
@@ -182,6 +199,8 @@ const fetchAllFiltered = async (
     query = applyTabFilter(query, tab);
 
     if (categoryId) query = query.eq("category_id", categoryId);
+    if (invoiceSeries) query = query.ilike("invoice_series", `%${invoiceSeries}%`);
+    if (invoiceNumber) query = query.ilike("invoice_number", `%${invoiceNumber}%`);
     if (orClause) query = query.or(orClause);
     if (dateFrom) query = query.gte("issued_at", dateFrom);
     if (dateTo) query = query.lte("issued_at", dateTo);
@@ -206,8 +225,19 @@ const exportCsv = async (
   dateTo: string,
   tab: SummaryTab,
   categoryId: string,
+  invoiceSeries: string,
+  invoiceNumber: string,
 ) => {
-  const all = await fetchAllFiltered(workspaceId, search, dateFrom, dateTo, tab, categoryId);
+  const all = await fetchAllFiltered(
+    workspaceId,
+    search,
+    dateFrom,
+    dateTo,
+    tab,
+    categoryId,
+    invoiceSeries,
+    invoiceNumber,
+  );
 
   let csv = "﻿";
   csv += "Mes,Fecha,Serie,Numero,Proveedor,RUC,Categoria,Metodo Pago,Monto,Moneda,Notas\n";
@@ -260,13 +290,26 @@ const exportPdf = async (
   tab: SummaryTab,
   categoryId: string,
   categoryName: string,
+  invoiceSeries: string,
+  invoiceNumber: string,
 ) => {
-  const all = await fetchAllFiltered(workspaceId, search, dateFrom, dateTo, tab, categoryId);
+  const all = await fetchAllFiltered(
+    workspaceId,
+    search,
+    dateFrom,
+    dateTo,
+    tab,
+    categoryId,
+    invoiceSeries,
+    invoiceNumber,
+  );
 
   const filters = [
     `Tipo: ${tab === "facturas" ? "Facturas" : "Gastos"}`,
     categoryId ? `Categoría: ${categoryName}` : null,
     dateFrom || dateTo ? `Emisión: ${dateFrom || "…"} a ${dateTo || "…"}` : null,
+    invoiceSeries ? `Serie: ${invoiceSeries}` : null,
+    invoiceNumber ? `Número: ${invoiceNumber}` : null,
     search ? `Búsqueda: "${search}"` : null,
   ]
     .filter(Boolean)
@@ -350,6 +393,8 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
   const [dateTo, setDateTo] = useState(() => searchParams.get("to") ?? "");
   const [month, setMonth] = useState(() => searchParams.get("month") ?? "");
   const [categoryId, setCategoryId] = useState(() => searchParams.get("cat") ?? "");
+  const [invoiceSeries, setInvoiceSeries] = useState(() => searchParams.get("series") ?? "");
+  const [invoiceNumber, setInvoiceNumber] = useState(() => searchParams.get("number") ?? "");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const { data: categories = [] } = useSWR(
@@ -357,7 +402,8 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
     ([, wid]) => fetchCategories(wid),
   );
 
-  const hasFilters = !!search || !!dateFrom || !!dateTo || !!month || !!categoryId;
+  const hasFilters =
+    !!search || !!dateFrom || !!dateTo || !!month || !!categoryId || !!invoiceSeries || !!invoiceNumber;
 
   const syncUrl = useCallback(() => {
     const params = new URLSearchParams();
@@ -368,10 +414,25 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
     if (dateTo) params.set("to", dateTo);
     if (month) params.set("month", month);
     if (categoryId) params.set("cat", categoryId);
+    if (invoiceSeries) params.set("series", invoiceSeries);
+    if (invoiceNumber) params.set("number", invoiceNumber);
     if (page > 0) params.set("page", String(page));
     const qs = params.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname);
-  }, [tab, workspaceId, search, dateFrom, dateTo, month, categoryId, page, router, pathname]);
+  }, [
+    tab,
+    workspaceId,
+    search,
+    dateFrom,
+    dateTo,
+    month,
+    categoryId,
+    invoiceSeries,
+    invoiceNumber,
+    page,
+    router,
+    pathname,
+  ]);
 
   useEffect(() => {
     const t = setTimeout(syncUrl, 300);
@@ -410,6 +471,8 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
     setDateTo("");
     setMonth("");
     setCategoryId("");
+    setInvoiceSeries("");
+    setInvoiceNumber("");
     setPage(0);
     if (searchInputRef.current) searchInputRef.current.value = "";
   };
@@ -420,7 +483,20 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
   }, 350);
 
   const { data, isLoading } = useSWR(
-    workspaceId ? ["summary", workspaceId, page, search, dateFrom, dateTo, tab, categoryId] : null,
+    workspaceId
+      ? [
+          "summary",
+          workspaceId,
+          page,
+          search,
+          dateFrom,
+          dateTo,
+          tab,
+          categoryId,
+          invoiceSeries,
+          invoiceNumber,
+        ]
+      : null,
     fetcher,
   );
 
@@ -457,7 +533,18 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
         </div>
         <div className="flex gap-2">
           <button
-            onClick={() => exportCsv(workspaceId, search, dateFrom, dateTo, tab, categoryId)}
+            onClick={() =>
+              exportCsv(
+                workspaceId,
+                search,
+                dateFrom,
+                dateTo,
+                tab,
+                categoryId,
+                invoiceSeries,
+                invoiceNumber,
+              )
+            }
             disabled={!workspaceId}
             className={PRIMARY_BUTTON_CLASS}
           >
@@ -475,6 +562,8 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
                 tab,
                 categoryId,
                 categories.find((c) => c.id === categoryId)?.name ?? "",
+                invoiceSeries,
+                invoiceNumber,
               )
             }
             disabled={!workspaceId}
@@ -532,6 +621,27 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
               type="date"
               value={dateTo}
               onChange={(e) => { setDateTo(e.target.value); setMonth(""); setPage(0); }}
+              className={INPUT_CLASS}
+            />
+          </InputWithTooltip>
+        </div>
+        <div className="flex gap-2 items-center border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
+          <span className="text-sm font-medium text-gray-400 pl-1">Factura</span>
+          <InputWithTooltip label="Serie">
+            <input
+              type="text"
+              placeholder="Serie"
+              value={invoiceSeries}
+              onChange={(e) => { setInvoiceSeries(e.target.value); setPage(0); }}
+              className={INPUT_CLASS}
+            />
+          </InputWithTooltip>
+          <InputWithTooltip label="Número">
+            <input
+              type="text"
+              placeholder="Número"
+              value={invoiceNumber}
+              onChange={(e) => { setInvoiceNumber(e.target.value); setPage(0); }}
               className={INPUT_CLASS}
             />
           </InputWithTooltip>

@@ -65,6 +65,8 @@ type Filters = {
   stageId: string;
   levelId: string;
   providerId: string;
+  invoiceSeries: string;
+  invoiceNumber: string;
 };
 
 function categoryIdList(categoryId: string): string[] {
@@ -173,6 +175,14 @@ const fetchExpenses = async (
     query = query.eq("provider_id", filters.providerId);
     amountsQuery = amountsQuery.eq("provider_id", filters.providerId);
   }
+  if (filters.invoiceSeries) {
+    query = query.ilike("invoice_series", `%${filters.invoiceSeries}%`);
+    amountsQuery = amountsQuery.ilike("invoice_series", `%${filters.invoiceSeries}%`);
+  }
+  if (filters.invoiceNumber) {
+    query = query.ilike("invoice_number", `%${filters.invoiceNumber}%`);
+    amountsQuery = amountsQuery.ilike("invoice_number", `%${filters.invoiceNumber}%`);
+  }
   if (orClause) {
     query = query.or(orClause);
     amountsQuery = amountsQuery.or(orClause);
@@ -250,6 +260,8 @@ const fetchAllFilteredExpenses = async (
     if (filters.stageId) query = query.eq("stage_id", filters.stageId);
     if (filters.levelId) query = query.eq("level_id", filters.levelId);
     if (filters.providerId) query = query.eq("provider_id", filters.providerId);
+    if (filters.invoiceSeries) query = query.ilike("invoice_series", `%${filters.invoiceSeries}%`);
+    if (filters.invoiceNumber) query = query.ilike("invoice_number", `%${filters.invoiceNumber}%`);
     if (filters.issuedFrom) query = query.gte("issued_at", filters.issuedFrom);
     if (filters.issuedTo) query = query.lte("issued_at", filters.issuedTo);
     if (filters.amountMin)
@@ -340,6 +352,8 @@ const exportExpensesPdf = async (
     filters.providerId
       ? `Proveedor: ${providers.find((p) => p.id === filters.providerId)?.name ?? ""}`
       : null,
+    filters.invoiceSeries ? `Serie: ${filters.invoiceSeries}` : null,
+    filters.invoiceNumber ? `Número: ${filters.invoiceNumber}` : null,
     filters.issuedFrom || filters.issuedTo
       ? `Emisión: ${filters.issuedFrom || "…"} a ${filters.issuedTo || "…"}`
       : null,
@@ -389,6 +403,8 @@ const EMPTY_FILTERS: Filters = {
   stageId: "",
   levelId: "",
   providerId: "",
+  invoiceSeries: "",
+  invoiceNumber: "",
 };
 
 export default function ExpensesClient({
@@ -418,6 +434,8 @@ export default function ExpensesClient({
     stageId: searchParams.get("stageId") ?? "",
     levelId: searchParams.get("levelId") ?? "",
     providerId: searchParams.get("providerId") ?? "",
+    invoiceSeries: searchParams.get("invoiceSeries") ?? "",
+    invoiceNumber: searchParams.get("invoiceNumber") ?? "",
   }));
   const [issuedMonth, setIssuedMonth] = useState(() => searchParams.get("issuedMonth") ?? "");
   const [showFilters, setShowFilters] = useState(() => {
@@ -429,6 +447,8 @@ export default function ExpensesClient({
       "categoryId",
       "stageId",
       "levelId",
+      "invoiceSeries",
+      "invoiceNumber",
     ] as const;
     return f.some((k) => searchParams.get(k));
   });
@@ -735,6 +755,27 @@ export default function ExpensesClient({
                     setFilter("issuedTo", e.target.value);
                     setIssuedMonth("");
                   }}
+                  className={INPUT_CLASS}
+                />
+              </InputWithTooltip>
+            </div>
+            <div className="col-span-2 sm:col-span-3 lg:col-span-2 flex gap-2 items-center border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
+              <span className="text-[11px] font-medium text-gray-400 pl-1">Factura</span>
+              <InputWithTooltip label="Serie">
+                <input
+                  type="text"
+                  placeholder="Serie"
+                  value={filters.invoiceSeries}
+                  onChange={(e) => setFilter("invoiceSeries", e.target.value)}
+                  className={INPUT_CLASS}
+                />
+              </InputWithTooltip>
+              <InputWithTooltip label="Número">
+                <input
+                  type="text"
+                  placeholder="Número"
+                  value={filters.invoiceNumber}
+                  onChange={(e) => setFilter("invoiceNumber", e.target.value)}
                   className={INPUT_CLASS}
                 />
               </InputWithTooltip>

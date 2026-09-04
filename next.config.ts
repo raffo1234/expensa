@@ -7,7 +7,10 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: "/(.*)",
+        // ponytail: excludes /api/* — COEP there broke the browser's native
+        // PDF viewer on direct file links (chrome-extension pdf viewer frame
+        // isn't COEP-compatible); only pages rendering cornerstone.js need this
+        source: "/((?!api/).*)",
         headers: [
           { key: "Cross-Origin-Embedder-Policy", value: "require-corp" },
           { key: "Cross-Origin-Opener-Policy", value: "same-origin" },

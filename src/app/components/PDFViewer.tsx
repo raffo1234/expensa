@@ -5,7 +5,12 @@ import { Document, Page, pdfjs } from "react-pdf";
 import { Icon } from "@iconify/react/dist/iconify.js";
 
 // Keep this outside the component for stability
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+// ponytail: self-hosted worker instead of the unpkg CDN — avoids COEP/ad-blocker
+// blocking the cross-origin worker script (broke silently in Brave, worked in Chrome)
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/build/pdf.worker.min.mjs",
+  import.meta.url,
+).toString();
 
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";

@@ -56,16 +56,22 @@ function MaterialsReportPage() {
   const [levelFilterHydrated, setLevelFilterHydrated] = useState(false);
 
   // Restore the last selected level filter for this workspace (persists until changed).
+  // ponytail: localStorage throws in some mobile browsers (private mode, in-app
+  // webviews) — an uncaught throw here blanked the whole page on mobile
   useEffect(() => {
     if (!workspaceId) return;
-    const saved = localStorage.getItem(`materials-level-filter:${workspaceId}`);
-    if (saved) setLevelFilter(saved);
+    try {
+      const saved = localStorage.getItem(`materials-level-filter:${workspaceId}`);
+      if (saved) setLevelFilter(saved);
+    } catch {}
     setLevelFilterHydrated(true);
   }, [workspaceId]);
 
   useEffect(() => {
     if (!workspaceId || !levelFilterHydrated) return;
-    localStorage.setItem(`materials-level-filter:${workspaceId}`, levelFilter);
+    try {
+      localStorage.setItem(`materials-level-filter:${workspaceId}`, levelFilter);
+    } catch {}
   }, [levelFilter, workspaceId, levelFilterHydrated]);
 
   const materialOptions = useMemo(() => {

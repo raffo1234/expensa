@@ -15,13 +15,13 @@ import {
 import { formatAmount } from "@/utils/formatAmount";
 import getAttachmentUrl from "@/lib/getAttachmentUrl";
 import Link from "next/link";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useSearchParams, usePathname } from "next/navigation";
+import { replaceUrl } from "@/utils/replaceUrl";
 import OptionButton from "./OptionButton";
 import InputWithTooltip from "./InputWithTooltip";
 import DataTable, { DataTableRow } from "./DataTable";
 import CategoryFilter from "./CategoryFilter";
-import { pdf } from "@react-pdf/renderer";
-import SummaryReportPDF, { SummaryReportRow } from "./SummaryReportPDF";
+import type { SummaryReportRow } from "./SummaryReportPDF";
 
 const PAGE_SIZE = 10;
 type SummaryTab = "facturas" | "gastos";
@@ -317,6 +317,10 @@ const exportPdf = async (
     };
   });
 
+  const [{ pdf }, { default: SummaryReportPDF }] = await Promise.all([
+    import("@react-pdf/renderer"),
+    import("./SummaryReportPDF"),
+  ]);
   const blob = await pdf(
     <SummaryReportPDF workspaceName={workspaceName} filtersLabel={filters} rows={rows} />,
   ).toBlob();
@@ -362,7 +366,6 @@ function readStorage(key: string): string | null {
 
 export default function SummaryClient({ workspaces }: { workspaces: Workspace[] }) {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const pathname = usePathname();
 
   const [tab, setTabLocal] = useState<SummaryTab>(() => {
@@ -416,7 +419,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
     if (invoiceNumber) params.set("number", invoiceNumber);
     if (page > 0) params.set("page", String(page));
     const qs = params.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname);
+    replaceUrl(qs ? `${pathname}?${qs}` : pathname);
   }, [
     tab,
     workspaceId,
@@ -428,7 +431,6 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
     invoiceSeries,
     invoiceNumber,
     page,
-    router,
     pathname,
   ]);
 

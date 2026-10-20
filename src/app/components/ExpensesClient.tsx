@@ -23,10 +23,10 @@ import ProviderFilter from "./ProviderFilter";
 import { formatAmount } from "@/utils/formatAmount";
 import { useGlobalState } from "@/lib/globalState";
 import CategoryManagerModal from "./CategoryManagerModal";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useSearchParams, usePathname } from "next/navigation";
 import InputWithTooltip from "./InputWithTooltip";
-import { pdf } from "@react-pdf/renderer";
-import SummaryReportPDF, { SummaryReportRow } from "./SummaryReportPDF";
+import { replaceUrl } from "@/utils/replaceUrl";
+import type { SummaryReportRow } from "./SummaryReportPDF";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -377,6 +377,10 @@ const exportExpensesPdf = async (
     };
   });
 
+  const [{ pdf }, { default: SummaryReportPDF }] = await Promise.all([
+    import("@react-pdf/renderer"),
+    import("./SummaryReportPDF"),
+  ]);
   const blob = await pdf(
     <SummaryReportPDF
       workspaceName={workspaceName}
@@ -419,7 +423,6 @@ export default function ExpensesClient({
   providers,
 }: Props) {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const pathname = usePathname();
 
   const [page, setPage] = useState(() => Number(searchParams.get("page") ?? "1") || 1);
@@ -464,8 +467,8 @@ export default function ExpensesClient({
       if (v) params.set(k, v);
     }
     const qs = params.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname);
-  }, [page, debouncedSearch, filters, issuedMonth, router, pathname]);
+    replaceUrl(qs ? `${pathname}?${qs}` : pathname);
+  }, [page, debouncedSearch, filters, issuedMonth, pathname]);
 
   useEffect(() => {
     const t = setTimeout(syncUrl, 300);
@@ -521,18 +524,23 @@ export default function ExpensesClient({
 
   const hasActiveFilters = debouncedSearch || Object.values(filters).some((v) => v !== "");
 
+  const isDefaultView =
+    page === 1 && !debouncedSearch && !Object.values(filters).some((v) => v !== "");
+  // The server already rendered the default view; skip refetching it on mount.
+  const [hasServerData] = useState(isDefaultView);
+
   const { data, error, mutate } = useSWR(
     ["expenses", workspace.id, page, debouncedSearch, filters],
     () => fetchExpenses(workspace.id, page, debouncedSearch, filters),
     {
-      fallbackData:
-        page === 1 && !debouncedSearch && !Object.values(filters).some((v) => v !== "")
-          ? ({
-              data: initialExpenses,
-              count: initialCount,
-              totalAmount: initialTotalAmount,
-            } as FetchResult)
-          : undefined,
+      fallbackData: isDefaultView
+        ? ({
+            data: initialExpenses,
+            count: initialCount,
+            totalAmount: initialTotalAmount,
+          } as FetchResult)
+        : undefined,
+      revalidateOnMount: !hasServerData,
       revalidateOnFocus: false,
       keepPreviousData: true,
     },
@@ -544,7 +552,10 @@ export default function ExpensesClient({
   const totalPages = Math.max(1, Math.ceil(totalCount / ITEMS_PER_PAGE));
   const displayCurrency = expenses[0]?.currency ?? "PEN";
 
-  const expenseIdsKey = expenses.map((e) => e.id).sort().join(",");
+  const expenseIdsKey = expenses
+    .map((e) => e.id)
+    .sort()
+    .join(",");
   const { data: materialExpenseIds = [] } = useSWR(
     expenseIdsKey ? ["expenses-with-materials", expenseIdsKey] : null,
     () => getExpenseIdsWithMaterials(expenses.map((e) => e.id)),
@@ -752,8 +763,13 @@ export default function ExpensesClient({
               />
             </div>
             <div className="col-span-2 sm:col-span-3 lg:col-span-3 flex flex-wrap sm:flex-nowrap gap-2 items-center border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
-              <span className="w-full sm:w-auto text-[11px] font-medium text-gray-400 pl-1">Emisión</span>
-              <InputWithTooltip label="Mes de emisión" className="w-full sm:w-auto sm:flex-1 min-w-0">
+              <span className="w-full sm:w-auto text-[11px] font-medium text-gray-400 pl-1">
+                Emisión
+              </span>
+              <InputWithTooltip
+                label="Mes de emisión"
+                className="w-full sm:w-auto sm:flex-1 min-w-0"
+              >
                 <input
                   type="month"
                   value={issuedMonth}
@@ -785,7 +801,9 @@ export default function ExpensesClient({
               </InputWithTooltip>
             </div>
             <div className="col-span-2 sm:col-span-3 lg:col-span-3 flex flex-wrap sm:flex-nowrap gap-2 items-center border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
-              <span className="w-full sm:w-auto text-[11px] font-medium text-gray-400 pl-1">Monto</span>
+              <span className="w-full sm:w-auto text-[11px] font-medium text-gray-400 pl-1">
+                Monto
+              </span>
               <InputWithTooltip label="Monto mínimo" className="flex-1 min-w-0">
                 <input
                   type="number"

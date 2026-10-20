@@ -22,13 +22,11 @@ async function SummarySection() {
   const user = await getCurrentUser();
   if (!user || !user.roleId) return <NoAccess />;
 
-  const permissions = await checkPermissions(user.roleId, [Permissions.VIEW_EXPENSES_SUMMARY]);
+  const [permissions, { data: userWorkspaces }] = await Promise.all([
+    checkPermissions(user.roleId, [Permissions.VIEW_EXPENSES_SUMMARY]),
+    supabaseAdmin.from("user_workspace").select("workspace_id").eq("user_id", user.id),
+  ]);
   if (!permissions[Permissions.VIEW_EXPENSES_SUMMARY]) return <NoAccess />;
-
-  const { data: userWorkspaces } = await supabaseAdmin
-    .from("user_workspace")
-    .select("workspace_id")
-    .eq("user_id", user.id);
 
   const workspaceIds = (userWorkspaces ?? []).map((r) => r.workspace_id);
 

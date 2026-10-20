@@ -25,6 +25,7 @@ import { useGlobalState } from "@/lib/globalState";
 import CategoryManagerModal from "./CategoryManagerModal";
 import { useSearchParams, usePathname } from "next/navigation";
 import InputWithTooltip from "./InputWithTooltip";
+import SearchInput from "./SearchInput";
 import { replaceUrl } from "@/utils/replaceUrl";
 import type { SummaryReportRow } from "./SummaryReportPDF";
 
@@ -691,12 +692,18 @@ export default function ExpensesClient({
 
         {/* Buscador */}
         <div className="mb-3 flex gap-2">
-          <input
-            type="text"
+          <SearchInput
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(value) => {
+              setSearch(value);
+              // Clearing applies right away instead of waiting for the debounce.
+              if (!value) {
+                setDebouncedSearch("");
+                setPage(1);
+              }
+            }}
             placeholder="Buscar por referencia, proveedor o notas..."
-            className={`${INPUT_CLASS} flex-1`}
+            className="flex-1"
           />
           {hasActiveFilters && (
             <InputWithTooltip label="Limpiar filtros">

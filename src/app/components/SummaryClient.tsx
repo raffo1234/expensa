@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import useSWR from "swr";
 import { supabase } from "@/lib/supabase";
 import { useDebouncedCallback } from "use-debounce";
@@ -19,12 +19,18 @@ import { useSearchParams, usePathname } from "next/navigation";
 import { replaceUrl } from "@/utils/replaceUrl";
 import OptionButton from "./OptionButton";
 import InputWithTooltip from "./InputWithTooltip";
+import SearchInput from "./SearchInput";
 import DataTable, { DataTableRow } from "./DataTable";
 import CategoryFilter from "./CategoryFilter";
 import type { SummaryReportRow } from "./SummaryReportPDF";
 
 const PAGE_SIZE = 10;
 type SummaryTab = "facturas" | "gastos";
+
+const SUMMARY_TABS: { value: SummaryTab; label: string }[] = [
+  { value: "facturas", label: "Facturas" },
+  { value: "gastos", label: "Gastos" },
+];
 
 const SUMMARY_COLUMNS = [
   { label: "Referencia" },
@@ -390,7 +396,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
   const [categoryId, setCategoryId] = useState(() => searchParams.get("cat") ?? "");
   const [invoiceSeries, setInvoiceSeries] = useState(() => searchParams.get("series") ?? "");
   const [invoiceNumber, setInvoiceNumber] = useState(() => searchParams.get("number") ?? "");
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [searchText, setSearchText] = useState(search);
 
   const { data: categories = [] } = useSWR(
     workspaceId ? ["summary-categories", workspaceId] : null,
@@ -474,13 +480,26 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
     setInvoiceSeries("");
     setInvoiceNumber("");
     setPage(0);
-    if (searchInputRef.current) searchInputRef.current.value = "";
+    setSearchText("");
+    debouncedSearch.cancel();
   };
 
   const debouncedSearch = useDebouncedCallback((value: string) => {
     setSearch(value);
     setPage(0);
   }, 350);
+
+  const handleSearchChange = (value: string) => {
+    setSearchText(value);
+    if (value) {
+      debouncedSearch(value);
+    } else {
+      // Clearing applies right away instead of waiting for the debounce.
+      debouncedSearch.cancel();
+      setSearch("");
+      setPage(0);
+    }
+  };
 
   const { data, isLoading } = useSWR(
     workspaceId
@@ -507,160 +526,177 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex gap-2">
-        <OptionButton isActive={tab === "facturas"} onClick={() => setTab("facturas")}>
-          Facturas
-        </OptionButton>
-        <OptionButton isActive={tab === "gastos"} onClick={() => setTab("gastos")}>
-          Gastos
-        </OptionButton>
+        {SUMMARY_TABS.map(({ value, label }) => (
+          <OptionButton key={value} isActive={tab === value} onClick={() => setTab(value)}>
+            {label}
+          </OptionButton>
+        ))}
       </div>
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative w-full sm:max-w-xs">
-          <select
-            value={workspaceId}
-            onChange={(e) => handleWorkspaceChange(e.target.value)}
-            className={SELECT_CLASS + " pr-10"}
-          >
-            {workspaces.map((ws) => (
-              <option key={ws.id} value={ws.id}>
-                {ws.name}
-              </option>
-            ))}
-          </select>
-          <div className="absolute top-1/2 -translate-y-1/2 right-3 pointer-events-none">
-            <Icon icon="solar:alt-arrow-down-linear" fontSize={16} />
+      <div className="flex flex-col gap-4 rounded-xl border border-gray-200 p-3 sm:p-4">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="w-full sm:max-w-xs">
+            <select
+              value={workspaceId}
+              onChange={(e) => handleWorkspaceChange(e.target.value)}
+              className={SELECT_CLASS}
+            >
+              {workspaces.map((ws) => (
+                <option key={ws.id} value={ws.id}>
+                  {ws.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:flex">
+            <button
+              onClick={() =>
+                exportCsv(
+                  workspaceId,
+                  search,
+                  dateFrom,
+                  dateTo,
+                  tab,
+                  categoryId,
+                  invoiceSeries,
+                  invoiceNumber,
+                )
+              }
+              disabled={!workspaceId}
+              className={`${PRIMARY_BUTTON_CLASS} justify-center`}
+            >
+              <Icon icon="solar:download-linear" fontSize={ICON_SIZE} />
+              Export CSV
+            </button>
+            <button
+              onClick={() =>
+                exportPdf(
+                  workspaceId,
+                  workspaces.find((w) => w.id === workspaceId)?.name ?? "",
+                  search,
+                  dateFrom,
+                  dateTo,
+                  tab,
+                  categoryId,
+                  categories.find((c) => c.id === categoryId)?.name ?? "",
+                  invoiceSeries,
+                  invoiceNumber,
+                )
+              }
+              disabled={!workspaceId}
+              className={`${SECONDARY_BUTTON_CLASS} justify-center`}
+            >
+              <Icon icon="hugeicons:pdf-02" fontSize={ICON_SIZE} />
+              Descargar PDF
+            </button>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-2 sm:flex">
-          <button
-            onClick={() =>
-              exportCsv(
-                workspaceId,
-                search,
-                dateFrom,
-                dateTo,
-                tab,
-                categoryId,
-                invoiceSeries,
-                invoiceNumber,
-              )
-            }
-            disabled={!workspaceId}
-            className={`${PRIMARY_BUTTON_CLASS} justify-center`}
-          >
-            <Icon icon="solar:download-linear" fontSize={ICON_SIZE} />
-            Export CSV
-          </button>
-          <button
-            onClick={() =>
-              exportPdf(
-                workspaceId,
-                workspaces.find((w) => w.id === workspaceId)?.name ?? "",
-                search,
-                dateFrom,
-                dateTo,
-                tab,
-                categoryId,
-                categories.find((c) => c.id === categoryId)?.name ?? "",
-                invoiceSeries,
-                invoiceNumber,
-              )
-            }
-            disabled={!workspaceId}
-            className={`${SECONDARY_BUTTON_CLASS} justify-center`}
-          >
-            <Icon icon="hugeicons:pdf-02" fontSize={ICON_SIZE} />
-            Descargar PDF
-          </button>
-        </div>
-      </div>
-      <div className="flex gap-2 items-center">
-        <input
-          ref={searchInputRef}
-          type="text"
-          defaultValue={search}
-          placeholder="Search invoice, provider, notes..."
-          onChange={(e) => debouncedSearch(e.target.value)}
-          className={INPUT_CLASS}
-        />
-        <button onClick={clearFilters} disabled={!hasFilters} className={SECONDARY_BUTTON_CLASS}>
-          Clear filters
-        </button>
-      </div>
-      <div className="border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
-        <p className="block text-[11px] font-medium text-gray-400 mb-1">Factura</p>
-        <div className="grid grid-cols-2 gap-2">
-          <input
-            type="text"
-            placeholder="Serie"
-            value={invoiceSeries}
-            onChange={(e) => {
-              setInvoiceSeries(e.target.value);
-              setPage(0);
-            }}
-            className={INPUT_CLASS}
+        <div className="flex gap-2 items-center">
+          <SearchInput
+            value={searchText}
+            onChange={handleSearchChange}
+            placeholder="Search invoice, provider, notes..."
+            className="flex-1"
           />
-          <input
-            type="text"
-            placeholder="Número"
-            value={invoiceNumber}
-            onChange={(e) => {
-              setInvoiceNumber(e.target.value);
-              setPage(0);
-            }}
-            className={INPUT_CLASS}
-          />
+          {hasFilters && (
+            <InputWithTooltip label="Limpiar filtros">
+              <button
+                type="button"
+                onClick={clearFilters}
+                aria-label="Limpiar filtros"
+                className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-purple-400 hover:text-purple-500 transition-colors cursor-pointer"
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                  <line x1="4" y1="21" x2="21" y2="4" />
+                </svg>
+              </button>
+            </InputWithTooltip>
+          )}
         </div>
-      </div>
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-        <div className="flex gap-2 items-end border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
-          <div className="flex-1">
-            <p className="block text-[11px] font-medium text-gray-400 mb-1">Categoría</p>
-            <CategoryFilter
-              categories={categories}
-              value={categoryId}
-              onChange={(id) => {
-                setCategoryId(id);
+        <div className="border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
+          <p className="block text-[11px] font-medium text-gray-400 mb-1">Factura</p>
+          <div className="grid grid-cols-2 gap-2">
+            <input
+              type="text"
+              placeholder="Serie"
+              value={invoiceSeries}
+              onChange={(e) => {
+                setInvoiceSeries(e.target.value);
                 setPage(0);
               }}
+              className={INPUT_CLASS}
+            />
+            <input
+              type="text"
+              placeholder="Número"
+              value={invoiceNumber}
+              onChange={(e) => {
+                setInvoiceNumber(e.target.value);
+                setPage(0);
+              }}
+              className={INPUT_CLASS}
             />
           </div>
         </div>
-        <div className="border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
-          <p className="block text-[11px] font-medium text-gray-400 mb-1">Emisión</p>
-          <div className="flex flex-wrap sm:flex-nowrap gap-2">
-            <InputWithTooltip label="Mes de emisión" className="w-full sm:w-auto min-w-0">
-              <input
-                type="month"
-                value={month}
-                onChange={(e) => handleMonthChange(e.target.value)}
-                className={INPUT_CLASS}
-              />
-            </InputWithTooltip>
-            <InputWithTooltip label="Emisión desde" className="flex-1 min-w-0">
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => {
-                  setDateFrom(e.target.value);
-                  setMonth("");
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+          <div className="flex gap-2 items-end border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
+            <div className="flex-1">
+              <p className="block text-[11px] font-medium text-gray-400 mb-1">Categoría</p>
+              <CategoryFilter
+                categories={categories}
+                value={categoryId}
+                onChange={(id) => {
+                  setCategoryId(id);
                   setPage(0);
                 }}
-                className={INPUT_CLASS}
               />
-            </InputWithTooltip>
-            <InputWithTooltip label="Emisión hasta" className="flex-1 min-w-0">
-              <input
-                type="date"
-                value={dateTo}
-                onChange={(e) => {
-                  setDateTo(e.target.value);
-                  setMonth("");
-                  setPage(0);
-                }}
-                className={INPUT_CLASS}
-              />
-            </InputWithTooltip>
+            </div>
+          </div>
+          <div className="border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
+            <p className="block text-[11px] font-medium text-gray-400 mb-1">Emisión</p>
+            <div className="flex flex-wrap sm:flex-nowrap gap-2">
+              <InputWithTooltip label="Mes de emisión" className="w-full sm:w-auto min-w-0">
+                <input
+                  type="month"
+                  value={month}
+                  onChange={(e) => handleMonthChange(e.target.value)}
+                  className={INPUT_CLASS}
+                />
+              </InputWithTooltip>
+              <InputWithTooltip label="Emisión desde" className="flex-1 min-w-0">
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => {
+                    setDateFrom(e.target.value);
+                    setMonth("");
+                    setPage(0);
+                  }}
+                  className={INPUT_CLASS}
+                />
+              </InputWithTooltip>
+              <InputWithTooltip label="Emisión hasta" className="flex-1 min-w-0">
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => {
+                    setDateTo(e.target.value);
+                    setMonth("");
+                    setPage(0);
+                  }}
+                  className={INPUT_CLASS}
+                />
+              </InputWithTooltip>
+            </div>
           </div>
         </div>
       </div>

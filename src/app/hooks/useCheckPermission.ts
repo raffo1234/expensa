@@ -1,7 +1,7 @@
 "use client";
 
-import { checkPermissions } from "@/lib/checkPermissions";
 import useSWR from "swr";
+import { fetchRolePermissionSlugs, rolePermissionSlugsKey } from "@/lib/rolePermissions";
 
 function useCheckPermission(
   userRoleId: string | null | undefined,
@@ -11,13 +11,15 @@ function useCheckPermission(
     ? requiredPermissionSlugs
     : [requiredPermissionSlugs];
 
-  const { data, isLoading } = useSWR(
-    userRoleId && slugs.length > 0 ? `role-permissions-${userRoleId}-${slugs.join(",")}` : null,
-    () => checkPermissions(userRoleId!, slugs),
+  // Shares one cached list per role with the menu (prefilled by the admin layout),
+  // so most checks resolve without a network request.
+  const { data: granted, isLoading } = useSWR(
+    userRoleId && slugs.length > 0 ? rolePermissionSlugsKey(userRoleId) : null,
+    () => fetchRolePermissionSlugs(userRoleId!),
   );
 
   return {
-    hasPermission: slugs.every((s) => data?.[s] === true),
+    hasPermission: !!granted && slugs.every((s) => granted.includes(s)),
     isLoading,
   };
 }

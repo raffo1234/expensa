@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import GlobalModal from "@/components/GlobalModal";
-import { SWRConfig } from "swr";
-import { fetchAllPermissionsServer, prefetchPermissionServer } from "@/utils/serverPermissions";
 import { Toaster } from "react-hot-toast";
 import { ReactScan } from "@/components/ReactScan";
 import Slider from "@/components/Slider";
@@ -59,15 +57,7 @@ const manrope = Manrope({
 });
 
 export default async function Layout({ children }: Readonly<LayoutProps>) {
-  const messages = await getMessages();
-  const locale = await getLocale();
-  const initialPermissions = {};
-  const permissionSlugs = await fetchAllPermissionsServer();
-
-  for (const slug of permissionSlugs) {
-    const permissionData = await prefetchPermissionServer(slug);
-    Object.assign(initialPermissions, permissionData);
-  }
+  const [messages, locale] = await Promise.all([getMessages(), getLocale()]);
 
   return (
     <html lang={locale} className={`${cormorant.variable} ${manrope.variable}`}>
@@ -76,11 +66,9 @@ export default async function Layout({ children }: Readonly<LayoutProps>) {
       </head>
       <body className="bg-slate-100 font-sans">
         <Toaster toastOptions={{ className: "text-xs" }} />
-        <ReactScan />
+        {process.env.NODE_ENV === "development" && <ReactScan />}
         <Providers>
-          <SWRConfig value={{ fallback: initialPermissions }}>
-            <NextIntlClientProvider messages={messages}>{children}</NextIntlClientProvider>
-          </SWRConfig>
+          <NextIntlClientProvider messages={messages}>{children}</NextIntlClientProvider>
           <GlobalModal />
           <Slider />
         </Providers>

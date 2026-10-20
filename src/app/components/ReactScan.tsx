@@ -1,13 +1,11 @@
 "use client";
 
-import { scan } from "react-scan";
 import { JSX, useEffect } from "react";
 
 export function ReactScan(): JSX.Element {
   useEffect(() => {
-    scan({
-      enabled: true,
-    });
+    // Loaded on demand so the profiler never ships in the production bundle.
+    import("react-scan").then(({ scan }) => scan({ enabled: true }));
   }, []);
 
   return <></>;

@@ -333,6 +333,7 @@ export default function EditExpensePage() {
   const [existingAttachments, setExistingAttachments] = useState<ExpenseAttachment[]>([]);
   const [deletedIds, setDeletedIds] = useState<string[]>([]);
   const [newFiles, setNewFiles] = useState<File[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<Record<number, number>>({});
 
   const [saving, setSaving] = useState(false);
@@ -387,9 +388,23 @@ export default function EditExpensePage() {
     setDeletedIds((prev) => [...prev, id]);
   }
 
-  function addFiles(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? []);
-    setNewFiles((prev) => [...prev, ...files]);
+  function addFiles(files: File[]) {
+    // Dropped files skip the input's `accept`, so filter them here too.
+    const allowed = files.filter(
+      (f) => f.type.startsWith("image/") || f.type === "application/pdf",
+    );
+    if (allowed.length) setNewFiles((prev) => [...prev, ...allowed]);
+  }
+
+  function handleDrop(e: React.DragEvent<HTMLLabelElement>) {
+    e.preventDefault();
+    setIsDragging(false);
+    addFiles(Array.from(e.dataTransfer.files));
+  }
+
+  function handleDragLeave(e: React.DragEvent<HTMLLabelElement>) {
+    // Ignore leave events fired when moving over the label's own children.
+    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setIsDragging(false);
   }
 
   function removeNewFile(index: number) {
@@ -724,24 +739,10 @@ export default function EditExpensePage() {
                       </p>
                       <p className="text-xs text-gray-400 mt-0.5">{image ? "Imagen" : "PDF"}</p>
                     </div>
-                    <button
+                    <RemoveFileButton
+                      fileName={att.file_name ?? att.storage_path.split("/").pop() ?? "archivo"}
                       onClick={() => removeExisting(att.id)}
-                      className="p-1.5 rounded-lg text-gray-300 hover:text-red-400 hover:bg-red-50 transition-all"
-                    >
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                      >
-                        <polyline points="3 6 5 6 21 6" />
-                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                        <path d="M10 11v6M14 11v6" />
-                      </svg>
-                    </button>
+                    />
                   </div>
                 );
               })}
@@ -775,23 +776,7 @@ export default function EditExpensePage() {
                         </p>
                       </div>
                       {pct === null && (
-                        <button
-                          onClick={() => removeNewFile(i)}
-                          className="p-1.5 rounded-lg text-cyan-300 hover:text-red-400 hover:bg-red-50 transition-all"
-                        >
-                          <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                          >
-                            <line x1="18" y1="6" x2="6" y2="18" />
-                            <line x1="6" y1="6" x2="18" y2="18" />
-                          </svg>
-                        </button>
+                        <RemoveFileButton fileName={file.name} onClick={() => removeNewFile(i)} />
                       )}
                     </div>
                     {pct !== null && (
@@ -806,13 +791,29 @@ export default function EditExpensePage() {
                 );
               })}
 
-              <label className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-200 py-8 text-sm text-gray-400 hover:border-purple-500 hover:text-purple-600 hover:bg-purple-50/40 transition-all cursor-pointer">
+              <label
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsDragging(true);
+                }}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed py-8 text-sm transition-all cursor-pointer ${
+                  isDragging
+                    ? "border-purple-500 bg-purple-50 text-purple-600"
+                    : "border-gray-200 text-gray-400 hover:border-purple-500 hover:text-purple-600 hover:bg-purple-50/40"
+                }`}
+              >
                 <input
                   type="file"
                   multiple
                   accept="image/*,application/pdf"
                   className="hidden"
-                  onChange={addFiles}
+                  onChange={(e) => {
+                    addFiles(Array.from(e.target.files ?? []));
+                    // Allow picking the same file again after removing it.
+                    e.target.value = "";
+                  }}
                 />
                 <svg
                   width="14"
@@ -826,7 +827,13 @@ export default function EditExpensePage() {
                   <line x1="12" y1="5" x2="12" y2="19" />
                   <line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
-                Agregar archivo
+                {isDragging ? (
+                  "Suelta los archivos aquí"
+                ) : (
+                  <span>
+                    Agregar archivo <span className="hidden sm:inline">o arrástralo aquí</span>
+                  </span>
+                )}
               </label>
             </div>
           </FormInnerSection>
@@ -875,5 +882,37 @@ export default function EditExpensePage() {
         </div>
       )}
     </FormSection>
+  );
+}
+
+// 44px touch target on mobile / 40px on desktop, visible at rest (≥3:1 contrast),
+// red only on hover/focus so the destructive action doesn't dominate the list.
+function RemoveFileButton({ fileName, onClick }: { fileName: string; onClick: () => void }) {
+  const label = `Quitar ${fileName}`;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className="flex-shrink-0 w-11 h-11 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-1 active:scale-95 transition-all cursor-pointer"
+    >
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+      >
+        <polyline points="3 6 5 6 21 6" />
+        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+        <path d="M10 11v6M14 11v6" />
+        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+      </svg>
+    </button>
   );
 }

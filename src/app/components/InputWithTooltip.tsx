@@ -3,7 +3,15 @@
 import { useState } from "react";
 import { Popover } from "react-tiny-popover";
 
-export default function InputWithTooltip({ label, children }: { label: string; children: React.ReactElement }) {
+export default function InputWithTooltip({
+  label,
+  children,
+  className,
+}: {
+  label: string;
+  children: React.ReactElement;
+  className?: string;
+}) {
   const [hovered, setHovered] = useState(false);
   return (
     <Popover
@@ -16,7 +24,7 @@ export default function InputWithTooltip({ label, children }: { label: string; c
         </div>
       }
     >
-      <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
+      <div className={className} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
         {children}
       </div>
     </Popover>

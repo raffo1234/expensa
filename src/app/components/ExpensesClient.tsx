@@ -447,8 +447,7 @@ export default function ExpensesClient({
       "categoryId",
       "stageId",
       "levelId",
-      "invoiceSeries",
-      "invoiceNumber",
+      "providerId",
     ] as const;
     return f.some((k) => searchParams.get(k));
   });
@@ -585,10 +584,10 @@ export default function ExpensesClient({
     <>
       <div>
         <TitleWrapper>
-          <div className="flex mb-6 items-center justify-between mt-8">
+          <div className="flex flex-col gap-3 mb-6 mt-8 sm:flex-row sm:items-center sm:justify-between">
             <Link
               href={`/admin/workspaces/${slug}/upload-expense`}
-              className={PRIMARY_BUTTON_CLASS}
+              className={`${PRIMARY_BUTTON_CLASS} justify-center`}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -605,8 +604,11 @@ export default function ExpensesClient({
               </svg>
               Agregar
             </Link>
-            <div className="flex gap-2 items-center">
-              <Link href={`/admin/workspaces/${slug}/materials`} className={SECONDARY_BUTTON_CLASS}>
+            <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center">
+              <Link
+                href={`/admin/workspaces/${slug}/materials`}
+                className={`${SECONDARY_BUTTON_CLASS} justify-center px-2 sm:px-4`}
+              >
                 <svg
                   width="15"
                   height="15"
@@ -625,7 +627,7 @@ export default function ExpensesClient({
               </Link>
               <button
                 onClick={() => exportExpensesCsv(workspace.id, debouncedSearch, filters)}
-                className={SECONDARY_BUTTON_CLASS}
+                className={`${SECONDARY_BUTTON_CLASS} justify-center px-2 sm:px-4`}
               >
                 <svg
                   width="15"
@@ -641,7 +643,8 @@ export default function ExpensesClient({
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
-                Export CSV
+                <span className="sm:hidden">CSV</span>
+                <span className="hidden sm:inline">Export CSV</span>
               </button>
               <button
                 onClick={() =>
@@ -656,10 +659,11 @@ export default function ExpensesClient({
                     providers,
                   )
                 }
-                className={SECONDARY_BUTTON_CLASS}
+                className={`${SECONDARY_BUTTON_CLASS} justify-center px-2 sm:px-4`}
               >
                 <Icon icon="hugeicons:pdf-02" fontSize={ICON_SIZE} />
-                Download PDF
+                <span className="sm:hidden">PDF</span>
+                <span className="hidden sm:inline">Download PDF</span>
               </button>
             </div>
           </div>
@@ -707,12 +711,25 @@ export default function ExpensesClient({
             </InputWithTooltip>
           )}
         </div>
-        <div className="mb-3">
-          <ProviderFilter
-            providers={providers}
-            value={filters.providerId}
-            onChange={(id) => setFilter("providerId", id)}
-          />
+        <div className="mb-3 grid grid-cols-2 gap-2">
+          <InputWithTooltip label="Serie de factura" className="min-w-0">
+            <input
+              type="text"
+              placeholder="Serie"
+              value={filters.invoiceSeries}
+              onChange={(e) => setFilter("invoiceSeries", e.target.value)}
+              className={INPUT_CLASS}
+            />
+          </InputWithTooltip>
+          <InputWithTooltip label="Número de factura" className="min-w-0">
+            <input
+              type="text"
+              placeholder="Número"
+              value={filters.invoiceNumber}
+              onChange={(e) => setFilter("invoiceNumber", e.target.value)}
+              className={INPUT_CLASS}
+            />
+          </InputWithTooltip>
         </div>
 
         {/* Toggle filtros */}
@@ -726,9 +743,17 @@ export default function ExpensesClient({
 
         {showFilters && (
           <div className="mb-4 grid grid-cols-2 gap-x-3 gap-y-3 sm:grid-cols-3 lg:grid-cols-6">
-            <div className="col-span-2 sm:col-span-3 lg:col-span-3 flex gap-2 items-center border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
-              <span className="text-[11px] font-medium text-gray-400 pl-1">Emisión</span>
-              <InputWithTooltip label="Mes de emisión">
+            <div className="col-span-2 sm:col-span-3 lg:col-span-6 border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
+              <p className={`${labelClass} pl-1`}>Proveedor</p>
+              <ProviderFilter
+                providers={providers}
+                value={filters.providerId}
+                onChange={(id) => setFilter("providerId", id)}
+              />
+            </div>
+            <div className="col-span-2 sm:col-span-3 lg:col-span-3 flex flex-wrap sm:flex-nowrap gap-2 items-center border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
+              <span className="w-full sm:w-auto text-[11px] font-medium text-gray-400 pl-1">Emisión</span>
+              <InputWithTooltip label="Mes de emisión" className="w-full sm:w-auto sm:flex-1 min-w-0">
                 <input
                   type="month"
                   value={issuedMonth}
@@ -736,7 +761,7 @@ export default function ExpensesClient({
                   className={INPUT_CLASS}
                 />
               </InputWithTooltip>
-              <InputWithTooltip label="Emisión desde">
+              <InputWithTooltip label="Emisión desde" className="flex-1 min-w-0">
                 <input
                   type="date"
                   value={filters.issuedFrom}
@@ -747,7 +772,7 @@ export default function ExpensesClient({
                   className={INPUT_CLASS}
                 />
               </InputWithTooltip>
-              <InputWithTooltip label="Emisión hasta">
+              <InputWithTooltip label="Emisión hasta" className="flex-1 min-w-0">
                 <input
                   type="date"
                   value={filters.issuedTo}
@@ -759,30 +784,9 @@ export default function ExpensesClient({
                 />
               </InputWithTooltip>
             </div>
-            <div className="col-span-2 sm:col-span-3 lg:col-span-2 flex gap-2 items-center border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
-              <span className="text-[11px] font-medium text-gray-400 pl-1">Factura</span>
-              <InputWithTooltip label="Serie">
-                <input
-                  type="text"
-                  placeholder="Serie"
-                  value={filters.invoiceSeries}
-                  onChange={(e) => setFilter("invoiceSeries", e.target.value)}
-                  className={INPUT_CLASS}
-                />
-              </InputWithTooltip>
-              <InputWithTooltip label="Número">
-                <input
-                  type="text"
-                  placeholder="Número"
-                  value={filters.invoiceNumber}
-                  onChange={(e) => setFilter("invoiceNumber", e.target.value)}
-                  className={INPUT_CLASS}
-                />
-              </InputWithTooltip>
-            </div>
-            <div className="col-span-2 sm:col-span-3 lg:col-span-3 flex gap-2 items-center border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
-              <span className="text-[11px] font-medium text-gray-400 pl-1">Monto</span>
-              <InputWithTooltip label="Monto mínimo">
+            <div className="col-span-2 sm:col-span-3 lg:col-span-3 flex flex-wrap sm:flex-nowrap gap-2 items-center border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
+              <span className="w-full sm:w-auto text-[11px] font-medium text-gray-400 pl-1">Monto</span>
+              <InputWithTooltip label="Monto mínimo" className="flex-1 min-w-0">
                 <input
                   type="number"
                   min="0"
@@ -793,7 +797,7 @@ export default function ExpensesClient({
                   className={INPUT_CLASS}
                 />
               </InputWithTooltip>
-              <InputWithTooltip label="Monto máximo">
+              <InputWithTooltip label="Monto máximo" className="flex-1 min-w-0">
                 <input
                   type="number"
                   min="0"

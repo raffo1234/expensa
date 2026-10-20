@@ -46,18 +46,16 @@ const MenuItemLink = React.forwardRef<
       onMouseLeave={closePopover}
       className={`${
         href === currentPath
-          ? "text-purple-800 bg-purple-50"
-          : "text-gray-800 hover:text-purple-600"
-      } truncate rounded-lg w-full p-1 gap-3.5 flex items-center text-sm font-semibold transition-colors duration-300`}
+          ? "text-purple-800 bg-purple-100 ring-1 ring-inset ring-purple-200"
+          : "text-gray-800 hover:text-purple-800 hover:bg-purple-100/60"
+      } group truncate rounded-lg w-full p-1 pr-3 gap-3.5 flex items-center text-sm font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-300`}
       onClick={closeMenu}
       ref={ref}
     >
-      <span className={STYLED_ICON_CLASS}>
-        <Icon
-          icon={iconName}
-          fontSize={ICON_SIZE}
-          className="flex-shrink-0"
-        />
+      <span
+        className={`${STYLED_ICON_CLASS} transition-all duration-200 group-hover:border-purple-300 group-hover:shadow-sm`}
+      >
+        <Icon icon={iconName} fontSize={ICON_SIZE} className="flex-shrink-0" />
       </span>
       <span
         className={`${isContracted ? "lg:invisible lg:opacity-0 lg:w-0" : "lg:visible lg:opacity-100"} transition-all duration-400 overflow-hidden truncate`}

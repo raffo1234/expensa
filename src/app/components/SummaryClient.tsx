@@ -514,8 +514,8 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
           Gastos
         </OptionButton>
       </div>
-      <div className="flex gap-2 items-center justify-between">
-        <div className="relative max-w-xs">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative w-full sm:max-w-xs">
           <select
             value={workspaceId}
             onChange={(e) => handleWorkspaceChange(e.target.value)}
@@ -531,7 +531,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
             <Icon icon="solar:alt-arrow-down-linear" fontSize={16} />
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:flex">
           <button
             onClick={() =>
               exportCsv(
@@ -546,7 +546,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
               )
             }
             disabled={!workspaceId}
-            className={PRIMARY_BUTTON_CLASS}
+            className={`${PRIMARY_BUTTON_CLASS} justify-center`}
           >
             <Icon icon="solar:download-linear" fontSize={ICON_SIZE} />
             Export CSV
@@ -567,7 +567,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
               )
             }
             disabled={!workspaceId}
-            className={SECONDARY_BUTTON_CLASS}
+            className={`${SECONDARY_BUTTON_CLASS} justify-center`}
           >
             <Icon icon="hugeicons:pdf-02" fontSize={ICON_SIZE} />
             Descargar PDF
@@ -587,7 +587,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
           Clear filters
         </button>
       </div>
-      <div className="flex flex-wrap gap-3 items-center">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <div className="flex gap-2 items-end border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
           <div className="flex-1">
             <p className="block text-[11px] font-medium text-gray-400 mb-1">Categoría</p>
@@ -598,9 +598,9 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
             />
           </div>
         </div>
-        <div className="flex gap-2 items-center border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
-          <span className="text-sm font-medium text-gray-400 pl-1">Emisión</span>
-          <InputWithTooltip label="Mes de emisión">
+        <div className="flex flex-wrap sm:flex-nowrap gap-2 items-center border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
+          <span className="w-full sm:w-auto text-sm font-medium text-gray-400 pl-1">Emisión</span>
+          <InputWithTooltip label="Mes de emisión" className="w-full sm:w-auto min-w-0">
             <input
               type="month"
               value={month}
@@ -608,7 +608,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
               className={INPUT_CLASS}
             />
           </InputWithTooltip>
-          <InputWithTooltip label="Emisión desde">
+          <InputWithTooltip label="Emisión desde" className="flex-1 min-w-0">
             <input
               type="date"
               value={dateFrom}
@@ -616,7 +616,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
               className={INPUT_CLASS}
             />
           </InputWithTooltip>
-          <InputWithTooltip label="Emisión hasta">
+          <InputWithTooltip label="Emisión hasta" className="flex-1 min-w-0">
             <input
               type="date"
               value={dateTo}
@@ -625,9 +625,9 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
             />
           </InputWithTooltip>
         </div>
-        <div className="flex gap-2 items-center border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
-          <span className="text-sm font-medium text-gray-400 pl-1">Factura</span>
-          <InputWithTooltip label="Serie">
+        <div className="flex flex-wrap sm:flex-nowrap gap-2 items-center border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
+          <span className="w-full sm:w-auto text-sm font-medium text-gray-400 pl-1">Factura</span>
+          <InputWithTooltip label="Serie" className="flex-1 min-w-0">
             <input
               type="text"
               placeholder="Serie"
@@ -636,7 +636,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
               className={INPUT_CLASS}
             />
           </InputWithTooltip>
-          <InputWithTooltip label="Número">
+          <InputWithTooltip label="Número" className="flex-1 min-w-0">
             <input
               type="text"
               placeholder="Número"

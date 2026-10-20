@@ -26,6 +26,7 @@ import CategoryManagerModal from "./CategoryManagerModal";
 import { useSearchParams, usePathname } from "next/navigation";
 import InputWithTooltip from "./InputWithTooltip";
 import SearchInput from "./SearchInput";
+import ClearFiltersButton from "./ClearFiltersButton";
 import { replaceUrl } from "@/utils/replaceUrl";
 import type { SummaryReportRow } from "./SummaryReportPDF";
 
@@ -705,29 +706,7 @@ export default function ExpensesClient({
             placeholder="Buscar por referencia, proveedor o notas..."
             className="flex-1"
           />
-          {hasActiveFilters && (
-            <InputWithTooltip label="Limpiar filtros">
-              <button
-                type="button"
-                onClick={clearFilters}
-                className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-purple-400 hover:text-purple-500 transition-colors"
-              >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-                  <line x1="4" y1="21" x2="21" y2="4" />
-                </svg>
-              </button>
-            </InputWithTooltip>
-          )}
+          {hasActiveFilters && <ClearFiltersButton onClick={clearFilters} />}
         </div>
         <div className="mb-3 grid grid-cols-2 gap-2">
           <InputWithTooltip label="Serie de factura" className="min-w-0">

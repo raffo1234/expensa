@@ -78,6 +78,8 @@ export type MaterialReportRow = {
   brand: { id: string; name: string } | null;
   unit: { id: string; name: string };
   level: { id: string; name: string } | null;
+  provider: { id: string; name: string } | null;
+  invoice_ref: string | null;
 };
 
 export async function getMaterialsReport(workspaceId: string): Promise<MaterialReportRow[]> {
@@ -88,7 +90,8 @@ export async function getMaterialsReport(workspaceId: string): Promise<MaterialR
        material:material_id(id, name),
        brand:brand_id(id, name),
        unit:unit_id(id, name),
-       expense:expense_id!inner(workspace_id, paid_at, currency, level:level_id(id, name))`,
+       expense:expense_id!inner(workspace_id, paid_at, currency, invoice_series, invoice_number,
+         level:level_id(id, name), provider:provider_id(id, name))`,
     )
     .eq("expense.workspace_id", workspaceId)
     .order("created_at", { ascending: false });
@@ -108,7 +111,10 @@ export async function getMaterialsReport(workspaceId: string): Promise<MaterialR
       workspace_id: string;
       paid_at: string;
       currency: string;
+      invoice_series: string | null;
+      invoice_number: string | null;
       level: { id: string; name: string } | null;
+      provider: { id: string; name: string } | null;
     };
   };
 
@@ -124,5 +130,10 @@ export async function getMaterialsReport(workspaceId: string): Promise<MaterialR
     brand: row.brand,
     unit: row.unit,
     level: row.expense.level,
+    provider: row.expense.provider,
+    invoice_ref:
+      row.expense.invoice_series && row.expense.invoice_number
+        ? `${row.expense.invoice_series}-${row.expense.invoice_number}`
+        : null,
   }));
 }

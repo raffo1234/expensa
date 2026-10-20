@@ -15,17 +15,31 @@ export type ExpenseItemLine = {
   unit_id: string;
   quantity: string;
   unit_price: string;
+  /** Filled from the invoice by AI; cleared once the user edits the line. */
+  ai?: boolean;
+  /** Names read from the invoice that aren't in the catalog yet. */
+  suggested?: { material?: string; brand?: string; unit?: string };
 };
 
 type CatalogItem = { id: string; name: string };
 type CatalogKind = "material" | "brand" | "unit";
+
+const ID_FIELD = { material: "material_id", brand: "brand_id", unit: "unit_id" } as const;
 
 const ICON_BTN_CLASS =
   "flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-cyan-400 hover:text-cyan-500 transition-colors";
 
 function GearIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    >
       <circle cx="12" cy="12" r="3" />
       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
     </svg>
@@ -58,12 +72,34 @@ export default function ExpenseItemsEditor({
   const addLine = () => {
     onChange([
       ...lines,
-      { id: crypto.randomUUID(), material_id: "", brand_id: "", unit_id: "", quantity: "", unit_price: "" },
+      {
+        id: crypto.randomUUID(),
+        material_id: "",
+        brand_id: "",
+        unit_id: "",
+        quantity: "",
+        unit_price: "",
+      },
     ]);
   };
 
   const updateLine = (id: string, patch: Partial<ExpenseItemLine>) => {
-    onChange(lines.map((l) => (l.id === id ? { ...l, ...patch } : l)));
+    onChange(lines.map((l) => (l.id === id ? { ...l, ...patch, ai: false } : l)));
+  };
+
+  // Names read from the invoice that aren't in the catalog yet; they are
+  // created on save unless the user picks an existing entry instead.
+  const suggestion = (line: ExpenseItemLine, kind: CatalogKind) => {
+    const name = line.suggested?.[kind];
+    if (!name || line[ID_FIELD[kind]]) return null;
+    return (
+      <p
+        title="Leído de la factura. Elige uno existente si prefieres no crearlo."
+        className="self-start max-w-full truncate rounded-md border border-dashed border-violet-300 bg-violet-50 px-2 py-1 text-xs text-violet-700"
+      >
+        ✦ Nuevo: <span className="font-semibold">«{name}»</span> · se creará al guardar
+      </p>
+    );
   };
 
   const removeLine = (id: string) => {
@@ -139,9 +175,19 @@ export default function ExpenseItemsEditor({
   return (
     <div className="space-y-3">
       {lines.map((line, idx) => (
-        <div key={line.id} className="rounded-xl border border-gray-200 p-4 space-y-3 bg-white">
+        <div
+          key={line.id}
+          className={`rounded-xl border p-4 space-y-3 bg-white ${line.ai ? "border-violet-200" : "border-gray-200"}`}
+        >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-gray-400">Material {idx + 1}</span>
+            <span className="text-xs font-medium text-gray-400">
+              Material {idx + 1}
+              {line.ai && (
+                <span className="ml-2 rounded-full bg-violet-50 px-2 py-0.5 text-[11px] font-semibold text-violet-600">
+                  ✦ Leído de la factura
+                </span>
+              )}
+            </span>
             <button
               type="button"
               onClick={() => removeLine(line.id)}
@@ -161,13 +207,20 @@ export default function ExpenseItemsEditor({
               >
                 <option value="">Seleccionar</option>
                 {materials.map((m) => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                  </option>
                 ))}
               </select>
-              <button type="button" onClick={() => openManager("material")} className={ICON_BTN_CLASS}>
+              <button
+                type="button"
+                onClick={() => openManager("material")}
+                className={ICON_BTN_CLASS}
+              >
                 <GearIcon />
               </button>
             </div>
+            {suggestion(line, "material")}
           </Field>
 
           <div className="grid grid-cols-2 gap-3">
@@ -180,13 +233,20 @@ export default function ExpenseItemsEditor({
                 >
                   <option value="">Sin marca</option>
                   {brands.map((b) => (
-                    <option key={b.id} value={b.id}>{b.name}</option>
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
                   ))}
                 </select>
-                <button type="button" onClick={() => openManager("brand")} className={ICON_BTN_CLASS}>
+                <button
+                  type="button"
+                  onClick={() => openManager("brand")}
+                  className={ICON_BTN_CLASS}
+                >
                   <GearIcon />
                 </button>
               </div>
+              {suggestion(line, "brand")}
             </Field>
             <Field label="Unidad *">
               <div className="flex items-center gap-2">
@@ -197,13 +257,20 @@ export default function ExpenseItemsEditor({
                 >
                   <option value="">Seleccionar</option>
                   {units.map((u) => (
-                    <option key={u.id} value={u.id}>{u.name}</option>
+                    <option key={u.id} value={u.id}>
+                      {u.name}
+                    </option>
                   ))}
                 </select>
-                <button type="button" onClick={() => openManager("unit")} className={ICON_BTN_CLASS}>
+                <button
+                  type="button"
+                  onClick={() => openManager("unit")}
+                  className={ICON_BTN_CLASS}
+                >
                   <GearIcon />
                 </button>
               </div>
+              {suggestion(line, "unit")}
             </Field>
           </div>
 
@@ -245,4 +312,63 @@ export default function ExpenseItemsEditor({
       </button>
     </div>
   );
+}
+
+/**
+ * Creates the catalog entries suggested by the invoice (materials, brands,
+ * units the workspace doesn't have yet) and returns the lines with their ids
+ * filled in. Creation is an upsert by name, so repeated names are safe.
+ */
+export async function createSuggestedCatalogItems(
+  workspaceId: string,
+  lines: ExpenseItemLine[],
+): Promise<ExpenseItemLine[]> {
+  const pending = (kind: CatalogKind) => [
+    ...new Set(
+      lines
+        .filter((l) => !l[ID_FIELD[kind]] && l.suggested?.[kind])
+        .map((l) => l.suggested![kind]!),
+    ),
+  ];
+
+  const createAll = async (
+    names: string[],
+    create: (name: string) => Promise<{ id?: string; error?: string }>,
+  ) => {
+    const ids = new Map<string, string>();
+    for (const name of names) {
+      const { id, error } = await create(name);
+      if (error || !id) throw new Error(`No se pudo crear «${name}»: ${error ?? "error"}`);
+      ids.set(name, id);
+    }
+    return ids;
+  };
+
+  const [materialIds, brandIds, unitIds] = await Promise.all([
+    createAll(pending("material"), (name) =>
+      createMaterial({ workspace_id: workspaceId, name }).then((r) => ({
+        id: r.material?.id,
+        error: r.error,
+      })),
+    ),
+    createAll(pending("brand"), (name) =>
+      createBrand({ workspace_id: workspaceId, name }).then((r) => ({
+        id: r.brand?.id,
+        error: r.error,
+      })),
+    ),
+    createAll(pending("unit"), (name) =>
+      createUnit({ workspace_id: workspaceId, name }).then((r) => ({
+        id: r.unit?.id,
+        error: r.error,
+      })),
+    ),
+  ]);
+
+  return lines.map((l) => ({
+    ...l,
+    material_id: l.material_id || materialIds.get(l.suggested?.material ?? "") || "",
+    brand_id: l.brand_id || brandIds.get(l.suggested?.brand ?? "") || "",
+    unit_id: l.unit_id || unitIds.get(l.suggested?.unit ?? "") || "",
+  }));
 }

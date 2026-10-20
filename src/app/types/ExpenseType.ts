@@ -8,6 +8,7 @@ export interface Expense {
   paid_at?: string;
   payment_method?: string;
   notes?: string;
+  tax_status?: "con_igv" | "sin_igv" | "sin_comprobante" | null;
   created_at: string;
   provider?: { id: string; name: string; ruc?: string };
   category?: { id: string; name: string; color?: string };

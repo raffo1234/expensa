@@ -25,10 +25,16 @@ import Field from "./Field";
 import { useGlobalState } from "@/lib/globalState";
 import AddProviderModal from "./AddProviderModal";
 import CategoryManagerModal from "./CategoryManagerModal";
-import ExpenseItemsEditor, { type ExpenseItemLine } from "./ExpenseItemsEditor";
+import ExpenseItemsEditor, {
+  createSuggestedCatalogItems,
+  type ExpenseItemLine,
+} from "./ExpenseItemsEditor";
 import { getMaterials } from "@/actions/materials";
 import { getBrands } from "@/actions/brands";
 import { getUnits } from "@/actions/units";
+import type { ExtractedExpense } from "@/api/extract-expense/route";
+import { TAX_STATUS_LABELS, type TaxStatus, type TotalsCheck } from "@/lib/invoiceTax";
+import { matchBrand, matchMaterial, matchUnit } from "@/lib/matchCatalog";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type Category = { id: string; name: string; color: string | null };
@@ -109,7 +115,9 @@ async function fetchUnits(workspaceId: string) {
 }
 
 // ── Receipt extractor ─────────────────────────────────────────────────────────
-async function extractFromReceipt(file: File): Promise<Record<string, string>> {
+type ReceiptCatalog = { materials: string[]; brands: string[]; units: string[] };
+
+async function extractFromReceipt(file: File, catalog: ReceiptCatalog): Promise<ExtractedExpense> {
   const base64 = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve((reader.result as string).split(",")[1]);
@@ -120,7 +128,7 @@ async function extractFromReceipt(file: File): Promise<Record<string, string>> {
   const res = await fetch("/api/extract-expense", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ base64, mimeType: file.type }),
+    body: JSON.stringify({ base64, mimeType: file.type, catalog }),
   });
 
   if (!res.ok) throw new Error("Extraction failed");
@@ -248,7 +256,9 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
     stage_id: "",
     level_id: "",
     notes: "",
+    tax_status: "" as TaxStatus | "",
   });
+  const [totalsCheck, setTotalsCheck] = useState<TotalsCheck | null>(null);
 
   const [resolvedProvider, setResolvedProvider] = useState<{
     ruc: string | null;
@@ -333,7 +343,11 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
       setResolvedProvider({ ruc: null, name: null });
 
       try {
-        const extracted = await extractFromReceipt(allowed[0]);
+        const extracted = await extractFromReceipt(allowed[0], {
+          materials: materials.map((m) => m.name),
+          brands: brands.map((b) => b.name),
+          units: units.map((u) => u.name),
+        });
 
         setForm((f) => ({
           ...f,
@@ -349,7 +363,34 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
           ...(extracted.payment_method && PAYMENT_METHODS.includes(extracted.payment_method)
             ? { payment_method: extracted.payment_method }
             : {}),
+          ...(extracted.tax_status ? { tax_status: extracted.tax_status } : {}),
         }));
+
+        // Fill materials only when the user hasn't started the list themselves.
+        if (extracted.items?.length) {
+          const aiLines: ExpenseItemLine[] = extracted.items.map((item) => {
+            const material = matchMaterial(item.material, materials);
+            const brand = matchBrand(item.brand, brands);
+            const unit = matchUnit(item.unit, units);
+            const price = item.paid_unit_price ?? item.unit_price;
+            return {
+              id: crypto.randomUUID(),
+              material_id: material?.id ?? "",
+              brand_id: brand?.id ?? "",
+              unit_id: unit?.id ?? "",
+              quantity: item.quantity ? String(item.quantity) : "",
+              unit_price: price != null ? String(price) : "",
+              ai: true,
+              suggested: {
+                material: material ? undefined : item.material || undefined,
+                brand: brand ? undefined : item.brand || undefined,
+                unit: unit ? undefined : item.unit || undefined,
+              },
+            };
+          });
+          setItemLines((prev) => (prev.length ? prev : aiLines));
+          setTotalsCheck(extracted.totals_check);
+        }
 
         if (extracted.provider_ruc || extracted.provider_name) {
           const match = providers.find(
@@ -376,7 +417,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
         setExtracting(false);
       }
     },
-    [providers],
+    [providers, materials, brands, units],
   );
 
   const onDrop = useCallback(
@@ -397,22 +438,30 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
   const saveExpense = async () => {
     const amountCents = Math.round(parseFloat(form.amount) * 100);
 
-    const items = itemLines
-      .filter((l) => l.material_id && l.unit_id && l.quantity)
-      .map((l) => ({
-        material_id: l.material_id,
-        brand_id: l.brand_id || null,
-        unit_id: l.unit_id,
-        quantity: parseFloat(l.quantity),
-        unit_price: l.unit_price ? Math.round(parseFloat(l.unit_price) * 100) : null,
-      }));
-
     setUploadProgress({});
     abortRef.current = new AbortController();
     const { signal } = abortRef.current;
 
     setIsPending(true);
     try {
+      // Materials, brands and units read from the invoice that the catalog
+      // doesn't have yet are created now, only once the expense is saved.
+      const resolvedLines = await createSuggestedCatalogItems(workspaceId, itemLines);
+      const items = resolvedLines
+        .filter((l) => l.material_id && l.unit_id && l.quantity)
+        .map((l) => ({
+          material_id: l.material_id,
+          brand_id: l.brand_id || null,
+          unit_id: l.unit_id,
+          quantity: parseFloat(l.quantity),
+          unit_price: l.unit_price ? Math.round(parseFloat(l.unit_price) * 100) : null,
+        }));
+      if (resolvedLines.some((l) => l.suggested)) {
+        mutate(["materials", workspaceId]);
+        mutate(["brands", workspaceId]);
+        mutate(["units", workspaceId]);
+      }
+
       const result = await createExpense({
         workspace_id: workspaceId,
         workspace_slug: workspaceSlug,
@@ -430,6 +479,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
         paid_at: form.paid_at,
         payment_method: form.payment_method || undefined,
         notes: form.notes || undefined,
+        tax_status: form.tax_status || null,
         items: items.length ? items : undefined,
       });
 
@@ -929,6 +979,16 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                 />
               </Field>
             </div>
+            <Field label="Situación fiscal">
+              <select value={form.tax_status} onChange={set("tax_status")} className={SELECT_CLASS}>
+                <option value="">Sin especificar</option>
+                {(Object.keys(TAX_STATUS_LABELS) as TaxStatus[]).map((status) => (
+                  <option key={status} value={status}>
+                    {TAX_STATUS_LABELS[status]}
+                  </option>
+                ))}
+              </select>
+            </Field>
           </section>
         </FormInnerSection>
 
@@ -1022,6 +1082,9 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
 
         <SectionTitle>Materiales</SectionTitle>
         <FormInnerSection>
+          {totalsCheck && totalsCheck !== "ok" && itemLines.some((l) => l.ai) && (
+            <TotalsCheckNotice check={totalsCheck} />
+          )}
           <ExpenseItemsEditor
             workspaceId={workspaceId}
             lines={itemLines}
@@ -1125,4 +1188,24 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
       </form>
     </FormSection>
   );
+}
+
+const TOTALS_CHECK_MESSAGES: Record<Exclude<TotalsCheck, "ok">, { tone: string; text: string }> = {
+  adjusted: {
+    tone: "bg-cyan-50 border-cyan-200 text-cyan-700",
+    text: "Los precios de la factura venían sin IGV; se ajustaron para reflejar lo que pagaste.",
+  },
+  mismatch: {
+    tone: "bg-amber-50 border-amber-200 text-amber-800",
+    text: "Los materiales leídos no suman el total de la factura. Revisa cantidades y precios antes de guardar.",
+  },
+  unverified: {
+    tone: "bg-amber-50 border-amber-200 text-amber-800",
+    text: "No se pudo comparar los materiales con el total de la factura. Revísalos antes de guardar.",
+  },
+};
+
+function TotalsCheckNotice({ check }: { check: Exclude<TotalsCheck, "ok"> }) {
+  const { tone, text } = TOTALS_CHECK_MESSAGES[check];
+  return <p className={`mb-3 rounded-lg border px-4 py-2.5 text-xs ${tone}`}>✦ {text}</p>;
 }

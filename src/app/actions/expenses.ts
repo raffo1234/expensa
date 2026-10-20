@@ -40,6 +40,7 @@ type CreateExpenseInput = {
   provider_id?: string | null;
   stage_id?: string | null; // ← agregar
   level_id?: string | null;
+  tax_status?: "con_igv" | "sin_igv" | "sin_comprobante" | null;
   items?: ExpenseItemInput[];
 };
 
@@ -186,6 +187,7 @@ export async function createExpense(
       issued_at: input.issued_at ?? null,
       stage_id: input.stage_id ?? null,
       level_id: input.level_id ?? null,
+      tax_status: input.tax_status ?? null,
       created_by: user.id,
     })
     .select("id")

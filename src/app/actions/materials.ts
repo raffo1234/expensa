@@ -80,6 +80,7 @@ export type MaterialReportRow = {
   level: { id: string; name: string } | null;
   provider: { id: string; name: string } | null;
   invoice_ref: string | null;
+  tax_status: "con_igv" | "sin_igv" | "sin_comprobante" | null;
 };
 
 export async function getMaterialsReport(workspaceId: string): Promise<MaterialReportRow[]> {
@@ -90,7 +91,7 @@ export async function getMaterialsReport(workspaceId: string): Promise<MaterialR
        material:material_id(id, name),
        brand:brand_id(id, name),
        unit:unit_id(id, name),
-       expense:expense_id!inner(workspace_id, paid_at, currency, invoice_series, invoice_number,
+       expense:expense_id!inner(workspace_id, paid_at, currency, invoice_series, invoice_number, tax_status,
          level:level_id(id, name), provider:provider_id(id, name))`,
     )
     .eq("expense.workspace_id", workspaceId)
@@ -113,6 +114,7 @@ export async function getMaterialsReport(workspaceId: string): Promise<MaterialR
       currency: string;
       invoice_series: string | null;
       invoice_number: string | null;
+      tax_status: MaterialReportRow["tax_status"];
       level: { id: string; name: string } | null;
       provider: { id: string; name: string } | null;
     };
@@ -131,6 +133,7 @@ export async function getMaterialsReport(workspaceId: string): Promise<MaterialR
     unit: row.unit,
     level: row.expense.level,
     provider: row.expense.provider,
+    tax_status: row.expense.tax_status,
     invoice_ref:
       row.expense.invoice_series && row.expense.invoice_number
         ? `${row.expense.invoice_series}-${row.expense.invoice_number}`

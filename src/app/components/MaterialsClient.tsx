@@ -12,8 +12,11 @@ import { formatAmount } from "@/utils/formatAmount";
 import { formatSafeDate } from "@/lib/formatSafeDate";
 import { replaceUrl } from "@/utils/replaceUrl";
 import { INPUT_CLASS, SELECT_CLASS } from "@/constants";
+import { TAX_STATUS_LABELS, type TaxStatus } from "@/lib/invoiceTax";
 
 type Option = [id: string, name: string];
+
+const TAX_STATUS_OPTIONS = Object.entries(TAX_STATUS_LABELS) as Option[];
 
 const BOX_CLASS = "min-w-0 border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50";
 const LABEL_CLASS = "block text-[11px] font-medium text-gray-400 mb-1";
@@ -80,6 +83,7 @@ export default function MaterialsClient({
   const [materialId, setMaterialId] = useState(() => searchParams.get("material") ?? "");
   const [brandId, setBrandId] = useState(() => searchParams.get("brand") ?? "");
   const [providerId, setProviderId] = useState(() => searchParams.get("provider") ?? "");
+  const [taxStatus, setTaxStatus] = useState(() => searchParams.get("tax") ?? "");
   const [levelId, setLevelId] = useState(() => searchParams.get("level") ?? "");
   const [month, setMonth] = useState(() => searchParams.get("month") ?? "");
   const [dateFrom, setDateFrom] = useState(() => searchParams.get("from") ?? "");
@@ -112,6 +116,7 @@ export default function MaterialsClient({
       if (materialId) params.set("material", materialId);
       if (brandId) params.set("brand", brandId);
       if (providerId) params.set("provider", providerId);
+      if (taxStatus) params.set("tax", taxStatus);
       if (levelId) params.set("level", levelId);
       if (month) params.set("month", month);
       if (dateFrom) params.set("from", dateFrom);
@@ -125,6 +130,7 @@ export default function MaterialsClient({
     materialId,
     brandId,
     providerId,
+    taxStatus,
     levelId,
     month,
     dateFrom,
@@ -144,6 +150,7 @@ export default function MaterialsClient({
       if (materialId && r.material.id !== materialId) return false;
       if (brandId && r.brand?.id !== brandId) return false;
       if (providerId && r.provider?.id !== providerId) return false;
+      if (taxStatus && r.tax_status !== taxStatus) return false;
       if (levelId && r.level?.id !== levelId) return false;
       const paidDay = r.paid_at?.slice(0, 10) ?? "";
       if (dateFrom && paidDay < dateFrom) return false;
@@ -157,7 +164,7 @@ export default function MaterialsClient({
       }
       return true;
     });
-  }, [rows, search, materialId, brandId, providerId, levelId, dateFrom, dateTo]);
+  }, [rows, search, materialId, brandId, providerId, taxStatus, levelId, dateFrom, dateTo]);
 
   const totals = useMemo(() => {
     const map = new Map<
@@ -190,6 +197,7 @@ export default function MaterialsClient({
     materialId ||
     brandId ||
     providerId ||
+    taxStatus ||
     month ||
     dateFrom ||
     dateTo
@@ -213,6 +221,7 @@ export default function MaterialsClient({
     setMaterialId("");
     setBrandId("");
     setProviderId("");
+    setTaxStatus("");
     setMonth("");
     setDateFrom("");
     setDateTo("");
@@ -267,7 +276,7 @@ export default function MaterialsClient({
                 {hasFilters && <ClearFiltersButton onClick={clearFilters} />}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 <FilterSelect
                   label="Material"
                   value={materialId}
@@ -295,6 +304,13 @@ export default function MaterialsClient({
                   onChange={setLevelId}
                   allLabel="Todos los niveles"
                   options={levelOptions}
+                />
+                <FilterSelect
+                  label="Tipo de compra"
+                  value={taxStatus}
+                  onChange={setTaxStatus}
+                  allLabel="Todas"
+                  options={TAX_STATUS_OPTIONS}
                 />
               </div>
 
@@ -407,6 +423,7 @@ export default function MaterialsClient({
                         </p>
                       </div>
                       <div className="flex-shrink-0 text-right">
+                        <TaxBadge status={r.tax_status} />
                         {r.unit_price != null && (
                           <p className="text-xs text-gray-400">
                             P. unit. {formatAmount(r.unit_price, r.currency)}
@@ -431,5 +448,16 @@ export default function MaterialsClient({
         )}
       </div>
     </div>
+  );
+}
+
+// Prices from purchases without IGV aren't comparable with invoiced ones, so
+// they are labelled; "con IGV" is the normal case and stays unmarked.
+function TaxBadge({ status }: { status: TaxStatus | null }) {
+  if (status !== "sin_igv" && status !== "sin_comprobante") return null;
+  return (
+    <span className="mb-0.5 inline-block rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
+      {TAX_STATUS_LABELS[status]}
+    </span>
   );
 }

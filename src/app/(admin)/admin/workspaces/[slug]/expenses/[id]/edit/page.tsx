@@ -14,6 +14,7 @@ import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import getAttachmentUrl from "@/lib/getAttachmentUrl";
 import { Expense } from "@/types/ExpenseType";
+import { TAX_STATUS_LABELS, type TaxStatus } from "@/lib/invoiceTax";
 import { Category } from "@/types/CategoryType";
 import { ExpenseAttachment } from "@/types/ExpenseAttachment";
 import { Provider } from "@/types/ProviderType";
@@ -142,7 +143,7 @@ async function fetchExpense(expenseId: string, workspaceId: string): Promise<Exp
     .from("expense")
     .select(
       `
-      id, amount, currency, issued_at, paid_at, payment_method, notes, created_at, invoice_series, invoice_number,
+      id, amount, currency, issued_at, paid_at, payment_method, notes, created_at, invoice_series, invoice_number, tax_status,
       provider:provider_id(id, name),
       category:category_id(id, name, color),
       stage:stage_id(id, name, color),
@@ -324,6 +325,7 @@ export default function EditExpensePage() {
   const [currency, setCurrency] = useState("PEN");
   const [paidAt, setPaidAt] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
+  const [taxStatus, setTaxStatus] = useState("");
   const [notes, setNotes] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [invoiceSeries, setInvoiceSeries] = useState("");
@@ -373,6 +375,7 @@ export default function EditExpensePage() {
     setCurrency(expense.currency ? expense.currency.trim() : "");
     setPaidAt(expense.paid_at ? expense.paid_at.slice(0, 10) : "");
     setPaymentMethod(expense.payment_method ?? "");
+    setTaxStatus(expense.tax_status ?? "");
     setNotes(expense.notes ?? "");
     setCategoryId(expense.category?.id ?? "");
     setInvoiceSeries(expense.invoice_series ?? "");
@@ -431,6 +434,7 @@ export default function EditExpensePage() {
           issued_at: issuedAt || null,
           paid_at: paidAt,
           payment_method: paymentMethod || null,
+          tax_status: taxStatus || null,
           notes: notes.trim() || null,
           category_id: categoryId || null,
           invoice_series: invoiceSeries.trim() || null,
@@ -597,6 +601,17 @@ export default function EditExpensePage() {
                   />
                 </Field>
               </div>
+
+              <Field label="Situación fiscal">
+                <Select value={taxStatus} onChange={setTaxStatus}>
+                  <option value="">Sin especificar</option>
+                  {(Object.keys(TAX_STATUS_LABELS) as TaxStatus[]).map((status) => (
+                    <option key={status} value={status}>
+                      {TAX_STATUS_LABELS[status]}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <Field label="Fecha de emisión">

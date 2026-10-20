@@ -74,10 +74,7 @@ export default async function Layout({ children }: Readonly<LayoutProps>) {
       <head>
         <meta property="og:logo" content="https://expensa-sigma.vercel.app/expensa-hero.png" />
       </head>
-      <body
-        style={{ backgroundImage: "url('/shapes.webp')", backgroundSize: "cover" }}
-        className="bg-gray-50 font-sans"
-      >
+      <body className="bg-slate-100 font-sans">
         <Toaster toastOptions={{ className: "text-xs" }} />
         <ReactScan />
         <Providers>

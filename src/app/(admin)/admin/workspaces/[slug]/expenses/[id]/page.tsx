@@ -1,16 +1,12 @@
-"use client";
-
-import useSWR from "swr";
-import { useRouter, useParams } from "next/navigation";
+import { Suspense } from "react";
+import Link from "next/link";
+import { notFound } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
 import getAttachmentUrl from "@/lib/getAttachmentUrl";
 import FormSection from "@/components/FormSection";
 import FormInnerSection from "@/components/FormInnerSection";
 import SectionTitle from "@/components/SectionTitle";
-import { PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from "@/constants";
-import Link from "next/link";
+import { PRIMARY_BUTTON_CLASS } from "@/constants";
 import { formatAmount } from "@/utils/formatAmount";
 import { formatSafeDate } from "@/lib/formatSafeDate";
 import { getExpenseItems, type ExpenseItem } from "@/actions/expenses";
@@ -26,14 +22,11 @@ type Expense = {
   id: string;
   invoice_series: string | null;
   invoice_number: string | null;
-  provider: {
-    name: string;
-    ruc: string;
-  } | null;
+  provider: { name: string; ruc: string | null } | null;
   amount: number;
   currency: string;
-  issued_at: string;
-  paid_at: string;
+  issued_at: string | null;
+  paid_at: string | null;
   payment_method: string | null;
   notes: string | null;
   created_at: string;
@@ -42,8 +35,8 @@ type Expense = {
   expense_attachment: ExpenseAttachment[];
 };
 
-// ── Fetchers ──────────────────────────────────────────────────────────────────
-async function fetchExpense(expenseId: string): Promise<Expense> {
+// ── Data ─────────────────────────────────────────────────────────────────────
+async function fetchExpense(expenseId: string): Promise<Expense | null> {
   const { data, error } = await supabase
     .from("expense")
     .select(
@@ -52,269 +45,300 @@ async function fetchExpense(expenseId: string): Promise<Expense> {
       provider:provider_id(name, ruc),
       payment_method, notes, created_at,
       category(id, name, color),
-      user:user(id, email),
+      created_by_user:user(id, email),
       expense_attachment(id, file_name, storage_path)
     `,
     )
     .eq("id", expenseId)
-    .single();
+    .maybeSingle();
   if (error) throw error;
-  return data as unknown as Expense;
+  return data as unknown as Expense | null;
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────────────────────────
+const LONG_DATE = "d 'de' MMMM, yyyy";
+const DEFAULT_CATEGORY_COLOR = "#7c3aed";
 
 function isImage(storagePath: string) {
   return /\.(jpe?g|png|webp|gif)$/i.test(storagePath);
 }
 
-function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
+function invoiceRef(expense: Expense) {
+  const { invoice_series: series, invoice_number: number } = expense;
+  if (!series && !number) return null;
+  return [series, number].filter(Boolean).join("-");
+}
+
+// Server runs in UTC; show the registration time the way users in Peru see it.
+const registeredAtFormatter = new Intl.DateTimeFormat("es-PE", {
+  timeZone: "America/Lima",
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
+const Empty = () => <span className="text-gray-300">—</span>;
+
+function Fact({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="first:rounded-t-xl odd:bg-slate-50 flex items-start justify-between p-5 border-b border-gray-100 last:border-0 gap-4">
-      <span className="text-[11px] font-bold text-gray-800 uppercase tracking-widest flex-shrink-0 pt-0.5">
-        {label}
-      </span>
-      <span className="text-sm text-gray-500 text-right font-medium">{children}</span>
+    <div className="min-w-0">
+      <dt className="text-[11px] font-medium text-gray-400 uppercase tracking-wide">{label}</dt>
+      <dd className="mt-1 text-sm font-medium text-gray-800 break-words">{children}</dd>
     </div>
   );
 }
 
-function FilePreview({ attachment }: { attachment: ExpenseAttachment }) {
+function FileTile({ attachment }: { attachment: ExpenseAttachment }) {
   const url = getAttachmentUrl(attachment.storage_path);
   const image = isImage(attachment.storage_path);
+  const name = attachment.file_name ?? attachment.storage_path.split("/").pop();
 
   return (
     <a
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="group flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl p-3
-                 hover:border-cyan-300 hover:bg-cyan-50/40 transition-all"
+      title={name}
+      className="group block rounded-xl border border-gray-200 bg-gray-50 overflow-hidden hover:border-violet-300 hover:shadow-md transition-all"
     >
-      {image ? (
-        <img
-          src={url}
-          alt={attachment.file_name ?? "adjunto"}
-          className="w-12 h-12 rounded-lg object-cover flex-shrink-0 border border-gray-200"
-        />
-      ) : (
-        <div className="w-12 h-12 rounded-lg bg-cyan-100 flex items-center justify-center flex-shrink-0">
-          <span className="text-[10px] font-bold text-cyan-600">PDF</span>
-        </div>
-      )}
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-800 truncate">
-          {attachment.file_name ?? attachment.storage_path.split("/").pop()}
-        </p>
-        <p className="text-xs text-gray-400 mt-0.5">{image ? "Imagen" : "PDF"}</p>
+      <div className="aspect-[4/3] flex items-center justify-center bg-white border-b border-gray-100 overflow-hidden">
+        {image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={url}
+            alt={name ?? "adjunto"}
+            loading="lazy"
+            className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
+          />
+        ) : (
+          <span className="w-12 h-14 rounded-md bg-rose-50 border border-rose-100 flex items-end justify-center pb-2 text-[10px] font-bold text-rose-500">
+            PDF
+          </span>
+        )}
       </div>
-      <svg
-        width="14"
-        height="14"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        className="text-gray-300 group-hover:text-cyan-500 flex-shrink-0 transition-colors"
-      >
-        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-        <polyline points="15 3 21 3 21 9" />
-        <line x1="10" y1="14" x2="21" y2="3" />
-      </svg>
+      <div className="flex items-center gap-2 px-3 py-2">
+        <p className="flex-1 min-w-0 text-xs font-medium text-gray-700 truncate">{name}</p>
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          className="text-gray-300 group-hover:text-violet-500 flex-shrink-0 transition-colors"
+          aria-hidden
+        >
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+          <polyline points="15 3 21 3 21 9" />
+          <line x1="10" y1="14" x2="21" y2="3" />
+        </svg>
+      </div>
     </a>
   );
 }
 
-function MaterialRow({ item, currency }: { item: ExpenseItem; currency: string }) {
+function MaterialsTable({ items, currency }: { items: ExpenseItem[]; currency: string }) {
+  const total = items.reduce((sum, item) => sum + (item.subtotal ?? 0), 0);
   return (
-    <div className="flex items-center justify-between gap-3 bg-gray-50 border border-gray-200 rounded-xl p-3">
-      <div className="min-w-0">
-        <p className="text-sm font-medium text-gray-800 truncate">
-          {item.material.name}
-          {item.brand && <span className="text-gray-400 font-normal"> · {item.brand.name}</span>}
-        </p>
-        <p className="text-xs text-gray-400 mt-0.5">
-          {item.quantity} {item.unit.name}
-        </p>
+    <FormInnerSection padding={false}>
+      <ul className="divide-y divide-gray-100">
+        {items.map((item) => (
+          <li key={item.id} className="flex items-center justify-between gap-4 px-5 py-3">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-gray-800 truncate">
+                {item.material.name}
+                {item.brand && (
+                  <span className="text-gray-400 font-normal"> · {item.brand.name}</span>
+                )}
+              </p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {item.quantity} {item.unit.name}
+                {item.unit_price != null && <> × {formatAmount(item.unit_price, currency)}</>}
+              </p>
+            </div>
+            <p className="flex-shrink-0 text-sm font-semibold text-gray-700">
+              {item.subtotal != null ? formatAmount(item.subtotal, currency) : "—"}
+            </p>
+          </li>
+        ))}
+      </ul>
+      <div className="flex items-center justify-between gap-4 px-5 py-3 border-t border-gray-200 bg-gray-50/60 rounded-b-xl">
+        <span className="text-sm font-semibold text-gray-600">Total materiales</span>
+        <span className="text-sm font-bold text-gray-900">{formatAmount(total, currency)}</span>
       </div>
-      <div className="flex-shrink-0 text-right">
-        {item.unit_price != null && (
-          <p className="text-xs text-gray-400">P. unit. {formatAmount(item.unit_price, currency)}</p>
-        )}
-        {item.subtotal != null && (
-          <p className="text-sm font-semibold text-gray-700">{formatAmount(item.subtotal, currency)}</p>
-        )}
-      </div>
-    </div>
+    </FormInnerSection>
   );
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
-export default function ExpenseDetailPage() {
-  const params = useParams();
-  const workspaceSlug = params.slug as string;
-  const expenseId = params.id as string;
-  const router = useRouter();
+// ── Page ─────────────────────────────────────────────────────────────────────
+interface PageProps {
+  params: Promise<{ slug: string; id: string }>;
+}
 
-  const {
-    data: expense,
-    isLoading,
-    error,
-  } = useSWR(expenseId ? ["expense", expenseId] : null, ([, id]) => fetchExpense(id));
-
-  const { data: materialItems = [] } = useSWR(
-    expenseId ? ["expense-items", expenseId] : null,
-    ([, id]) => getExpenseItems(id),
+export default async function ExpenseDetailPage({ params }: PageProps) {
+  const { slug, id } = await params;
+  return (
+    <Suspense fallback={<ExpenseDetailFallback />}>
+      <ExpenseDetail slug={slug} expenseId={id} />
+    </Suspense>
   );
+}
 
-  const categoryColor = expense?.category?.color ?? "#06b6d4";
+async function ExpenseDetail({ slug, expenseId }: { slug: string; expenseId: string }) {
+  const [expense, materialItems] = await Promise.all([
+    fetchExpense(expenseId),
+    getExpenseItems(expenseId),
+  ]);
+  if (!expense) notFound();
+
+  const ref = invoiceRef(expense);
+  const categoryColor = expense.category?.color ?? DEFAULT_CATEGORY_COLOR;
+  const attachments = expense.expense_attachment ?? [];
+  const editUrl = `/admin/workspaces/${slug}/expenses/${expense.id}/edit`;
 
   return (
     <FormSection
-      title={isLoading ? "..." : (expense?.provider?.name ?? "Sin proveedor")}
-      backUrl={`/admin/workspaces/${workspaceSlug}/expenses`}
+      title={expense.provider?.name ?? "Sin proveedor"}
+      backUrl={`/admin/workspaces/${slug}/expenses`}
     >
-      {isLoading && (
-        <div className="flex items-center justify-center py-32 text-gray-400 text-sm gap-2">
-          <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-            <circle
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="3"
-              strokeOpacity="0.25"
-            />
-            <path
-              d="M12 2a10 10 0 0 1 10 10"
-              stroke="currentColor"
-              strokeWidth="3"
-              strokeLinecap="round"
-            />
-          </svg>
-          Cargando gasto...
-        </div>
-      )}
-
-      {error && (
-        <div className="flex items-center gap-3 border border-red-200 bg-red-50 rounded-lg px-4 py-3 text-sm text-red-600">
-          No se pudo cargar el gasto. Intenta recargar la página.
-        </div>
-      )}
-
-      {expense && (
-        <div className="space-y-8">
-          {/* Amount hero */}
-          <SectionTitle>Monto</SectionTitle>
-          <FormInnerSection>
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-4xl font-bold tracking-tight" style={{ color: "#06b6d4" }}>
-                  {formatAmount(expense.amount, expense.currency)}
-                </p>
-                <p className="text-sm text-gray-400 mt-1">
-                  Pagado: {formatSafeDate(expense.paid_at, "d 'de' MMMM, yyyy")}
-                </p>
+      <div className="space-y-8">
+        {/* Summary: what was paid, and the main action */}
+        <FormInnerSection>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <p className="text-3xl sm:text-4xl font-bold tracking-tight text-gray-900">
+                {formatAmount(expense.amount, expense.currency)}
+              </p>
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+                {expense.category && (
+                  <span
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
+                    style={{ background: `${categoryColor}18`, color: categoryColor }}
+                  >
+                    <span
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{ background: categoryColor }}
+                    />
+                    {expense.category.name}
+                  </span>
+                )}
+                {ref && (
+                  <span className="px-2.5 py-1 rounded-full bg-gray-100 text-xs font-mono text-gray-600">
+                    {ref}
+                  </span>
+                )}
               </div>
-              {expense.category && (
-                <span
-                  className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold flex-shrink-0"
-                  style={{ background: `${categoryColor}18`, color: categoryColor }}
-                >
-                  {expense.category.name}
-                </span>
-              )}
             </div>
-          </FormInnerSection>
-
-          <SectionTitle>Detalles</SectionTitle>
-          <FormInnerSection padding={false}>
-            <DetailRow label="Referencia">
-              {expense.invoice_series || expense.invoice_number ? (
-                <span className="font-mono">
-                  {expense.invoice_series}
-                  {expense.invoice_series && expense.invoice_number ? "-" : ""}
-                  {expense.invoice_number}
-                </span>
-              ) : (
-                <span className="text-gray-400">—</span>
-              )}
-            </DetailRow>
-            <DetailRow label="Proveedor">
-              {expense.provider?.name ?? <span className="text-gray-400">—</span>} <br />
-              <span className="text-gray-600 text-lg">{expense.provider?.ruc}</span>
-            </DetailRow>
-            <DetailRow label="Moneda">{expense.currency}</DetailRow>
-            <DetailRow label="Método de pago">
-              {expense.payment_method ?? <span className="text-gray-400">—</span>}
-            </DetailRow>
-            <DetailRow label="Fecha de emision">
-              {formatSafeDate(expense.issued_at, "d 'de' MMMM, yyyy")}
-            </DetailRow>
-            <DetailRow label="Fecha de pago">
-              {formatSafeDate(expense.paid_at, "d 'de' MMMM, yyyy")}
-            </DetailRow>
-            <DetailRow label="Registrado">
-              {expense.created_at
-                ? format(new Date(expense.created_at), "d MMM yyyy · HH:mm", { locale: es })
-                : "—"}
-            </DetailRow>
-            {expense.created_by_user && (
-              <DetailRow label="Creado por">{expense.created_by_user.email}</DetailRow>
-            )}
-            {expense.notes && (
-              <DetailRow label="Notas">
-                <span className="text-gray-500 whitespace-pre-wrap text-right">
-                  {expense.notes}
-                </span>
-              </DetailRow>
-            )}
-          </FormInnerSection>
-
-          {materialItems.length > 0 && (
-            <>
-              <SectionTitle>Materiales ({materialItems.length})</SectionTitle>
-              <FormInnerSection>
-                <section className="space-y-3">
-                  {materialItems.map((item) => (
-                    <MaterialRow key={item.id} item={item} currency={expense.currency} />
-                  ))}
-                </section>
-              </FormInnerSection>
-            </>
-          )}
-
-          <SectionTitle>Adjuntos ({expense.expense_attachment.length})</SectionTitle>
-          {(expense.expense_attachment ?? []).length > 0 && (
-            <FormInnerSection>
-              <section className="space-y-4">
-                {expense.expense_attachment.map((att) => (
-                  <FilePreview key={att.id} attachment={att} />
-                ))}
-              </section>
-            </FormInnerSection>
-          )}
-
-          {/* Actions */}
-          <div className="flex gap-3 pt-1">
-            <Link
-              href={`/admin/workspaces/${workspaceSlug}/expenses`}
-              className={SECONDARY_BUTTON_CLASS}
-            >
-              ← Volver a gastos
-            </Link>
-            <button
-              onClick={() =>
-                router.push(`/admin/workspaces/${workspaceSlug}/expenses/${expense.id}/edit`)
-              }
-              className={PRIMARY_BUTTON_CLASS}
-            >
+            <Link href={editUrl} className={`${PRIMARY_BUTTON_CLASS} justify-center`}>
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+              </svg>
               Editar
-            </button>
+            </Link>
           </div>
-        </div>
-      )}
+
+          <dl className="mt-6 pt-5 border-t border-gray-100 grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-5">
+            <Fact label="Proveedor">
+              {expense.provider?.name ?? <Empty />}
+              {expense.provider?.ruc && (
+                <span className="block text-xs font-normal text-gray-400 font-mono mt-0.5">
+                  RUC {expense.provider.ruc}
+                </span>
+              )}
+            </Fact>
+            <Fact label="Fecha de emisión">
+              {expense.issued_at ? formatSafeDate(expense.issued_at, LONG_DATE) : <Empty />}
+            </Fact>
+            <Fact label="Fecha de pago">
+              {expense.paid_at ? formatSafeDate(expense.paid_at, LONG_DATE) : <Empty />}
+            </Fact>
+            <Fact label="Método de pago">{expense.payment_method ?? <Empty />}</Fact>
+          </dl>
+        </FormInnerSection>
+
+        {expense.notes && (
+          <section>
+            <SectionTitle>Notas</SectionTitle>
+            <FormInnerSection>
+              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                {expense.notes}
+              </p>
+            </FormInnerSection>
+          </section>
+        )}
+
+        {materialItems.length > 0 && (
+          <section>
+            <SectionTitle>Materiales ({materialItems.length})</SectionTitle>
+            <MaterialsTable items={materialItems} currency={expense.currency} />
+          </section>
+        )}
+
+        <section>
+          <SectionTitle>Adjuntos ({attachments.length})</SectionTitle>
+          {attachments.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {attachments.map((att) => (
+                <FileTile key={att.id} attachment={att} />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-gray-200 px-5 py-8 text-center">
+              <p className="text-sm text-gray-500">Este gasto no tiene adjuntos.</p>
+              <Link
+                href={editUrl}
+                className="mt-1 inline-block text-sm font-medium text-violet-600 hover:text-violet-700"
+              >
+                Agregar factura o comprobante
+              </Link>
+            </div>
+          )}
+        </section>
+
+        <p className="text-xs text-gray-400">
+          Registrado el {registeredAtFormatter.format(new Date(expense.created_at))}
+          {expense.created_by_user && <> por {expense.created_by_user.email}</>}
+        </p>
+      </div>
     </FormSection>
+  );
+}
+
+function ExpenseDetailFallback() {
+  return (
+    <div className="p-6 bg-white border border-violet-200 rounded-xl animate-pulse">
+      <div className="h-6 w-56 bg-gray-200 rounded mb-8" />
+      <div className="rounded-xl border border-gray-100 p-5 mb-8">
+        <div className="h-9 w-48 bg-gray-200 rounded mb-3" />
+        <div className="h-5 w-32 bg-gray-100 rounded-full mb-6" />
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i}>
+              <div className="h-3 w-16 bg-gray-100 rounded mb-2" />
+              <div className="h-4 w-24 bg-gray-200 rounded" />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {Array.from({ length: 2 }).map((_, i) => (
+          <div key={i} className="aspect-[4/3] rounded-xl bg-gray-100" />
+        ))}
+      </div>
+    </div>
   );
 }

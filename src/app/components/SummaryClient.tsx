@@ -36,7 +36,6 @@ const SUMMARY_COLUMNS = [
   { label: "Adjuntos" },
 ];
 
-
 type Workspace = { id: string; name: string; slug: string };
 type Attachment = { id: string; file_name: string | null; storage_path: string };
 type SummaryExpense = {
@@ -79,18 +78,7 @@ const fetcher = async ([
   categoryId,
   invoiceSeries,
   invoiceNumber,
-]: [
-  string,
-  string,
-  number,
-  string,
-  string,
-  string,
-  SummaryTab,
-  string,
-  string,
-  string,
-]) => {
+]: [string, string, number, string, string, string, SummaryTab, string, string, string]) => {
   const from = page * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
 
@@ -365,7 +353,11 @@ const STORAGE_TAB = "summary-tab";
 const STORAGE_WS = "summary-workspace";
 
 function readStorage(key: string): string | null {
-  try { return localStorage.getItem(key); } catch { return null; }
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
 }
 
 export default function SummaryClient({ workspaces }: { workspaces: Workspace[] }) {
@@ -403,7 +395,13 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
   );
 
   const hasFilters =
-    !!search || !!dateFrom || !!dateTo || !!month || !!categoryId || !!invoiceSeries || !!invoiceNumber;
+    !!search ||
+    !!dateFrom ||
+    !!dateTo ||
+    !!month ||
+    !!categoryId ||
+    !!invoiceSeries ||
+    !!invoiceNumber;
 
   const syncUrl = useCallback(() => {
     const params = new URLSearchParams();
@@ -587,6 +585,31 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
           Clear filters
         </button>
       </div>
+      <div className="border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
+        <p className="block text-[11px] font-medium text-gray-400 mb-1">Factura</p>
+        <div className="grid grid-cols-2 gap-2">
+          <input
+            type="text"
+            placeholder="Serie"
+            value={invoiceSeries}
+            onChange={(e) => {
+              setInvoiceSeries(e.target.value);
+              setPage(0);
+            }}
+            className={INPUT_CLASS}
+          />
+          <input
+            type="text"
+            placeholder="Número"
+            value={invoiceNumber}
+            onChange={(e) => {
+              setInvoiceNumber(e.target.value);
+              setPage(0);
+            }}
+            className={INPUT_CLASS}
+          />
+        </div>
+      </div>
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <div className="flex gap-2 items-end border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
           <div className="flex-1">
@@ -594,57 +617,49 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
             <CategoryFilter
               categories={categories}
               value={categoryId}
-              onChange={(id) => { setCategoryId(id); setPage(0); }}
+              onChange={(id) => {
+                setCategoryId(id);
+                setPage(0);
+              }}
             />
           </div>
         </div>
-        <div className="flex flex-wrap sm:flex-nowrap gap-2 items-center border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
-          <span className="w-full sm:w-auto text-sm font-medium text-gray-400 pl-1">Emisión</span>
-          <InputWithTooltip label="Mes de emisión" className="w-full sm:w-auto min-w-0">
-            <input
-              type="month"
-              value={month}
-              onChange={(e) => handleMonthChange(e.target.value)}
-              className={INPUT_CLASS}
-            />
-          </InputWithTooltip>
-          <InputWithTooltip label="Emisión desde" className="flex-1 min-w-0">
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => { setDateFrom(e.target.value); setMonth(""); setPage(0); }}
-              className={INPUT_CLASS}
-            />
-          </InputWithTooltip>
-          <InputWithTooltip label="Emisión hasta" className="flex-1 min-w-0">
-            <input
-              type="date"
-              value={dateTo}
-              onChange={(e) => { setDateTo(e.target.value); setMonth(""); setPage(0); }}
-              className={INPUT_CLASS}
-            />
-          </InputWithTooltip>
-        </div>
-        <div className="flex flex-wrap sm:flex-nowrap gap-2 items-center border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
-          <span className="w-full sm:w-auto text-sm font-medium text-gray-400 pl-1">Factura</span>
-          <InputWithTooltip label="Serie" className="flex-1 min-w-0">
-            <input
-              type="text"
-              placeholder="Serie"
-              value={invoiceSeries}
-              onChange={(e) => { setInvoiceSeries(e.target.value); setPage(0); }}
-              className={INPUT_CLASS}
-            />
-          </InputWithTooltip>
-          <InputWithTooltip label="Número" className="flex-1 min-w-0">
-            <input
-              type="text"
-              placeholder="Número"
-              value={invoiceNumber}
-              onChange={(e) => { setInvoiceNumber(e.target.value); setPage(0); }}
-              className={INPUT_CLASS}
-            />
-          </InputWithTooltip>
+        <div className="border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
+          <p className="block text-[11px] font-medium text-gray-400 mb-1">Emisión</p>
+          <div className="flex flex-wrap sm:flex-nowrap gap-2">
+            <InputWithTooltip label="Mes de emisión" className="w-full sm:w-auto min-w-0">
+              <input
+                type="month"
+                value={month}
+                onChange={(e) => handleMonthChange(e.target.value)}
+                className={INPUT_CLASS}
+              />
+            </InputWithTooltip>
+            <InputWithTooltip label="Emisión desde" className="flex-1 min-w-0">
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => {
+                  setDateFrom(e.target.value);
+                  setMonth("");
+                  setPage(0);
+                }}
+                className={INPUT_CLASS}
+              />
+            </InputWithTooltip>
+            <InputWithTooltip label="Emisión hasta" className="flex-1 min-w-0">
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => {
+                  setDateTo(e.target.value);
+                  setMonth("");
+                  setPage(0);
+                }}
+                className={INPUT_CLASS}
+              />
+            </InputWithTooltip>
+          </div>
         </div>
       </div>
       <div className="flex justify-between items-center font-semibold">
@@ -677,12 +692,8 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
         emptyMessage="No expenses found"
       >
         {expenses.map((expense) => {
-          const prov = Array.isArray(expense.provider)
-            ? expense.provider[0]
-            : expense.provider;
-          const cat = Array.isArray(expense.category)
-            ? expense.category[0]
-            : expense.category;
+          const prov = Array.isArray(expense.provider) ? expense.provider[0] : expense.provider;
+          const cat = Array.isArray(expense.category) ? expense.category[0] : expense.category;
 
           const href = `/admin/summary/${expense.id}`;
 
@@ -730,9 +741,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
               </td>
               <td className="text-right font-medium whitespace-nowrap">
                 <Link href={href} target="_blank" className="block p-6">
-                  {expense.amount != null
-                    ? formatAmount(expense.amount, expense.currency)
-                    : "—"}
+                  {expense.amount != null ? formatAmount(expense.amount, expense.currency) : "—"}
                 </Link>
               </td>
               <td className="p-6">
@@ -746,7 +755,14 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
                       title={att.file_name ?? "attachment"}
                       className="inline-flex items-center gap-2 p-2 rounded-lg bg-cyan-50 text-cyan-600 hover:bg-cyan-100 text-sm transition-colors"
                     >
-                      <Icon icon={/\.pdf$/i.test(att.file_name ?? "") ? "hugeicons:pdf-02" : "solar:gallery-minimalistic-linear"} fontSize={24} />
+                      <Icon
+                        icon={
+                          /\.pdf$/i.test(att.file_name ?? "")
+                            ? "hugeicons:pdf-02"
+                            : "solar:gallery-minimalistic-linear"
+                        }
+                        fontSize={24}
+                      />
                       <span className="max-w-[80px] truncate">{att.file_name ?? "file"}</span>
                     </a>
                   ))}

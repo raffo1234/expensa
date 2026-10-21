@@ -261,7 +261,7 @@ export default function ExpenseItemsEditor({
             {suggestion(line, "material")}
           </Field>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Marca">
               <div className="flex items-center gap-2">
                 <select

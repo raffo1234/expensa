@@ -13,10 +13,10 @@ export default function FormSection({
 }) {
   return (
     <div
-      className={`border-violet-200 shadow-violet-100 shadow-lg ${padding ? "p-6" : ""} bg-white border rounded-xl`}
+      className={`border-violet-200 shadow-violet-100 shadow-lg ${padding ? "p-4 sm:p-6" : ""} bg-white border rounded-xl`}
     >
       {title && (
-        <h2 className="border-b flex gap-3 items-center px-6 pb-6 mb-6 -ml-6 -mr-6 border-gray-200 text-lg font-semibold text-gray-800">
+        <h2 className="border-b flex gap-3 items-center px-4 sm:px-6 pb-4 sm:pb-6 mb-4 sm:mb-6 -mx-4 sm:-mx-6 border-gray-200 text-lg font-semibold text-gray-800">
           {backUrl && (
             <Link
               href={backUrl}

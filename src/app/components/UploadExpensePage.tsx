@@ -570,6 +570,35 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
         <FormInnerSection>
           <section className="space-y-4">
             <div className="text-xs text-gray-500 mb-2">Se rellena automáticamente ✦</div>
+            {/* On site, the fastest path is a photo: opens the rear camera directly. */}
+            <label className="sm:hidden relative flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-3.5 text-base font-medium text-white active:bg-violet-700 focus-within:ring-2 focus-within:ring-violet-500 focus-within:ring-offset-2">
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="sr-only"
+                aria-label="Tomar foto del comprobante"
+                onChange={(e) => {
+                  addFiles(Array.from(e.target.files ?? []));
+                  e.target.value = "";
+                }}
+              />
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+                <circle cx="12" cy="13" r="3" />
+              </svg>
+              Tomar foto del comprobante
+            </label>
             <label
               ref={dropRef}
               onDragOver={(e) => {
@@ -617,12 +646,13 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
               </div>
               <div className="text-center">
                 <p className="text-sm font-medium text-gray-700">
-                  Arrastra archivos o{" "}
-                  <span className="text-violet-600 underline underline-offset-2">haz click</span>
+                  <span className="hidden sm:inline">Arrastra archivos o </span>
+                  <span className="text-violet-600 underline underline-offset-2">
+                    <span className="sm:hidden">Elegir archivo</span>
+                    <span className="hidden sm:inline">elige un archivo</span>
+                  </span>
                 </p>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  JPG, PNG, WEBP, PDF — sin límite de tamaño
-                </p>
+                <p className="text-xs text-gray-400 mt-0.5">JPG, PNG, WEBP o PDF · hasta 1 GB</p>
               </div>
             </label>
 
@@ -844,7 +874,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                 </select>
               </Field>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Fecha de emisión">
                 <input
                   type="date"
@@ -939,7 +969,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
         <SectionTitle>Detalles</SectionTitle>
         <FormInnerSection>
           <section className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Categoría">
                 <div className="flex items-center gap-2">
                   <select
@@ -991,7 +1021,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                 </select>
               </Field>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Etapa">
                 <select value={form.stage_id} onChange={set("stage_id")} className={SELECT_CLASS}>
                   <option value="">Sin etapa</option>
@@ -1080,14 +1110,19 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
           </div>
         )}
 
-        <div className="flex items-center gap-3 pt-1">
-          <button type="button" onClick={() => router.back()} className={SECONDARY_BUTTON_CLASS}>
+        {/* Pinned to the bottom on phones so saving never needs a long scroll. */}
+        <div className="sticky bottom-0 z-20 -mx-4 flex items-center gap-3 border-t border-gray-200 bg-white px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0 sm:pb-0 sm:pt-1">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className={`${SECONDARY_BUTTON_CLASS} flex-1 justify-center sm:flex-none min-h-11`}
+          >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={isPending || success || !workspaceId || !userId || extracting}
-            className={PRIMARY_BUTTON_CLASS}
+            className={`${PRIMARY_BUTTON_CLASS} flex-1 justify-center sm:flex-none min-h-11`}
           >
             {isPending ? (
               <>

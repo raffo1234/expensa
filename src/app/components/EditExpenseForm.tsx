@@ -574,7 +574,7 @@ export default function EditExpenseForm() {
                 </div>
               </Field>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="Etapa">
                   <Select value={stageId} onChange={setStageId}>
                     <option value="">Sin etapa</option>
@@ -772,19 +772,21 @@ export default function EditExpenseForm() {
             </div>
           )}
 
-          <div className="flex gap-3 pt-1">
+          {/* Pinned to the bottom on phones so saving never needs a long scroll. */}
+          <div className="sticky bottom-0 z-20 -mx-4 flex items-center gap-3 border-t border-gray-200 bg-white px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0 sm:pb-0 sm:pt-1">
             <button
+              type="button"
               onClick={() =>
                 router.push(`/admin/workspaces/${workspaceSlug}/expenses/${expenseId}`)
               }
-              className={SECONDARY_BUTTON_CLASS}
+              className={`${SECONDARY_BUTTON_CLASS} flex-1 justify-center sm:flex-none min-h-11`}
             >
               Cancelar
             </button>
             <button
               onClick={handleSave}
               disabled={saving || !amount || !paidAt}
-              className={PRIMARY_BUTTON_CLASS}
+              className={`${PRIMARY_BUTTON_CLASS} flex-1 justify-center sm:flex-none min-h-11`}
             >
               {saving && (
                 <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">

@@ -19,7 +19,7 @@ export default function ListPage({
 }) {
   return (
     <div>
-      <div className="mb-10 space-y-12">{controls}</div>
+      <div className="mb-12 space-y-12">{controls}</div>
       {pager && <div className="mb-4">{pager}</div>}
       {children}
       {pager && <div className="mt-4">{pager}</div>}

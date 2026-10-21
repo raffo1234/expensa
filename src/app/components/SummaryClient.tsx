@@ -18,16 +18,11 @@ import PageNavigator from "./PageNavigator";
 import ClearFiltersButton from "./ClearFiltersButton";
 import { usePageSize } from "@/hooks/usePageSize";
 import ListPage from "./ListPage";
+import { summaryColumns } from "@/lib/tableColumns";
 import FiltersButton from "./FiltersButton";
 import FormSection from "./FormSection";
 import SearchInput from "./SearchInput";
-import DataTable, {
-  DataTableRow,
-  ROW_CONTROL,
-  RowLink,
-  Td,
-  type DataTableColumn,
-} from "./DataTable";
+import DataTable, { DataTableRow, ROW_CONTROL, RowLink, Td } from "./DataTable";
 import CategoryFilter from "./CategoryFilter";
 import CategoryBadge from "./CategoryBadge";
 import type { SummaryReportRow } from "./SummaryReportPDF";
@@ -39,17 +34,7 @@ const SUMMARY_TABS: { value: SummaryTab; label: string }[] = [
   { value: "gastos", label: "Gastos" },
 ];
 
-// The first column identifies the record: the invoice reference on the
-// invoices tab; on the expenses tab (no invoice by definition) its notes.
-const summaryColumns = (tab: SummaryTab): DataTableColumn[] => [
-  { label: tab === "facturas" ? "Factura" : "Descripción" },
-  { label: "Proveedor" },
-  { label: "Categoría" },
-  { label: "Método de pago" },
-  { label: "Fecha emisión" },
-  { label: "Monto", align: "right" as const },
-  { label: "Adjuntos" },
-];
+// Columns come from lib/tableColumns (shared with the loading skeleton).
 
 type Workspace = { id: string; name: string; slug: string };
 type Attachment = { id: string; file_name: string | null; storage_path: string };

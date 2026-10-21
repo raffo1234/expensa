@@ -5,6 +5,9 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { Permissions } from "@/types/propertyState";
 import { checkPermissions } from "@/lib/checkPermissions";
 import FormSection from "@/components/FormSection";
+import { Suspense } from "react";
+import { ListPageSkeleton, SearchRowSkeleton, TotalHeaderSkeleton } from "@/components/Skeleton";
+import { WORKSPACE_COLUMNS } from "@/lib/tableColumns";
 
 export type Workspace = {
   id: string;
@@ -14,7 +17,29 @@ export type Workspace = {
   created_at: string;
 };
 
-export default async function WorkspacePage() {
+export default function WorkspacePage() {
+  return (
+    <FormSection title="Proyectos">
+      <Suspense
+        fallback={
+          <ListPageSkeleton
+            columns={WORKSPACE_COLUMNS}
+            controls={
+              <>
+                <TotalHeaderSkeleton />
+                <SearchRowSkeleton filters={false} />
+              </>
+            }
+          />
+        }
+      >
+        <WorkspacesSection />
+      </Suspense>
+    </FormSection>
+  );
+}
+
+async function WorkspacesSection() {
   const user = await getCurrentUser();
 
   if (!user) return <NoAccess />;
@@ -34,9 +59,5 @@ export default async function WorkspacePage() {
 
   if (!permissions[Permissions.HANDLE_WORKSPACES]) return <NoAccess />;
 
-  return (
-    <FormSection title="Proyectos">
-      <WorkspaceClient workspaces={workspaces ?? []} />
-    </FormSection>
-  );
+  return <WorkspaceClient workspaces={workspaces ?? []} />;
 }

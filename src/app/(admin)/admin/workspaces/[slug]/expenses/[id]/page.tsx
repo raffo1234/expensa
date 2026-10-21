@@ -6,6 +6,7 @@ import getAttachmentUrl from "@/lib/getAttachmentUrl";
 import FormSection from "@/components/FormSection";
 import FormInnerSection from "@/components/FormInnerSection";
 import SectionTitle from "@/components/SectionTitle";
+import { Bone } from "@/components/Skeleton";
 import { PRIMARY_BUTTON_CLASS } from "@/constants";
 import { formatAmount } from "@/utils/formatAmount";
 import { formatSafeDate } from "@/lib/formatSafeDate";
@@ -181,7 +182,7 @@ interface PageProps {
 export default async function ExpenseDetailPage({ params }: PageProps) {
   const { slug, id } = await params;
   return (
-    <Suspense fallback={<ExpenseDetailFallback />}>
+    <Suspense fallback={<ExpenseDetailFallback slug={slug} />}>
       <ExpenseDetail slug={slug} expenseId={id} />
     </Suspense>
   );
@@ -318,27 +319,52 @@ async function ExpenseDetail({ slug, expenseId }: { slug: string; expenseId: str
   );
 }
 
-function ExpenseDetailFallback() {
+function ExpenseDetailFallback({ slug }: { slug: string }) {
   return (
-    <div className="p-6 bg-white border border-violet-200 rounded-xl animate-pulse">
-      <div className="h-6 w-56 bg-gray-200 rounded mb-8" />
-      <div className="rounded-xl border border-gray-100 p-5 mb-8">
-        <div className="h-9 w-48 bg-gray-200 rounded mb-3" />
-        <div className="h-5 w-32 bg-gray-100 rounded-full mb-6" />
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i}>
-              <div className="h-3 w-16 bg-gray-100 rounded mb-2" />
-              <div className="h-4 w-24 bg-gray-200 rounded" />
+    <FormSection
+      title={<Bone className="h-4.5 w-48" />}
+      backUrl={`/admin/workspaces/${slug}/expenses`}
+    >
+      <div className="space-y-8">
+        {/* Summary card: amount, chips, edit button, then four facts. */}
+        <FormInnerSection>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <Bone className="h-9 w-56 sm:h-10" />
+              <div className="mt-3 flex gap-2">
+                <Bone className="h-6 w-28 rounded-full" />
+                <Bone className="h-6 w-24 rounded-full" />
+              </div>
             </div>
-          ))}
-        </div>
+            <Bone className="h-9.5 w-full rounded-md sm:w-24" />
+          </div>
+          <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-5 border-t border-gray-100 pt-5 sm:grid-cols-4">
+            {Array.from({ length: 4 }, (_, i) => (
+              <div key={i}>
+                <Bone className="h-3 w-20" />
+                <Bone className="mt-2 h-4 w-28" />
+              </div>
+            ))}
+          </div>
+        </FormInnerSection>
+
+        {/* Attachments. */}
+        <section>
+          <Bone className="mb-3 h-4 w-28" />
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {Array.from({ length: 2 }, (_, i) => (
+              <div key={i} className="overflow-hidden rounded-xl border border-gray-200">
+                <Bone className="aspect-[4/3] rounded-none" />
+                <div className="px-3 py-2.5">
+                  <Bone className="h-3 w-3/4" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <Bone className="h-3 w-64" />
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {Array.from({ length: 2 }).map((_, i) => (
-          <div key={i} className="aspect-[4/3] rounded-xl bg-gray-100" />
-        ))}
-      </div>
-    </div>
+    </FormSection>
   );
 }

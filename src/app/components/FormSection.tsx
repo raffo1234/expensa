@@ -7,7 +7,7 @@ export default function FormSection({
   backUrl,
   actions,
 }: {
-  title?: string;
+  title?: React.ReactNode;
   /** Section-header links on the right of the title (Fly.io style). */
   actions?: React.ReactNode;
   padding?: boolean;

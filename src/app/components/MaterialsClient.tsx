@@ -9,35 +9,19 @@ import FiltersButton from "@/components/FiltersButton";
 import Field from "@/components/Field";
 import ListPage from "@/components/ListPage";
 import PageNavigator from "@/components/PageNavigator";
-import DataTable, { DataTableRow, RowLink, Td, type DataTableColumn } from "@/components/DataTable";
+import DataTable, { DataTableRow, RowLink, Td } from "@/components/DataTable";
 import { useClientPagination } from "@/hooks/useClientPagination";
 import type { MaterialReportRow } from "@/actions/materials";
 import { formatAmount, formatTotals, totalsByCurrency } from "@/utils/formatAmount";
 import { formatSafeDate } from "@/lib/formatSafeDate";
 import { replaceUrl } from "@/utils/replaceUrl";
+import { MATERIAL_DETAIL_COLUMNS, MATERIAL_SUMMARY_COLUMNS } from "@/lib/tableColumns";
 import { INPUT_CLASS, SELECT_CLASS } from "@/constants";
 import { TAX_STATUS_LABELS, type TaxStatus } from "@/lib/invoiceTax";
 
 type Option = [id: string, name: string];
 
 const TAX_STATUS_OPTIONS = Object.entries(TAX_STATUS_LABELS) as Option[];
-
-const SUMMARY_COLUMNS: DataTableColumn[] = [
-  { label: "Material" },
-  { label: "Cantidad", align: "right" },
-  { label: "Subtotal", align: "right" },
-];
-
-const DETAIL_COLUMNS: DataTableColumn[] = [
-  { label: "Material" },
-  { label: "Marca" },
-  { label: "Nivel" },
-  { label: "Proveedor" },
-  { label: "Fecha de pago" },
-  { label: "Cantidad", align: "right" },
-  { label: "P. unit.", align: "right" },
-  { label: "Subtotal", align: "right" },
-];
 
 // Level is a "where am I working" choice, so it survives reloads and is not
 // reset by "clear filters".
@@ -435,7 +419,7 @@ export default function MaterialsClient({
 
             {/* 3 · Totals per material for the current filters. */}
             <DataTable
-              columns={SUMMARY_COLUMNS}
+              columns={MATERIAL_SUMMARY_COLUMNS}
               numbered
               isEmpty={totals.length === 0}
               emptyMessage={emptyMessage}
@@ -452,7 +436,7 @@ export default function MaterialsClient({
                 </DataTableRow>
               ))}
               {totals.length > 0 && (
-                <TotalRow colSpan={SUMMARY_COLUMNS.length} total={filteredTotal} />
+                <TotalRow colSpan={MATERIAL_SUMMARY_COLUMNS.length} total={filteredTotal} />
               )}
             </DataTable>
           </>
@@ -460,7 +444,7 @@ export default function MaterialsClient({
       >
         {/* 4 · Every purchase, linked to its expense. */}
         <DataTable
-          columns={DETAIL_COLUMNS}
+          columns={MATERIAL_DETAIL_COLUMNS}
           numbered
           isEmpty={filtered.length === 0}
           emptyMessage={emptyMessage}
@@ -497,7 +481,7 @@ export default function MaterialsClient({
             );
           })}
           {filtered.length > 0 && (
-            <TotalRow colSpan={DETAIL_COLUMNS.length} total={filteredTotal} />
+            <TotalRow colSpan={MATERIAL_DETAIL_COLUMNS.length} total={filteredTotal} />
           )}
         </DataTable>
       </ListPage>

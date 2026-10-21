@@ -8,6 +8,14 @@ import { getMaterialsReport } from "@/actions/materials";
 import NoAccess from "@/components/NoAccess";
 import MaterialsClient from "@/components/MaterialsClient";
 import FormSection from "@/components/FormSection";
+import ListPage from "@/components/ListPage";
+import {
+  PagerSkeleton,
+  SearchRowSkeleton,
+  TableSkeleton,
+  TotalHeaderSkeleton,
+} from "@/components/Skeleton";
+import { MATERIAL_DETAIL_COLUMNS, MATERIAL_SUMMARY_COLUMNS } from "@/lib/tableColumns";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -16,7 +24,7 @@ interface PageProps {
 export default async function MaterialsPage({ params }: PageProps) {
   const { slug } = await params;
   return (
-    <Suspense fallback={<MaterialsFallback />}>
+    <Suspense fallback={<MaterialsFallback slug={slug} />}>
       <MaterialsSection slug={slug} />
     </Suspense>
   );
@@ -42,10 +50,21 @@ async function MaterialsSection({ slug }: { slug: string }) {
   return <MaterialsClient workspaceId={workspace.id} workspaceSlug={slug} rows={rows} />;
 }
 
-function MaterialsFallback() {
+function MaterialsFallback({ slug }: { slug: string }) {
   return (
-    <FormSection title="Materiales">
-      <div className="h-96 animate-pulse rounded-xl bg-gray-100" />
+    <FormSection title="Materiales" backUrl={`/admin/workspaces/${slug}/expenses`}>
+      <ListPage
+        pager={<PagerSkeleton />}
+        controls={
+          <>
+            <TotalHeaderSkeleton action={false} />
+            <SearchRowSkeleton />
+            <TableSkeleton columns={MATERIAL_SUMMARY_COLUMNS} rows={4} />
+          </>
+        }
+      >
+        <TableSkeleton columns={MATERIAL_DETAIL_COLUMNS} />
+      </ListPage>
     </FormSection>
   );
 }

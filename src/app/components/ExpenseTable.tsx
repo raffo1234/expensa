@@ -8,24 +8,8 @@ import { formatAmount } from "@/utils/formatAmount";
 import { ICON_SIZE } from "@/constants";
 import { Expense } from "@/types/ExpenseType";
 import { formatSafeDate } from "@/lib/formatSafeDate";
-import DataTable, {
-  DataTableRow,
-  ROW_CONTROL,
-  RowLink,
-  Td,
-  type DataTableColumn,
-} from "./DataTable";
-
-const COLUMNS: DataTableColumn[] = [
-  { label: "Factura" },
-  { label: "Proveedor" },
-  { label: "Categoría" },
-  { label: "Método" },
-  { label: "Fecha de emisión" },
-  { label: "Monto", align: "right" },
-  { label: "Materiales", align: "center" },
-  { label: "" },
-];
+import { EXPENSE_COLUMNS } from "@/lib/tableColumns";
+import DataTable, { DataTableRow, ROW_CONTROL, RowLink, Td } from "./DataTable";
 
 interface ExpenseTableProps {
   expenses: Expense[];
@@ -47,7 +31,7 @@ export default function ExpenseTable({
 }: ExpenseTableProps) {
   return (
     <DataTable
-      columns={COLUMNS}
+      columns={EXPENSE_COLUMNS}
       numbered
       isEmpty={expenses.length === 0}
       emptyMessage="No hay gastos registrados."

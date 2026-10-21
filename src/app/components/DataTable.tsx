@@ -143,15 +143,18 @@ export default function DataTable({
   isLoading,
   emptyMessage,
   numbered = false,
+  loadingRows = 10,
   children,
 }: {
   columns: DataTableColumn[];
   /** Adds a leading "#" column; rows pass their order number. */
   numbered?: boolean;
+  /** Skeleton rows shown while loading. */
+  loadingRows?: number;
   isEmpty?: boolean;
   isLoading?: boolean;
   emptyMessage?: string;
-  children: ReactNode;
+  children?: ReactNode;
 }) {
   const columnCount = columns.length + (numbered ? 1 : 0);
 
@@ -171,7 +174,7 @@ export default function DataTable({
           </thead>
           <tbody className="divide-y divide-navy-200">
             {isLoading ? (
-              Array.from({ length: 10 }, (_, i) => (
+              Array.from({ length: loadingRows }, (_, i) => (
                 <tr key={i}>
                   {Array.from({ length: columnCount }, (_, j) => (
                     <Td key={j}>

@@ -4,6 +4,7 @@ import { SELECT_CLASS } from "@/constants";
 import DataTable, { DataTableRow, RowLink, Td, type DataTableColumn } from "./DataTable";
 import CategoryBadge from "./CategoryBadge";
 import ClearFiltersButton from "./ClearFiltersButton";
+import { Bone } from "./Skeleton";
 import { formatAmount } from "@/utils/formatAmount";
 import { formatSafeDate } from "@/lib/formatSafeDate";
 import { useState, useEffect, useTransition, useCallback } from "react";
@@ -87,10 +88,14 @@ interface ChartTooltipProps<TData = Record<string, unknown>> {
 
 // ─── Spinner / Empty ──────────────────────────────────────────────────────────
 
-function Spinner() {
+// Same 220px height as the charts, so the card doesn't resize when data arrives.
+const CHART_BARS = [55, 80, 40, 95, 65, 75, 45, 85];
+function ChartSkeleton() {
   return (
-    <div className="flex items-center justify-center h-full min-h-[120px]">
-      <div className="w-6 h-6 border-2 border-gray-200 border-t-violet-600 rounded-full animate-spin" />
+    <div aria-hidden className="flex h-[220px] items-end gap-3 px-2 pb-6">
+      {CHART_BARS.map((h, i) => (
+        <Bone key={i} className="flex-1 rounded-t-md rounded-b-none" style={{ height: `${h}%` }} />
+      ))}
     </div>
   );
 }
@@ -111,9 +116,8 @@ function HistoricalBanner({ totals, loading }: { totals: WorkspaceTotal[]; loadi
     return (
       <div className="border-b border-gray-200/60 bg-gray-50/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex gap-6">
-          {[80, 64].map((w) => (
-            <div key={w} className={`h-4 w-${w} bg-gray-100 rounded animate-pulse`} />
-          ))}
+          <Bone className="h-4 w-32" />
+          <Bone className="h-4 w-24" />
         </div>
       </div>
     );
@@ -218,7 +222,7 @@ function TrendChart({
   currencies: string[];
   loading: boolean;
 }) {
-  if (loading) return <Spinner />;
+  if (loading) return <ChartSkeleton />;
   if (trend.length === 0) return <EmptyState message="Sin gastos este mes" />;
 
   return (
@@ -283,7 +287,7 @@ function CategoryTooltip({ active, payload }: ChartTooltipProps<CategoryRow>) {
 }
 
 function CategoryChart({ categories, loading }: { categories: CategoryRow[]; loading: boolean }) {
-  if (loading) return <Spinner />;
+  if (loading) return <ChartSkeleton />;
   if (categories.length === 0) return <EmptyState message="Sin datos de categorías" />;
 
   const primary = categories[0]?.currency ?? "PEN";
@@ -349,7 +353,7 @@ function ProviderTooltip({ active, payload }: ChartTooltipProps<ProviderRow>) {
 }
 
 function ProviderChart({ providers, loading }: { providers: ProviderRow[]; loading: boolean }) {
-  if (loading) return <Spinner />;
+  if (loading) return <ChartSkeleton />;
   if (providers.length === 0) return <EmptyState message="Sin datos de proveedores" />;
 
   const truncate = (str: string, max: number) => (str.length > max ? `${str.slice(0, max)}…` : str);
@@ -698,8 +702,12 @@ export default function DashboardClient({ workspaces, defaultYear, defaultMonth 
             {[...Array(4)].map((_, i) => (
               <div
                 key={i}
-                className="bg-white border border-gray-200 rounded-xl p-5 h-[140px] animate-pulse"
-              />
+                className="flex h-[140px] flex-col gap-3 rounded-xl border border-gray-200 bg-white p-5"
+              >
+                <Bone className="h-3 w-16" />
+                <Bone className="h-7 w-32" />
+                <Bone className="mt-auto h-3 w-20" />
+              </div>
             ))}
           </div>
         )}

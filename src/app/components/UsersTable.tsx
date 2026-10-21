@@ -9,6 +9,7 @@ import { useDebouncedCallback } from "use-debounce";
 import SearchInput from "./SearchInput";
 import ClearFiltersButton from "./ClearFiltersButton";
 import PageNavigator from "./PageNavigator";
+import { UserCardSkeleton } from "./Skeleton";
 
 const PAGE_SIZE = 9;
 
@@ -125,9 +126,7 @@ export default function UsersTable() {
         style={{ gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))" }}
       >
         {isLoading
-          ? SKELETON_ITEMS.map((i) => (
-              <div key={i} className="bg-gray-100 h-[258px] rounded-2xl animate-pulse" />
-            ))
+          ? SKELETON_ITEMS.map((i) => <UserCardSkeleton key={i} />)
           : data?.data?.map((user) => <UserCard mutate={mutate} key={user.id} user={user} />)}
       </div>
     </>

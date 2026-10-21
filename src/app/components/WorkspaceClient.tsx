@@ -10,17 +10,10 @@ import SearchInput from "./SearchInput";
 import ClearFiltersButton from "./ClearFiltersButton";
 import ListPage from "./ListPage";
 import PageNavigator from "./PageNavigator";
-import DataTable, { DataTableRow, RowLink, Td, type DataTableColumn } from "./DataTable";
+import DataTable, { DataTableRow, RowLink, Td } from "./DataTable";
 import { useClientPagination } from "@/hooks/useClientPagination";
 import { deleteWorkspace } from "@/actions/workspace";
-
-const COLUMNS: DataTableColumn[] = [
-  { label: "Proyecto" },
-  { label: "URL" },
-  { label: "Gastos", align: "right" },
-  { label: "Creado" },
-  { label: "" },
-];
+import { WORKSPACE_COLUMNS } from "@/lib/tableColumns";
 
 const PlusIcon = () => (
   <svg
@@ -100,7 +93,7 @@ export default function WorkspaceClient({ workspaces: initial }: { workspaces: W
       }
     >
       <DataTable
-        columns={COLUMNS}
+        columns={WORKSPACE_COLUMNS}
         numbered
         isEmpty={filtered.length === 0}
         emptyMessage={

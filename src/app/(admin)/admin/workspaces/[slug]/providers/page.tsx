@@ -17,16 +17,15 @@ import ListPage from "@/components/ListPage";
 import PageNavigator from "@/components/PageNavigator";
 import SearchInput from "@/components/SearchInput";
 import ClearFiltersButton from "@/components/ClearFiltersButton";
-import DataTable, { DataTableRow, Td, type DataTableColumn } from "@/components/DataTable";
+import DataTable, { DataTableRow, Td } from "@/components/DataTable";
 import { useClientPagination } from "@/hooks/useClientPagination";
+import { PROVIDER_COLUMNS } from "@/lib/tableColumns";
 import {
   HEADER_LINK_CLASS,
   ICON_SIZE,
   PRIMARY_BUTTON_CLASS,
   SECONDARY_BUTTON_CLASS,
 } from "@/constants";
-
-const COLUMNS: DataTableColumn[] = [{ label: "Nombre" }, { label: "RUC" }, { label: "" }];
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type Provider = ProviderRecord;
@@ -463,9 +462,9 @@ export default function ProvidersPage() {
           }
         >
           <DataTable
-            columns={COLUMNS}
+            columns={PROVIDER_COLUMNS}
             numbered
-            isLoading={isLoading}
+            isLoading={isLoading || !workspace}
             isEmpty={filtered.length === 0}
             emptyMessage={
               providers.length === 0

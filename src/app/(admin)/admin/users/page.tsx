@@ -6,6 +6,13 @@ import UsersTable from "@/components/UsersTable";
 import NoAccess from "@/components/NoAccess";
 import { getCurrentUser } from "@/lib/getCurrentUser";
 import FormSection from "@/components/FormSection";
+import {
+  Bone,
+  PagerSkeleton,
+  SearchRowSkeleton,
+  TabsSkeleton,
+  UserCardSkeleton,
+} from "@/components/Skeleton";
 
 export default async function Page() {
   return (
@@ -13,15 +20,23 @@ export default async function Page() {
       <Suspense
         fallback={
           <>
-            <div className="mb-6 flex gap-2">
-              <div className="w-[89px] h-[38px] bg-gray-100 rounded-lg animate-pulse"></div>
-              <div className="w-[89px] h-[38px] bg-gray-100 rounded-lg animate-pulse"></div>
+            <div className="mb-6">
+              <TabsSkeleton />
             </div>
-            <div className="h-[38px] mb-6 bg-gray-100 rounded-lg animate-pulse"></div>
-            <div className="space-y-3">
-              <div className="h-8 w-full bg-gray-100 animate-pulse rounded" />
-              <div className="h-8 w-full bg-gray-100 animate-pulse rounded" />
-              <div className="h-8 w-3/4 bg-gray-100 animate-pulse rounded" />
+            <div className="mb-8">
+              <SearchRowSkeleton filters={false} />
+            </div>
+            <Bone className="mb-4 h-3.5 w-20" />
+            <div className="mb-4">
+              <PagerSkeleton pageSize={false} />
+            </div>
+            <div
+              className="grid gap-3"
+              style={{ gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))" }}
+            >
+              {Array.from({ length: 9 }, (_, i) => (
+                <UserCardSkeleton key={i} />
+              ))}
             </div>
           </>
         }

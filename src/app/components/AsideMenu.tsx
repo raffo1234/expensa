@@ -124,7 +124,7 @@ export default function AsideMenu({
         {Array.from({ length: 4 }, (_, i) => (
           <div
             key={i}
-            className={`h-[43px] w-full ${isContracted ? "lg:w-[51px]" : "w-auto"} rounded-xl bg-gray-100 animate-pulse`}
+            className={`h-[43px] w-full ${isContracted ? "lg:w-[51px]" : "w-auto"} rounded-xl bg-navy-100 animate-pulse`}
           />
         ))}
       </div>

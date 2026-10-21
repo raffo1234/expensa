@@ -1,10 +1,11 @@
 import { supabaseAdmin as supabase } from "@/lib/supabaseAdmin";
+import { totalsByCurrency, type CurrencyTotal } from "@/utils/formatAmount";
 
-// Sums expense amounts (in cents) for a workspace with any filters applied.
-// Supabase returns at most 1,000 rows per request, so summing a plain
-// `select("amount")` silently undercounts large workspaces. This asks the
-// database for the sum first (needs PostgREST aggregates enabled) and falls
-// back to summing page by page when aggregates are off.
+// Sums expense amounts (in cents) per currency for a workspace with any filters
+// applied. Amounts in different currencies are never added together.
+// Supabase returns at most 1,000 rows per request, so this asks the database
+// for the grouped sum first (PostgREST aggregates) and falls back to summing
+// page by page when aggregates are off.
 
 const PAGE_SIZE = 1000;
 
@@ -17,29 +18,32 @@ let aggregatesUnavailable = false;
 export async function sumExpenseAmounts(
   workspaceId: string,
   applyFilters: ApplyFilters = (q) => q,
-): Promise<number> {
+): Promise<CurrencyTotal[]> {
   if (!aggregatesUnavailable) {
     const { data, error } = await applyFilters(
-      supabase.from("expense").select("amount.sum()").eq("workspace_id", workspaceId),
+      supabase.from("expense").select("currency, amount.sum()").eq("workspace_id", workspaceId),
     );
     if (!error) {
-      const row = (data as Record<string, number | null>[] | null)?.[0];
-      return Number(row ? (Object.values(row)[0] ?? 0) : 0);
+      return totalsByCurrency(
+        ((data ?? []) as { currency: string | null; sum: number | null }[]).map((r) => ({
+          currency: r.currency,
+          amount: Number(r.sum ?? 0),
+        })),
+      );
     }
     aggregatesUnavailable = true;
   }
 
-  let total = 0;
+  const rows: { currency: string | null; amount: number | null }[] = [];
   for (let from = 0; ; from += PAGE_SIZE) {
     const { data, error } = await applyFilters(
-      supabase.from("expense").select("amount").eq("workspace_id", workspaceId),
+      supabase.from("expense").select("currency, amount").eq("workspace_id", workspaceId),
     )
       .order("id")
       .range(from, from + PAGE_SIZE - 1);
     if (error) throw error;
-    const rows = (data ?? []) as { amount: number | null }[];
-    total += rows.reduce((acc, r) => acc + (r.amount ?? 0), 0);
-    if (rows.length < PAGE_SIZE) break;
+    rows.push(...(data ?? []));
+    if (!data || data.length < PAGE_SIZE) break;
   }
-  return total;
+  return totalsByCurrency(rows);
 }

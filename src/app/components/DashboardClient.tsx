@@ -383,7 +383,15 @@ function ProviderChart({ providers, loading }: { providers: ProviderRow[]; loadi
   );
 }
 
-const TruncatedTick = ({ x = 0, y = 0, payload = { value: "" } }: { x?: number; y?: number; payload?: { value: string } }) => {
+const TruncatedTick = ({
+  x = 0,
+  y = 0,
+  payload = { value: "" },
+}: {
+  x?: number;
+  y?: number;
+  payload?: { value: string };
+}) => {
   const max = 18; // caracteres máximos
   const text = payload.value?.length > max ? `${payload.value.slice(0, max)}…` : payload.value;
   return (
@@ -615,6 +623,7 @@ export default function DashboardClient({ workspaces, defaultYear, defaultMonth 
           <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg p-1">
             <button
               onClick={prevMonth}
+              aria-label="Mes anterior"
               className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-200/70 rounded-md transition-colors"
             >
               ‹
@@ -624,6 +633,7 @@ export default function DashboardClient({ workspaces, defaultYear, defaultMonth 
             </span>
             <button
               onClick={nextMonth}
+              aria-label="Mes siguiente"
               disabled={isCurrentMonth}
               className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-200/70 rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             >

@@ -1,5 +1,6 @@
 "use client";
 
+import toast from "react-hot-toast";
 import { useState } from "react";
 import Link from "next/link";
 import { Workspace } from "@/types/WorkspaceType";
@@ -43,6 +44,13 @@ function TableView({
     try {
       await deleteWorkspace(id);
       onDelete(id);
+      toast.success("Workspace eliminado");
+    } catch (err) {
+      toast.error(
+        err instanceof Error && err.message.includes("acceso")
+          ? "Solo quien creó el workspace puede eliminarlo."
+          : "No se pudo eliminar el workspace. Inténtalo de nuevo.",
+      );
     } finally {
       setDeletingId(null);
     }

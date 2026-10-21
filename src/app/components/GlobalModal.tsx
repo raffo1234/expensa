@@ -71,7 +71,8 @@ export default function GlobalModal() {
         {modalContent}
         <button
           type="button"
-          className="outline-0 cursor-pointer hover:text-cyan-400 transition-colors duration-300 absolute right-1 top-1 rounded-full p-4"
+          aria-label="Cerrar"
+          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 cursor-pointer hover:text-cyan-400 transition-colors duration-300 absolute right-1 top-1 rounded-full p-4"
           onClick={handleOnClose}
         >
           <CloseIcon />

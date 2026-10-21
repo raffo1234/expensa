@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import toast from "react-hot-toast";
 import useSWR from "swr";
 import ExpenseTable from "@/components/ExpenseTable";
 import {
@@ -19,7 +20,8 @@ import { getExpenseIdsWithMaterials } from "@/actions/materials";
 import TitleWrapper from "./TitleWrapper";
 import CategoryMultiFilter from "./CategoryMultiFilter";
 import ProviderFilter from "./ProviderFilter";
-import { formatAmount } from "@/utils/formatAmount";
+import { csvEscape } from "@/utils/csv";
+import { formatTotals, type CurrencyTotal, totalsByCurrency } from "@/utils/formatAmount";
 import { useGlobalState } from "@/lib/globalState";
 import CategoryManagerModal from "./CategoryManagerModal";
 import { useSearchParams, usePathname } from "next/navigation";
@@ -45,7 +47,7 @@ interface Props {
   workspace: Workspace;
   initialExpenses: Expense[];
   initialCount: number;
-  initialTotalAmount: number;
+  initialTotals: CurrencyTotal[];
   categories: Category[];
   stages: Stage[];
   levels: Level[];
@@ -55,7 +57,7 @@ interface Props {
 interface FetchResult {
   data: Expense[];
   count: number;
-  totalAmount: number;
+  totals: CurrencyTotal[];
 }
 
 type Filters = ExpenseFilters;
@@ -93,14 +95,14 @@ const fetchExpenses = async (
   search: string,
   filters: Filters,
 ): Promise<FetchResult> => {
-  const { rows, count, totalAmount } = await listExpenses(
+  const { rows, count, totals } = await listExpenses(
     workspaceId,
     page,
     ITEMS_PER_PAGE,
     search,
     filters,
   );
-  return { data: rows.map(mapExpenseRow), count, totalAmount };
+  return { data: rows.map(mapExpenseRow), count, totals };
 };
 
 // ── CSV Export ───────────────────────────────────────────────────────────────
@@ -109,12 +111,6 @@ const fmtDate = (d?: string | null) => {
   if (!d) return "";
   const [y, m, day] = d.slice(0, 10).split("-");
   return `${day}-${m}-${y}`;
-};
-
-const csvEscape = (v: unknown) => {
-  if (v == null) return "";
-  const s = String(v);
-  return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s;
 };
 
 const fetchAllFilteredExpenses = (workspaceId: string, search: string, filters: Filters) =>
@@ -154,8 +150,11 @@ const exportExpensesCsv = async (workspaceId: string, search: string, filters: F
           csvEscape(e.notes),
         ].join(",") + "\n";
     }
-    const total = expenses.reduce((s, e) => s + (e.amount || 0), 0);
-    csv += `${csvEscape(month)},,,,,,,,,${(total / 100).toFixed(2)},,TOTAL ${month}\n\n`;
+    // One total row per currency: soles and dollars are never added together.
+    for (const t of totalsByCurrency(expenses)) {
+      csv += `${csvEscape(month)},,,,,,,,,${(t.amount / 100).toFixed(2)},${t.currency},TOTAL ${month}\n`;
+    }
+    csv += "\n";
   }
 
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -257,7 +256,7 @@ export default function ExpensesClient({
   workspace,
   initialExpenses,
   initialCount,
-  initialTotalAmount,
+  initialTotals,
   categories,
   stages,
   levels,
@@ -378,7 +377,7 @@ export default function ExpensesClient({
         ? ({
             data: initialExpenses,
             count: initialCount,
-            totalAmount: initialTotalAmount,
+            totals: initialTotals,
           } as FetchResult)
         : undefined,
       revalidateOnMount: !hasServerData,
@@ -389,7 +388,7 @@ export default function ExpensesClient({
 
   const expenses = data?.data ?? [];
   const totalCount = data?.count ?? 0;
-  const totalAmount = data?.totalAmount ?? 0;
+  const totals = data?.totals ?? [];
   const totalPages = Math.max(1, Math.ceil(totalCount / ITEMS_PER_PAGE));
   const displayCurrency = expenses[0]?.currency ?? "PEN";
 
@@ -408,15 +407,18 @@ export default function ExpensesClient({
     setDeletingId(id);
     try {
       await deleteExpense(id, slug);
+      // Drop the row right away, then refetch so totals and pages stay correct.
       mutate(
         (prev) =>
           prev
             ? { ...prev, data: prev.data.filter((e) => e.id !== id), count: prev.count - 1 }
             : prev,
-        { revalidate: false },
+        { revalidate: true },
       );
+      toast.success("Gasto eliminado");
     } catch {
       mutate(snapshot, { revalidate: false });
+      toast.error("No se pudo eliminar el gasto. Inténtalo de nuevo.");
     } finally {
       setDeletingId(null);
     }
@@ -424,8 +426,16 @@ export default function ExpensesClient({
 
   if (error) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <p className="text-sm text-red-400">Error al cargar los gastos.</p>
+      <div
+        role="alert"
+        className="flex flex-col items-center justify-center gap-3 py-20 text-center"
+      >
+        <p className="text-sm text-red-700">
+          No se pudieron cargar los gastos. Revisa tu conexión e inténtalo de nuevo.
+        </p>
+        <button type="button" onClick={() => mutate()} className={SECONDARY_BUTTON_CLASS}>
+          Reintentar
+        </button>
       </div>
     );
   }
@@ -521,7 +531,7 @@ export default function ExpensesClient({
           </div>
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium text-gray-700">
-              {formatAmount(totalAmount, displayCurrency)}
+              {formatTotals(totals, displayCurrency)}
             </span>
             <span className="text-gray-800">·</span>
             <span className="text-gray-400">
@@ -665,6 +675,7 @@ export default function ExpensesClient({
                 <button
                   type="button"
                   onClick={openCategoriesModal}
+                  aria-label="Gestionar categorías"
                   className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-purple-400 hover:text-purple-500 transition-colors mb-0.5"
                 >
                   <svg
@@ -724,7 +735,7 @@ export default function ExpensesClient({
             </span>
             <span className="text-xs text-gray-300">·</span>
             <span className="text-xs font-medium text-gray-600">
-              {formatAmount(totalAmount, displayCurrency)}
+              {formatTotals(totals, displayCurrency)}
             </span>
           </div>
         )}

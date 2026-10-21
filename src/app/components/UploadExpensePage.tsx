@@ -28,6 +28,7 @@ import AddProviderModal from "./AddProviderModal";
 import CategoryManagerModal from "./CategoryManagerModal";
 import ExpenseItemsEditor, {
   createSuggestedCatalogItems,
+  incompleteItemLines,
   type ExpenseItemLine,
 } from "./ExpenseItemsEditor";
 import { getMaterials } from "@/actions/materials";
@@ -153,6 +154,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
   );
 
   const [itemLines, setItemLines] = useState<ExpenseItemLine[]>([]);
+  const [incompleteIds, setIncompleteIds] = useState<string[]>([]);
 
   const [form, setForm] = useState({
     provider_id: "",
@@ -181,6 +183,8 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [extracting, setExtracting] = useState(false);
+  // Outcome of reading the receipt, so a failed read is never silent.
+  const [readResult, setReadResult] = useState<{ ok: boolean; fileName: string } | null>(null);
   const [isPending, setIsPending] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
 
@@ -250,11 +254,15 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
         })),
       ]);
 
+      // Prefer the invoice PDF when several files are dropped (e.g. PDF + payment screenshot).
+      const toRead = allowed.find((f) => f.type === "application/pdf") ?? allowed[0];
+
       setExtracting(true);
+      setReadResult(null);
       setResolvedProvider({ ruc: null, name: null });
 
       try {
-        const extracted = await extractFromReceipt(allowed[0], {
+        const extracted = await extractFromReceipt(toRead, {
           materials: materials.map((m) => m.name),
           brands: brands.map((b) => b.name),
           units: units.map((u) => u.name),
@@ -322,8 +330,9 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
             });
           }
         }
+        setReadResult({ ok: true, fileName: toRead.name });
       } catch {
-        // silently fail — usuario rellena manualmente
+        setReadResult({ ok: false, fileName: toRead.name });
       } finally {
         setExtracting(false);
       }
@@ -520,6 +529,15 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
       return;
     }
 
+    const incomplete = incompleteItemLines(itemLines);
+    setIncompleteIds(incomplete.map((l) => l.id));
+    if (incomplete.length) {
+      setError(
+        `${incomplete.length === 1 ? "Hay 1 material incompleto" : `Hay ${incomplete.length} materiales incompletos`}: elige material, unidad y cantidad, o quítalo${incomplete.length === 1 ? "" : "s"}.`,
+      );
+      return;
+    }
+
     try {
       const dupes = await checkDuplicateExpenses(
         workspaceId,
@@ -560,7 +578,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
               }}
               onDragLeave={() => setDragging(false)}
               onDrop={onDrop}
-              className={`flex flex-col items-center justify-center gap-3 border-2 border-dashed
+              className={`relative focus-within:ring-2 focus-within:ring-violet-500 focus-within:ring-offset-2 flex flex-col items-center justify-center gap-3 border-2 border-dashed
                 rounded-xl py-9 cursor-pointer transition-all duration-200
                 ${dragging ? "border-purple-600 bg-cyan-50" : "border-gray-200 hover:border-purple-400 hover:bg-purple-50/40"}`}
             >
@@ -568,7 +586,8 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                 type="file"
                 multiple
                 accept="image/*,application/pdf"
-                className="hidden"
+                className="sr-only"
+                aria-label="Adjuntar comprobante: imágenes o PDF"
                 onChange={(e) => addFiles(Array.from(e.target.files ?? []))}
               />
               <div
@@ -608,7 +627,10 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
             </label>
 
             {extracting && (
-              <div className="flex items-center gap-2.5 bg-cyan-50 border border-cyan-200 rounded-lg px-4 py-3">
+              <div
+                role="status"
+                className="flex items-center gap-2.5 bg-cyan-50 border border-cyan-200 rounded-lg px-4 py-3"
+              >
                 <svg
                   className="animate-spin w-4 h-4 text-cyan-500 flex-shrink-0"
                   viewBox="0 0 24 24"
@@ -631,7 +653,9 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                 </svg>
                 <div>
                   <p className="text-xs font-semibold text-cyan-700">Analizando comprobante...</p>
-                  <p className="text-[11px] text-cyan-500">Extrayendo monto, fechas y proveedor</p>
+                  <p className="text-[11px] text-cyan-700">
+                    Extrayendo monto, fechas, proveedor y materiales
+                  </p>
                 </div>
               </div>
             )}
@@ -663,18 +687,26 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
               </div>
             )}
 
-            {!extracting && files.length > 0 && !willCreateProvider && form.provider_id && (
-              <div className="flex items-center gap-2 text-xs text-cyan-600">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M20 6L9 17l-5-5"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                Campos rellenados desde el comprobante
+            {!extracting && readResult && (
+              <div
+                role="status"
+                className={`rounded-lg border px-4 py-2.5 text-xs ${
+                  readResult.ok
+                    ? "border-violet-200 bg-violet-50 text-violet-800"
+                    : "border-amber-200 bg-amber-50 text-amber-900"
+                }`}
+              >
+                {readResult.ok ? (
+                  <>
+                    ✦ Datos leídos de <span className="font-semibold">«{readResult.fileName}»</span>
+                    . Revísalos antes de guardar.
+                  </>
+                ) : (
+                  <>
+                    No pudimos leer <span className="font-semibold">«{readResult.fileName}»</span>.
+                    Completa los datos a mano; el archivo se adjuntará igual.
+                  </>
+                )}
               </div>
             )}
 
@@ -714,9 +746,11 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                           <button
                             type="button"
                             onClick={() => removeFile(fi.id)}
-                            className="text-gray-300 hover:text-red-400 transition-colors ml-1 flex-shrink-0 opacity-0 group-hover:opacity-100"
+                            aria-label={`Quitar ${fi.file.name}`}
+                            title={`Quitar ${fi.file.name}`}
+                            className="ml-1 flex-shrink-0 w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 transition-colors cursor-pointer"
                           >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
                               <path
                                 d="M18 6L6 18M6 6l12 12"
                                 stroke="currentColor"
@@ -855,6 +889,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                 <button
                   type="button"
                   onClick={openAddProvider}
+                  aria-label="Agregar proveedor"
                   className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-cyan-400 hover:text-cyan-500 transition-colors"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
@@ -923,6 +958,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                   <button
                     type="button"
                     onClick={openCategoryManager}
+                    aria-label="Gestionar categorías"
                     className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-cyan-400 hover:text-cyan-500 transition-colors"
                   >
                     <svg
@@ -995,6 +1031,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
             <TotalsCheckNotice check={totalsCheck} />
           )}
           <ExpenseItemsEditor
+            highlightIds={incompleteIds}
             workspaceId={workspaceId}
             lines={itemLines}
             onChange={setItemLines}

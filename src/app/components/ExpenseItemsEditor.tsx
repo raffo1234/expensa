@@ -26,6 +26,30 @@ type CatalogKind = "material" | "brand" | "unit";
 
 const ID_FIELD = { material: "material_id", brand: "brand_id", unit: "unit_id" } as const;
 
+const isBlankLine = (l: ExpenseItemLine) =>
+  !l.material_id &&
+  !l.brand_id &&
+  !l.unit_id &&
+  !l.quantity &&
+  !l.unit_price &&
+  !l.suggested?.material &&
+  !l.suggested?.unit;
+
+/**
+ * Lines the user started but can't be saved: no material, no unit or no
+ * positive quantity. Completely empty lines are ignored instead. Saving must
+ * stop on these rather than silently dropping them.
+ */
+export function incompleteItemLines(lines: ExpenseItemLine[]): ExpenseItemLine[] {
+  return lines.filter((l) => {
+    if (isBlankLine(l)) return false;
+    const hasMaterial = !!(l.material_id || l.suggested?.material);
+    const hasUnit = !!(l.unit_id || l.suggested?.unit);
+    const hasQuantity = parseFloat(l.quantity) > 0;
+    return !hasMaterial || !hasUnit || !hasQuantity;
+  });
+}
+
 const ICON_BTN_CLASS =
   "flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-cyan-400 hover:text-cyan-500 transition-colors";
 
@@ -56,7 +80,9 @@ export default function ExpenseItemsEditor({
   onMaterialsChange,
   onBrandsChange,
   onUnitsChange,
+  highlightIds = [],
 }: {
+  highlightIds?: string[];
   workspaceId: string;
   lines: ExpenseItemLine[];
   onChange: (lines: ExpenseItemLine[]) => void;
@@ -177,7 +203,13 @@ export default function ExpenseItemsEditor({
       {lines.map((line, idx) => (
         <div
           key={line.id}
-          className={`rounded-xl border p-4 space-y-3 bg-white ${line.ai ? "border-violet-200" : "border-gray-200"}`}
+          className={`rounded-xl border p-4 space-y-3 bg-white ${
+            highlightIds.includes(line.id)
+              ? "border-red-300 ring-1 ring-red-200"
+              : line.ai
+                ? "border-violet-200"
+                : "border-gray-200"
+          }`}
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-gray-400">
@@ -187,12 +219,17 @@ export default function ExpenseItemsEditor({
                   ✦ Leído de la factura
                 </span>
               )}
+              {highlightIds.includes(line.id) && (
+                <span className="ml-2 text-[11px] font-semibold text-red-700">
+                  Falta material, unidad o cantidad
+                </span>
+              )}
             </span>
             <button
               type="button"
               onClick={() => removeLine(line.id)}
-              className="w-9 h-9 flex items-center justify-center rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors text-lg"
-              aria-label="Eliminar material"
+              className="w-11 h-11 sm:w-9 sm:h-9 flex items-center justify-center rounded-full text-gray-500 hover:text-red-600 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 transition-colors text-lg"
+              aria-label={`Quitar material ${idx + 1}`}
             >
               ×
             </button>
@@ -215,6 +252,7 @@ export default function ExpenseItemsEditor({
               <button
                 type="button"
                 onClick={() => openManager("material")}
+                aria-label="Gestionar materiales"
                 className={ICON_BTN_CLASS}
               >
                 <GearIcon />
@@ -241,6 +279,7 @@ export default function ExpenseItemsEditor({
                 <button
                   type="button"
                   onClick={() => openManager("brand")}
+                  aria-label="Gestionar marcas"
                   className={ICON_BTN_CLASS}
                 >
                   <GearIcon />
@@ -265,6 +304,7 @@ export default function ExpenseItemsEditor({
                 <button
                   type="button"
                   onClick={() => openManager("unit")}
+                  aria-label="Gestionar unidades"
                   className={ICON_BTN_CLASS}
                 >
                   <GearIcon />

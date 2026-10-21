@@ -8,7 +8,7 @@ import SearchInput from "@/components/SearchInput";
 import ClearFiltersButton from "@/components/ClearFiltersButton";
 import InputWithTooltip from "@/components/InputWithTooltip";
 import type { MaterialReportRow } from "@/actions/materials";
-import { formatAmount } from "@/utils/formatAmount";
+import { formatAmount, formatTotals, totalsByCurrency } from "@/utils/formatAmount";
 import { formatSafeDate } from "@/lib/formatSafeDate";
 import { replaceUrl } from "@/utils/replaceUrl";
 import { INPUT_CLASS, SELECT_CLASS } from "@/constants";
@@ -167,9 +167,15 @@ export default function MaterialsClient({
   }, [rows, search, materialId, brandId, providerId, taxStatus, levelId, dateFrom, dateTo]);
 
   const totals = useMemo(() => {
+    // Quantities add up across purchases; money is kept per currency.
     const map = new Map<
       string,
-      { material: string; unit: string; quantity: number; subtotal: number }
+      {
+        material: string;
+        unit: string;
+        quantity: number;
+        lines: { currency: string; amount: number | null }[];
+      }
     >();
     filtered.forEach((r) => {
       const key = `${r.material.id}__${r.unit.id}`;
@@ -177,21 +183,21 @@ export default function MaterialsClient({
         material: r.material.name,
         unit: r.unit.name,
         quantity: 0,
-        subtotal: 0,
+        lines: [],
       };
       prev.quantity += r.quantity;
-      prev.subtotal += r.subtotal ?? 0;
+      prev.lines.push({ currency: r.currency, amount: r.subtotal });
       map.set(key, prev);
     });
-    return [...map.values()].sort((a, b) => a.material.localeCompare(b.material));
+    return [...map.values()]
+      .map(({ lines, ...t }) => ({ ...t, subtotals: totalsByCurrency(lines) }))
+      .sort((a, b) => a.material.localeCompare(b.material));
   }, [filtered]);
 
-  const filteredTotal = useMemo(
-    () => filtered.reduce((sum, r) => sum + (r.subtotal ?? 0), 0),
+  const filteredTotals = useMemo(
+    () => totalsByCurrency(filtered.map((r) => ({ currency: r.currency, amount: r.subtotal }))),
     [filtered],
   );
-
-  const currency = rows[0]?.currency ?? "PEN";
   const hasFilters = !!(
     search ||
     materialId ||
@@ -378,8 +384,8 @@ export default function MaterialsClient({
                         <span className="text-sm text-gray-500">
                           {t.quantity} {t.unit}
                         </span>
-                        <span className="text-sm font-semibold text-gray-700 w-24 text-right">
-                          {t.subtotal > 0 ? formatAmount(t.subtotal, currency) : "—"}
+                        <span className="text-sm font-semibold text-gray-700 min-w-24 text-right tabular-nums">
+                          {t.subtotals.some((x) => x.amount > 0) ? formatTotals(t.subtotals) : "—"}
                         </span>
                       </div>
                     </div>
@@ -387,7 +393,7 @@ export default function MaterialsClient({
                   <div className="flex items-center justify-between gap-4 px-4 sm:px-5 py-3 border-t border-gray-200 bg-gray-50/60">
                     <span className="text-sm font-bold text-gray-800">Total</span>
                     <span className="text-sm font-bold text-gray-900">
-                      {formatAmount(filteredTotal, currency)}
+                      {formatTotals(filteredTotals)}
                     </span>
                   </div>
                 </div>
@@ -438,7 +444,7 @@ export default function MaterialsClient({
                   <div className="flex items-center justify-between gap-4 px-4 sm:px-5 py-3 border-t border-gray-200 bg-gray-50/60">
                     <span className="text-sm font-bold text-gray-800">Total</span>
                     <span className="text-sm font-bold text-gray-900">
-                      {formatAmount(filteredTotal, currency)}
+                      {formatTotals(filteredTotals)}
                     </span>
                   </div>
                 </div>

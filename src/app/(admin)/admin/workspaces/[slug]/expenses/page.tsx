@@ -31,7 +31,7 @@ async function ExpensesSection({ slug }: { slug: string }) {
 
   const [
     { data: rows, error: expError, count },
-    initialTotalAmount,
+    initialTotals,
     { data: categories },
     { data: stages },
     { data: levels },
@@ -94,7 +94,7 @@ async function ExpensesSection({ slug }: { slug: string }) {
         workspace={workspace}
         initialExpenses={expenses}
         initialCount={count ?? 0}
-        initialTotalAmount={initialTotalAmount}
+        initialTotals={initialTotals}
         categories={categories ?? []}
         stages={stages ?? []}
         levels={levels ?? []}

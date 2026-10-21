@@ -13,7 +13,8 @@ import {
   SELECT_CLASS,
   PRIMARY_BUTTON_CLASS,
 } from "@/constants";
-import { formatAmount } from "@/utils/formatAmount";
+import { csvEscape } from "@/utils/csv";
+import { formatAmount, totalsByCurrency } from "@/utils/formatAmount";
 import getAttachmentUrl from "@/lib/getAttachmentUrl";
 import Link from "next/link";
 import { useSearchParams, usePathname } from "next/navigation";
@@ -93,12 +94,6 @@ const fmtDate = (d?: string | null) => {
   return `${day}-${m}-${y}`;
 };
 
-const csvEscape = (v: unknown) => {
-  if (v == null) return "";
-  const s = String(v);
-  return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s;
-};
-
 const fetchAllFiltered = async (
   workspaceId: string,
   search: string,
@@ -173,8 +168,11 @@ const exportCsv = async (
           csvEscape(e.notes),
         ].join(",") + "\n";
     }
-    const total = expenses.reduce((s, e) => s + (e.amount || 0), 0);
-    csv += `${csvEscape(month)},,,,,,,,${(total / 100).toFixed(2)},,TOTAL ${month}\n\n`;
+    // One total row per currency: soles and dollars are never added together.
+    for (const t of totalsByCurrency(expenses)) {
+      csv += `${csvEscape(month)},,,,,,,,${(t.amount / 100).toFixed(2)},${t.currency},TOTAL ${month}\n`;
+    }
+    csv += "\n";
   }
 
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -587,6 +585,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
           <button
             disabled={page === 0}
             onClick={() => setPage((p) => p - 1)}
+            aria-label="Página anterior"
             className="px-3 py-1 bg-cyan-400 disabled:opacity-50 disabled:pointer-events-none text-white rounded-full cursor-pointer"
           >
             <Icon icon="solar:alt-arrow-left-linear" fontSize={ICON_SIZE} />
@@ -597,6 +596,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
           <button
             disabled={(page + 1) * PAGE_SIZE >= total}
             onClick={() => setPage((p) => p + 1)}
+            aria-label="Página siguiente"
             className="px-3 py-1 bg-cyan-400 disabled:opacity-50 disabled:pointer-events-none text-white rounded-full cursor-pointer"
           >
             <Icon icon="solar:alt-arrow-right-linear" fontSize={ICON_SIZE} />

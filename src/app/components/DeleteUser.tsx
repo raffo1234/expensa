@@ -45,6 +45,7 @@ export default function DeleteUser({ userId }: { userId: string }) {
       <button
         disabled
         onClick={deleteUser}
+        aria-label="Eliminar usuario"
         type="button"
         className="w-11 h-11 rounded-full border-gray-100 border text-red-500 flex items-center justify-center"
       >

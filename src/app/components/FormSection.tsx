@@ -20,8 +20,9 @@ export default function FormSection({
           {backUrl && (
             <Link
               href={backUrl}
-              title="Users"
-              className="px-3 py-1 bg-slate-100 rounded-md hover:text-cyan-400 transition-colors duration-300"
+              title="Volver"
+              aria-label="Volver"
+              className="px-3 py-1 bg-slate-100 rounded-md hover:text-violet-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 transition-colors duration-300"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
                 <path d="M0 0h24v24H0z" fill="none" />

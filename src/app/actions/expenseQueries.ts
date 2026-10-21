@@ -5,6 +5,7 @@ import { requireWorkspaceAccess } from "@/lib/access";
 import { sumExpenseAmounts } from "@/lib/sumExpenseAmounts";
 import { categoryIdList, type ExpenseFilters } from "@/types/expenseFilters";
 import type { ExpenseRow } from "@/types/ExpenseType";
+import type { CurrencyTotal } from "@/utils/formatAmount";
 
 // Expense list, totals and exports for the expenses page. They run on the
 // server with the caller's workspace access checked, instead of querying the
@@ -75,7 +76,7 @@ export async function listExpenses(
   pageSize: number,
   search: string,
   filters: ExpenseFilters,
-): Promise<{ rows: ExpenseRow[]; count: number; totalAmount: number }> {
+): Promise<{ rows: ExpenseRow[]; count: number; totals: CurrencyTotal[] }> {
   await requireWorkspaceAccess(workspaceId);
   const from = (page - 1) * pageSize;
   const orClause = await buildSearchClause(workspaceId, search);
@@ -92,13 +93,13 @@ export async function listExpenses(
     orClause,
   );
 
-  const [{ data, error, count }, totalAmount] = await Promise.all([
+  const [{ data, error, count }, totals] = await Promise.all([
     query,
     sumExpenseAmounts(workspaceId, (q) => applyExpenseFilters(q, filters, orClause)),
   ]);
   if (error) throw new Error(error.message);
 
-  return { rows: (data ?? []) as unknown as ExpenseRow[], count: count ?? 0, totalAmount };
+  return { rows: (data ?? []) as unknown as ExpenseRow[], count: count ?? 0, totals };
 }
 
 export async function listAllFilteredExpenses(

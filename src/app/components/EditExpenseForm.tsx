@@ -4,7 +4,10 @@ import { useGlobalState } from "@/lib/globalState";
 import { mutate } from "swr";
 import AddProviderModal from "@/components/AddProviderModal";
 import CategoryManagerModal from "@/components/CategoryManagerModal";
-import ExpenseItemsEditor, { type ExpenseItemLine } from "@/components/ExpenseItemsEditor";
+import ExpenseItemsEditor, {
+  incompleteItemLines,
+  type ExpenseItemLine,
+} from "@/components/ExpenseItemsEditor";
 import { getMaterials } from "@/actions/materials";
 import { getBrands } from "@/actions/brands";
 import { getUnits } from "@/actions/units";
@@ -85,11 +88,13 @@ const fetchCategories = (workspaceId: string): Promise<Category[]> => getCategor
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 function Input({
+  id,
   value,
   onChange,
   placeholder,
   type = "text",
 }: {
+  id?: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
@@ -97,6 +102,7 @@ function Input({
 }) {
   return (
     <input
+      id={id}
       type={type}
       value={value}
       onChange={(e) => onChange(e.target.value)}
@@ -105,22 +111,31 @@ function Input({
     />
   );
 }
+Input.acceptsFieldId = true;
 
 function Select({
+  id,
   value,
   onChange,
   children,
 }: {
+  id?: string;
   value: string;
   onChange: (v: string) => void;
   children: React.ReactNode;
 }) {
   return (
-    <select value={value} onChange={(e) => onChange(e.target.value)} className={INPUT_CLASS}>
+    <select
+      id={id}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className={SELECT_CLASS}
+    >
       {children}
     </select>
   );
 }
+Select.acceptsFieldId = true;
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function EditExpenseForm() {
@@ -186,6 +201,7 @@ export default function EditExpenseForm() {
   );
 
   const [itemLines, setItemLines] = useState<ExpenseItemLine[]>([]);
+  const [incompleteIds, setIncompleteIds] = useState<string[]>([]);
 
   // Fill the form once. Later revalidations (on mount or tab focus) return the
   // same data and would otherwise wipe edits the user hasn't saved yet.
@@ -306,6 +322,15 @@ export default function EditExpenseForm() {
 
   // ── Save ──
   async function handleSave() {
+    const incomplete = incompleteItemLines(itemLines);
+    setIncompleteIds(incomplete.map((l) => l.id));
+    if (incomplete.length) {
+      setSaveError(
+        `${incomplete.length === 1 ? "Hay 1 material incompleto" : `Hay ${incomplete.length} materiales incompletos`}: elige material, unidad y cantidad, o quítalo${incomplete.length === 1 ? "" : "s"}.`,
+      );
+      return;
+    }
+
     setSaving(true);
     setSaveError(null);
     setUploadProgress({});
@@ -453,6 +478,7 @@ export default function EditExpenseForm() {
                   <button
                     type="button"
                     onClick={openAddProvider}
+                    aria-label="Agregar proveedor"
                     className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-cyan-400 hover:text-cyan-500 transition-colors"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
@@ -529,6 +555,7 @@ export default function EditExpenseForm() {
                   <button
                     type="button"
                     onClick={openCategoryManager}
+                    aria-label="Gestionar categorías"
                     className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-cyan-400 hover:text-cyan-500 transition-colors"
                   >
                     <svg
@@ -585,6 +612,7 @@ export default function EditExpenseForm() {
           <SectionTitle>Materiales</SectionTitle>
           <FormInnerSection>
             <ExpenseItemsEditor
+              highlightIds={incompleteIds}
               workspaceId={workspaceId ?? ""}
               lines={itemLines}
               onChange={setItemLines}
@@ -697,7 +725,7 @@ export default function EditExpenseForm() {
                 }}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
-                className={`w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed py-8 text-sm transition-all cursor-pointer ${
+                className={`relative focus-within:ring-2 focus-within:ring-violet-500 focus-within:ring-offset-2 w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed py-8 text-sm transition-all cursor-pointer ${
                   isDragging
                     ? "border-purple-500 bg-purple-50 text-purple-600"
                     : "border-gray-200 text-gray-400 hover:border-purple-500 hover:text-purple-600 hover:bg-purple-50/40"
@@ -707,7 +735,8 @@ export default function EditExpenseForm() {
                   type="file"
                   multiple
                   accept="image/*,application/pdf"
-                  className="hidden"
+                  className="sr-only"
+                  aria-label="Adjuntar comprobante: imágenes o PDF"
                   onChange={(e) => {
                     addFiles(Array.from(e.target.files ?? []));
                     // Allow picking the same file again after removing it.

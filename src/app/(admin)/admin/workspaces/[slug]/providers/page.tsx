@@ -115,7 +115,8 @@ function ProviderModal({
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-300 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100"
+            aria-label="Cerrar"
+            className="text-gray-500 hover:text-gray-700 transition-colors p-1 rounded-lg hover:bg-gray-100"
           >
             <svg
               width="16"

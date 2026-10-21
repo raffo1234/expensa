@@ -62,6 +62,7 @@ export default function Aside({
       <div className={`flex justify-end lg:p-2 ${!isMenuContracted ? "lg:pr-5" : "lg:pr-6"}`}>
         <button
           onClick={toggleContracted}
+          aria-label="Contraer o expandir el menú"
           className="p-3 cursor-pointer hover:bg-purple-200/70 transition-colors duration-300 active:scale-95 hidden lg:block bg-purple-100 rounded-lg"
           type="button"
         >

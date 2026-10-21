@@ -11,7 +11,7 @@ import { formatSafeDate } from "@/lib/formatSafeDate";
 import DataTable, { DataTableRow } from "./DataTable";
 
 const COLUMNS = [
-  { label: "Ref." },
+  { label: "Factura" },
   { label: "Proveedor" },
   { label: "Categoría" },
   { label: "Método" },

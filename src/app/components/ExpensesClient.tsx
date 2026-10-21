@@ -9,7 +9,6 @@ import {
   SECONDARY_BUTTON_CLASS,
   INPUT_CLASS,
   SELECT_CLASS,
-  ICON_SIZE,
 } from "@/constants";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import Link from "next/link";
@@ -17,7 +16,7 @@ import { Expense, ExpenseRow } from "@/types/ExpenseType";
 import { Workspace } from "@/types/WorkspaceType";
 import { deleteExpense } from "@/actions/expenses";
 import { getExpenseIdsWithMaterials } from "@/actions/materials";
-import TitleWrapper from "./TitleWrapper";
+import Field from "./Field";
 import CategoryMultiFilter from "./CategoryMultiFilter";
 import ProviderFilter from "./ProviderFilter";
 import { csvEscape } from "@/utils/csv";
@@ -25,9 +24,7 @@ import { formatTotals, type CurrencyTotal, totalsByCurrency } from "@/utils/form
 import { useGlobalState } from "@/lib/globalState";
 import CategoryManagerModal from "./CategoryManagerModal";
 import { useSearchParams, usePathname } from "next/navigation";
-import InputWithTooltip from "./InputWithTooltip";
 import SearchInput from "./SearchInput";
-import ClearFiltersButton from "./ClearFiltersButton";
 import { replaceUrl } from "@/utils/replaceUrl";
 import { listAllFilteredExpenses, listExpenses } from "@/actions/expenseQueries";
 import { categoryIdList, type ExpenseFilters } from "@/types/expenseFilters";
@@ -61,6 +58,14 @@ interface FetchResult {
 }
 
 type Filters = ExpenseFilters;
+
+// Quiet buttons for secondary tools (navigation, exports) next to the main action.
+const TOOL_BUTTON_CLASS =
+  "inline-flex min-h-11 sm:min-h-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-violet-50 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 cursor-pointer";
+
+function FilterField({ label, children }: { label: string; children: React.ReactNode }) {
+  return <Field label={label}>{children}</Field>;
+}
 
 export type Stage = { id: string; name: string; color: string | null };
 export type Level = { id: string; name: string };
@@ -391,6 +396,19 @@ export default function ExpensesClient({
   const totals = data?.totals ?? [];
   const totalPages = Math.max(1, Math.ceil(totalCount / ITEMS_PER_PAGE));
   const displayCurrency = expenses[0]?.currency ?? "PEN";
+  // Largest-impact currency first; soles lead when present.
+  const primaryTotals = [...totals]
+    .filter((t) => t.amount !== 0)
+    .sort((a, b) => (a.currency === "PEN" ? -1 : b.currency === "PEN" ? 1 : b.amount - a.amount));
+  // Filters inside the panel (the invoice reference is always visible, so it isn't counted).
+  const advancedFilterCount = [
+    filters.providerId,
+    filters.categoryId,
+    filters.stageId,
+    filters.levelId,
+    filters.issuedFrom || filters.issuedTo,
+    filters.amountMin || filters.amountMax,
+  ].filter(Boolean).length;
 
   const expenseIdsKey = expenses
     .map((e) => e.id)
@@ -440,19 +458,46 @@ export default function ExpensesClient({
     );
   }
 
-  const labelClass = "block text-[11px] font-medium text-gray-400 mb-1";
-
   return (
     <>
-      <div>
-        <TitleWrapper>
-          <div className="flex flex-col gap-3 mb-6 mt-8 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-8 mb-8 space-y-8">
+        {/* 1 · What matters most: how much was spent, and the one primary action. */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-sm text-gray-600">
+              {hasActiveFilters ? "Total con los filtros aplicados" : "Total gastado"}
+            </p>
+            <p className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1 tabular-nums">
+              {primaryTotals.length === 0 ? (
+                <span className="text-3xl font-semibold tracking-tight text-gray-900">
+                  {formatTotals([], displayCurrency)}
+                </span>
+              ) : (
+                primaryTotals.map((t, i) => (
+                  <span
+                    key={t.currency}
+                    className={
+                      i === 0
+                        ? "text-3xl font-semibold tracking-tight text-gray-900"
+                        : "text-lg font-medium text-gray-700"
+                    }
+                  >
+                    {formatTotals([t])}
+                  </span>
+                ))
+              )}
+            </p>
+            <p className="mt-1 text-sm text-gray-600">
+              {totalCount} {totalCount === 1 ? "gasto" : "gastos"}
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-4 sm:items-end">
             <Link
               href={`/admin/workspaces/${slug}/upload-expense`}
-              className={`${PRIMARY_BUTTON_CLASS} justify-center`}
+              className={`${PRIMARY_BUTTON_CLASS} justify-center min-h-11`}
             >
               <svg
-                xmlns="http://www.w3.org/2000/svg"
                 width="14"
                 height="14"
                 viewBox="0 0 24 24"
@@ -461,16 +506,15 @@ export default function ExpensesClient({
                 strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
+                aria-hidden
               >
                 <path d="M5 12h14M12 5v14" />
               </svg>
-              Agregar
+              Agregar gasto
             </Link>
-            <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center">
-              <Link
-                href={`/admin/workspaces/${slug}/materials`}
-                className={`${SECONDARY_BUTTON_CLASS} justify-center px-2 sm:px-4`}
-              >
+            {/* Secondary tools stay quiet so they don't compete with the main action. */}
+            <div className="flex flex-wrap items-center gap-1 sm:justify-end">
+              <Link href={`/admin/workspaces/${slug}/materials`} className={TOOL_BUTTON_CLASS}>
                 <svg
                   width="15"
                   height="15"
@@ -480,6 +524,7 @@ export default function ExpensesClient({
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
+                  aria-hidden
                 >
                   <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
                   <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
@@ -488,8 +533,9 @@ export default function ExpensesClient({
                 Materiales
               </Link>
               <button
+                type="button"
                 onClick={() => exportExpensesCsv(workspace.id, debouncedSearch, filters)}
-                className={`${SECONDARY_BUTTON_CLASS} justify-center px-2 sm:px-4`}
+                className={TOOL_BUTTON_CLASS}
               >
                 <svg
                   width="15"
@@ -500,15 +546,16 @@ export default function ExpensesClient({
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
+                  aria-hidden
                 >
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
-                <span className="sm:hidden">CSV</span>
-                <span className="hidden sm:inline">Exportar CSV</span>
+                Exportar CSV
               </button>
               <button
+                type="button"
                 onClick={() =>
                   exportExpensesPdf(
                     workspace.id,
@@ -521,181 +568,137 @@ export default function ExpensesClient({
                     providers,
                   )
                 }
-                className={`${SECONDARY_BUTTON_CLASS} justify-center px-2 sm:px-4`}
+                className={TOOL_BUTTON_CLASS}
               >
-                <Icon icon="hugeicons:pdf-02" fontSize={ICON_SIZE} />
-                <span className="sm:hidden">PDF</span>
-                <span className="hidden sm:inline">Descargar PDF</span>
+                <Icon icon="hugeicons:pdf-02" fontSize={15} aria-hidden />
+                Descargar PDF
               </button>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-gray-700">
-              {formatTotals(totals, displayCurrency)}
-            </span>
-            <span className="text-gray-800">·</span>
-            <span className="text-gray-400">
-              {totalCount} registro{totalCount !== 1 ? "s" : ""}
-            </span>
-          </div>
-        </TitleWrapper>
-
-        {/* Buscador */}
-        <div className="mb-3 flex gap-2">
-          <SearchInput
-            value={search}
-            onChange={(value) => {
-              setSearch(value);
-              // Clearing applies right away instead of waiting for the debounce.
-              if (!value) {
-                setDebouncedSearch("");
-                setPage(1);
-              }
-            }}
-            placeholder="Buscar por referencia, proveedor o notas..."
-            className="flex-1"
-          />
-          {hasActiveFilters && <ClearFiltersButton onClick={clearFilters} />}
         </div>
-        <div className="mb-3 grid grid-cols-2 gap-2">
-          <InputWithTooltip label="Serie de factura" className="min-w-0">
+
+        {/* 2 · Finding an expense: search plus the invoice reference, in one row. */}
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+            <SearchInput
+              value={search}
+              onChange={(value) => {
+                setSearch(value);
+                // Clearing applies right away instead of waiting for the debounce.
+                if (!value) {
+                  setDebouncedSearch("");
+                  setPage(1);
+                }
+              }}
+              placeholder="Buscar por proveedor, notas o monto…"
+              className="col-span-2 sm:flex-1"
+            />
             <input
               type="text"
+              aria-label="Serie de factura"
               placeholder="Serie"
               value={filters.invoiceSeries}
               onChange={(e) => setFilter("invoiceSeries", e.target.value)}
-              className={INPUT_CLASS}
+              className={`${INPUT_CLASS} sm:w-28`}
             />
-          </InputWithTooltip>
-          <InputWithTooltip label="Número de factura" className="min-w-0">
             <input
               type="text"
+              aria-label="Número de factura"
               placeholder="Número"
               value={filters.invoiceNumber}
               onChange={(e) => setFilter("invoiceNumber", e.target.value)}
-              className={INPUT_CLASS}
+              className={`${INPUT_CLASS} sm:w-36`}
             />
-          </InputWithTooltip>
-        </div>
-
-        {/* Toggle filtros */}
-        <button
-          type="button"
-          onClick={() => setShowFilters((v) => !v)}
-          className="mb-3 text-xs text-violet-500 hover:text-violet-700 underline underline-offset-2 transition"
-        >
-          {showFilters ? "Cerrar filtros" : "Más filtros"}
-        </button>
-
-        {showFilters && (
-          <div className="mb-4 grid grid-cols-2 gap-x-3 gap-y-3 sm:grid-cols-3 lg:grid-cols-6">
-            <div className="col-span-2 sm:col-span-3 lg:col-span-6 border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
-              <p className={`${labelClass} pl-1`}>Proveedor</p>
-              <ProviderFilter
-                providers={providers}
-                value={filters.providerId}
-                onChange={(id) => setFilter("providerId", id)}
-              />
-            </div>
-            <div className="col-span-2 sm:col-span-3 lg:col-span-3 flex flex-wrap sm:flex-nowrap gap-2 items-center border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
-              <span className="w-full sm:w-auto text-[11px] font-medium text-gray-400 pl-1">
-                Emisión
-              </span>
-              <InputWithTooltip
-                label="Mes de emisión"
-                className="w-full sm:w-auto sm:flex-1 min-w-0"
+            <button
+              type="button"
+              onClick={() => setShowFilters((v) => !v)}
+              aria-expanded={showFilters}
+              aria-controls="expense-filters"
+              className={`${SECONDARY_BUTTON_CLASS} justify-center min-h-11 sm:min-h-0 ${
+                showFilters || advancedFilterCount ? "border-violet-300 text-violet-700" : ""
+              }`}
+            >
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
               >
-                <input
-                  type="month"
-                  value={issuedMonth}
-                  onChange={(e) => handleIssuedMonthChange(e.target.value)}
-                  className={INPUT_CLASS}
+                <line x1="4" y1="6" x2="20" y2="6" />
+                <line x1="7" y1="12" x2="17" y2="12" />
+                <line x1="10" y1="18" x2="14" y2="18" />
+              </svg>
+              Filtros
+              {advancedFilterCount > 0 && (
+                <span className="rounded-full bg-violet-600 px-1.5 text-xs font-semibold text-white tabular-nums">
+                  {advancedFilterCount}
+                </span>
+              )}
+            </button>
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="justify-self-start text-sm font-medium text-gray-600 underline-offset-2 hover:text-violet-700 hover:underline min-h-11 sm:min-h-0 px-1"
+              >
+                Limpiar todo
+              </button>
+            )}
+          </div>
+
+          {/* 3 · Everything else, only when asked for: one panel, visible labels. */}
+          {showFilters && (
+            <div
+              id="expense-filters"
+              className="grid grid-cols-1 gap-4 rounded-xl border border-gray-200 bg-gray-50/70 p-4 sm:grid-cols-2 lg:grid-cols-4"
+            >
+              <FilterField label="Proveedor">
+                <ProviderFilter
+                  providers={providers}
+                  value={filters.providerId}
+                  onChange={(id) => setFilter("providerId", id)}
                 />
-              </InputWithTooltip>
-              <InputWithTooltip label="Emisión desde" className="flex-1 min-w-0">
-                <input
-                  type="date"
-                  value={filters.issuedFrom}
-                  onChange={(e) => {
-                    setFilter("issuedFrom", e.target.value);
-                    setIssuedMonth("");
-                  }}
-                  className={INPUT_CLASS}
-                />
-              </InputWithTooltip>
-              <InputWithTooltip label="Emisión hasta" className="flex-1 min-w-0">
-                <input
-                  type="date"
-                  value={filters.issuedTo}
-                  onChange={(e) => {
-                    setFilter("issuedTo", e.target.value);
-                    setIssuedMonth("");
-                  }}
-                  className={INPUT_CLASS}
-                />
-              </InputWithTooltip>
-            </div>
-            <div className="col-span-2 sm:col-span-3 lg:col-span-3 flex flex-wrap sm:flex-nowrap gap-2 items-center border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
-              <span className="w-full sm:w-auto text-[11px] font-medium text-gray-400 pl-1">
-                Monto
-              </span>
-              <InputWithTooltip label="Monto mínimo" className="flex-1 min-w-0">
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={filters.amountMin}
-                  onChange={(e) => setFilter("amountMin", e.target.value)}
-                  className={INPUT_CLASS}
-                />
-              </InputWithTooltip>
-              <InputWithTooltip label="Monto máximo" className="flex-1 min-w-0">
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={filters.amountMax}
-                  onChange={(e) => setFilter("amountMax", e.target.value)}
-                  className={INPUT_CLASS}
-                />
-              </InputWithTooltip>
-            </div>
-            <div className="col-span-2 sm:col-span-3 lg:col-span-2 flex gap-2 items-end border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
-              <div className="flex-1">
-                <p className={labelClass}>Categoría</p>
-                <CategoryMultiFilter
-                  categories={localCategories}
-                  value={categoryIdList(filters.categoryId)}
-                  onChange={(ids) => setFilter("categoryId", ids.join(","))}
-                />
-              </div>
-              <InputWithTooltip label="Gestionar categorías">
-                <button
-                  type="button"
-                  onClick={openCategoriesModal}
-                  aria-label="Gestionar categorías"
-                  className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-violet-400 hover:text-violet-500 transition-colors mb-0.5"
-                >
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
+              </FilterField>
+
+              <FilterField label="Categoría">
+                <div className="flex items-center gap-2">
+                  <div className="min-w-0 flex-1">
+                    <CategoryMultiFilter
+                      categories={localCategories}
+                      value={categoryIdList(filters.categoryId)}
+                      onChange={(ids) => setFilter("categoryId", ids.join(","))}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={openCategoriesModal}
+                    aria-label="Gestionar categorías"
+                    title="Gestionar categorías"
+                    className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition-colors hover:border-violet-400 hover:text-violet-600"
                   >
-                    <circle cx="12" cy="12" r="3" />
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                  </svg>
-                </button>
-              </InputWithTooltip>
-            </div>
-            <div className="col-span-2 sm:col-span-3 lg:col-span-2 flex gap-2 items-end border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
-              <div className="flex-1">
-                <p className={labelClass}>Etapa</p>
+                    <svg
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      aria-hidden
+                    >
+                      <circle cx="12" cy="12" r="3" />
+                      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                    </svg>
+                  </button>
+                </div>
+              </FilterField>
+
+              <FilterField label="Etapa">
                 <select
                   value={filters.stageId}
                   onChange={(e) => setFilter("stageId", e.target.value)}
@@ -708,9 +711,9 @@ export default function ExpensesClient({
                     </option>
                   ))}
                 </select>
-              </div>
-              <div className="flex-1">
-                <p className={labelClass}>Nivel</p>
+              </FilterField>
+
+              <FilterField label="Nivel">
                 <select
                   value={filters.levelId}
                   onChange={(e) => setFilter("levelId", e.target.value)}
@@ -723,22 +726,70 @@ export default function ExpensesClient({
                     </option>
                   ))}
                 </select>
-              </div>
-            </div>
-          </div>
-        )}
+              </FilterField>
 
-        {hasActiveFilters && (
-          <div className="mb-3 flex items-center gap-2">
-            <span className="text-xs text-gray-400">
-              {totalCount} resultado{totalCount !== 1 ? "s" : ""}
-            </span>
-            <span className="text-xs text-gray-300">·</span>
-            <span className="text-xs font-medium text-gray-600">
-              {formatTotals(totals, displayCurrency)}
-            </span>
-          </div>
-        )}
+              <FilterField label="Mes de emisión">
+                <input
+                  type="month"
+                  value={issuedMonth}
+                  onChange={(e) => handleIssuedMonthChange(e.target.value)}
+                  className={INPUT_CLASS}
+                />
+              </FilterField>
+
+              <FilterField label="Emitida desde">
+                <input
+                  type="date"
+                  value={filters.issuedFrom}
+                  onChange={(e) => {
+                    setFilter("issuedFrom", e.target.value);
+                    setIssuedMonth("");
+                  }}
+                  className={INPUT_CLASS}
+                />
+              </FilterField>
+
+              <FilterField label="Emitida hasta">
+                <input
+                  type="date"
+                  value={filters.issuedTo}
+                  onChange={(e) => {
+                    setFilter("issuedTo", e.target.value);
+                    setIssuedMonth("");
+                  }}
+                  className={INPUT_CLASS}
+                />
+              </FilterField>
+
+              <FilterField label="Monto (mín. – máx.)">
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="0.01"
+                    placeholder="Mín."
+                    aria-label="Monto mínimo"
+                    value={filters.amountMin}
+                    onChange={(e) => setFilter("amountMin", e.target.value)}
+                    className={INPUT_CLASS}
+                  />
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="0.01"
+                    placeholder="Máx."
+                    aria-label="Monto máximo"
+                    value={filters.amountMax}
+                    onChange={(e) => setFilter("amountMax", e.target.value)}
+                    className={INPUT_CLASS}
+                  />
+                </div>
+              </FilterField>
+            </div>
+          )}
+        </div>
       </div>
 
       {totalPages > 1 && (

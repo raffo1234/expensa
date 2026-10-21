@@ -6,13 +6,7 @@ import { listAllSummaryExpenses, listSummaryExpenses } from "@/actions/summaryQu
 import { getCategories } from "@/actions/lookups";
 import { useDebouncedCallback } from "use-debounce";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import {
-  ICON_SIZE,
-  INPUT_CLASS,
-  SECONDARY_BUTTON_CLASS,
-  SELECT_CLASS,
-  PRIMARY_BUTTON_CLASS,
-} from "@/constants";
+import { ICON_SIZE, INPUT_CLASS, SECONDARY_BUTTON_CLASS, SELECT_CLASS } from "@/constants";
 import { csvEscape } from "@/utils/csv";
 import { formatAmount, totalsByCurrency } from "@/utils/formatAmount";
 import getAttachmentUrl from "@/lib/getAttachmentUrl";
@@ -20,14 +14,17 @@ import Link from "next/link";
 import { useSearchParams, usePathname } from "next/navigation";
 import { replaceUrl } from "@/utils/replaceUrl";
 import OptionButton from "./OptionButton";
-import InputWithTooltip from "./InputWithTooltip";
+import Field from "./Field";
 import SearchInput from "./SearchInput";
-import ClearFiltersButton from "./ClearFiltersButton";
 import DataTable, { DataTableRow } from "./DataTable";
 import CategoryFilter from "./CategoryFilter";
 import type { SummaryReportRow } from "./SummaryReportPDF";
 
 const PAGE_SIZE = 10;
+
+// Quiet buttons for secondary tools (exports), consistent with the expenses list.
+const TOOL_BUTTON_CLASS =
+  "inline-flex min-h-11 sm:min-h-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-violet-50 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:opacity-50 disabled:pointer-events-none cursor-pointer";
 type SummaryTab = "facturas" | "gastos"; // same values as summaryQueries
 
 const SUMMARY_TABS: { value: SummaryTab; label: string }[] = [
@@ -299,6 +296,15 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
   const [invoiceSeries, setInvoiceSeries] = useState(() => searchParams.get("series") ?? "");
   const [invoiceNumber, setInvoiceNumber] = useState(() => searchParams.get("number") ?? "");
   const [searchText, setSearchText] = useState(search);
+  const [showFilters, setShowFilters] = useState(
+    () =>
+      !!(
+        searchParams.get("cat") ||
+        searchParams.get("month") ||
+        searchParams.get("from") ||
+        searchParams.get("to")
+      ),
+  );
 
   const { data: categories = [] } = useSWR(
     workspaceId ? ["summary-categories", workspaceId] : null,
@@ -424,19 +430,15 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
   const expenses = data?.data ?? [];
   const total = data?.count ?? 0;
   const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+  // Filters inside the panel (search and invoice reference are always visible).
+  const advancedFilterCount = [categoryId, dateFrom || dateTo].filter(Boolean).length;
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex gap-2">
-        {SUMMARY_TABS.map(({ value, label }) => (
-          <OptionButton key={value} isActive={tab === value} onClick={() => setTab(value)}>
-            {label}
-          </OptionButton>
-        ))}
-      </div>
-      <div className="flex flex-col gap-4 rounded-xl border border-gray-200 p-3 sm:p-4">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="w-full sm:max-w-xs">
+    <div className="flex flex-col gap-7">
+      {/* 1 · Context: which project, plus quiet export tools. */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="w-full sm:max-w-xs">
+          <Field label="Proyecto">
             <select
               value={workspaceId}
               onChange={(e) => handleWorkspaceChange(e.target.value)}
@@ -448,88 +450,149 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
                 </option>
               ))}
             </select>
-          </div>
-          <div className="grid grid-cols-2 gap-2 sm:flex">
-            <button
-              onClick={() =>
-                exportCsv(
-                  workspaceId,
-                  search,
-                  dateFrom,
-                  dateTo,
-                  tab,
-                  categoryId,
-                  invoiceSeries,
-                  invoiceNumber,
-                )
-              }
-              disabled={!workspaceId}
-              className={`${PRIMARY_BUTTON_CLASS} justify-center`}
-            >
-              <Icon icon="solar:download-linear" fontSize={ICON_SIZE} />
-              Exportar CSV
-            </button>
-            <button
-              onClick={() =>
-                exportPdf(
-                  workspaceId,
-                  workspaces.find((w) => w.id === workspaceId)?.name ?? "",
-                  search,
-                  dateFrom,
-                  dateTo,
-                  tab,
-                  categoryId,
-                  categories.find((c) => c.id === categoryId)?.name ?? "",
-                  invoiceSeries,
-                  invoiceNumber,
-                )
-              }
-              disabled={!workspaceId}
-              className={`${SECONDARY_BUTTON_CLASS} justify-center`}
-            >
-              <Icon icon="hugeicons:pdf-02" fontSize={ICON_SIZE} />
-              Descargar PDF
-            </button>
-          </div>
+          </Field>
         </div>
-        <div className="flex gap-2 items-center">
+        <div className="flex flex-wrap items-center gap-1 sm:justify-end">
+          <button
+            type="button"
+            onClick={() =>
+              exportCsv(
+                workspaceId,
+                search,
+                dateFrom,
+                dateTo,
+                tab,
+                categoryId,
+                invoiceSeries,
+                invoiceNumber,
+              )
+            }
+            disabled={!workspaceId}
+            className={TOOL_BUTTON_CLASS}
+          >
+            <Icon icon="solar:download-linear" fontSize={15} aria-hidden />
+            Exportar CSV
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              exportPdf(
+                workspaceId,
+                workspaces.find((w) => w.id === workspaceId)?.name ?? "",
+                search,
+                dateFrom,
+                dateTo,
+                tab,
+                categoryId,
+                categories.find((c) => c.id === categoryId)?.name ?? "",
+                invoiceSeries,
+                invoiceNumber,
+              )
+            }
+            disabled={!workspaceId}
+            className={TOOL_BUTTON_CLASS}
+          >
+            <Icon icon="hugeicons:pdf-02" fontSize={15} aria-hidden />
+            Descargar PDF
+          </button>
+        </div>
+      </div>
+
+      {/* 2 · What you're looking at. */}
+      <div className="flex gap-2">
+        {SUMMARY_TABS.map(({ value, label }) => (
+          <OptionButton key={value} isActive={tab === value} onClick={() => setTab(value)}>
+            {label}
+          </OptionButton>
+        ))}
+      </div>
+
+      {/* 3 · Finding a record: search (+ invoice reference on the invoices tab). */}
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
           <SearchInput
             value={searchText}
             onChange={handleSearchChange}
-            placeholder="Buscar por factura, proveedor o notas…"
-            className="flex-1"
+            placeholder={
+              tab === "facturas"
+                ? "Buscar por factura, proveedor o notas…"
+                : "Buscar por proveedor o notas…"
+            }
+            className="col-span-2 sm:flex-1"
           />
-          {hasFilters && <ClearFiltersButton onClick={clearFilters} />}
+
+          <input
+            type="text"
+            aria-label="Serie de factura"
+            placeholder="Serie"
+            value={invoiceSeries}
+            onChange={(e) => {
+              setInvoiceSeries(e.target.value);
+              setPage(0);
+            }}
+            className={`${INPUT_CLASS} sm:w-28`}
+          />
+          <input
+            type="text"
+            aria-label="Número de factura"
+            placeholder="Número"
+            value={invoiceNumber}
+            onChange={(e) => {
+              setInvoiceNumber(e.target.value);
+              setPage(0);
+            }}
+            className={`${INPUT_CLASS} sm:w-36`}
+          />
+
+          <button
+            type="button"
+            onClick={() => setShowFilters((v) => !v)}
+            aria-expanded={showFilters}
+            aria-controls="summary-filters"
+            className={`${SECONDARY_BUTTON_CLASS} justify-center min-h-11 sm:min-h-0 ${
+              showFilters || advancedFilterCount ? "border-violet-300 text-violet-700" : ""
+            }`}
+          >
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <line x1="4" y1="6" x2="20" y2="6" />
+              <line x1="7" y1="12" x2="17" y2="12" />
+              <line x1="10" y1="18" x2="14" y2="18" />
+            </svg>
+            Filtros
+            {advancedFilterCount > 0 && (
+              <span className="rounded-full bg-violet-600 px-1.5 text-xs font-semibold text-white tabular-nums">
+                {advancedFilterCount}
+              </span>
+            )}
+          </button>
+          {hasFilters && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="justify-self-start text-sm font-medium text-gray-600 underline-offset-2 hover:text-violet-700 hover:underline min-h-11 sm:min-h-0 px-1"
+            >
+              Limpiar todo
+            </button>
+          )}
         </div>
-        <div className="border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
-          <p className="block text-[11px] font-medium text-gray-400 mb-1">Factura</p>
-          <div className="grid grid-cols-2 gap-2">
-            <input
-              type="text"
-              placeholder="Serie"
-              value={invoiceSeries}
-              onChange={(e) => {
-                setInvoiceSeries(e.target.value);
-                setPage(0);
-              }}
-              className={INPUT_CLASS}
-            />
-            <input
-              type="text"
-              placeholder="Número"
-              value={invoiceNumber}
-              onChange={(e) => {
-                setInvoiceNumber(e.target.value);
-                setPage(0);
-              }}
-              className={INPUT_CLASS}
-            />
-          </div>
-        </div>
-        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-          <div className="flex gap-2 items-end border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
-            <div className="flex-1">
-              <p className="block text-[11px] font-medium text-gray-400 mb-1">Categoría</p>
+
+        {/* 4 · The rest, only when asked for: one panel, visible labels. */}
+        {showFilters && (
+          <div
+            id="summary-filters"
+            className="grid grid-cols-1 gap-4 rounded-xl border border-gray-200 bg-gray-50/70 p-4 sm:grid-cols-2 lg:grid-cols-4"
+          >
+            <Field label="Categoría">
               <CategoryFilter
                 categories={categories}
                 value={categoryId}
@@ -538,70 +601,68 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
                   setPage(0);
                 }}
               />
-            </div>
+            </Field>
+            <Field label="Mes de emisión">
+              <input
+                type="month"
+                value={month}
+                onChange={(e) => handleMonthChange(e.target.value)}
+                className={INPUT_CLASS}
+              />
+            </Field>
+            <Field label="Emitida desde">
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => {
+                  setDateFrom(e.target.value);
+                  setMonth("");
+                  setPage(0);
+                }}
+                className={INPUT_CLASS}
+              />
+            </Field>
+            <Field label="Emitida hasta">
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => {
+                  setDateTo(e.target.value);
+                  setMonth("");
+                  setPage(0);
+                }}
+                className={INPUT_CLASS}
+              />
+            </Field>
           </div>
-          <div className="border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50">
-            <p className="block text-[11px] font-medium text-gray-400 mb-1">Emisión</p>
-            <div className="flex flex-wrap sm:flex-nowrap gap-2">
-              <InputWithTooltip label="Mes de emisión" className="w-full sm:w-auto min-w-0">
-                <input
-                  type="month"
-                  value={month}
-                  onChange={(e) => handleMonthChange(e.target.value)}
-                  className={INPUT_CLASS}
-                />
-              </InputWithTooltip>
-              <InputWithTooltip label="Emisión desde" className="flex-1 min-w-0">
-                <input
-                  type="date"
-                  value={dateFrom}
-                  onChange={(e) => {
-                    setDateFrom(e.target.value);
-                    setMonth("");
-                    setPage(0);
-                  }}
-                  className={INPUT_CLASS}
-                />
-              </InputWithTooltip>
-              <InputWithTooltip label="Emisión hasta" className="flex-1 min-w-0">
-                <input
-                  type="date"
-                  value={dateTo}
-                  onChange={(e) => {
-                    setDateTo(e.target.value);
-                    setMonth("");
-                    setPage(0);
-                  }}
-                  className={INPUT_CLASS}
-                />
-              </InputWithTooltip>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
-      <div className="flex justify-between items-center font-semibold">
-        <span>
+
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-sm text-gray-600">
           {total} {total === 1 ? "registro" : "registros"}
         </span>
-        <div className="flex text-sm items-center gap-2">
+        <div className="flex items-center gap-2 text-sm">
           <button
+            type="button"
             disabled={page === 0}
             onClick={() => setPage((p) => p - 1)}
             aria-label="Página anterior"
-            className="px-3 py-1 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:pointer-events-none text-white rounded-full cursor-pointer"
+            className="flex h-11 w-11 sm:h-9 sm:w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
           >
-            <Icon icon="solar:alt-arrow-left-linear" fontSize={ICON_SIZE} />
+            <Icon icon="solar:alt-arrow-left-linear" fontSize={ICON_SIZE} aria-hidden />
           </button>
-          <span className="uppercase">
+          <span className="text-gray-600 tabular-nums">
             Página {page + 1} de {totalPages}
           </span>
           <button
+            type="button"
             disabled={(page + 1) * PAGE_SIZE >= total}
             onClick={() => setPage((p) => p + 1)}
             aria-label="Página siguiente"
-            className="px-3 py-1 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:pointer-events-none text-white rounded-full cursor-pointer"
+            className="flex h-11 w-11 sm:h-9 sm:w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
           >
-            <Icon icon="solar:alt-arrow-right-linear" fontSize={ICON_SIZE} />
+            <Icon icon="solar:alt-arrow-right-linear" fontSize={ICON_SIZE} aria-hidden />
           </button>
         </div>
       </div>

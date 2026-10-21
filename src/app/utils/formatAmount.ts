@@ -1,6 +1,6 @@
 const LOCALE_BY_CURRENCY: Record<string, string> = {
   PEN: "es-PE",
-  USD: "en-US",
+  USD: "es-PE", // "USD 40.00" instead of a bare "$", unambiguous next to soles
   EUR: "es-ES",
   MXN: "es-MX",
   COP: "es-CO",

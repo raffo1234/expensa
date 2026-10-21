@@ -1,12 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import FormSection from "@/components/FormSection";
 import SearchInput from "@/components/SearchInput";
 import ClearFiltersButton from "@/components/ClearFiltersButton";
-import InputWithTooltip from "@/components/InputWithTooltip";
+import FiltersButton from "@/components/FiltersButton";
+import Field from "@/components/Field";
+import ListPage from "@/components/ListPage";
+import PageNavigator from "@/components/PageNavigator";
+import DataTable, { DataTableRow, RowLink, Td, type DataTableColumn } from "@/components/DataTable";
+import { usePageSize } from "@/hooks/usePageSize";
 import type { MaterialReportRow } from "@/actions/materials";
 import { formatAmount, formatTotals, totalsByCurrency } from "@/utils/formatAmount";
 import { formatSafeDate } from "@/lib/formatSafeDate";
@@ -18,8 +22,22 @@ type Option = [id: string, name: string];
 
 const TAX_STATUS_OPTIONS = Object.entries(TAX_STATUS_LABELS) as Option[];
 
-const BOX_CLASS = "min-w-0 border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50/50";
-const LABEL_CLASS = "block text-[11px] font-medium text-gray-400 mb-1";
+const SUMMARY_COLUMNS: DataTableColumn[] = [
+  { label: "Material" },
+  { label: "Cantidad", align: "right" },
+  { label: "Subtotal", align: "right" },
+];
+
+const DETAIL_COLUMNS: DataTableColumn[] = [
+  { label: "Material" },
+  { label: "Marca" },
+  { label: "Nivel" },
+  { label: "Proveedor" },
+  { label: "Fecha de pago" },
+  { label: "Cantidad", align: "right" },
+  { label: "P. unit.", align: "right" },
+  { label: "Subtotal", align: "right" },
+];
 
 // Level is a "where am I working" choice, so it survives reloads and is not
 // reset by "clear filters".
@@ -53,8 +71,7 @@ function FilterSelect({
   options: Option[];
 }) {
   return (
-    <div className={BOX_CLASS}>
-      <p className={LABEL_CLASS}>{label}</p>
+    <Field label={label}>
       <select value={value} onChange={(e) => onChange(e.target.value)} className={SELECT_CLASS}>
         <option value="">{allLabel}</option>
         {options.map(([id, name]) => (
@@ -63,7 +80,21 @@ function FilterSelect({
           </option>
         ))}
       </select>
-    </div>
+    </Field>
+  );
+}
+
+// Footer row with the filtered total, aligned to the last column.
+function TotalRow({ colSpan, total }: { colSpan: number; total: string }) {
+  return (
+    <tr className="bg-navy-50">
+      <Td colSpan={colSpan} className="font-book text-navy-900">
+        Total
+      </Td>
+      <Td align="right" className="font-book text-navy-900 tabular-nums">
+        {total}
+      </Td>
+    </tr>
   );
 }
 
@@ -89,6 +120,23 @@ export default function MaterialsClient({
   const [dateFrom, setDateFrom] = useState(() => searchParams.get("from") ?? "");
   const [dateTo, setDateTo] = useState(() => searchParams.get("to") ?? "");
   const [levelHydrated, setLevelHydrated] = useState(false);
+  // Open the panel on load when the URL already carries panel filters.
+  const [showFilters, setShowFilters] = useState(() =>
+    ["material", "brand", "provider", "tax", "level", "month", "from", "to"].some((k) =>
+      searchParams.get(k),
+    ),
+  );
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSizePref] = usePageSize();
+  const setPageSize = (size: number) => {
+    setPageSizePref(size);
+    setPage(1);
+  };
+
+  // A new filter starts back on the first page.
+  useEffect(() => {
+    setPage(1);
+  }, [search, materialId, brandId, providerId, taxStatus, levelId, dateFrom, dateTo]);
 
   // Restore the saved level after mount (localStorage is not available on the server).
   useEffect(() => {
@@ -233,201 +281,242 @@ export default function MaterialsClient({
     setDateTo("");
   };
 
+  // Filters inside the panel (search is always visible, so it isn't counted).
+  const advancedFilterCount = [
+    materialId,
+    brandId,
+    providerId,
+    taxStatus,
+    levelId,
+    month || dateFrom || dateTo,
+  ].filter(Boolean).length;
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pageStart = (currentPage - 1) * pageSize;
+  const pageRows = filtered.slice(pageStart, pageStart + pageSize);
+  const filteredTotal = formatTotals(filteredTotals);
+
+  // Largest-impact currency first; soles lead when present (same as expenses).
+  const primaryTotals = [...filteredTotals]
+    .filter((t) => t.amount !== 0)
+    .sort((a, b) => (a.currency === "PEN" ? -1 : b.currency === "PEN" ? 1 : b.amount - a.amount));
+
+  const emptyMessage =
+    rows.length === 0
+      ? "Sin materiales aún. Agrega materiales a un gasto para verlos aquí."
+      : "No se encontraron materiales para ese filtro.";
+
+  // Always shown (disabled on a single page) so the table never jumps.
+  const pager = (
+    <PageNavigator
+      page={currentPage}
+      totalPages={totalPages}
+      onPrev={() => setPage(Math.max(1, currentPage - 1))}
+      onNext={() => setPage(Math.min(totalPages, currentPage + 1))}
+      pageSize={pageSize}
+      onPageSizeChange={setPageSize}
+    />
+  );
+
   return (
     <FormSection title="Materiales" backUrl={`/admin/workspaces/${workspaceSlug}/expenses`}>
-      <p className="text-sm text-gray-600 mb-6">
-        Todo lo comprado, agrupado por material y en detalle por gasto.
-      </p>
-
-      {rows.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 text-center">
-          <p className="text-sm font-semibold text-gray-700 mb-1">Sin materiales aún</p>
-          <p className="text-xs text-gray-400">Agrega materiales a un gasto para verlos aquí.</p>
-        </div>
-      ) : (
-        <>
-          {/* Filters */}
-          <div className="flex flex-col gap-3 rounded-xl border border-gray-200 p-3 sm:p-4 mb-6">
-            <div className="flex gap-2 items-center">
-              <SearchInput
-                value={search}
-                onChange={setSearch}
-                placeholder="Buscar material, marca, proveedor o factura..."
-                className="flex-1"
-              />
-              <ClearFiltersButton onClick={clearFilters} disabled={!hasFilters} />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              <FilterSelect
-                label="Material"
-                value={materialId}
-                onChange={setMaterialId}
-                allLabel="Todos los materiales"
-                options={materialOptions}
-              />
-              <FilterSelect
-                label="Marca"
-                value={brandId}
-                onChange={setBrandId}
-                allLabel="Todas las marcas"
-                options={brandOptions}
-              />
-              <FilterSelect
-                label="Proveedor"
-                value={providerId}
-                onChange={setProviderId}
-                allLabel="Todos los proveedores"
-                options={providerOptions}
-              />
-              <FilterSelect
-                label="Nivel"
-                value={levelId}
-                onChange={setLevelId}
-                allLabel="Todos los niveles"
-                options={levelOptions}
-              />
-              <FilterSelect
-                label="Tipo de compra"
-                value={taxStatus}
-                onChange={setTaxStatus}
-                allLabel="Todas"
-                options={TAX_STATUS_OPTIONS}
-              />
-            </div>
-
-            <div className={BOX_CLASS}>
-              <p className={LABEL_CLASS}>Fecha de pago</p>
-              <div className="flex flex-wrap sm:flex-nowrap gap-2">
-                <InputWithTooltip label="Mes de pago" className="w-full sm:w-auto min-w-0">
-                  <input
-                    type="month"
-                    value={month}
-                    onChange={(e) => handleMonthChange(e.target.value)}
-                    className={INPUT_CLASS}
-                  />
-                </InputWithTooltip>
-                <InputWithTooltip label="Pagado desde" className="flex-1 min-w-0">
-                  <input
-                    type="date"
-                    value={dateFrom}
-                    onChange={(e) => {
-                      setDateFrom(e.target.value);
-                      setMonth("");
-                    }}
-                    className={INPUT_CLASS}
-                  />
-                </InputWithTooltip>
-                <InputWithTooltip label="Pagado hasta" className="flex-1 min-w-0">
-                  <input
-                    type="date"
-                    value={dateTo}
-                    onChange={(e) => {
-                      setDateTo(e.target.value);
-                      setMonth("");
-                    }}
-                    className={INPUT_CLASS}
-                  />
-                </InputWithTooltip>
-              </div>
-            </div>
-          </div>
-
-          {filtered.length === 0 ? (
-            <div className="text-center py-16 text-sm text-gray-400">
-              No se encontraron materiales para ese filtro.
-            </div>
-          ) : (
-            <>
-              {/* Totals summary */}
-              <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden mb-6">
-                <div className="px-4 sm:px-5 py-3 border-b border-gray-100 bg-gray-50/60">
-                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                    Resumen por material
+      <ListPage
+        pager={pager}
+        controls={
+          <>
+            {/* 1 · How much was bought. */}
+            <div>
+              <p className="text-sm text-gray-600">
+                {hasFilters ? "Total con los filtros aplicados" : "Total en materiales"}
+              </p>
+              <p className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1 tabular-nums">
+                {primaryTotals.length === 0 ? (
+                  <span className="text-3xl font-semibold tracking-tight text-gray-900">
+                    {formatTotals([])}
                   </span>
-                </div>
-                {totals.map((t, i) => (
-                  <div
-                    key={`${t.material}-${t.unit}-${i}`}
-                    className={`flex items-center justify-between gap-4 px-4 sm:px-5 py-3 ${
-                      i < totals.length - 1 ? "border-b border-gray-100" : ""
-                    }`}
-                  >
-                    <span className="text-sm font-semibold text-gray-800 min-w-0">
-                      {t.material}
+                ) : (
+                  primaryTotals.map((t, i) => (
+                    <span
+                      key={t.currency}
+                      className={
+                        i === 0
+                          ? "text-3xl font-semibold tracking-tight text-gray-900"
+                          : "text-lg font-medium text-gray-700"
+                      }
+                    >
+                      {formatTotals([t])}
                     </span>
-                    <div className="flex items-center gap-4 flex-shrink-0">
-                      <span className="text-sm text-gray-500">
-                        {t.quantity} {t.unit}
-                      </span>
-                      <span className="text-sm font-semibold text-gray-700 min-w-24 text-right tabular-nums">
-                        {t.subtotals.some((x) => x.amount > 0) ? formatTotals(t.subtotals) : "—"}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-                <div className="flex items-center justify-between gap-4 px-4 sm:px-5 py-3 border-t border-gray-200 bg-gray-50/60">
-                  <span className="text-sm font-bold text-gray-800">Total</span>
-                  <span className="text-sm font-bold text-gray-900">
-                    {formatTotals(filteredTotals)}
-                  </span>
+                  ))
+                )}
+              </p>
+              <p className="mt-1 text-sm text-gray-600">
+                {filtered.length} {filtered.length === 1 ? "registro" : "registros"}
+              </p>
+            </div>
+
+            {/* 2 · Search, plus the rest of the filters on demand. */}
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+                <SearchInput
+                  value={search}
+                  onChange={setSearch}
+                  placeholder="Buscar material, marca, proveedor o factura…"
+                  className="col-span-2 sm:flex-1"
+                />
+                <div className="col-span-2 flex items-center gap-2 sm:contents">
+                  <FiltersButton
+                    open={showFilters}
+                    count={advancedFilterCount}
+                    controls="material-filters"
+                    onClick={() => setShowFilters((v) => !v)}
+                  />
+                  <ClearFiltersButton onClick={clearFilters} disabled={!hasFilters} />
                 </div>
               </div>
 
-              {/* Detail list */}
-              <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-                <div className="px-4 sm:px-5 py-3 border-b border-gray-100 bg-gray-50/60">
-                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                    Detalle ({filtered.length})
-                  </span>
+              {showFilters && (
+                <div
+                  id="material-filters"
+                  className="grid grid-cols-1 gap-4 rounded-xl border border-gray-200 bg-gray-50/70 p-4 sm:grid-cols-2 lg:grid-cols-4"
+                >
+                  <FilterSelect
+                    label="Material"
+                    value={materialId}
+                    onChange={setMaterialId}
+                    allLabel="Todos los materiales"
+                    options={materialOptions}
+                  />
+                  <FilterSelect
+                    label="Marca"
+                    value={brandId}
+                    onChange={setBrandId}
+                    allLabel="Todas las marcas"
+                    options={brandOptions}
+                  />
+                  <FilterSelect
+                    label="Proveedor"
+                    value={providerId}
+                    onChange={setProviderId}
+                    allLabel="Todos los proveedores"
+                    options={providerOptions}
+                  />
+                  <FilterSelect
+                    label="Nivel"
+                    value={levelId}
+                    onChange={setLevelId}
+                    allLabel="Todos los niveles"
+                    options={levelOptions}
+                  />
+                  <FilterSelect
+                    label="Tipo de compra"
+                    value={taxStatus}
+                    onChange={setTaxStatus}
+                    allLabel="Todas"
+                    options={TAX_STATUS_OPTIONS}
+                  />
+                  <Field label="Mes de pago">
+                    <input
+                      type="month"
+                      value={month}
+                      onChange={(e) => handleMonthChange(e.target.value)}
+                      className={INPUT_CLASS}
+                    />
+                  </Field>
+                  <Field label="Pagado desde">
+                    <input
+                      type="date"
+                      value={dateFrom}
+                      onChange={(e) => {
+                        setDateFrom(e.target.value);
+                        setMonth("");
+                      }}
+                      className={INPUT_CLASS}
+                    />
+                  </Field>
+                  <Field label="Pagado hasta">
+                    <input
+                      type="date"
+                      value={dateTo}
+                      onChange={(e) => {
+                        setDateTo(e.target.value);
+                        setMonth("");
+                      }}
+                      className={INPUT_CLASS}
+                    />
+                  </Field>
                 </div>
-                {filtered.map((r, i) => (
-                  <Link
-                    key={r.id}
-                    href={`/admin/workspaces/${workspaceSlug}/expenses/${r.expense_id}`}
-                    className={`flex items-center justify-between gap-4 px-4 sm:px-5 py-3.5 hover:bg-gray-50/60 transition-colors ${
-                      i < filtered.length - 1 ? "border-b border-gray-100" : ""
-                    }`}
-                  >
-                    <div className="min-w-0">
-                      <p className="text-[10px] font-semibold text-violet-600 uppercase tracking-wide mb-0.5">
-                        {r.level?.name ?? "Sin nivel"}
-                      </p>
-                      <p className="text-sm font-medium text-gray-800 truncate">
-                        {r.material.name}
-                        {r.brand && (
-                          <span className="text-gray-400 font-normal"> · {r.brand.name}</span>
-                        )}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-0.5 truncate">
-                        {formatSafeDate(r.paid_at, "d MMM yyyy")} · {r.quantity} {r.unit.name}
-                        {r.provider && <> · {r.provider.name}</>}
-                      </p>
-                    </div>
-                    <div className="flex-shrink-0 text-right">
-                      <TaxBadge status={r.tax_status} />
-                      {r.unit_price != null && (
-                        <p className="text-xs text-gray-400">
-                          P. unit. {formatAmount(r.unit_price, r.currency)}
-                        </p>
-                      )}
-                      <p className="text-sm font-semibold text-gray-700">
-                        {r.subtotal != null ? formatAmount(r.subtotal, r.currency) : "—"}
-                      </p>
-                    </div>
-                  </Link>
-                ))}
-                <div className="flex items-center justify-between gap-4 px-4 sm:px-5 py-3 border-t border-gray-200 bg-gray-50/60">
-                  <span className="text-sm font-bold text-gray-800">Total</span>
-                  <span className="text-sm font-bold text-gray-900">
-                    {formatTotals(filteredTotals)}
+              )}
+            </div>
+
+            {/* 3 · Totals per material for the current filters. */}
+            <DataTable
+              columns={SUMMARY_COLUMNS}
+              numbered
+              isEmpty={totals.length === 0}
+              emptyMessage={emptyMessage}
+            >
+              {totals.map((t, i) => (
+                <DataTableRow key={`${t.material}-${t.unit}-${i}`} number={i + 1}>
+                  <Td className="font-book text-navy-900">{t.material}</Td>
+                  <Td align="right" className="tabular-nums">
+                    {t.quantity} {t.unit}
+                  </Td>
+                  <Td align="right" className="tabular-nums">
+                    {t.subtotals.some((x) => x.amount > 0) ? formatTotals(t.subtotals) : "—"}
+                  </Td>
+                </DataTableRow>
+              ))}
+              {totals.length > 0 && (
+                <TotalRow colSpan={SUMMARY_COLUMNS.length} total={filteredTotal} />
+              )}
+            </DataTable>
+          </>
+        }
+      >
+        {/* 4 · Every purchase, linked to its expense. */}
+        <DataTable
+          columns={DETAIL_COLUMNS}
+          numbered
+          isEmpty={filtered.length === 0}
+          emptyMessage={emptyMessage}
+        >
+          {pageRows.map((r, i) => {
+            const href = `/admin/workspaces/${workspaceSlug}/expenses/${r.expense_id}`;
+            return (
+              <DataTableRow key={r.id} href={href} number={pageStart + i + 1}>
+                <Td className="font-book text-navy-900">
+                  <RowLink href={href}>
+                    {r.material.name}
+                    <span className="sr-only"> — ver gasto</span>
+                  </RowLink>
+                </Td>
+                <Td>{r.brand?.name ?? "—"}</Td>
+                <Td>{r.level?.name ?? "Sin nivel"}</Td>
+                <Td>
+                  <span className="block max-w-56 truncate">{r.provider?.name ?? "—"}</span>
+                </Td>
+                <Td>{formatSafeDate(r.paid_at, "d MMM yyyy")}</Td>
+                <Td align="right" className="tabular-nums">
+                  {r.quantity} {r.unit.name}
+                </Td>
+                <Td align="right" className="tabular-nums">
+                  {r.unit_price != null ? formatAmount(r.unit_price, r.currency) : "—"}
+                </Td>
+                <Td align="right" className="font-book text-navy-900 tabular-nums">
+                  <span className="inline-flex items-center justify-end gap-2">
+                    <TaxBadge status={r.tax_status} />
+                    {r.subtotal != null ? formatAmount(r.subtotal, r.currency) : "—"}
                   </span>
-                </div>
-              </div>
-            </>
+                </Td>
+              </DataTableRow>
+            );
+          })}
+          {filtered.length > 0 && (
+            <TotalRow colSpan={DETAIL_COLUMNS.length} total={filteredTotal} />
           )}
-        </>
-      )}
+        </DataTable>
+      </ListPage>
     </FormSection>
   );
 }
@@ -437,7 +526,7 @@ export default function MaterialsClient({
 function TaxBadge({ status }: { status: TaxStatus | null }) {
   if (status !== "sin_igv" && status !== "sin_comprobante") return null;
   return (
-    <span className="mb-0.5 inline-block rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
+    <span className="inline-block rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
       {TAX_STATUS_LABELS[status]}
     </span>
   );

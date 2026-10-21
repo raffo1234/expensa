@@ -7,6 +7,7 @@ import { Permissions } from "@/types/propertyState";
 import { getMaterialsReport } from "@/actions/materials";
 import NoAccess from "@/components/NoAccess";
 import MaterialsClient from "@/components/MaterialsClient";
+import FormSection from "@/components/FormSection";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -43,18 +44,8 @@ async function MaterialsSection({ slug }: { slug: string }) {
 
 function MaterialsFallback() {
   return (
-    <div className="p-6 bg-white border border-violet-200 rounded-xl animate-pulse">
-      <div className="h-6 w-40 bg-gray-200 rounded mb-8" />
-      <div className="h-4 w-72 bg-gray-100 rounded mb-6" />
-      <div className="h-44 rounded-xl border border-gray-200 bg-gray-50 mb-6" />
-      <div className="rounded-xl border border-gray-200 overflow-hidden">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="flex justify-between px-5 py-4 border-b border-gray-100">
-            <div className="h-3 w-40 bg-gray-100 rounded" />
-            <div className="h-3 w-16 bg-gray-100 rounded" />
-          </div>
-        ))}
-      </div>
-    </div>
+    <FormSection title="Materiales">
+      <div className="h-96 animate-pulse rounded-xl bg-gray-100" />
+    </FormSection>
   );
 }

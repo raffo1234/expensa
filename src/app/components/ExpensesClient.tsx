@@ -460,7 +460,7 @@ export default function ExpensesClient({
 
   return (
     <>
-      <div className="mt-8 mb-8 space-y-8">
+      <div className="my-10 space-y-8">
         {/* 1 · What matters most: how much was spent, and the one primary action. */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -492,7 +492,7 @@ export default function ExpensesClient({
             </p>
           </div>
 
-          <div className="flex flex-col gap-4 sm:items-end">
+          <div className="flex flex-col gap-6 sm:items-end">
             <Link
               href={`/admin/workspaces/${slug}/upload-expense`}
               className={`${PRIMARY_BUTTON_CLASS} justify-center min-h-11`}

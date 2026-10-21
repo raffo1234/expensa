@@ -34,8 +34,10 @@ const SUMMARY_TABS: { value: SummaryTab; label: string }[] = [
   { value: "gastos", label: "Gastos" },
 ];
 
-const SUMMARY_COLUMNS = [
-  { label: "Factura" },
+// The first column identifies the record: the invoice reference on the
+// invoices tab; on the expenses tab (no invoice by definition) its notes.
+const summaryColumns = (tab: SummaryTab) => [
+  { label: tab === "facturas" ? "Factura" : "Descripción" },
   { label: "Proveedor" },
   { label: "Categoría" },
   { label: "Método de pago" },
@@ -661,7 +663,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
       }
     >
       <DataTable
-        columns={SUMMARY_COLUMNS}
+        columns={summaryColumns(tab)}
         isLoading={isLoading}
         isEmpty={expenses.length === 0}
         emptyMessage="No hay gastos con estos filtros"
@@ -674,13 +676,28 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
 
           return (
             <DataTableRow key={expense.id}>
-              <td className="font-mono text-sm whitespace-nowrap">
-                <Link href={href} target="_blank" className="block p-6">
-                  {expense.invoice_series && expense.invoice_number
-                    ? `${expense.invoice_series}-${expense.invoice_number}`
-                    : "—"}
-                </Link>
-              </td>
+              {tab === "facturas" ? (
+                <td className="font-mono text-sm whitespace-nowrap">
+                  <Link href={href} target="_blank" className="block p-6">
+                    {expense.invoice_series && expense.invoice_number
+                      ? `${expense.invoice_series}-${expense.invoice_number}`
+                      : "—"}
+                  </Link>
+                </td>
+              ) : (
+                <td className="text-sm">
+                  <Link
+                    href={href}
+                    target="_blank"
+                    title={expense.notes ?? undefined}
+                    className="block p-6 max-w-xs"
+                  >
+                    <span className="line-clamp-2 text-gray-800">
+                      {expense.notes?.trim() || "—"}
+                    </span>
+                  </Link>
+                </td>
+              )}
               <td>
                 <Link href={href} target="_blank" className="block p-6">
                   <div>{prov?.name ?? "—"}</div>

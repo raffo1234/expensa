@@ -380,7 +380,7 @@ export default function ExpensesClient({
   // The server already rendered the default view; skip refetching it on mount.
   const [hasServerData] = useState(isDefaultView);
 
-  const { data, error, mutate } = useSWR(
+  const { data, error, mutate, isLoading } = useSWR(
     ["expenses", workspace.id, page, pageSize, debouncedSearch, filters],
     () => fetchExpenses(workspace.id, page, pageSize, debouncedSearch, filters),
     {
@@ -510,6 +510,8 @@ export default function ExpensesClient({
       onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
       pageSize={pageSize}
       onPageSizeChange={setPageSize}
+      // Also while the search text waits for its debounce.
+      loading={isLoading || search !== debouncedSearch}
     />
   );
 

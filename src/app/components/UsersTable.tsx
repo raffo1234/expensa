@@ -30,6 +30,7 @@ export default function UsersTable() {
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / PAGE_SIZE)), [total]);
 
   const [searchInput, setSearchInput] = useState("");
+
   const applySearch = useDebouncedCallback((value: string) => {
     setPage(0);
     setSearch(value);
@@ -111,7 +112,7 @@ export default function UsersTable() {
         </div>
       ) : (
         <p className="mb-4 text-sm text-gray-600 tabular-nums">
-          {isLoading ? "Cargando…" : `${total} ${total === 1 ? "usuario" : "usuarios"}`}
+          {isLoading && !data ? "Cargando…" : `${total} ${total === 1 ? "usuario" : "usuarios"}`}
         </p>
       )}
       <PageNavigator
@@ -119,13 +120,15 @@ export default function UsersTable() {
         totalPages={totalPages}
         onPrev={() => setPage((p) => Math.max(0, p - 1))}
         onNext={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+        // Also while the search text waits for its debounce.
+        loading={isLoading || searchInput !== search}
         className="mb-4"
       />
       <div
         className="grid gap-3"
         style={{ gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))" }}
       >
-        {isLoading
+        {isLoading && !data
           ? SKELETON_ITEMS.map((i) => <UserCardSkeleton key={i} />)
           : data?.data?.map((user) => <UserCard mutate={mutate} key={user.id} user={user} />)}
       </div>

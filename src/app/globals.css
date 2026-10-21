@@ -1,6 +1,21 @@
 @import "tailwindcss";
 
 @theme {
+  /* Loading dots: each one rises 2px and brightens, staggered by delay. */
+  --animate-dot-bounce: dot-bounce 0.9s ease-in-out infinite;
+  @keyframes dot-bounce {
+    0%,
+    60%,
+    100% {
+      transform: translateY(0);
+      opacity: 0.45;
+    }
+    30% {
+      transform: translateY(-2px);
+      opacity: 1;
+    }
+  }
+
   --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-title), ui-sans-serif, system-ui, sans-serif;
 

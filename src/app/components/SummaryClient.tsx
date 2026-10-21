@@ -59,31 +59,22 @@ type SummaryExpense = {
   expense_attachment?: Attachment[];
 };
 
-const fetcher = async ([
-  ,
-  workspaceId,
-  page,
-  search,
-  dateFrom,
-  dateTo,
-  tab,
-  categoryId,
-  invoiceSeries,
-  invoiceNumber,
-  pageSize,
-]: [
-  string,
-  string,
-  number,
-  string,
-  string,
-  string,
-  SummaryTab,
-  string,
-  string,
-  string,
-  number,
-]) => {
+const fetcher = async (
+  key: [string, string, number, string, string, string, SummaryTab, string, string, string, number],
+) => {
+  const [
+    ,
+    workspaceId,
+    page,
+    search,
+    dateFrom,
+    dateTo,
+    tab,
+    categoryId,
+    invoiceSeries,
+    invoiceNumber,
+    pageSize,
+  ] = key;
   const { data, count } = await listSummaryExpenses(
     { workspaceId, search, dateFrom, dateTo, tab, categoryId, invoiceSeries, invoiceNumber },
     page,
@@ -422,22 +413,22 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
     setPage(0);
   };
 
+  const swrKey = [
+    "summary",
+    workspaceId,
+    page,
+    search,
+    dateFrom,
+    dateTo,
+    tab,
+    categoryId,
+    invoiceSeries,
+    invoiceNumber,
+    pageSize,
+  ] as const;
+
   const { data, isLoading } = useSWR(
-    workspaceId
-      ? [
-          "summary",
-          workspaceId,
-          page,
-          search,
-          dateFrom,
-          dateTo,
-          tab,
-          categoryId,
-          invoiceSeries,
-          invoiceNumber,
-          pageSize,
-        ]
-      : null,
+    workspaceId ? swrKey : null,
     fetcher,
     // Keep the current rows while the next page/filter loads, so the table never
     // swaps to a skeleton and back.
@@ -506,6 +497,8 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
       onNext={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
       pageSize={pageSize}
       onPageSizeChange={setPageSize}
+      // Also while the search text waits for its debounce.
+      loading={isLoading || searchText !== search}
     />
   );
 

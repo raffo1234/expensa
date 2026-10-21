@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { ICON_SIZE } from "@/constants";
+import LoadingSwap from "./LoadingSwap";
 import { MAX_PAGE_SIZE, MIN_PAGE_SIZE, safePageSize } from "@/lib/pageSize";
 
 // Previous/next pager with icon buttons (44px touch targets on phones),
@@ -14,6 +15,7 @@ export default function PageNavigator({
   onNext,
   pageSize,
   onPageSizeChange,
+  loading = false,
   className = "",
 }: {
   page: number;
@@ -23,6 +25,12 @@ export default function PageNavigator({
   /** Rows per page; pass with onPageSizeChange to show the selector. */
   pageSize?: number;
   onPageSizeChange?: (size: number) => void;
+  /**
+   * True while the list waits for results that aren't cached yet (a new page,
+   * filter, search or page size): the right arrow shows loading dots. Use SWR
+   * `isLoading`, not `isValidating`, so a cached page shows no dots.
+   */
+  loading?: boolean;
   className?: string;
 }) {
   const sizeId = useId();
@@ -37,26 +45,62 @@ export default function PageNavigator({
         {pageSize != null && onPageSizeChange && (
           <PageSizeInput id={sizeId} value={pageSize} onChange={onPageSizeChange} />
         )}
-        <button
-          type="button"
-          onClick={onPrev}
+        <PagerButton
+          direction="prev"
+          busy={false}
           disabled={page <= 1}
-          aria-label="Página anterior"
+          onClick={onPrev}
           className={button}
-        >
-          <Icon icon="solar:alt-arrow-left-linear" fontSize={ICON_SIZE} aria-hidden />
-        </button>
-        <button
-          type="button"
-          onClick={onNext}
+        />
+        <PagerButton
+          direction="next"
+          busy={loading}
           disabled={page >= totalPages}
-          aria-label="Página siguiente"
+          onClick={onNext}
           className={button}
-        >
-          <Icon icon="solar:alt-arrow-right-linear" fontSize={ICON_SIZE} aria-hidden />
-        </button>
+        />
       </div>
     </div>
+  );
+}
+
+/**
+ * Pager arrow; the right one turns into three loading dots while the list loads.
+ * The dots sit on top of the arrow (cross-fade), so nothing moves, and it
+ * only appears after 150ms so quick loads don't flicker.
+ */
+function PagerButton({
+  direction,
+  busy,
+  disabled,
+  onClick,
+  className,
+}: {
+  direction: "prev" | "next";
+  busy: boolean;
+  disabled: boolean;
+  onClick: () => void;
+  className: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-busy={busy}
+      aria-label={direction === "prev" ? "Página anterior" : "Página siguiente"}
+      className={className}
+    >
+      <LoadingSwap busy={busy}>
+        <Icon
+          icon={
+            direction === "prev" ? "solar:alt-arrow-left-linear" : "solar:alt-arrow-right-linear"
+          }
+          fontSize={ICON_SIZE}
+          aria-hidden
+        />
+      </LoadingSwap>
+    </button>
   );
 }
 

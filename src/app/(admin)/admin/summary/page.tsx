@@ -9,11 +9,15 @@ import FormSection from "@/components/FormSection";
 
 export default async function Page() {
   return (
-    <FormSection title="Resumen de gastos">
-      <Suspense fallback={<div className="h-96 bg-gray-100 rounded-xl animate-pulse" />}>
-        <SummarySection />
-      </Suspense>
-    </FormSection>
+    <Suspense
+      fallback={
+        <FormSection title="Resumen de gastos">
+          <div className="h-96 animate-pulse rounded-xl bg-gray-100" />
+        </FormSection>
+      }
+    >
+      <SummarySection />
+    </Suspense>
   );
 }
 

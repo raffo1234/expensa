@@ -3,6 +3,43 @@
 @theme {
   --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-title), ui-sans-serif, system-ui, sans-serif;
+
+  /* Data tables, matched to Fly.io's dashboard (values from its stylesheet). */
+  --color-navy-50: rgb(249 249 253);
+  --color-navy-100: rgb(244 243 251);
+  --color-navy-200: rgb(231 230 244);
+  --color-navy-300: rgb(212 206 234);
+  --color-navy-400: rgb(163 154 193);
+  --color-navy-500: rgb(117 107 147);
+  --color-navy-600: rgb(86 76 115);
+  --color-navy-700: rgb(66 56 95);
+  --color-navy-800: rgb(40 32 69);
+  --color-navy-900: rgb(34 24 60);
+
+  /* Fly.io's own gray/violet values (they differ from Tailwind's defaults). */
+  --color-divider: rgb(225 228 239);
+  --color-link-muted: rgb(103 107 137);
+  --color-link-hover: rgb(109 40 217);
+
+  --font-weight-book: 450;
+  --text-title: 1.0625rem;
+  --text-title--line-height: 1.5;
+  --text-cell: 0.90625rem;
+  --text-cell--line-height: 1.5;
+  --radius-card: 0.625rem;
+  /* Soft violet card shadow; the last layer draws the 1px outline. */
+  --shadow-card:
+    0 10px 15px -3px rgb(91 33 182 / 0.075), 0 4px 6px -4px rgb(91 33 182 / 0.075),
+    0 0 0 1px rgb(91 33 182 / 0.075);
+}
+
+/* Base type, as on Fly.io: light 325 weight, slightly condensed, soft navy ink. */
+@layer base {
+  html {
+    font-weight: 325;
+    font-stretch: 98.5%;
+    color: rgb(40 25 80 / 0.75);
+  }
 }
 
 @layer components {

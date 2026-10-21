@@ -9,8 +9,8 @@ import {
   SECONDARY_BUTTON_CLASS,
   INPUT_CLASS,
   SELECT_CLASS,
+  HEADER_LINK_CLASS,
 } from "@/constants";
-import { Icon } from "@iconify/react/dist/iconify.js";
 import Link from "next/link";
 import { Expense, ExpenseRow } from "@/types/ExpenseType";
 import { Workspace } from "@/types/WorkspaceType";
@@ -19,6 +19,7 @@ import { getExpenseIdsWithMaterials } from "@/actions/materials";
 import Field from "./Field";
 import PageNavigator from "./PageNavigator";
 import ListPage from "./ListPage";
+import FormSection from "./FormSection";
 import CategoryMultiFilter from "./CategoryMultiFilter";
 import ProviderFilter from "./ProviderFilter";
 import { csvEscape } from "@/utils/csv";
@@ -60,10 +61,6 @@ interface FetchResult {
 }
 
 type Filters = ExpenseFilters;
-
-// Quiet buttons for secondary tools (navigation, exports) next to the main action.
-const TOOL_BUTTON_CLASS =
-  "inline-flex min-h-11 sm:min-h-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-violet-50 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 cursor-pointer";
 
 function FilterField({ label, children }: { label: string; children: React.ReactNode }) {
   return <Field label={label}>{children}</Field>;
@@ -446,19 +443,55 @@ export default function ExpensesClient({
 
   if (error) {
     return (
-      <div
-        role="alert"
-        className="flex flex-col items-center justify-center gap-3 py-20 text-center"
-      >
-        <p className="text-sm text-red-700">
-          No se pudieron cargar los gastos. Revisa tu conexión e inténtalo de nuevo.
-        </p>
-        <button type="button" onClick={() => mutate()} className={SECONDARY_BUTTON_CLASS}>
-          Reintentar
-        </button>
-      </div>
+      <FormSection title={workspace.name} backUrl="/admin/workspaces">
+        <div
+          role="alert"
+          className="flex flex-col items-center justify-center gap-3 py-20 text-center"
+        >
+          <p className="text-sm text-red-700">
+            No se pudieron cargar los gastos. Revisa tu conexión e inténtalo de nuevo.
+          </p>
+          <button type="button" onClick={() => mutate()} className={SECONDARY_BUTTON_CLASS}>
+            Reintentar
+          </button>
+        </div>
+      </FormSection>
     );
   }
+
+  // Secondary actions live in the section header, like Fly.io's section links.
+  const headerLinks = (
+    <>
+      <Link href={`/admin/workspaces/${slug}/materials`} className={HEADER_LINK_CLASS}>
+        Materiales
+      </Link>
+      <button
+        type="button"
+        onClick={() => exportExpensesCsv(workspace.id, debouncedSearch, filters)}
+        className={HEADER_LINK_CLASS}
+      >
+        Exportar CSV
+      </button>
+      <button
+        type="button"
+        onClick={() =>
+          exportExpensesPdf(
+            workspace.id,
+            workspace.name,
+            debouncedSearch,
+            filters,
+            localCategories,
+            stages,
+            levels,
+            providers,
+          )
+        }
+        className={HEADER_LINK_CLASS}
+      >
+        Descargar PDF
+      </button>
+    </>
+  );
 
   const pager =
     totalPages > 1 ? (
@@ -471,349 +504,289 @@ export default function ExpensesClient({
     ) : null;
 
   return (
-    <ListPage
-      pager={pager}
-      controls={
-        <>
-          {/* 1 · What matters most: how much was spent, and the one primary action. */}
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-sm text-gray-600">
-                {hasActiveFilters ? "Total con los filtros aplicados" : "Total gastado"}
-              </p>
-              <p className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1 tabular-nums">
-                {primaryTotals.length === 0 ? (
-                  <span className="text-3xl font-semibold tracking-tight text-gray-900">
-                    {formatTotals([], displayCurrency)}
-                  </span>
-                ) : (
-                  primaryTotals.map((t, i) => (
-                    <span
-                      key={t.currency}
-                      className={
-                        i === 0
-                          ? "text-3xl font-semibold tracking-tight text-gray-900"
-                          : "text-lg font-medium text-gray-700"
-                      }
-                    >
-                      {formatTotals([t])}
+    <FormSection title={workspace.name} backUrl="/admin/workspaces" actions={headerLinks}>
+      <ListPage
+        pager={pager}
+        controls={
+          <>
+            {/* 1 · What matters most: how much was spent, and the one primary action. */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-600">
+                  {hasActiveFilters ? "Total con los filtros aplicados" : "Total gastado"}
+                </p>
+                <p className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1 tabular-nums">
+                  {primaryTotals.length === 0 ? (
+                    <span className="text-3xl font-semibold tracking-tight text-gray-900">
+                      {formatTotals([], displayCurrency)}
                     </span>
-                  ))
-                )}
-              </p>
-              <p className="mt-1 text-sm text-gray-600">
-                {totalCount} {totalCount === 1 ? "gasto" : "gastos"}
-              </p>
-            </div>
+                  ) : (
+                    primaryTotals.map((t, i) => (
+                      <span
+                        key={t.currency}
+                        className={
+                          i === 0
+                            ? "text-3xl font-semibold tracking-tight text-gray-900"
+                            : "text-lg font-medium text-gray-700"
+                        }
+                      >
+                        {formatTotals([t])}
+                      </span>
+                    ))
+                  )}
+                </p>
+                <p className="mt-1 text-sm text-gray-600">
+                  {totalCount} {totalCount === 1 ? "gasto" : "gastos"}
+                </p>
+              </div>
 
-            <div className="flex flex-col gap-6 sm:items-end">
-              <Link
-                href={`/admin/workspaces/${slug}/upload-expense`}
-                className={`${PRIMARY_BUTTON_CLASS} justify-center min-h-11`}
-              >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden
+              <div className="flex flex-col gap-6 sm:items-end">
+                <Link
+                  href={`/admin/workspaces/${slug}/upload-expense`}
+                  className={`${PRIMARY_BUTTON_CLASS} justify-center min-h-11`}
                 >
-                  <path d="M5 12h14M12 5v14" />
-                </svg>
-                Agregar gasto
-              </Link>
-              {/* Secondary tools stay quiet so they don't compete with the main action. */}
-              <div className="flex flex-wrap items-center gap-1 sm:justify-end">
-                <Link href={`/admin/workspaces/${slug}/materials`} className={TOOL_BUTTON_CLASS}>
                   <svg
-                    width="15"
-                    height="15"
+                    width="14"
+                    height="14"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    strokeWidth="2"
+                    strokeWidth="2.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     aria-hidden
                   >
-                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-                    <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-                    <line x1="12" y1="22.08" x2="12" y2="12" />
+                    <path d="M5 12h14M12 5v14" />
                   </svg>
-                  Materiales
+                  Agregar gasto
                 </Link>
-                <button
-                  type="button"
-                  onClick={() => exportExpensesCsv(workspace.id, debouncedSearch, filters)}
-                  className={TOOL_BUTTON_CLASS}
-                >
-                  <svg
-                    width="15"
-                    height="15"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden
-                  >
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="7 10 12 15 17 10" />
-                    <line x1="12" y1="15" x2="12" y2="3" />
-                  </svg>
-                  Exportar CSV
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    exportExpensesPdf(
-                      workspace.id,
-                      workspace.name,
-                      debouncedSearch,
-                      filters,
-                      localCategories,
-                      stages,
-                      levels,
-                      providers,
-                    )
-                  }
-                  className={TOOL_BUTTON_CLASS}
-                >
-                  <Icon icon="hugeicons:pdf-02" fontSize={15} aria-hidden />
-                  Descargar PDF
-                </button>
               </div>
             </div>
-          </div>
 
-          {/* 2 · Finding an expense: search plus the invoice reference, in one row. */}
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
-              <SearchInput
-                value={search}
-                onChange={(value) => {
-                  setSearch(value);
-                  // Clearing applies right away instead of waiting for the debounce.
-                  if (!value) {
-                    setDebouncedSearch("");
-                    setPage(1);
-                  }
-                }}
-                placeholder="Buscar por proveedor, notas o monto…"
-                className="col-span-2 sm:flex-1"
-              />
-              <input
-                type="text"
-                aria-label="Serie de factura"
-                placeholder="Serie"
-                value={filters.invoiceSeries}
-                onChange={(e) => setFilter("invoiceSeries", e.target.value)}
-                className={`${INPUT_CLASS} sm:w-28`}
-              />
-              <input
-                type="text"
-                aria-label="Número de factura"
-                placeholder="Número"
-                value={filters.invoiceNumber}
-                onChange={(e) => setFilter("invoiceNumber", e.target.value)}
-                className={`${INPUT_CLASS} sm:w-36`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowFilters((v) => !v)}
-                aria-expanded={showFilters}
-                aria-controls="expense-filters"
-                className={`${SECONDARY_BUTTON_CLASS} justify-center min-h-11 sm:min-h-0 ${
-                  showFilters || advancedFilterCount ? "border-violet-300 text-violet-700" : ""
-                }`}
-              >
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden
-                >
-                  <line x1="4" y1="6" x2="20" y2="6" />
-                  <line x1="7" y1="12" x2="17" y2="12" />
-                  <line x1="10" y1="18" x2="14" y2="18" />
-                </svg>
-                Filtros
-                {advancedFilterCount > 0 && (
-                  <span className="rounded-full bg-violet-600 px-1.5 text-xs font-semibold text-white tabular-nums">
-                    {advancedFilterCount}
-                  </span>
-                )}
-              </button>
-              {hasActiveFilters && (
+            {/* 2 · Finding an expense: search plus the invoice reference, in one row. */}
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+                <SearchInput
+                  value={search}
+                  onChange={(value) => {
+                    setSearch(value);
+                    // Clearing applies right away instead of waiting for the debounce.
+                    if (!value) {
+                      setDebouncedSearch("");
+                      setPage(1);
+                    }
+                  }}
+                  placeholder="Buscar por proveedor, notas o monto…"
+                  className="col-span-2 sm:flex-1"
+                />
+                <input
+                  type="text"
+                  aria-label="Serie de factura"
+                  placeholder="Serie"
+                  value={filters.invoiceSeries}
+                  onChange={(e) => setFilter("invoiceSeries", e.target.value)}
+                  className={`${INPUT_CLASS} sm:w-28`}
+                />
+                <input
+                  type="text"
+                  aria-label="Número de factura"
+                  placeholder="Número"
+                  value={filters.invoiceNumber}
+                  onChange={(e) => setFilter("invoiceNumber", e.target.value)}
+                  className={`${INPUT_CLASS} sm:w-36`}
+                />
                 <button
                   type="button"
-                  onClick={clearFilters}
-                  className="justify-self-start text-sm font-medium text-gray-600 underline-offset-2 hover:text-violet-700 hover:underline min-h-11 sm:min-h-0 px-1"
+                  onClick={() => setShowFilters((v) => !v)}
+                  aria-expanded={showFilters}
+                  aria-controls="expense-filters"
+                  className={`${SECONDARY_BUTTON_CLASS} justify-center min-h-11 sm:min-h-0 ${
+                    showFilters || advancedFilterCount ? "border-violet-300 text-violet-700" : ""
+                  }`}
                 >
-                  Limpiar todo
+                  <svg
+                    width="15"
+                    height="15"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <line x1="4" y1="6" x2="20" y2="6" />
+                    <line x1="7" y1="12" x2="17" y2="12" />
+                    <line x1="10" y1="18" x2="14" y2="18" />
+                  </svg>
+                  Filtros
+                  {advancedFilterCount > 0 && (
+                    <span className="rounded-full bg-violet-600 px-1.5 text-xs font-semibold text-white tabular-nums">
+                      {advancedFilterCount}
+                    </span>
+                  )}
                 </button>
-              )}
-            </div>
+                {hasActiveFilters && (
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="justify-self-start text-sm font-medium text-gray-600 underline-offset-2 hover:text-violet-700 hover:underline min-h-11 sm:min-h-0 px-1"
+                  >
+                    Limpiar todo
+                  </button>
+                )}
+              </div>
 
-            {/* 3 · Everything else, only when asked for: one panel, visible labels. */}
-            {showFilters && (
-              <div
-                id="expense-filters"
-                className="grid grid-cols-1 gap-4 rounded-xl border border-gray-200 bg-gray-50/70 p-4 sm:grid-cols-2 lg:grid-cols-4"
-              >
-                <FilterField label="Proveedor">
-                  <ProviderFilter
-                    providers={providers}
-                    value={filters.providerId}
-                    onChange={(id) => setFilter("providerId", id)}
-                  />
-                </FilterField>
+              {/* 3 · Everything else, only when asked for: one panel, visible labels. */}
+              {showFilters && (
+                <div
+                  id="expense-filters"
+                  className="grid grid-cols-1 gap-4 rounded-xl border border-gray-200 bg-gray-50/70 p-4 sm:grid-cols-2 lg:grid-cols-4"
+                >
+                  <FilterField label="Proveedor">
+                    <ProviderFilter
+                      providers={providers}
+                      value={filters.providerId}
+                      onChange={(id) => setFilter("providerId", id)}
+                    />
+                  </FilterField>
 
-                <FilterField label="Categoría">
-                  <div className="flex items-center gap-2">
-                    <div className="min-w-0 flex-1">
-                      <CategoryMultiFilter
-                        categories={localCategories}
-                        value={categoryIdList(filters.categoryId)}
-                        onChange={(ids) => setFilter("categoryId", ids.join(","))}
+                  <FilterField label="Categoría">
+                    <div className="flex items-center gap-2">
+                      <div className="min-w-0 flex-1">
+                        <CategoryMultiFilter
+                          categories={localCategories}
+                          value={categoryIdList(filters.categoryId)}
+                          onChange={(ids) => setFilter("categoryId", ids.join(","))}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={openCategoriesModal}
+                        aria-label="Gestionar categorías"
+                        title="Gestionar categorías"
+                        className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition-colors hover:border-violet-400 hover:text-violet-600"
+                      >
+                        <svg
+                          width="15"
+                          height="15"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          aria-hidden
+                        >
+                          <circle cx="12" cy="12" r="3" />
+                          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                        </svg>
+                      </button>
+                    </div>
+                  </FilterField>
+
+                  <FilterField label="Etapa">
+                    <select
+                      value={filters.stageId}
+                      onChange={(e) => setFilter("stageId", e.target.value)}
+                      className={SELECT_CLASS}
+                    >
+                      <option value="">Todas</option>
+                      {stages.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
+                  </FilterField>
+
+                  <FilterField label="Nivel">
+                    <select
+                      value={filters.levelId}
+                      onChange={(e) => setFilter("levelId", e.target.value)}
+                      className={SELECT_CLASS}
+                    >
+                      <option value="">Todos</option>
+                      {levels.map((l) => (
+                        <option key={l.id} value={l.id}>
+                          {l.name}
+                        </option>
+                      ))}
+                    </select>
+                  </FilterField>
+
+                  <FilterField label="Mes de emisión">
+                    <input
+                      type="month"
+                      value={issuedMonth}
+                      onChange={(e) => handleIssuedMonthChange(e.target.value)}
+                      className={INPUT_CLASS}
+                    />
+                  </FilterField>
+
+                  <FilterField label="Emitida desde">
+                    <input
+                      type="date"
+                      value={filters.issuedFrom}
+                      onChange={(e) => {
+                        setFilter("issuedFrom", e.target.value);
+                        setIssuedMonth("");
+                      }}
+                      className={INPUT_CLASS}
+                    />
+                  </FilterField>
+
+                  <FilterField label="Emitida hasta">
+                    <input
+                      type="date"
+                      value={filters.issuedTo}
+                      onChange={(e) => {
+                        setFilter("issuedTo", e.target.value);
+                        setIssuedMonth("");
+                      }}
+                      className={INPUT_CLASS}
+                    />
+                  </FilterField>
+
+                  <FilterField label="Monto (mín. – máx.)">
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        min="0"
+                        step="0.01"
+                        placeholder="Mín."
+                        aria-label="Monto mínimo"
+                        value={filters.amountMin}
+                        onChange={(e) => setFilter("amountMin", e.target.value)}
+                        className={INPUT_CLASS}
+                      />
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        min="0"
+                        step="0.01"
+                        placeholder="Máx."
+                        aria-label="Monto máximo"
+                        value={filters.amountMax}
+                        onChange={(e) => setFilter("amountMax", e.target.value)}
+                        className={INPUT_CLASS}
                       />
                     </div>
-                    <button
-                      type="button"
-                      onClick={openCategoriesModal}
-                      aria-label="Gestionar categorías"
-                      title="Gestionar categorías"
-                      className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition-colors hover:border-violet-400 hover:text-violet-600"
-                    >
-                      <svg
-                        width="15"
-                        height="15"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        aria-hidden
-                      >
-                        <circle cx="12" cy="12" r="3" />
-                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                      </svg>
-                    </button>
-                  </div>
-                </FilterField>
-
-                <FilterField label="Etapa">
-                  <select
-                    value={filters.stageId}
-                    onChange={(e) => setFilter("stageId", e.target.value)}
-                    className={SELECT_CLASS}
-                  >
-                    <option value="">Todas</option>
-                    {stages.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </select>
-                </FilterField>
-
-                <FilterField label="Nivel">
-                  <select
-                    value={filters.levelId}
-                    onChange={(e) => setFilter("levelId", e.target.value)}
-                    className={SELECT_CLASS}
-                  >
-                    <option value="">Todos</option>
-                    {levels.map((l) => (
-                      <option key={l.id} value={l.id}>
-                        {l.name}
-                      </option>
-                    ))}
-                  </select>
-                </FilterField>
-
-                <FilterField label="Mes de emisión">
-                  <input
-                    type="month"
-                    value={issuedMonth}
-                    onChange={(e) => handleIssuedMonthChange(e.target.value)}
-                    className={INPUT_CLASS}
-                  />
-                </FilterField>
-
-                <FilterField label="Emitida desde">
-                  <input
-                    type="date"
-                    value={filters.issuedFrom}
-                    onChange={(e) => {
-                      setFilter("issuedFrom", e.target.value);
-                      setIssuedMonth("");
-                    }}
-                    className={INPUT_CLASS}
-                  />
-                </FilterField>
-
-                <FilterField label="Emitida hasta">
-                  <input
-                    type="date"
-                    value={filters.issuedTo}
-                    onChange={(e) => {
-                      setFilter("issuedTo", e.target.value);
-                      setIssuedMonth("");
-                    }}
-                    className={INPUT_CLASS}
-                  />
-                </FilterField>
-
-                <FilterField label="Monto (mín. – máx.)">
-                  <div className="grid grid-cols-2 gap-2">
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      min="0"
-                      step="0.01"
-                      placeholder="Mín."
-                      aria-label="Monto mínimo"
-                      value={filters.amountMin}
-                      onChange={(e) => setFilter("amountMin", e.target.value)}
-                      className={INPUT_CLASS}
-                    />
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      min="0"
-                      step="0.01"
-                      placeholder="Máx."
-                      aria-label="Monto máximo"
-                      value={filters.amountMax}
-                      onChange={(e) => setFilter("amountMax", e.target.value)}
-                      className={INPUT_CLASS}
-                    />
-                  </div>
-                </FilterField>
-              </div>
-            )}
-          </div>
-        </>
-      }
-    >
-      <ExpenseTable
-        expenses={expenses}
-        onDelete={handleDelete}
-        deletingId={deletingId}
-        workspaceSlug={slug}
-        materialExpenseIds={materialExpenseIdSet}
-      />
-    </ListPage>
+                  </FilterField>
+                </div>
+              )}
+            </div>
+          </>
+        }
+      >
+        <ExpenseTable
+          expenses={expenses}
+          onDelete={handleDelete}
+          deletingId={deletingId}
+          workspaceSlug={slug}
+          materialExpenseIds={materialExpenseIdSet}
+        />
+      </ListPage>
+    </FormSection>
   );
 }

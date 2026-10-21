@@ -3,7 +3,6 @@ import { supabaseAdmin as supabase } from "@/lib/supabaseAdmin";
 import { sumExpenseAmounts } from "@/lib/sumExpenseAmounts";
 import ExpensesClient from "@/components/ExpensesClient";
 import FallbackExpenses from "@/components/FallbackExpenses";
-import FormSection from "@/components/FormSection";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -88,18 +87,16 @@ async function ExpensesSection({ slug }: { slug: string }) {
   });
 
   return (
-    <FormSection title={workspace.name} backUrl="/admin/workspaces">
-      <ExpensesClient
-        slug={slug}
-        workspace={workspace}
-        initialExpenses={expenses}
-        initialCount={count ?? 0}
-        initialTotals={initialTotals}
-        categories={categories ?? []}
-        stages={stages ?? []}
-        levels={levels ?? []}
-        providers={providers ?? []}
-      />
-    </FormSection>
+    <ExpensesClient
+      slug={slug}
+      workspace={workspace}
+      initialExpenses={expenses}
+      initialCount={count ?? 0}
+      initialTotals={initialTotals}
+      categories={categories ?? []}
+      stages={stages ?? []}
+      levels={levels ?? []}
+      providers={providers ?? []}
+    />
   );
 }

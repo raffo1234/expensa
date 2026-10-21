@@ -8,7 +8,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getMessages, getLocale } from "next-intl/server";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import Providers from "@/components/Providers";
-import { Cormorant, Manrope } from "next/font/google";
+import { Bricolage_Grotesque, Cormorant } from "next/font/google";
 
 const siteName = "Finolis";
 const title = "Finolis - Gestión de Gastos Inteligente";
@@ -51,16 +51,21 @@ const cormorant = Cormorant({
   weight: ["300", "400", "500", "600"],
 });
 
-const manrope = Manrope({
+// Same family as Fly.io's dashboard ("Fricolage Grotesque" is their build of
+// Bricolage Grotesque). Variable weight/width/optical size, so the 325 base
+// weight and 98.5% width below render exactly.
+const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
   variable: "--font-body",
+  weight: "variable",
+  axes: ["opsz", "wdth"],
 });
 
 export default async function Layout({ children }: Readonly<LayoutProps>) {
   const [messages, locale] = await Promise.all([getMessages(), getLocale()]);
 
   return (
-    <html lang={locale} className={`${cormorant.variable} ${manrope.variable}`}>
+    <html lang={locale} className={`${cormorant.variable} ${bricolage.variable}`}>
       <head>
         <meta property="og:logo" content="https://expensa-sigma.vercel.app/expensa-hero.png" />
       </head>

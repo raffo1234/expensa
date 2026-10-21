@@ -5,16 +5,18 @@ interface CategoryBadgeProps {
   color?: string | null;
 }
 
+// Category pill shared by every table. Uses the category's own color when set,
+// otherwise the neutral navy tones of the data tables.
 export default function CategoryBadge({ category, color }: CategoryBadgeProps) {
-  if (!category || category === "other") return <span className="text-gray-300 text-xs">—</span>;
-
-  const bg = color ? `${color}18` : "#f3f4f6";
-  const text = color ?? "#374151";
+  if (!category || category === "other") return <span>—</span>;
 
   return (
     <span
-      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap"
-      style={{ background: bg, color: text }}
+      className="inline-flex items-center whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium"
+      style={{
+        backgroundColor: color ? `${color}20` : "var(--color-navy-100)",
+        color: color ?? "var(--color-navy-700)",
+      }}
     >
       {category}
     </span>

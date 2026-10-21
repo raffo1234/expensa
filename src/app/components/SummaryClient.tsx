@@ -6,27 +6,37 @@ import { listAllSummaryExpenses, listSummaryExpenses } from "@/actions/summaryQu
 import { getCategories } from "@/actions/lookups";
 import { useDebouncedCallback } from "use-debounce";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { INPUT_CLASS, SECONDARY_BUTTON_CLASS, SELECT_CLASS } from "@/constants";
+import {
+  INPUT_CLASS,
+  SECONDARY_BUTTON_CLASS,
+  SELECT_CLASS,
+  HEADER_LINK_CLASS,
+  ICON_SIZE,
+} from "@/constants";
 import { csvEscape } from "@/utils/csv";
 import { formatAmount, totalsByCurrency } from "@/utils/formatAmount";
 import getAttachmentUrl from "@/lib/getAttachmentUrl";
-import Link from "next/link";
 import { useSearchParams, usePathname } from "next/navigation";
 import { replaceUrl } from "@/utils/replaceUrl";
 import OptionButton from "./OptionButton";
 import Field from "./Field";
 import PageNavigator from "./PageNavigator";
 import ListPage from "./ListPage";
+import FormSection from "./FormSection";
 import SearchInput from "./SearchInput";
-import DataTable, { DataTableRow } from "./DataTable";
+import DataTable, {
+  DataTableRow,
+  ROW_CONTROL,
+  RowLink,
+  Td,
+  type DataTableColumn,
+} from "./DataTable";
 import CategoryFilter from "./CategoryFilter";
+import CategoryBadge from "./CategoryBadge";
 import type { SummaryReportRow } from "./SummaryReportPDF";
 
 const PAGE_SIZE = 10;
 
-// Quiet buttons for secondary tools (exports), consistent with the expenses list.
-const TOOL_BUTTON_CLASS =
-  "inline-flex min-h-11 sm:min-h-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-violet-50 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:opacity-50 disabled:pointer-events-none cursor-pointer";
 type SummaryTab = "facturas" | "gastos"; // same values as summaryQueries
 
 const SUMMARY_TABS: { value: SummaryTab; label: string }[] = [
@@ -36,13 +46,13 @@ const SUMMARY_TABS: { value: SummaryTab; label: string }[] = [
 
 // The first column identifies the record: the invoice reference on the
 // invoices tab; on the expenses tab (no invoice by definition) its notes.
-const summaryColumns = (tab: SummaryTab) => [
+const summaryColumns = (tab: SummaryTab): DataTableColumn[] => [
   { label: tab === "facturas" ? "Factura" : "Descripción" },
   { label: "Proveedor" },
   { label: "Categoría" },
   { label: "Método de pago" },
   { label: "Fecha emisión" },
-  { label: "Monto", className: "text-right" },
+  { label: "Monto", align: "right" as const },
   { label: "Adjuntos" },
 ];
 
@@ -437,6 +447,52 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
   // Filters inside the panel (search and invoice reference are always visible).
   const advancedFilterCount = [categoryId, dateFrom || dateTo].filter(Boolean).length;
 
+  // Secondary actions live in the section header, like Fly.io's section links.
+  const headerLinks = (
+    <>
+      <button
+        type="button"
+        onClick={() =>
+          exportCsv(
+            workspaceId,
+            search,
+            dateFrom,
+            dateTo,
+            tab,
+            categoryId,
+            invoiceSeries,
+            invoiceNumber,
+          )
+        }
+        disabled={!workspaceId}
+        className={HEADER_LINK_CLASS}
+      >
+        Exportar CSV
+      </button>
+      <button
+        type="button"
+        onClick={() =>
+          exportPdf(
+            workspaceId,
+            workspaces.find((w) => w.id === workspaceId)?.name ?? "",
+            search,
+            dateFrom,
+            dateTo,
+            tab,
+            categoryId,
+            categories.find((c) => c.id === categoryId)?.name ?? "",
+            invoiceSeries,
+            invoiceNumber,
+          )
+        }
+        disabled={!workspaceId}
+        className={HEADER_LINK_CLASS}
+      >
+        Descargar PDF
+      </button>
+    </>
+  );
+
   const pager =
     totalPages > 1 ? (
       <PageNavigator
@@ -448,322 +504,251 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
     ) : null;
 
   return (
-    <ListPage
-      pager={pager}
-      controls={
-        <>
-          {/* 1 · Context: project and export tools, laid out like the expenses header. */}
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div className="w-full sm:max-w-xs">
-              <Field label="Proyecto">
-                <select
-                  value={workspaceId}
-                  onChange={(e) => handleWorkspaceChange(e.target.value)}
-                  className={SELECT_CLASS}
-                >
-                  {workspaces.map((ws) => (
-                    <option key={ws.id} value={ws.id}>
-                      {ws.name}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-            </div>
-            <div className="flex flex-col gap-4 sm:items-end">
-              <div className="flex flex-wrap items-center gap-1 sm:justify-end">
-                <button
-                  type="button"
-                  onClick={() =>
-                    exportCsv(
-                      workspaceId,
-                      search,
-                      dateFrom,
-                      dateTo,
-                      tab,
-                      categoryId,
-                      invoiceSeries,
-                      invoiceNumber,
-                    )
-                  }
-                  disabled={!workspaceId}
-                  className={TOOL_BUTTON_CLASS}
-                >
-                  <Icon icon="solar:download-linear" fontSize={15} aria-hidden />
-                  Exportar CSV
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    exportPdf(
-                      workspaceId,
-                      workspaces.find((w) => w.id === workspaceId)?.name ?? "",
-                      search,
-                      dateFrom,
-                      dateTo,
-                      tab,
-                      categoryId,
-                      categories.find((c) => c.id === categoryId)?.name ?? "",
-                      invoiceSeries,
-                      invoiceNumber,
-                    )
-                  }
-                  disabled={!workspaceId}
-                  className={TOOL_BUTTON_CLASS}
-                >
-                  <Icon icon="hugeicons:pdf-02" fontSize={15} aria-hidden />
-                  Descargar PDF
-                </button>
-              </div>
-              <p className="text-sm text-gray-600 tabular-nums">
-                {total} {total === 1 ? "registro" : "registros"}
-              </p>
-            </div>
-          </div>
-
-          {/* 2 · What you're looking at. */}
-          <div className="flex gap-2">
-            {SUMMARY_TABS.map(({ value, label }) => (
-              <OptionButton key={value} isActive={tab === value} onClick={() => setTab(value)}>
-                {label}
-              </OptionButton>
-            ))}
-          </div>
-
-          {/* 3 · Finding a record: search (+ invoice reference on the invoices tab). */}
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
-              <SearchInput
-                value={searchText}
-                onChange={handleSearchChange}
-                placeholder={
-                  tab === "facturas"
-                    ? "Buscar por factura, proveedor o notas…"
-                    : "Buscar por proveedor o notas…"
-                }
-                className="col-span-2 sm:flex-1"
-              />
-
-              <input
-                type="text"
-                aria-label="Serie de factura"
-                placeholder="Serie"
-                value={invoiceSeries}
-                onChange={(e) => {
-                  setInvoiceSeries(e.target.value);
-                  setPage(0);
-                }}
-                className={`${INPUT_CLASS} sm:w-28`}
-              />
-              <input
-                type="text"
-                aria-label="Número de factura"
-                placeholder="Número"
-                value={invoiceNumber}
-                onChange={(e) => {
-                  setInvoiceNumber(e.target.value);
-                  setPage(0);
-                }}
-                className={`${INPUT_CLASS} sm:w-36`}
-              />
-
-              <button
-                type="button"
-                onClick={() => setShowFilters((v) => !v)}
-                aria-expanded={showFilters}
-                aria-controls="summary-filters"
-                className={`${SECONDARY_BUTTON_CLASS} justify-center min-h-11 sm:min-h-0 ${
-                  showFilters || advancedFilterCount ? "border-violet-300 text-violet-700" : ""
-                }`}
-              >
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden
-                >
-                  <line x1="4" y1="6" x2="20" y2="6" />
-                  <line x1="7" y1="12" x2="17" y2="12" />
-                  <line x1="10" y1="18" x2="14" y2="18" />
-                </svg>
-                Filtros
-                {advancedFilterCount > 0 && (
-                  <span className="rounded-full bg-violet-600 px-1.5 text-xs font-semibold text-white tabular-nums">
-                    {advancedFilterCount}
-                  </span>
-                )}
-              </button>
-              {hasFilters && (
-                <button
-                  type="button"
-                  onClick={clearFilters}
-                  className="justify-self-start text-sm font-medium text-gray-600 underline-offset-2 hover:text-violet-700 hover:underline min-h-11 sm:min-h-0 px-1"
-                >
-                  Limpiar todo
-                </button>
-              )}
-            </div>
-
-            {/* 4 · The rest, only when asked for: one panel, visible labels. */}
-            {showFilters && (
-              <div
-                id="summary-filters"
-                className="grid grid-cols-1 gap-4 rounded-xl border border-gray-200 bg-gray-50/70 p-4 sm:grid-cols-2 lg:grid-cols-4"
-              >
-                <Field label="Categoría">
-                  <CategoryFilter
-                    categories={categories}
-                    value={categoryId}
-                    onChange={(id) => {
-                      setCategoryId(id);
-                      setPage(0);
-                    }}
-                  />
-                </Field>
-                <Field label="Mes de emisión">
-                  <input
-                    type="month"
-                    value={month}
-                    onChange={(e) => handleMonthChange(e.target.value)}
-                    className={INPUT_CLASS}
-                  />
-                </Field>
-                <Field label="Emitida desde">
-                  <input
-                    type="date"
-                    value={dateFrom}
-                    onChange={(e) => {
-                      setDateFrom(e.target.value);
-                      setMonth("");
-                      setPage(0);
-                    }}
-                    className={INPUT_CLASS}
-                  />
-                </Field>
-                <Field label="Emitida hasta">
-                  <input
-                    type="date"
-                    value={dateTo}
-                    onChange={(e) => {
-                      setDateTo(e.target.value);
-                      setMonth("");
-                      setPage(0);
-                    }}
-                    className={INPUT_CLASS}
-                  />
-                </Field>
-              </div>
-            )}
-          </div>
-        </>
-      }
-    >
-      <DataTable
-        columns={summaryColumns(tab)}
-        isLoading={isLoading}
-        isEmpty={expenses.length === 0}
-        emptyMessage="No hay gastos con estos filtros"
-      >
-        {expenses.map((expense) => {
-          const prov = Array.isArray(expense.provider) ? expense.provider[0] : expense.provider;
-          const cat = Array.isArray(expense.category) ? expense.category[0] : expense.category;
-
-          const href = `/admin/summary/${expense.id}`;
-
-          return (
-            <DataTableRow key={expense.id}>
-              {tab === "facturas" ? (
-                <td className="font-mono text-sm whitespace-nowrap">
-                  <Link href={href} target="_blank" className="block p-6">
-                    {expense.invoice_series && expense.invoice_number
-                      ? `${expense.invoice_series}-${expense.invoice_number}`
-                      : "—"}
-                  </Link>
-                </td>
-              ) : (
-                <td className="text-sm">
-                  <Link
-                    href={href}
-                    target="_blank"
-                    title={expense.notes ?? undefined}
-                    className="block p-6 max-w-xs"
+    <FormSection title="Resumen de gastos" actions={headerLinks}>
+      <ListPage
+        pager={pager}
+        controls={
+          <>
+            {/* 1 · Context: which project (exports live in the section header). */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div className="w-full sm:max-w-xs">
+                <Field label="Proyecto">
+                  <select
+                    value={workspaceId}
+                    onChange={(e) => handleWorkspaceChange(e.target.value)}
+                    className={SELECT_CLASS}
                   >
-                    <span className="line-clamp-2 text-gray-800">
-                      {expense.notes?.trim() || "—"}
+                    {workspaces.map((ws) => (
+                      <option key={ws.id} value={ws.id}>
+                        {ws.name}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <p className="mt-2 text-sm text-gray-600 tabular-nums">
+                  {total} {total === 1 ? "registro" : "registros"}
+                </p>
+              </div>
+            </div>
+
+            {/* 2 · What you're looking at. */}
+            <div className="flex gap-2">
+              {SUMMARY_TABS.map(({ value, label }) => (
+                <OptionButton key={value} isActive={tab === value} onClick={() => setTab(value)}>
+                  {label}
+                </OptionButton>
+              ))}
+            </div>
+
+            {/* 3 · Finding a record: search (+ invoice reference on the invoices tab). */}
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+                <SearchInput
+                  value={searchText}
+                  onChange={handleSearchChange}
+                  placeholder={
+                    tab === "facturas"
+                      ? "Buscar por factura, proveedor o notas…"
+                      : "Buscar por proveedor o notas…"
+                  }
+                  className="col-span-2 sm:flex-1"
+                />
+
+                <input
+                  type="text"
+                  aria-label="Serie de factura"
+                  placeholder="Serie"
+                  value={invoiceSeries}
+                  onChange={(e) => {
+                    setInvoiceSeries(e.target.value);
+                    setPage(0);
+                  }}
+                  className={`${INPUT_CLASS} sm:w-28`}
+                />
+                <input
+                  type="text"
+                  aria-label="Número de factura"
+                  placeholder="Número"
+                  value={invoiceNumber}
+                  onChange={(e) => {
+                    setInvoiceNumber(e.target.value);
+                    setPage(0);
+                  }}
+                  className={`${INPUT_CLASS} sm:w-36`}
+                />
+
+                <button
+                  type="button"
+                  onClick={() => setShowFilters((v) => !v)}
+                  aria-expanded={showFilters}
+                  aria-controls="summary-filters"
+                  className={`${SECONDARY_BUTTON_CLASS} justify-center min-h-11 sm:min-h-0 ${
+                    showFilters || advancedFilterCount ? "border-violet-300 text-violet-700" : ""
+                  }`}
+                >
+                  <svg
+                    width="15"
+                    height="15"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <line x1="4" y1="6" x2="20" y2="6" />
+                    <line x1="7" y1="12" x2="17" y2="12" />
+                    <line x1="10" y1="18" x2="14" y2="18" />
+                  </svg>
+                  Filtros
+                  {advancedFilterCount > 0 && (
+                    <span className="rounded-full bg-violet-600 px-1.5 text-xs font-semibold text-white tabular-nums">
+                      {advancedFilterCount}
                     </span>
-                  </Link>
-                </td>
-              )}
-              <td>
-                <Link href={href} target="_blank" className="block p-6">
-                  <div>{prov?.name ?? "—"}</div>
-                  {prov?.ruc && <div className="text-sm text-gray-400">{prov.ruc}</div>}
-                </Link>
-              </td>
-              <td>
-                <Link href={href} target="_blank" className="block p-6">
-                  {cat ? (
-                    <span
-                      className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-                      style={{
-                        backgroundColor: cat.color ? `${cat.color}20` : "#f3f4f6",
-                        color: cat.color ?? "#374151",
-                      }}
-                    >
-                      {cat.name}
-                    </span>
-                  ) : (
-                    "—"
                   )}
-                </Link>
-              </td>
-              <td className="whitespace-nowrap">
-                <Link href={href} target="_blank" className="block p-6">
-                  {expense.payment_method ?? "—"}
-                </Link>
-              </td>
-              <td className="whitespace-nowrap">
-                <Link href={href} target="_blank" className="block p-6">
-                  {formatDate(expense.issued_at)}
-                </Link>
-              </td>
-              <td className="text-right font-medium whitespace-nowrap">
-                <Link href={href} target="_blank" className="block p-6">
-                  {expense.amount != null ? formatAmount(expense.amount, expense.currency) : "—"}
-                </Link>
-              </td>
-              <td className="p-6">
-                <div className="flex flex-wrap gap-1">
-                  {expense.expense_attachment?.map((att) => (
-                    <a
-                      key={att.id}
-                      href={getAttachmentUrl(att.storage_path)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title={att.file_name ?? "attachment"}
-                      className="inline-flex items-center gap-2 p-2 rounded-lg bg-violet-50 text-violet-600 hover:bg-violet-100 text-sm transition-colors"
-                    >
-                      <Icon
-                        icon={
-                          /\.pdf$/i.test(att.file_name ?? "")
-                            ? "hugeicons:pdf-02"
-                            : "solar:gallery-minimalistic-linear"
-                        }
-                        fontSize={24}
-                      />
-                      <span className="max-w-[80px] truncate">{att.file_name ?? "file"}</span>
-                    </a>
-                  ))}
+                </button>
+                {hasFilters && (
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="justify-self-start text-sm font-medium text-gray-600 underline-offset-2 hover:text-violet-700 hover:underline min-h-11 sm:min-h-0 px-1"
+                  >
+                    Limpiar todo
+                  </button>
+                )}
+              </div>
+
+              {/* 4 · The rest, only when asked for: one panel, visible labels. */}
+              {showFilters && (
+                <div
+                  id="summary-filters"
+                  className="grid grid-cols-1 gap-4 rounded-xl border border-gray-200 bg-gray-50/70 p-4 sm:grid-cols-2 lg:grid-cols-4"
+                >
+                  <Field label="Categoría">
+                    <CategoryFilter
+                      categories={categories}
+                      value={categoryId}
+                      onChange={(id) => {
+                        setCategoryId(id);
+                        setPage(0);
+                      }}
+                    />
+                  </Field>
+                  <Field label="Mes de emisión">
+                    <input
+                      type="month"
+                      value={month}
+                      onChange={(e) => handleMonthChange(e.target.value)}
+                      className={INPUT_CLASS}
+                    />
+                  </Field>
+                  <Field label="Emitida desde">
+                    <input
+                      type="date"
+                      value={dateFrom}
+                      onChange={(e) => {
+                        setDateFrom(e.target.value);
+                        setMonth("");
+                        setPage(0);
+                      }}
+                      className={INPUT_CLASS}
+                    />
+                  </Field>
+                  <Field label="Emitida hasta">
+                    <input
+                      type="date"
+                      value={dateTo}
+                      onChange={(e) => {
+                        setDateTo(e.target.value);
+                        setMonth("");
+                        setPage(0);
+                      }}
+                      className={INPUT_CLASS}
+                    />
+                  </Field>
                 </div>
-              </td>
-            </DataTableRow>
-          );
-        })}
-      </DataTable>
-    </ListPage>
+              )}
+            </div>
+          </>
+        }
+      >
+        <DataTable
+          columns={summaryColumns(tab)}
+          isLoading={isLoading}
+          isEmpty={expenses.length === 0}
+          emptyMessage="No hay gastos con estos filtros"
+        >
+          {expenses.map((expense) => {
+            const prov = Array.isArray(expense.provider) ? expense.provider[0] : expense.provider;
+            const cat = Array.isArray(expense.category) ? expense.category[0] : expense.category;
+
+            const href = `/admin/summary/${expense.id}`;
+
+            return (
+              <DataTableRow key={expense.id} href={href} newTab>
+                {tab === "facturas" ? (
+                  <Td className="font-mono">
+                    <RowLink href={href} newTab>
+                      {expense.invoice_series && expense.invoice_number
+                        ? `${expense.invoice_series}-${expense.invoice_number}`
+                        : "—"}
+                    </RowLink>
+                  </Td>
+                ) : (
+                  <Td>
+                    <RowLink href={href} newTab className="block max-w-xs truncate">
+                      <span title={expense.notes ?? undefined}>{expense.notes?.trim() || "—"}</span>
+                    </RowLink>
+                  </Td>
+                )}
+                <Td>
+                  <span
+                    className="block max-w-56 truncate"
+                    title={prov?.ruc ? `RUC ${prov.ruc}` : undefined}
+                  >
+                    {prov?.name ?? "—"}
+                  </span>
+                </Td>
+                <Td>
+                  <CategoryBadge category={cat?.name} color={cat?.color} />
+                </Td>
+                <Td>{expense.payment_method ?? "—"}</Td>
+                <Td>{formatDate(expense.issued_at)}</Td>
+                <Td align="right" className="font-book text-navy-900 tabular-nums">
+                  {expense.amount != null ? formatAmount(expense.amount, expense.currency) : "—"}
+                </Td>
+                <Td>
+                  <div className="flex gap-2">
+                    {expense.expense_attachment?.map((att) => (
+                      <a
+                        key={att.id}
+                        href={getAttachmentUrl(att.storage_path)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={att.file_name ?? "Adjunto"}
+                        aria-label={`Abrir adjunto ${att.file_name ?? ""}`.trim()}
+                        className={`${ROW_CONTROL} inline-flex items-center gap-1.5 rounded-lg bg-violet-50 px-2.5 text-sm text-violet-700 transition-colors hover:bg-violet-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500`}
+                      >
+                        <Icon
+                          icon={
+                            /\.pdf$/i.test(att.file_name ?? "")
+                              ? "hugeicons:pdf-02"
+                              : "solar:gallery-minimalistic-linear"
+                          }
+                          fontSize={ICON_SIZE}
+                          aria-hidden
+                        />
+                        <span className="max-w-36 truncate">{att.file_name ?? "archivo"}</span>
+                      </a>
+                    ))}
+                  </div>
+                </Td>
+              </DataTableRow>
+            );
+          })}
+        </DataTable>
+      </ListPage>
+    </FormSection>
   );
 }

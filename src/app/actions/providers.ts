@@ -1,6 +1,7 @@
 "use server";
 
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { requireWorkspaceAccess } from "@/lib/access";
 
 export async function createProvider({
   workspace_id,
@@ -11,6 +12,7 @@ export async function createProvider({
   name: string;
   ruc: string;
 }): Promise<{ provider?: { id: string; name: string; ruc: string }; error?: string }> {
+  await requireWorkspaceAccess(workspace_id);
   const { data, error } = await supabaseAdmin
     .from("provider")
     .insert({ workspace_id, name, ruc })

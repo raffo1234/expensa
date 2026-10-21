@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/getCurrentUser";
 import { checkPermissions } from "@/lib/checkPermissions";
 import { Permissions } from "@/types/propertyState";
 import NoAccess from "@/components/NoAccess";
+import { AccessError, requireRowAccess } from "@/lib/access";
 import FormSection from "@/components/FormSection";
 import FormInnerSection from "@/components/FormInnerSection";
 import SectionTitle from "@/components/SectionTitle";
@@ -91,6 +92,12 @@ export default async function Page({ params }: { params: Params }) {
 
   const permissions = await checkPermissions(user.roleId, [Permissions.VIEW_EXPENSES_SUMMARY]);
   if (!permissions[Permissions.VIEW_EXPENSES_SUMMARY]) return <NoAccess />;
+  try {
+    await requireRowAccess("expense", id);
+  } catch (err) {
+    if (err instanceof AccessError) return <NoAccess />;
+    throw err;
+  }
 
   const { data, error } = await supabase
     .from("expense")
@@ -137,12 +144,8 @@ export default async function Page({ params }: { params: Params }) {
         {/* Details */}
         <SectionTitle>Detalles</SectionTitle>
         <FormInnerSection padding={false}>
-          {expense.invoice_series && (
-            <DetailRow label="Serie">{expense.invoice_series}</DetailRow>
-          )}
-          {expense.invoice_number && (
-            <DetailRow label="Número">{expense.invoice_number}</DetailRow>
-          )}
+          {expense.invoice_series && <DetailRow label="Serie">{expense.invoice_series}</DetailRow>}
+          {expense.invoice_number && <DetailRow label="Número">{expense.invoice_number}</DetailRow>}
           <DetailRow label="Proveedor">
             {expense.provider?.name ?? <span className="text-gray-400">—</span>}
             {expense.provider?.ruc && (

@@ -1,10 +1,12 @@
 "use server";
 
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { getAccessibleWorkspaceIds, requireRowAccess, requireWorkspaceAccess } from "@/lib/access";
 
 export type Material = { id: string; name: string };
 
 export async function getMaterials(workspaceId: string): Promise<Material[]> {
+  await requireWorkspaceAccess(workspaceId);
   const { data, error } = await supabaseAdmin
     .from("material")
     .select("id, name")
@@ -22,6 +24,7 @@ export async function createMaterial({
   workspace_id: string;
   name: string;
 }): Promise<{ material?: Material; error?: string }> {
+  await requireWorkspaceAccess(workspace_id);
   const { data, error } = await supabaseAdmin
     .from("material")
     .upsert(
@@ -39,6 +42,7 @@ export async function updateMaterial(
   id: string,
   input: { name: string },
 ): Promise<{ error?: string }> {
+  await requireRowAccess("material", id);
   const { error } = await supabaseAdmin
     .from("material")
     .update({ name: input.name.trim() })
@@ -49,6 +53,7 @@ export async function updateMaterial(
 }
 
 export async function deleteMaterial(id: string): Promise<{ error?: string }> {
+  await requireRowAccess("material", id);
   const { error } = await supabaseAdmin.from("material").delete().eq("id", id);
   if (error) return { error: error.message };
   return {};
@@ -57,10 +62,12 @@ export async function deleteMaterial(id: string): Promise<{ error?: string }> {
 export async function getExpenseIdsWithMaterials(expenseIds: string[]): Promise<string[]> {
   if (!expenseIds.length) return [];
 
+  const workspaceIds = await getAccessibleWorkspaceIds();
   const { data, error } = await supabaseAdmin
     .from("expense_item")
-    .select("expense_id")
-    .in("expense_id", expenseIds);
+    .select("expense_id, expense:expense_id!inner(workspace_id)")
+    .in("expense_id", expenseIds)
+    .in("expense.workspace_id", workspaceIds);
 
   if (error) throw new Error(error.message);
   return [...new Set((data ?? []).map((r) => r.expense_id))];
@@ -84,6 +91,7 @@ export type MaterialReportRow = {
 };
 
 export async function getMaterialsReport(workspaceId: string): Promise<MaterialReportRow[]> {
+  await requireWorkspaceAccess(workspaceId);
   // Supabase caps each request at 1,000 rows, so read the report page by page.
   const PAGE_SIZE = 1000;
   const data: unknown[] = [];

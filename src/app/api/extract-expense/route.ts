@@ -4,6 +4,7 @@ import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { generateText, Output } from "ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { z } from "zod";
+import { getCurrentUser } from "@/lib/getCurrentUser";
 import {
   normalizeItemsToPaid,
   resolveTaxStatus,
@@ -284,6 +285,11 @@ function finalize(data: InvoiceExtraction, source: ExtractedExpense["source"]): 
 export async function POST(
   req: NextRequest,
 ): Promise<NextResponse<ExtractedExpense | ErrorResponse>> {
+  // Each call spends AI credits; only signed-in users may use it.
+  if (!(await getCurrentUser())) {
+    return errorResponse("No autenticado", "UNAUTHORIZED", 401);
+  }
+
   let base64: string;
   let mimeType: string;
   let catalog: Catalog;

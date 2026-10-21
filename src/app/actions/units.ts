@@ -1,10 +1,12 @@
 "use server";
 
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { requireRowAccess, requireWorkspaceAccess } from "@/lib/access";
 
 export type Unit = { id: string; name: string };
 
 export async function getUnits(workspaceId: string): Promise<Unit[]> {
+  await requireWorkspaceAccess(workspaceId);
   const { data, error } = await supabaseAdmin
     .from("unit")
     .select("id, name")
@@ -22,6 +24,7 @@ export async function createUnit({
   workspace_id: string;
   name: string;
 }): Promise<{ unit?: Unit; error?: string }> {
+  await requireWorkspaceAccess(workspace_id);
   const { data, error } = await supabaseAdmin
     .from("unit")
     .upsert(
@@ -35,10 +38,8 @@ export async function createUnit({
   return { unit: data };
 }
 
-export async function updateUnit(
-  id: string,
-  input: { name: string },
-): Promise<{ error?: string }> {
+export async function updateUnit(id: string, input: { name: string }): Promise<{ error?: string }> {
+  await requireRowAccess("unit", id);
   const { error } = await supabaseAdmin
     .from("unit")
     .update({ name: input.name.trim() })
@@ -49,6 +50,7 @@ export async function updateUnit(
 }
 
 export async function deleteUnit(id: string): Promise<{ error?: string }> {
+  await requireRowAccess("unit", id);
   const { error } = await supabaseAdmin.from("unit").delete().eq("id", id);
   if (error) return { error: error.message };
   return {};

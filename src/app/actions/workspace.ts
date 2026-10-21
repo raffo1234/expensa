@@ -28,6 +28,15 @@ export async function deleteWorkspace(id: string) {
   const user = await getCurrentUser();
   if (!user) throw new Error("No autenticado");
 
+  // Only the workspace's creator may delete it (assigned users can't).
+  const { data: workspace } = await supabaseAdmin
+    .from("workspace")
+    .select("created_by")
+    .eq("id", id)
+    .maybeSingle();
+  if (!workspace || workspace.created_by !== user.id)
+    throw new Error("No tienes acceso a este workspace");
+
   const { data: attachments, error: fetchError } = await supabaseAdmin
     .from("expense_attachment")
     .select("storage_path, expense!inner(workspace_id)")
@@ -43,15 +52,12 @@ export async function deleteWorkspace(id: string) {
         Delete: {
           Objects: attachments.map((a) => ({ Key: a.storage_path })),
         },
-      })
+      }),
     );
   }
 
   // 3. Eliminar workspace (cascade borra expenses y attachments)
-  const { error } = await supabaseAdmin
-    .from("workspace")
-    .delete()
-    .eq("id", id);
+  const { error } = await supabaseAdmin.from("workspace").delete().eq("id", id);
 
   if (error) throw new Error(error.message);
 

@@ -463,7 +463,7 @@ export default function EditExpenseForm() {
       for (const id of deletedIds) {
         const att = expense?.expense_attachment?.find((a) => a.id === id);
         if (att) {
-          const { error } = await deleteAttachment(att.id, att.storage_path);
+          const { error } = await deleteAttachment(att.id);
           if (error) throw new Error(error);
         }
       }

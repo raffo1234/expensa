@@ -10,6 +10,12 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import {
+  AccessError,
+  requireRowAccess,
+  requireStorageKeyAccess,
+  requireWorkspaceAccess,
+} from "@/lib/access";
 import { getCurrentUser } from "@/lib/getCurrentUser";
 import { revalidatePath } from "next/cache";
 import { r2, uploadToR2, BUCKET } from "@/lib/r2";
@@ -101,6 +107,7 @@ export async function getUploadUrl(
 ): Promise<{ url: string; storagePath: string }> {
   const ext = fileName.split(".").pop();
   const storagePath = `${workspaceSlug}/${expenseId}/${crypto.randomUUID()}.${ext}`;
+  await requireStorageKeyAccess(storagePath);
 
   const url = await getSignedUrl(
     r2,
@@ -130,6 +137,7 @@ export async function checkDuplicateExpenses(
   paidAt: string,
   providerId?: string | null,
 ): Promise<DuplicateCandidate[]> {
+  await requireWorkspaceAccess(workspaceId);
   let query = supabaseAdmin
     .from("expense")
     .select("id, amount, paid_at, invoice_series, invoice_number, provider:provider_id(name)")
@@ -160,6 +168,7 @@ export async function createExpense(
 ): Promise<{ id?: string; error?: string }> {
   const user = await getCurrentUser();
   if (!user) return { error: "No autenticado" };
+  await requireWorkspaceAccess(input.workspace_id);
 
   // 1. Resolve provider
   let providerId: string | null = null;
@@ -223,6 +232,7 @@ async function insertExpenseItems(
 }
 
 export async function getExpenseItems(expenseId: string): Promise<ExpenseItem[]> {
+  await requireRowAccess("expense", expenseId);
   const { data, error } = await supabaseAdmin
     .from("expense_item")
     .select(
@@ -239,6 +249,7 @@ export async function saveExpenseItems(
   expenseId: string,
   items: ExpenseItemInput[],
 ): Promise<{ error?: string }> {
+  await requireRowAccess("expense", expenseId);
   const { error: deleteError } = await supabaseAdmin
     .from("expense_item")
     .delete()
@@ -259,6 +270,9 @@ export async function registerAttachment(
   storagePath: string,
   fileName: string,
 ): Promise<{ error?: string }> {
+  await requireStorageKeyAccess(storagePath);
+  if (!storagePath.startsWith(`${storagePath.split("/")[0]}/${expenseId}/`))
+    throw new AccessError();
   const { error } = await supabaseAdmin.from("expense_attachment").insert({
     expense_id: expenseId,
     storage_path: storagePath,
@@ -268,6 +282,7 @@ export async function registerAttachment(
 }
 
 export async function deleteExpense(id: string, workspaceSlug: string): Promise<void> {
+  await requireRowAccess("expense", id);
   // 1. Obtener attachments del expense
   const { data: attachments, error: fetchError } = await supabaseAdmin
     .from("expense_attachment")
@@ -296,15 +311,21 @@ export async function deleteExpense(id: string, workspaceSlug: string): Promise<
   revalidatePath(`/admin/workspaces/${workspaceSlug}/expenses`);
 }
 
-export async function deleteAttachment(
-  attachmentId: string,
-  storagePath: string,
-): Promise<{ error?: string }> {
+export async function deleteAttachment(attachmentId: string): Promise<{ error?: string }> {
   try {
+    const { data: attachment, error: fetchError } = await supabaseAdmin
+      .from("expense_attachment")
+      .select("storage_path, expense_id")
+      .eq("id", attachmentId)
+      .maybeSingle();
+    if (fetchError) throw new Error(fetchError.message);
+    if (!attachment) throw new AccessError();
+    await requireRowAccess("expense", attachment.expense_id);
+
     await r2.send(
       new DeleteObjectsCommand({
         Bucket: BUCKET,
-        Delete: { Objects: [{ Key: storagePath }] },
+        Delete: { Objects: [{ Key: attachment.storage_path }] },
       }),
     );
 
@@ -328,6 +349,7 @@ export async function uploadAttachment(
   try {
     const ext = file.name.split(".").pop();
     const storagePath = `${workspaceSlug}/${expenseId}/${crypto.randomUUID()}.${ext}`;
+    await requireStorageKeyAccess(storagePath);
 
     await uploadToR2(storagePath, Buffer.from(file.buffer), file.type);
 
@@ -356,6 +378,7 @@ export async function initiateMultipartUpload(
   // UUID en el key para evitar colisiones si se sube el mismo nombre dos veces
   const ext = fileName.split(".").pop();
   const key = `${workspaceSlug}/${expenseId}/${crypto.randomUUID()}.${ext}`;
+  await requireStorageKeyAccess(key);
 
   const { UploadId } = await r2.send(
     new CreateMultipartUploadCommand({ Bucket: BUCKET, Key: key, ContentType: contentType }),
@@ -370,6 +393,7 @@ export async function getPartPresignedUrl(
   uploadId: string,
   partNumber: number,
 ): Promise<{ url: string }> {
+  await requireStorageKeyAccess(key);
   const url = await getSignedUrl(
     r2,
     new UploadPartCommand({ Bucket: BUCKET, Key: key, UploadId: uploadId, PartNumber: partNumber }),
@@ -383,6 +407,7 @@ export async function completeMultipartUpload(
   uploadId: string,
   parts: { PartNumber: number; ETag: string }[],
 ): Promise<void> {
+  await requireStorageKeyAccess(key);
   await r2.send(
     new CompleteMultipartUploadCommand({
       Bucket: BUCKET,
@@ -394,5 +419,6 @@ export async function completeMultipartUpload(
 }
 
 export async function abortMultipartUpload(key: string, uploadId: string): Promise<void> {
+  await requireStorageKeyAccess(key);
   await r2.send(new AbortMultipartUploadCommand({ Bucket: BUCKET, Key: key, UploadId: uploadId }));
 }

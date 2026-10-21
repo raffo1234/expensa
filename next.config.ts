@@ -13,9 +13,6 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "*.googleusercontent.com" },
       { protocol: "http", hostname: "*.googleusercontent.com" },
       { protocol: "https", hostname: "s.yimg.com" },
-      { protocol: "https", hostname: "storage.cadia.pe" },
-      { protocol: "https", hostname: "storage.cadia.cc" },
-      { protocol: "https", hostname: "pub-c3fce7daeb3b43b5b514e48bccee2153.r2.dev" },
     ],
   },
 

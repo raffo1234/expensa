@@ -9,7 +9,7 @@ import { Suspense } from "react";
 export default async function Page() {
   return (
     <>
-      <h1 className="mb-6 font-semibold text-lg block">Global Settings</h1>
+      <h1 className="mb-6 text-lg block font-book text-navy-900">Global Settings</h1>
       <Suspense fallback={<SettingsPageFallBack />}>
         <SettingsSection />
       </Suspense>

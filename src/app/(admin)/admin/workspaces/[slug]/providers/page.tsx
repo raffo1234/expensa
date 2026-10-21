@@ -125,7 +125,7 @@ function ProviderModal({
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
         {/* Modal header */}
         <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="text-base font-bold text-gray-900">
+          <h2 className="text-base font-book text-navy-900">
             {mode === "create" ? "Nuevo proveedor" : "Editar proveedor"}
           </h2>
           <button
@@ -294,7 +294,7 @@ function DeleteDialog({
             <path d="M9 6V4h6v2" />
           </svg>
         </div>
-        <h2 className="text-base font-bold text-gray-900 mb-1">Eliminar proveedor</h2>
+        <h2 className="text-base mb-1 font-book text-navy-900">Eliminar proveedor</h2>
         <p className="text-sm text-gray-500 mb-1">
           ¿Estás seguro de que quieres eliminar{" "}
           <span className="font-semibold text-gray-800">{provider.name}</span>?

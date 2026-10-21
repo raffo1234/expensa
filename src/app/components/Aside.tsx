@@ -98,7 +98,7 @@ export default function Aside({
               className={`${isMenuContracted ? "lg:invisible lg:opacity-0 lg:w-0" : "lg:visible lg:opacity-100"} transition-all duration-300 truncate`}
             >
               <p className="text-sm leading-3 mb-1 text-gray-500">{t("welcome")}</p>
-              <h3 className="font-semibold text-gray-700 truncate text-lg">{userName}</h3>
+              <h3 className="truncate text-lg font-book text-navy-900">{userName}</h3>
               <p className="text-xs text-gray-500">{roleName}</p>
             </div>
           </div>

@@ -483,7 +483,7 @@ function FilterSelect({
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-colors cursor-pointer"
+      className={`${SELECT_CLASS} w-auto cursor-pointer`}
     >
       <option value="">{placeholder}</option>
       {options.map((o) => (
@@ -577,7 +577,7 @@ export default function DashboardClient({ workspaces, defaultYear, defaultMonth 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4 flex-wrap">
           <div>
             {/* Same title style as the other screens (FormSection). */}
-            <h1 className="text-lg font-semibold text-gray-800">Dashboard</h1>
+            <h1 className="text-lg font-book text-navy-900">Dashboard</h1>
             {currentWorkspace && (
               <p className="text-gray-500 text-sm mt-0.5">{currentWorkspace.name}</p>
             )}
@@ -707,7 +707,7 @@ export default function DashboardClient({ workspaces, defaultYear, defaultMonth 
         {/* ── Trend Chart ─────────────────────────────────────────────────── */}
         <div className="bg-white border border-gray-200 rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-gray-700 font-medium text-sm">
+            <h2 className="text-sm font-book text-navy-900">
               Gastos por día
               <span className="text-gray-300 font-normal ml-2 text-xs">fecha de pago</span>
             </h2>
@@ -733,11 +733,11 @@ export default function DashboardClient({ workspaces, defaultYear, defaultMonth 
         {/* ── Category + Provider Charts ───────────────────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="bg-white border border-gray-200 rounded-xl p-5">
-            <h2 className="text-gray-700 font-medium text-sm mb-4">Top categorías</h2>
+            <h2 className="text-sm mb-4 font-book text-navy-900">Top categorías</h2>
             <CategoryChart categories={data?.categories ?? []} loading={isPending && !data} />
           </div>
           <div className="bg-white border border-gray-200 rounded-xl p-5">
-            <h2 className="text-gray-700 font-medium text-sm mb-4">Top proveedores</h2>
+            <h2 className="text-sm mb-4 font-book text-navy-900">Top proveedores</h2>
             <ProviderChart providers={data?.providers ?? []} loading={isPending && !data} />
           </div>
         </div>
@@ -745,7 +745,7 @@ export default function DashboardClient({ workspaces, defaultYear, defaultMonth 
         {/* ── Recent Expenses ──────────────────────────────────────────────── */}
         <div className="bg-white border border-gray-200 rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-gray-700 font-medium text-sm">Últimos gastos</h2>
+            <h2 className="text-sm font-book text-navy-900">Últimos gastos</h2>
             {data?.recent.length === 10 && (
               <span className="text-gray-300 text-xs">10 más recientes</span>
             )}

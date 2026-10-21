@@ -40,7 +40,7 @@ export default function NoAccess() {
         Access Denied
       </p>
 
-      <h1 className="text-2xl font-semibold text-slate-700 mb-2 text-center">
+      <h1 className="text-2xl mb-2 text-center font-book text-navy-900">
         You don&apos;t have permission to view this page
       </h1>
 

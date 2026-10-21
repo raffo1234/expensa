@@ -15,7 +15,7 @@ export default function MySettings({ userId }: { userId: string }) {
 
   return (
     <FieldsSection>
-      <h2 className="font-semibold">Admin Menu Visibility</h2>
+      <h2 className="font-book text-navy-900">Admin Menu Visibility</h2>
       <div className="flex gap-3 items-center">
         <Switch
           loading={isLoading}

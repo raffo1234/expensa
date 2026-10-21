@@ -10,7 +10,6 @@ import {
 import FieldsSection from "./FieldsSection";
 import useSWR from "swr";
 import { adminRolesKey, INPUT_CLASS, SELECT_CLASS } from "@/constants";
-import { Icon } from "@iconify/react/dist/iconify.js";
 import toast from "react-hot-toast";
 
 import EditUserHeader from "./EditUserHeader";
@@ -104,9 +103,6 @@ export default function EditUserContent({ userId }: { userId: string }) {
                   </option>
                 ))}
               </select>
-              <div className="absolute top-1/2 -translate-y-1/2 right-1 pr-3 pointer-events-none bg-white">
-                <Icon icon="solar:alt-arrow-down-linear" fontSize={16} />
-              </div>
             </div>
           </div>
         </div>

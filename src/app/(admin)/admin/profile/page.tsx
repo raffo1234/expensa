@@ -43,7 +43,7 @@ export default async function Page() {
 
   return (
     <div className="max-w-2xl mx-auto py-10">
-      <h1 className="mb-6 font-semibold text-lg block">{t("title")}</h1>
+      <h1 className="mb-6 text-lg block font-book text-navy-900">{t("title")}</h1>
       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
         <div className="bg-slate-50 border-b border-gray-200 px-8 py-8 flex items-center gap-6">
           {(profile?.image_url ?? user?.image) ? (
@@ -60,7 +60,7 @@ export default async function Page() {
             </div>
           )}
           <div>
-            <h2 className="text-xl font-semibold text-gray-800">{fullName}</h2>
+            <h2 className="text-xl font-book text-navy-900">{fullName}</h2>
             <p className="text-sm text-gray-400 mt-0.5">{profile?.email ?? user?.email}</p>
             {profile?.role?.name && (
               <div className="w-fit mt-1.5">

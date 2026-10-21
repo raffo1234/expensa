@@ -12,7 +12,7 @@ import { Suspense } from "react";
 export default async function Page() {
   return (
     <>
-      <h1 className="mb-6 font-semibold text-lg block">Roles</h1>
+      <h1 className="mb-6 text-lg block font-book text-navy-900">Roles</h1>
       <div className="border border-gray-200 rounded-xl bg-white">
         <Suspense fallback={<FallBackRolesList />}>
           <RolesSection />

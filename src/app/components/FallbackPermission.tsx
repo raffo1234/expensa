@@ -5,7 +5,7 @@ import Link from "next/link";
 export default function FallbackPermission() {
   return (
     <div className="flex flex-col justify-center items-center gap-8">
-      <h1 className="text-lg font-semibold">Opps!</h1>
+      <h1 className="text-lg font-book text-navy-900">Opps!</h1>
       <p>You don&apos;t have permission to view this page.</p>
       <Image
         src="/opps.png"

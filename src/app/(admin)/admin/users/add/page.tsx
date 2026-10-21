@@ -24,7 +24,7 @@ export default async function Page() {
 
   return (
     <>
-      <h1 className="mb-8 font-semibold text-lg block">Add User</h1>
+      <h1 className="mb-8 text-lg block font-book text-navy-900">Add User</h1>
       <CheckPermission
         userRoleId={user.role_id}
         requiredPermission={Permissions.MANAGE_USERS}

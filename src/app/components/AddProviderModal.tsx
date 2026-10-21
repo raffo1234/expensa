@@ -74,7 +74,7 @@ export default function AddProviderModal({
 
   return (
     <div className="space-y-5 p-1">
-      <h2 className="text-base font-semibold text-gray-900">Nuevo proveedor</h2>
+      <h2 className="text-base font-book text-navy-900">Nuevo proveedor</h2>
 
       <Field label="RUC *">
         <input

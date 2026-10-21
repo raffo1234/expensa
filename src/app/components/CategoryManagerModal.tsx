@@ -113,7 +113,7 @@ export default function CategoryManagerModal({
 
   return (
     <div className="space-y-5 p-1">
-      <h2 className="text-base font-semibold text-gray-900">Categorias</h2>
+      <h2 className="text-base font-book text-navy-900">Categorias</h2>
 
       {categories.length > 0 ? (
         <ul className="space-y-1.5 max-h-60 overflow-y-auto">

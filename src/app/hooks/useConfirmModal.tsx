@@ -69,7 +69,7 @@ function ConfirmModalContent({
     <FormSection>
       <div className="flex flex-col items-center text-center py-4">
         <div className={`${iconColors[variant]} rounded-full mb-5`}>{icons[variant]}</div>
-        <h2 className="text-xl font-semibold mb-2">{title}</h2>
+        <h2 className="text-xl mb-2 font-book text-navy-900">{title}</h2>
         {description && <p className="text-slate-500 text-sm mb-8 max-w-sm">{description}</p>}
         <div className="flex gap-3 mt-2">
           <button

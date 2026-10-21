@@ -1,5 +1,6 @@
 "use client";
 
+import SelectChevron from "./SelectChevron";
 import { useEffect, useRef, useState } from "react";
 import { INPUT_CLASS } from "@/constants";
 
@@ -45,21 +46,7 @@ export default function CategoryFilter({ categories, value, onChange }: Props) {
         ) : (
           <span className="text-gray-400">Todas las categorías</span>
         )}
-        <svg
-          width="12"
-          height="12"
-          viewBox="0 0 24 24"
-          fill="none"
-          className={`text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}
-        >
-          <path
-            d="M6 9l6 6 6-6"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+        <SelectChevron open={open} />
       </button>
 
       {open && (

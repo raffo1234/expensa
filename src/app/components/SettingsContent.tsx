@@ -1,6 +1,6 @@
 "use client";
 
-import { Icon } from "@iconify/react/dist/iconify.js";
+import { SELECT_CLASS } from "@/constants";
 import FieldLabel from "./FieldLabel";
 import FieldsSection from "./FieldsSection";
 import { RoleType } from "@/types/roleType";
@@ -57,7 +57,7 @@ export default function SettingsContent({
 
   return (
     <FieldsSection>
-      <h2 className="font-semibold">Default Role on Sign Up</h2>
+      <h2 className="font-book text-navy-900">Default Role on Sign Up</h2>
       <div className="grow-1 relative">
         <FieldLabel htmlFor="name">Roles</FieldLabel>
         <div className="relative">
@@ -65,7 +65,7 @@ export default function SettingsContent({
             disabled={isSaving}
             defaultValue={defaultSignupRole ?? ""}
             onChange={onChange}
-            className="w-full disable:opacity-50 transition-colors duration-300 px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-violet-100  focus:border-violet-500 bg-white"
+            className={SELECT_CLASS}
           >
             {roles?.map(({ id, name }) => {
               return (
@@ -75,9 +75,6 @@ export default function SettingsContent({
               );
             })}
           </select>
-          <div className="absolute top-1/2 -translate-y-1/2 right-1 pr-3 pointer-events-none bg-white">
-            <Icon icon="solar:alt-arrow-down-linear" fontSize={16} />
-          </div>
         </div>
       </div>
     </FieldsSection>

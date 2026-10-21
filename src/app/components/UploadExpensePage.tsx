@@ -436,7 +436,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
   const showDuplicateModal = (dupes: DuplicateCandidate[]) => {
     setModalContent(
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">Posible duplicado</h2>
+        <h2 className="text-lg font-book text-navy-900">Posible duplicado</h2>
         <p className="text-sm text-gray-600">
           Se encontraron gastos con el mismo monto y fecha de pago. ¿Deseas guardar de todos modos?
         </p>

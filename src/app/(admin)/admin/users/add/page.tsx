@@ -41,7 +41,7 @@ export default async function Page() {
                 id="username"
                 name="username"
                 required
-                className="bg-white w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
+                className="bg-white w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-violet-100  focus:border-violet-500"
               />
             </fieldset>
             <fieldset>
@@ -53,7 +53,7 @@ export default async function Page() {
                 id="email"
                 name="email"
                 required
-                className="bg-white w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
+                className="bg-white w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-violet-100  focus:border-violet-500"
               />
             </fieldset>
             <fieldset>
@@ -65,7 +65,7 @@ export default async function Page() {
                 id="password"
                 name="password"
                 required
-                className="bg-white w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
+                className="bg-white w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-violet-100  focus:border-violet-500"
               />
             </fieldset>
           </div>
@@ -79,7 +79,7 @@ export default async function Page() {
             </Link>
             <button
               type="submit"
-              className="text-white font-semibold disabled:border-gray-100 disabled:bg-gray-100 inline-block py-3 px-10 text-sm bg-cyan-500 hover:bg-cyan-400 transition-colors duration-500 rounded-lg"
+              className="text-white font-semibold disabled:border-gray-100 disabled:bg-gray-100 inline-block py-3 px-10 text-sm bg-violet-600 hover:bg-violet-700 transition-colors duration-500 rounded-lg"
             >
               Guardar
             </button>

@@ -9,7 +9,7 @@ import FormSection from "@/components/FormSection";
 
 export default async function Page() {
   return (
-    <FormSection title="Expenses summary">
+    <FormSection title="Resumen de gastos">
       <Suspense fallback={<div className="h-96 bg-gray-100 rounded-xl animate-pulse" />}>
         <SummarySection />
       </Suspense>

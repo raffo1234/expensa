@@ -98,10 +98,12 @@
     "residents": "Residents",
     "hospitals": "Hospitals",
     "my-studies": "My Studies",
-    "my-workspaces": "My Workspaces",
+    "my-workspaces": "My projects",
     "settings": "Settings",
     "my-settings": "My Settings",
-    "sign-out": "Sign Out"
+    "sign-out": "Sign Out",
+    "dashboard": "Dashboard",
+    "summary": "Summary"
   },
   "My-Studies": {
     "title": "My Studies",

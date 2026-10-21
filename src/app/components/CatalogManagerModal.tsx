@@ -58,15 +58,19 @@ export default function CatalogManagerModal({
     try {
       if (isEditing) {
         const result = await update(editingId, name);
-        if (result.error) { setError(result.error); return; }
-        const updated = items.map((i) =>
-          i.id === editingId ? { ...i, name: name.trim() } : i,
-        );
+        if (result.error) {
+          setError(result.error);
+          return;
+        }
+        const updated = items.map((i) => (i.id === editingId ? { ...i, name: name.trim() } : i));
         setItems(updated);
         onUpdate(updated);
       } else {
         const result = await create(name);
-        if (result.error) { setError(result.error); return; }
+        if (result.error) {
+          setError(result.error);
+          return;
+        }
         const updated = [...items.filter((i) => i.id !== result.item!.id), result.item!].sort(
           (a, b) => a.name.localeCompare(b.name),
         );
@@ -83,7 +87,10 @@ export default function CatalogManagerModal({
     setDeletingId(id);
     try {
       const result = await remove(id);
-      if (result.error) { setError(result.error); return; }
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
       const updated = items.filter((i) => i.id !== id);
       setItems(updated);
       onUpdate(updated);
@@ -108,7 +115,7 @@ export default function CatalogManagerModal({
               <button
                 type="button"
                 onClick={() => startEdit(item)}
-                className="text-xs text-gray-400 hover:text-cyan-600 opacity-0 group-hover:opacity-100 transition"
+                className="text-xs text-gray-400 hover:text-violet-600 opacity-0 group-hover:opacity-100 transition"
               >
                 Editar
               </button>
@@ -128,9 +135,7 @@ export default function CatalogManagerModal({
       )}
 
       <div className="border-t border-gray-100 pt-4 space-y-3">
-        <p className="text-xs font-medium text-gray-500">
-          {isEditing ? "Editar" : "Nuevo"}
-        </p>
+        <p className="text-xs font-medium text-gray-500">{isEditing ? "Editar" : "Nuevo"}</p>
         <Field label="Nombre *">
           <input
             type="text"
@@ -165,7 +170,11 @@ export default function CatalogManagerModal({
       </div>
 
       <div className="pt-2">
-        <button type="button" onClick={() => setModalOpen(false)} className={SECONDARY_BUTTON_CLASS}>
+        <button
+          type="button"
+          onClick={() => setModalOpen(false)}
+          className={SECONDARY_BUTTON_CLASS}
+        >
           Cerrar
         </button>
       </div>

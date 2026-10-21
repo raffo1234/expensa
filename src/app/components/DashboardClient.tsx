@@ -1,5 +1,6 @@
 "use client";
 
+import { SELECT_CLASS } from "@/constants";
 import { useState, useEffect, useTransition, useCallback } from "react";
 import {
   AreaChart,
@@ -585,25 +586,20 @@ export default function DashboardClient({ workspaces, defaultYear, defaultMonth 
       {/* ── Header ────────────────────────────────────────────────────────── */}
       <header className="border-b border-gray-200  z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-violet-50 border border-violet-200 rounded-lg flex items-center justify-center">
-              <span className="text-violet-600 text-sm font-bold">$</span>
-            </div>
-            <div>
-              <h1 className="text-gray-900 font-semibold text-sm leading-none">
-                Dashboard Financiero
-              </h1>
-              {currentWorkspace && (
-                <p className="text-gray-400 text-xs mt-0.5">{currentWorkspace.name}</p>
-              )}
-            </div>
+          <div>
+            {/* Same title style as the other screens (FormSection). */}
+            <h1 className="text-lg font-semibold text-gray-800">Dashboard</h1>
+            {currentWorkspace && (
+              <p className="text-gray-500 text-sm mt-0.5">{currentWorkspace.name}</p>
+            )}
           </div>
 
           {workspaces.length > 0 && (
             <select
               value={workspaceId}
               onChange={(e) => setWorkspaceId(e.target.value)}
-              className="bg-white border border-gray-300 text-gray-800 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-300 transition-colors cursor-pointer font-medium"
+              aria-label="Proyecto"
+              className={`${SELECT_CLASS} w-auto font-medium`}
             >
               {workspaces.map((w) => (
                 <option key={w.id} value={w.id}>

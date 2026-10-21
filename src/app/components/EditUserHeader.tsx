@@ -41,7 +41,7 @@ export default function EditUserHeader({ user }: { user: UserType }) {
               <Icon icon="solar:arrow-right-outline" className="inline-block" />
               <Link
                 href={`/admin/users/edit/${supervisor.id}`}
-                className="text-cyan-500 underline underline-offset-4"
+                className="text-violet-500 underline underline-offset-4"
               >
                 <PopoverInnerButton title="See">
                   {supervisor?.first_name} {supervisor?.last_name}

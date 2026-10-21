@@ -30,7 +30,7 @@ export default function ProviderFilter({ providers, value, onChange }: Props) {
 
   const select = useCallback(
     (index: number) => {
-      onChange(index === 0 ? "" : filtered[index - 1]?.id ?? "");
+      onChange(index === 0 ? "" : (filtered[index - 1]?.id ?? ""));
       setOpen(false);
     },
     [filtered, onChange],
@@ -125,7 +125,7 @@ export default function ProviderFilter({ providers, value, onChange }: Props) {
               type="button"
               onClick={() => select(0)}
               className={`w-full text-left px-4 py-2 text-sm transition ${
-                highlighted === 0 ? "bg-purple-50" : "hover:bg-gray-50"
+                highlighted === 0 ? "bg-violet-50" : "hover:bg-gray-50"
               } ${!value ? "font-semibold text-gray-900" : "text-gray-500"}`}
             >
               Todos los proveedores
@@ -136,7 +136,7 @@ export default function ProviderFilter({ providers, value, onChange }: Props) {
                 type="button"
                 onClick={() => select(i + 1)}
                 className={`w-full text-left px-4 py-2 text-sm transition ${
-                  highlighted === i + 1 ? "bg-purple-50" : "hover:bg-gray-50"
+                  highlighted === i + 1 ? "bg-violet-50" : "hover:bg-gray-50"
                 } ${value === provider.id ? "font-semibold text-gray-900" : "text-gray-600"}`}
               >
                 {provider.name}

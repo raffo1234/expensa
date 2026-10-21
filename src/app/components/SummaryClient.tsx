@@ -467,7 +467,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
               className={`${PRIMARY_BUTTON_CLASS} justify-center`}
             >
               <Icon icon="solar:download-linear" fontSize={ICON_SIZE} />
-              Export CSV
+              Exportar CSV
             </button>
             <button
               onClick={() =>
@@ -496,7 +496,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
           <SearchInput
             value={searchText}
             onChange={handleSearchChange}
-            placeholder="Search invoice, provider, notes..."
+            placeholder="Buscar por factura, proveedor o notas…"
             className="flex-1"
           />
           {hasFilters && <ClearFiltersButton onClick={clearFilters} />}
@@ -580,24 +580,26 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
         </div>
       </div>
       <div className="flex justify-between items-center font-semibold">
-        <span>Total: {total}</span>
+        <span>
+          {total} {total === 1 ? "registro" : "registros"}
+        </span>
         <div className="flex text-sm items-center gap-2">
           <button
             disabled={page === 0}
             onClick={() => setPage((p) => p - 1)}
             aria-label="Página anterior"
-            className="px-3 py-1 bg-cyan-400 disabled:opacity-50 disabled:pointer-events-none text-white rounded-full cursor-pointer"
+            className="px-3 py-1 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:pointer-events-none text-white rounded-full cursor-pointer"
           >
             <Icon icon="solar:alt-arrow-left-linear" fontSize={ICON_SIZE} />
           </button>
           <span className="uppercase">
-            {page + 1} of {totalPages}
+            Página {page + 1} de {totalPages}
           </span>
           <button
             disabled={(page + 1) * PAGE_SIZE >= total}
             onClick={() => setPage((p) => p + 1)}
             aria-label="Página siguiente"
-            className="px-3 py-1 bg-cyan-400 disabled:opacity-50 disabled:pointer-events-none text-white rounded-full cursor-pointer"
+            className="px-3 py-1 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:pointer-events-none text-white rounded-full cursor-pointer"
           >
             <Icon icon="solar:alt-arrow-right-linear" fontSize={ICON_SIZE} />
           </button>
@@ -608,7 +610,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
         columns={SUMMARY_COLUMNS}
         isLoading={isLoading}
         isEmpty={expenses.length === 0}
-        emptyMessage="No expenses found"
+        emptyMessage="No hay gastos con estos filtros"
       >
         {expenses.map((expense) => {
           const prov = Array.isArray(expense.provider) ? expense.provider[0] : expense.provider;
@@ -672,7 +674,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
                       target="_blank"
                       rel="noopener noreferrer"
                       title={att.file_name ?? "attachment"}
-                      className="inline-flex items-center gap-2 p-2 rounded-lg bg-cyan-50 text-cyan-600 hover:bg-cyan-100 text-sm transition-colors"
+                      className="inline-flex items-center gap-2 p-2 rounded-lg bg-violet-50 text-violet-600 hover:bg-violet-100 text-sm transition-colors"
                     >
                       <Icon
                         icon={

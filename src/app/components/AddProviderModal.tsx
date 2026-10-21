@@ -107,7 +107,7 @@ export default function AddProviderModal({
                 onSelect(existing);
                 setModalOpen(false);
               }}
-              className="text-cyan-600 underline underline-offset-2 font-medium"
+              className="text-violet-600 underline underline-offset-2 font-medium"
             >
               Usar &quot;{existing.name}&quot;
             </button>

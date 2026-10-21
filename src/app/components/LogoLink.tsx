@@ -8,7 +8,7 @@ export default async function LogoLink() {
       className="flex text-3xl items-center font-bold font-title tracking-tight gap-1"
     >
       <svg
-        className="text-purple-500 pt-1"
+        className="text-violet-500 pt-1"
         xmlns="http://www.w3.org/2000/svg"
         width="32"
         height="32"
@@ -20,7 +20,7 @@ export default async function LogoLink() {
         </g>
       </svg>
       <span>
-        fino<span className="text-purple-500">lis</span>
+        fino<span className="text-violet-500">lis</span>
       </span>
     </Link>
   );

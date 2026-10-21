@@ -37,9 +37,9 @@ export default function SettingsContent({
 
       if (error) {
         console.error("Error updating email signup setting:", error);
-        toast.error("Failed to update settings.");
+        toast.error("No se pudo guardar la configuración.");
       } else {
-        toast.success("Settings updated successfully!");
+        toast.success("Configuración guardada");
       }
     } catch (error) {
       console.error("An unexpected error occurred:", error);
@@ -65,7 +65,7 @@ export default function SettingsContent({
             disabled={isSaving}
             defaultValue={defaultSignupRole ?? ""}
             onChange={onChange}
-            className="w-full disable:opacity-50 transition-colors duration-300 px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500 bg-white"
+            className="w-full disable:opacity-50 transition-colors duration-300 px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-violet-100  focus:border-violet-500 bg-white"
           >
             {roles?.map(({ id, name }) => {
               return (

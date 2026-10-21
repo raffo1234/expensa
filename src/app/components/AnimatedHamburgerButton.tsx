@@ -9,7 +9,7 @@ export default function AnimatedHamburgerButton({
     <button
       onClick={toggleMenu}
       className="lg:invisible z-50 visible absolute right-4 top-5 h-10 w-10 flex flex-col justify-center items-center focus:outline-none group"
-      aria-label={isOpen ? "Close" : "Open"}
+      aria-label={isOpen ? "Cerrar menú" : "Abrir menú"}
     >
       <div
         className={`

@@ -89,7 +89,7 @@ export default function NewWorkspaceForm() {
     <div className="max-w-xl mx-auto">
       <BackLink href="/admin/workspaces">Volver a workspaces</BackLink>
       <TitleWrapper>
-        <PageTitle>Nuevo Workspace</PageTitle>
+        <PageTitle>Nuevo proyecto</PageTitle>
         <p className="text-slate-500 text-sm">
           Los workspaces te ayudan a organizar tus proyectos y equipo.
         </p>
@@ -102,7 +102,7 @@ export default function NewWorkspaceForm() {
       >
         <FormSection>
           <div className="space-y-7">
-            <Field label="Nombre del workspace" hint="Mínimo 2 caracteres.">
+            <Field label="Nombre del proyecto" hint="Mínimo 2 caracteres.">
               <input
                 value={name}
                 onChange={(e) => handleNameChange(e.target.value)}
@@ -113,7 +113,7 @@ export default function NewWorkspaceForm() {
             </Field>
 
             <Field
-              label="Slug"
+              label="Dirección (URL)"
               hint="Se usa en las URLs. Se genera automáticamente — o personalízalo."
             >
               <div className="flex items-center">
@@ -123,7 +123,7 @@ export default function NewWorkspaceForm() {
                 <input
                   value={slug}
                   onChange={(e) => handleSlugChange(e.target.value)}
-                  placeholder="mi-workspace"
+                  placeholder="mi-proyecto"
                   maxLength={60}
                   className={INPUT_CLASS}
                 />
@@ -136,7 +136,7 @@ export default function NewWorkspaceForm() {
                   <div className={STYLED_ICON_CLASS}>{name[0]?.toUpperCase()}</div>
                   <div>
                     <p className="text-sm font-semibold">{name}</p>
-                    <p className="text-sm text-purple-800">/{slug || "…"}</p>
+                    <p className="text-sm text-violet-800">/{slug || "…"}</p>
                   </div>
                 </div>
               </FormInnerSection>

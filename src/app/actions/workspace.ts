@@ -35,7 +35,7 @@ export async function deleteWorkspace(id: string) {
     .eq("id", id)
     .maybeSingle();
   if (!workspace || workspace.created_by !== user.id)
-    throw new Error("No tienes acceso a este workspace");
+    throw new Error("No tienes acceso a este proyecto");
 
   const { data: attachments, error: fetchError } = await supabaseAdmin
     .from("expense_attachment")

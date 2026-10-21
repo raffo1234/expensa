@@ -44,12 +44,12 @@ function TableView({
     try {
       await deleteWorkspace(id);
       onDelete(id);
-      toast.success("Workspace eliminado");
+      toast.success("Proyecto eliminado");
     } catch (err) {
       toast.error(
         err instanceof Error && err.message.includes("acceso")
-          ? "Solo quien creó el workspace puede eliminarlo."
-          : "No se pudo eliminar el workspace. Inténtalo de nuevo.",
+          ? "Solo quien creó el proyecto puede eliminarlo."
+          : "No se pudo eliminar el proyecto. Inténtalo de nuevo.",
       );
     } finally {
       setDeletingId(null);
@@ -63,7 +63,7 @@ function TableView({
           <table className="w-full border-collapse">
             <thead>
               <tr className="border-b border-gray-200 sticky top-0 z-10">
-                {["Workspace", "Slug", "Gastos", "Creado", ""].map((h, i) => (
+                {["Proyecto", "URL", "Gastos", "Creado", ""].map((h, i) => (
                   <th key={i} className="px-6 py-4 text-left text-sm">
                     {h}
                   </th>
@@ -74,7 +74,7 @@ function TableView({
               {workspaces.map((ws) => (
                 <tr
                   key={ws.id}
-                  className="border-b border-purple-100 last:border-0 hover:bg-violet-50/60 transition-colors duration-150"
+                  className="border-b border-violet-100 last:border-0 hover:bg-violet-50/60 transition-colors duration-150"
                 >
                   <td className="font-semibold text-[15px] text-gray-800">
                     <Link
@@ -121,8 +121,8 @@ function TableView({
                         + Agregar
                       </Link>
                       <DeleteButton
-                        title="Eliminar workspace"
-                        confirmTitle="¿Eliminar workspace?"
+                        title="Eliminar proyecto"
+                        confirmTitle="¿Eliminar proyecto?"
                         confirmDescription="Se eliminarán todos los gastos y archivos adjuntos. Esta acción no se puede deshacer."
                         confirmLabel="Eliminar"
                         cancelLabel="Cancelar"
@@ -159,7 +159,7 @@ export default function WorkspaceClient({ workspaces: initial }: { workspaces: W
   return (
     <div>
       <Link href="/admin/workspaces/new" className={PRIMARY_BUTTON_CLASS}>
-        <PlusIcon /> Nuevo Workspace
+        <PlusIcon /> Nuevo proyecto
       </Link>
       <div className="relative my-6">
         <svg
@@ -178,30 +178,30 @@ export default function WorkspaceClient({ workspaces: initial }: { workspaces: W
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar workspaces…"
+          placeholder="Buscar proyectos…"
           className={SEARCH_CLASS}
         />
       </div>
 
       {workspaces.length === 0 && (
         <div className="text-center py-20">
-          <p className="text-[15px] text-gray-400 mb-4">Aún no tienes workspaces</p>
+          <p className="text-[15px] text-gray-400 mb-4">Aún no tienes proyectos</p>
           <Link href="/admin/workspaces/new" className={SECONDARY_BUTTON_CLASS}>
-            <PlusIcon /> Crear mi primer workspace
+            <PlusIcon /> Crear mi primer proyecto
           </Link>
         </div>
       )}
 
       {workspaces.length > 0 && filtered.length === 0 && (
         <div className="text-center py-16 text-gray-400">
-          <p className="text-[15px] m-0">Ningún workspace coincide con &quot;{search}&quot;</p>
+          <p className="text-[15px] m-0">Ningún proyecto coincide con &quot;{search}&quot;</p>
         </div>
       )}
 
       {filtered.length > 0 ? (
         <>
           <p className="text-gray-600 mb-4">
-            {filtered.length} workspace{filtered.length !== 1 ? "s" : ""}
+            {filtered.length} proyecto{filtered.length !== 1 ? "s" : ""}
           </p>
           <TableView workspaces={filtered} onDelete={handleDelete} />
         </>

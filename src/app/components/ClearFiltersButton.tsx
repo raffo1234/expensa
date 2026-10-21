@@ -9,7 +9,7 @@ export default function ClearFiltersButton({ onClick }: { onClick: () => void })
         type="button"
         onClick={onClick}
         aria-label="Limpiar filtros"
-        className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-purple-400 hover:text-purple-500 transition-colors cursor-pointer"
+        className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-violet-400 hover:text-violet-500 transition-colors cursor-pointer"
       >
         <svg
           width="14"

@@ -1,4 +1,6 @@
-import { useState } from "react";
+"use client";
+
+import { useEffect, useState } from "react";
 import { Popover } from "react-tiny-popover";
 
 export default function PopoverInnerButton({
@@ -13,6 +15,11 @@ export default function PopoverInnerButton({
   positions?: ["top" | "bottom" | "left" | "right", ...("top" | "bottom" | "left" | "right")[]];
 }) {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  // The tooltip lives in a portal that only exists in the browser. Rendering it
+  // during server rendering/hydration makes the HTML differ (hydration error),
+  // so it's attached after mount; it stays mounted so it can fade in and out.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const inner = (
     <span
@@ -24,7 +31,7 @@ export default function PopoverInnerButton({
     </span>
   );
 
-  if (!title) return inner;
+  if (!title || !mounted) return inner;
 
   return (
     <Popover

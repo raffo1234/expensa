@@ -97,7 +97,9 @@ export default function ExpenseTable({
                   {expense.issued_at ? formatSafeDate(expense.issued_at, "d 'de' MMMM, yyyy") : "-"}
                 </p>
                 <p className="text-sm text-gray-400 whitespace-nowrap">
-                  {parsedDate ? formatDistanceToNow(parsedDate, { addSuffix: true, locale: es }) : "-"}
+                  {parsedDate
+                    ? formatDistanceToNow(parsedDate, { addSuffix: true, locale: es })
+                    : "-"}
                 </p>
               </Link>
             </td>
@@ -113,9 +115,18 @@ export default function ExpenseTable({
                 {materialExpenseIds?.has(expense.id) ? (
                   <span
                     title="Tiene materiales registrados"
-                    className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-cyan-100 text-cyan-600"
+                    className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-violet-100 text-violet-600"
                   >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <svg
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
                       <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
                       <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
                       <line x1="12" y1="22.08" x2="12" y2="12" />

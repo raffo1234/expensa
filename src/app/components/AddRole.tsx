@@ -46,7 +46,7 @@ export default function AddRole() {
                 id="name"
                 {...register("name")}
                 required
-                className="bg-white w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
+                className="bg-white w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-violet-100  focus:border-violet-500"
               />
             </div>
             <div>
@@ -58,7 +58,7 @@ export default function AddRole() {
                 id="description"
                 {...register("description")}
                 required
-                className="bg-white w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-cyan-100  focus:border-cyan-500"
+                className="bg-white w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-violet-100  focus:border-violet-500"
               />
             </div>
           </fieldset>
@@ -70,7 +70,7 @@ export default function AddRole() {
             >
               Cancel
             </button>
-            <PrimaryButton type="submit" label="Add" isLoading={isLoading} />
+            <PrimaryButton type="submit" label="Agregar" isLoading={isLoading} />
           </div>
         </form>
       ) : (
@@ -79,7 +79,7 @@ export default function AddRole() {
           className="w-full cursor-pointer flex rounded-b-xl gap-3.5 items-center text-left hover:bg-gray-50 transition-colors duration-300 px-6 py-4 border-t border-gray-200"
         >
           <Icon icon="solar:add-square-broken" fontSize={ICON_SIZE} />
-          <span>Add</span>
+          <span>Agregar rol</span>
         </button>
       )}
     </>

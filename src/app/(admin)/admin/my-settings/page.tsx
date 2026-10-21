@@ -7,7 +7,7 @@ import FormSection from "@/components/FormSection";
 
 export default async function Page() {
   return (
-    <FormSection title="My Settings">
+    <FormSection title="Mis configuraciones">
       <Suspense fallback={<MySettingsPageFallBack />}>
         <SettingsSection />
       </Suspense>

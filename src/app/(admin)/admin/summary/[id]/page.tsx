@@ -55,7 +55,7 @@ function FilePreview({ attachment }: { attachment: Attachment }) {
       target="_blank"
       rel="noopener noreferrer"
       className="group flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl p-3
-                 hover:border-cyan-300 hover:bg-cyan-50/40 transition-all"
+                 hover:border-violet-300 hover:bg-violet-50/40 transition-all"
     >
       {image ? (
         <img
@@ -64,8 +64,8 @@ function FilePreview({ attachment }: { attachment: Attachment }) {
           className="w-12 h-12 rounded-lg object-cover flex-shrink-0 border border-gray-200"
         />
       ) : (
-        <div className="w-12 h-12 rounded-lg bg-cyan-100 flex items-center justify-center flex-shrink-0">
-          <span className="text-[10px] font-bold text-cyan-600">PDF</span>
+        <div className="w-12 h-12 rounded-lg bg-violet-100 flex items-center justify-center flex-shrink-0">
+          <span className="text-[10px] font-bold text-violet-600">PDF</span>
         </div>
       )}
       <div className="flex-1 min-w-0">
@@ -76,7 +76,7 @@ function FilePreview({ attachment }: { attachment: Attachment }) {
       </div>
       <Icon
         icon="solar:arrow-right-up-linear"
-        className="text-gray-300 group-hover:text-cyan-500 flex-shrink-0 transition-colors"
+        className="text-gray-300 group-hover:text-violet-500 flex-shrink-0 transition-colors"
         fontSize={16}
       />
     </a>

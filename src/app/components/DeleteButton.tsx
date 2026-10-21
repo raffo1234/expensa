@@ -19,12 +19,12 @@ interface DeleteButtonProps {
 export default function DeleteButton({
   onClick,
   classNames = "",
-  title = "Delete",
+  title = "Eliminar",
   isDeleting = false,
-  confirmTitle = "Are you sure?",
-  confirmDescription = "This action cannot be undone.",
-  confirmLabel = "Delete",
-  cancelLabel = "Cancel",
+  confirmTitle = "¿Estás seguro?",
+  confirmDescription = "Esta acción no se puede deshacer.",
+  confirmLabel = "Eliminar",
+  cancelLabel = "Cancelar",
 }: DeleteButtonProps) {
   const { confirm } = useConfirmModal();
 

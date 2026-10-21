@@ -41,7 +41,7 @@ export default function EditUserContent({ userId }: { userId: string }) {
   const toggleWorkspace = async (workspaceId: string, nowChecked: boolean) => {
     const { error } = await setUserWorkspace(userId, workspaceId, nowChecked);
 
-    if (error) toast.error("Failed to update workspace access.");
+    if (error) toast.error("No se pudo actualizar el acceso al proyecto.");
   };
 
   const updateUser = async (fieldName: string, value: string | null) => {
@@ -49,7 +49,7 @@ export default function EditUserContent({ userId }: { userId: string }) {
     try {
       const { error } = await updateUserFields(userId, { [fieldName]: value });
       if (error) throw new Error(error);
-      toast.success("User was updated successfully!");
+      toast.success("Usuario actualizado");
     } catch (error) {
       console.error(error);
     } finally {
@@ -97,7 +97,7 @@ export default function EditUserContent({ userId }: { userId: string }) {
                 disabled={!roles}
                 className={SELECT_CLASS}
               >
-                <option value="">{roles ? "Select ..." : "Loading..."}</option>
+                <option value="">{roles ? "Seleccionar…" : "Cargando…"}</option>
                 {roles?.map(({ id, name }) => (
                   <option value={id} key={id}>
                     {name}
@@ -113,16 +113,16 @@ export default function EditUserContent({ userId }: { userId: string }) {
       </FieldsSection>
 
       <FieldsSection>
-        <h2 className="font-semibold">Summary Workspace Access</h2>
+        <h2 className="font-semibold">Acceso a proyectos</h2>
         <div key={assignedWorkspaces ? "loaded" : "loading"} className="flex flex-col gap-2">
-          {!allWorkspaces && <p className="text-sm text-gray-400">Loading...</p>}
+          {!allWorkspaces && <p className="text-sm text-gray-500">Cargando…</p>}
           {allWorkspaces?.map((ws) => (
             <label key={ws.id} className="flex items-center gap-3 cursor-pointer select-none">
               <input
                 type="checkbox"
                 defaultChecked={assignedWorkspaces?.has(ws.id) ?? false}
                 onChange={(e) => toggleWorkspace(ws.id, e.target.checked)}
-                className="w-4 h-4 accent-cyan-500 cursor-pointer"
+                className="w-4 h-4 accent-violet-500 cursor-pointer"
               />
               <span className="text-sm">{ws.name}</span>
             </label>

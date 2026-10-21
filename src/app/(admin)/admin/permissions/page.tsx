@@ -9,7 +9,7 @@ import { Suspense } from "react";
 
 export default async function Page() {
   return (
-    <FormSection title="Permissions">
+    <FormSection title="Permisos">
       <Suspense fallback={<SkeletonPermissionsPage />}>
         <PermissionsSection />
       </Suspense>

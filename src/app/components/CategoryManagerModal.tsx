@@ -9,8 +9,15 @@ import Field from "./Field";
 type Category = { id: string; name: string; color: string | null };
 
 const COLORS = [
-  "#ef4444", "#f97316", "#eab308", "#22c55e", "#06b6d4",
-  "#3b82f6", "#8b5cf6", "#ec4899", "#6b7280",
+  "#ef4444",
+  "#f97316",
+  "#eab308",
+  "#22c55e",
+  "#06b6d4",
+  "#3b82f6",
+  "#8b5cf6",
+  "#ec4899",
+  "#6b7280",
 ];
 
 export default function CategoryManagerModal({
@@ -56,16 +63,28 @@ export default function CategoryManagerModal({
     try {
       if (isEditing) {
         const result = await updateCategory(editingId, { name: form.name, color: form.color });
-        if (result.error) { setError(result.error); return; }
+        if (result.error) {
+          setError(result.error);
+          return;
+        }
         const updated = categories.map((c) =>
           c.id === editingId ? { ...c, name: form.name.trim(), color: form.color } : c,
         );
         setCategories(updated);
         onUpdate(updated);
       } else {
-        const result = await createCategory({ workspace_id: workspaceId, name: form.name, color: form.color });
-        if (result.error) { setError(result.error); return; }
-        const updated = [...categories, result.category!].sort((a, b) => a.name.localeCompare(b.name));
+        const result = await createCategory({
+          workspace_id: workspaceId,
+          name: form.name,
+          color: form.color,
+        });
+        if (result.error) {
+          setError(result.error);
+          return;
+        }
+        const updated = [...categories, result.category!].sort((a, b) =>
+          a.name.localeCompare(b.name),
+        );
         setCategories(updated);
         onUpdate(updated);
       }
@@ -79,7 +98,10 @@ export default function CategoryManagerModal({
     setDeletingId(id);
     try {
       const result = await deleteCategory(id);
-      if (result.error) { setError(result.error); return; }
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
       const updated = categories.filter((c) => c.id !== id);
       setCategories(updated);
       onUpdate(updated);
@@ -108,7 +130,7 @@ export default function CategoryManagerModal({
               <button
                 type="button"
                 onClick={() => startEdit(cat)}
-                className="text-xs text-gray-400 hover:text-cyan-600 opacity-0 group-hover:opacity-100 transition"
+                className="text-xs text-gray-400 hover:text-violet-600 opacity-0 group-hover:opacity-100 transition"
               >
                 Editar
               </button>
@@ -148,7 +170,9 @@ export default function CategoryManagerModal({
                 type="button"
                 onClick={() => setForm((f) => ({ ...f, color: c }))}
                 className={`w-7 h-7 rounded-full border-2 transition ${
-                  form.color === c ? "border-gray-800 scale-110" : "border-transparent hover:scale-105"
+                  form.color === c
+                    ? "border-gray-800 scale-110"
+                    : "border-transparent hover:scale-105"
                 }`}
                 style={{ backgroundColor: c }}
               />
@@ -180,7 +204,11 @@ export default function CategoryManagerModal({
       </div>
 
       <div className="pt-2">
-        <button type="button" onClick={() => setModalOpen(false)} className={SECONDARY_BUTTON_CLASS}>
+        <button
+          type="button"
+          onClick={() => setModalOpen(false)}
+          className={SECONDARY_BUTTON_CLASS}
+        >
           Cerrar
         </button>
       </div>

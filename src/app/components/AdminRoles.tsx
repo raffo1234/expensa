@@ -39,12 +39,12 @@ export function Permission({
       await setRolePermission(roleId, id, true);
       await mutate();
       setIsUpdating(false);
-      toast.success("Role updated successfully!");
+      toast.success("Rol actualizado");
     } else {
       await setRolePermission(roleId, id, false);
       await mutate();
       setIsUpdating(false);
-      toast.success("Role updated successfully!");
+      toast.success("Rol actualizado");
     }
   };
 

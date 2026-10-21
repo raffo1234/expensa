@@ -12,7 +12,7 @@ export default async function Page({ params }: { params: Params }) {
   if (!currentUser) return <NoAccess />;
 
   return (
-    <FormSection title="Edit User" backUrl="/admin/users">
+    <FormSection title="Editar usuario" backUrl="/admin/users">
       <EditUserContent userId={id} />
     </FormSection>
   );

@@ -6,7 +6,7 @@ import DeleteButton from "./DeleteButton";
 
 export default function DeleteRole({ roleId }: { roleId: string }) {
   const [isDeleting, setIsDeleting] = useState(false);
-  const title = "Delete";
+  const title = "Eliminar";
 
   const deleteItem = async (roleId: string) => {
     setIsDeleting(true);

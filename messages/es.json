@@ -97,11 +97,13 @@
     "reports": "Reportes",
     "residents": "Residentes",
     "my-studies": "Mis Estudios",
-    "my-workspaces": "Mis Espacios de Trabajo",
+    "my-workspaces": "Mis proyectos",
     "hospitals": "Hospitales",
     "settings": "Configuración",
     "my-settings": "Mis Configuraciones",
-    "sign-out": "Salir"
+    "sign-out": "Salir",
+    "dashboard": "Dashboard",
+    "summary": "Resumen"
   },
   "My-Studies": {
     "title": "Mis Estudios",

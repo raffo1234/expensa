@@ -13,10 +13,10 @@ interface ConfirmModalOptions {
 }
 
 function ConfirmModalContent({
-  title = "Are you sure?",
+  title = "¿Estás seguro?",
   description,
   confirmLabel = "Confirm",
-  cancelLabel = "Cancel",
+  cancelLabel = "Cancelar",
   variant = "danger",
   onConfirm,
   onClose,
@@ -29,13 +29,13 @@ function ConfirmModalContent({
   const confirmColors = {
     danger: "bg-rose-600 hover:bg-rose-700 text-white",
     warning: "bg-amber-500 hover:bg-amber-600 text-white",
-    default: "bg-cyan-400 hover:bg-cyan-500 text-white",
+    default: "bg-violet-600 hover:bg-violet-700 text-white",
   };
 
   const iconColors = {
     danger: "text-rose-600 bg-rose-100",
     warning: "text-amber-600 bg-amber-100",
-    default: "text-cyan-400 bg-cyan-50",
+    default: "text-violet-400 bg-violet-50",
   };
 
   const icons = {

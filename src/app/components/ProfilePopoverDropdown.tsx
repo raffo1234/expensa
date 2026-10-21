@@ -50,7 +50,7 @@ export default function ProfilePopoverDropdown({
           {
             href: "/admin/workspaces",
             icon: "solar:wallet-2-linear",
-            label: "Workspaces",
+            label: "Proyectos",
           },
         ]
       : []),

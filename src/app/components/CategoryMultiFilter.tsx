@@ -151,7 +151,7 @@ export default function CategoryMultiFilter({ categories, value, onChange }: Pro
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={handleSearchKeyDown}
               placeholder="Buscar categoría..."
-              className="w-full px-2.5 py-1.5 text-sm rounded-lg border border-gray-200 focus:outline-none focus:border-cyan-400"
+              className="w-full px-2.5 py-1.5 text-sm rounded-lg border border-gray-200 focus:outline-none focus:border-violet-400"
             />
           </div>
           <div className="max-h-56 overflow-y-auto border-t border-gray-100 pt-1">
@@ -172,7 +172,7 @@ export default function CategoryMultiFilter({ categories, value, onChange }: Pro
                   itemRefs.current[i] = el;
                 }}
                 className={`w-full flex items-center gap-2.5 px-4 py-2 text-sm cursor-pointer transition ${
-                  i === activeIndex ? "bg-cyan-50" : "hover:bg-gray-50"
+                  i === activeIndex ? "bg-violet-50" : "hover:bg-gray-50"
                 }`}
               >
                 <input

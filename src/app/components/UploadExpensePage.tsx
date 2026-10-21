@@ -472,7 +472,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                 href={`/admin/workspaces/${workspaceSlug}/expenses/${d.id}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs text-cyan-600 hover:text-cyan-800 underline underline-offset-2 flex-shrink-0"
+                className="text-xs text-violet-600 hover:text-violet-800 underline underline-offset-2 flex-shrink-0"
               >
                 Ver
               </a>
@@ -515,7 +515,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
     setError(null);
 
     if (!workspaceId) {
-      setError("No se pudo obtener el workspace.");
+      setError("No se pudo obtener el proyecto.");
       return;
     }
     if (!userId) {
@@ -564,7 +564,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
       : null;
 
   return (
-    <FormSection title="New Expense" backUrl={`/admin/workspaces/${workspaceSlug}/expenses`}>
+    <FormSection title="Nuevo gasto" backUrl={`/admin/workspaces/${workspaceSlug}/expenses`}>
       <form onSubmit={handleSubmit} className="space-y-8">
         <SectionTitle>Comprobante / Adjuntos</SectionTitle>
         <FormInnerSection>
@@ -580,7 +580,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
               onDrop={onDrop}
               className={`relative focus-within:ring-2 focus-within:ring-violet-500 focus-within:ring-offset-2 flex flex-col items-center justify-center gap-3 border-2 border-dashed
                 rounded-xl py-9 cursor-pointer transition-all duration-200
-                ${dragging ? "border-purple-600 bg-cyan-50" : "border-gray-200 hover:border-purple-400 hover:bg-purple-50/40"}`}
+                ${dragging ? "border-violet-600 bg-violet-50" : "border-gray-200 hover:border-violet-400 hover:bg-violet-50/40"}`}
             >
               <input
                 type="file"
@@ -591,14 +591,14 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                 onChange={(e) => addFiles(Array.from(e.target.files ?? []))}
               />
               <div
-                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${dragging ? "bg-cyan-100" : "bg-gray-100"}`}
+                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${dragging ? "bg-violet-100" : "bg-gray-100"}`}
               >
                 <svg
                   width="18"
                   height="18"
                   viewBox="0 0 24 24"
                   fill="none"
-                  className={dragging ? "text-cyan-500" : "text-gray-400"}
+                  className={dragging ? "text-violet-500" : "text-gray-400"}
                   stroke="currentColor"
                 >
                   <path
@@ -618,7 +618,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
               <div className="text-center">
                 <p className="text-sm font-medium text-gray-700">
                   Arrastra archivos o{" "}
-                  <span className="text-cyan-600 underline underline-offset-2">haz click</span>
+                  <span className="text-violet-600 underline underline-offset-2">haz click</span>
                 </p>
                 <p className="text-xs text-gray-400 mt-0.5">
                   JPG, PNG, WEBP, PDF — sin límite de tamaño
@@ -629,10 +629,10 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
             {extracting && (
               <div
                 role="status"
-                className="flex items-center gap-2.5 bg-cyan-50 border border-cyan-200 rounded-lg px-4 py-3"
+                className="flex items-center gap-2.5 bg-violet-50 border border-violet-200 rounded-lg px-4 py-3"
               >
                 <svg
-                  className="animate-spin w-4 h-4 text-cyan-500 flex-shrink-0"
+                  className="animate-spin w-4 h-4 text-violet-500 flex-shrink-0"
                   viewBox="0 0 24 24"
                   fill="none"
                 >
@@ -652,8 +652,8 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                   />
                 </svg>
                 <div>
-                  <p className="text-xs font-semibold text-cyan-700">Analizando comprobante...</p>
-                  <p className="text-[11px] text-cyan-700">
+                  <p className="text-xs font-semibold text-violet-700">Analizando comprobante...</p>
+                  <p className="text-[11px] text-violet-700">
                     Extrayendo monto, fechas, proveedor y materiales
                   </p>
                 </div>
@@ -727,7 +727,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                             className="w-8 h-8 rounded-md object-cover flex-shrink-0"
                           />
                         ) : (
-                          <div className="w-8 h-8 rounded-md bg-cyan-100 flex items-center justify-center text-[9px] font-bold text-cyan-600 flex-shrink-0">
+                          <div className="w-8 h-8 rounded-md bg-violet-100 flex items-center justify-center text-[9px] font-bold text-violet-600 flex-shrink-0">
                             PDF
                           </div>
                         )}
@@ -738,7 +738,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                           {(fi.file.size / (1024 * 1024)).toFixed(1)} MB
                         </span>
                         {pct !== null && (
-                          <span className="text-xs text-cyan-600 font-medium flex-shrink-0">
+                          <span className="text-xs text-violet-600 font-medium flex-shrink-0">
                             {pct}%
                           </span>
                         )}
@@ -764,7 +764,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                       {pct !== null && (
                         <div className="mt-2 h-1 rounded-full bg-gray-200 overflow-hidden">
                           <div
-                            className="h-full bg-cyan-500 transition-all duration-200"
+                            className="h-full bg-violet-500 transition-all duration-200"
                             style={{ width: `${pct}%` }}
                           />
                         </div>
@@ -776,9 +776,9 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
             )}
 
             {overallProgress !== null && (
-              <div className="flex items-center gap-2.5 bg-cyan-50 border border-cyan-200 rounded-lg px-4 py-3">
+              <div className="flex items-center gap-2.5 bg-violet-50 border border-violet-200 rounded-lg px-4 py-3">
                 <svg
-                  className="animate-spin w-4 h-4 text-cyan-500 flex-shrink-0"
+                  className="animate-spin w-4 h-4 text-violet-500 flex-shrink-0"
                   viewBox="0 0 24 24"
                   fill="none"
                 >
@@ -798,12 +798,12 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                   />
                 </svg>
                 <div className="flex-1">
-                  <p className="text-xs font-semibold text-cyan-700">
+                  <p className="text-xs font-semibold text-violet-700">
                     Subiendo archivos... {overallProgress}%
                   </p>
-                  <div className="mt-1.5 h-1 rounded-full bg-cyan-200 overflow-hidden">
+                  <div className="mt-1.5 h-1 rounded-full bg-violet-200 overflow-hidden">
                     <div
-                      className="h-full bg-cyan-500 transition-all duration-200"
+                      className="h-full bg-violet-500 transition-all duration-200"
                       style={{ width: `${overallProgress}%` }}
                     />
                   </div>
@@ -819,7 +819,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
             <div className="flex gap-3">
               <Field label="Monto *">
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-500 font-bold text-base select-none">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-violet-500 font-bold text-base select-none">
                     {currSymbol}
                   </span>
                   <input
@@ -890,7 +890,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                   type="button"
                   onClick={openAddProvider}
                   aria-label="Agregar proveedor"
-                  className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-cyan-400 hover:text-cyan-500 transition-colors"
+                  className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-violet-400 hover:text-violet-500 transition-colors"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                     <path
@@ -959,7 +959,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                     type="button"
                     onClick={openCategoryManager}
                     aria-label="Gestionar categorías"
-                    className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-cyan-400 hover:text-cyan-500 transition-colors"
+                    className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-violet-400 hover:text-violet-500 transition-colors"
                   >
                     <svg
                       width="14"
@@ -1066,7 +1066,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
         )}
 
         {success && (
-          <div className="flex items-center gap-3 border border-cyan-200 bg-cyan-50 rounded-lg px-4 py-3 text-sm text-cyan-700">
+          <div className="flex items-center gap-3 border border-violet-200 bg-violet-50 rounded-lg px-4 py-3 text-sm text-violet-700">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="flex-shrink-0">
               <path
                 d="M20 6L9 17l-5-5"
@@ -1138,7 +1138,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
 
 const TOTALS_CHECK_MESSAGES: Record<Exclude<TotalsCheck, "ok">, { tone: string; text: string }> = {
   adjusted: {
-    tone: "bg-cyan-50 border-cyan-200 text-cyan-700",
+    tone: "bg-violet-50 border-violet-200 text-violet-700",
     text: "Los precios de la factura venían sin IGV; se ajustaron para reflejar lo que pagaste.",
   },
   mismatch: {

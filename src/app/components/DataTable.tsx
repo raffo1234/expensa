@@ -10,7 +10,13 @@ interface DataTableProps {
   children: React.ReactNode;
 }
 
-export default function DataTable({ columns, isEmpty, isLoading, emptyMessage, children }: DataTableProps) {
+export default function DataTable({
+  columns,
+  isEmpty,
+  isLoading,
+  emptyMessage,
+  children,
+}: DataTableProps) {
   return (
     <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
       <table className="w-full text-sm">
@@ -37,7 +43,7 @@ export default function DataTable({ columns, isEmpty, isLoading, emptyMessage, c
           ) : isEmpty ? (
             <tr>
               <td colSpan={columns.length} className="px-6 py-10 text-center text-gray-400">
-                {emptyMessage ?? "No data found"}
+                {emptyMessage ?? "No hay datos"}
               </td>
             </tr>
           ) : (

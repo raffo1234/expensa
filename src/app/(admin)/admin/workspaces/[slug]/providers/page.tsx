@@ -24,8 +24,8 @@ const fetchProviders = (workspaceId: string): Promise<Provider[]> => listProvide
 // ── Constants ─────────────────────────────────────────────────────────────────
 const inputCls =
   "w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-900 " +
-  "placeholder:text-gray-400 focus:outline-none focus:border-cyan-500 " +
-  "focus:ring-2 focus:ring-cyan-500/10 transition-all duration-150 shadow-sm";
+  "placeholder:text-gray-400 focus:outline-none focus:border-violet-500 " +
+  "focus:ring-2 focus:ring-violet-500/10 transition-all duration-150 shadow-sm";
 
 const labelCls = "block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide";
 
@@ -401,7 +401,7 @@ export default function ProvidersPage() {
           <div className="flex items-center gap-1 text-sm">
             <button
               onClick={() => router.push(`/admin/workspaces/${workspaceSlug}`)}
-              className="text-gray-500 hover:text-cyan-600 transition-colors px-2 py-1 rounded-md hover:bg-cyan-50"
+              className="text-gray-500 hover:text-violet-600 transition-colors px-2 py-1 rounded-md hover:bg-violet-50"
             >
               Workspace
             </button>
@@ -410,7 +410,7 @@ export default function ProvidersPage() {
             <span className="text-gray-300">/</span>
             <button
               onClick={() => router.push(`/admin/workspaces/${workspaceSlug}/materials`)}
-              className="text-gray-500 hover:text-cyan-600 transition-colors px-2 py-1 rounded-md hover:bg-cyan-50"
+              className="text-gray-500 hover:text-violet-600 transition-colors px-2 py-1 rounded-md hover:bg-violet-50"
             >
               Materiales
             </button>
@@ -600,7 +600,7 @@ export default function ProvidersPage() {
                 <div className="flex items-center justify-end gap-1">
                   <button
                     onClick={() => setModal({ type: "edit", provider })}
-                    className="p-1.5 rounded-lg text-gray-300 hover:text-cyan-500 hover:bg-cyan-50
+                    className="p-1.5 rounded-lg text-gray-300 hover:text-violet-500 hover:bg-violet-50
                                transition-all opacity-0 group-hover:opacity-100"
                     title="Editar"
                   >

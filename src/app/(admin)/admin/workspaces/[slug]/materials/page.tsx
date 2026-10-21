@@ -43,9 +43,8 @@ async function MaterialsSection({ slug }: { slug: string }) {
 
 function MaterialsFallback() {
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 animate-pulse">
-      <div className="h-4 w-48 bg-gray-200 rounded mb-10" />
-      <div className="h-7 w-40 bg-gray-200 rounded mb-2" />
+    <div className="p-6 bg-white border border-violet-200 rounded-xl animate-pulse">
+      <div className="h-6 w-40 bg-gray-200 rounded mb-8" />
       <div className="h-4 w-72 bg-gray-100 rounded mb-6" />
       <div className="h-44 rounded-xl border border-gray-200 bg-gray-50 mb-6" />
       <div className="rounded-xl border border-gray-200 overflow-hidden">

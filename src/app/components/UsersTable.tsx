@@ -65,13 +65,19 @@ export default function UsersTable() {
           </OptionButton>
         ))}
       </div>
-      <input onChange={debouncedSearchInput} placeholder="Search users" className={INPUT_CLASS} />
+      <input
+        onChange={debouncedSearchInput}
+        placeholder="Buscar usuarios"
+        className={INPUT_CLASS}
+      />
       <div className="my-3 flex justify-end items-center gap-2">
-        <span className="text-xs font-semibold">Total: {total}</span>
+        <span className="text-xs font-semibold">
+          {total} {total === 1 ? "usuario" : "usuarios"}
+        </span>
         <button
           disabled={page === 0}
           onClick={() => setPage((p) => p - 1)}
-          className="px-4 py-1 bg-cyan-400 disabled:pointer-events-none text-white rounded-full disabled:opacity-50 cursor-pointer text-sm"
+          className="px-4 py-1 bg-violet-600 hover:bg-violet-700 disabled:pointer-events-none text-white rounded-full disabled:opacity-50 cursor-pointer text-sm"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -88,12 +94,12 @@ export default function UsersTable() {
           </svg>
         </button>
         <div className="text-xs uppercase font-semibold">
-          {page + 1} of {totalPages}
+          Página {page + 1} de {totalPages}
         </div>
         <button
           disabled={(page + 1) * PAGE_SIZE >= total}
           onClick={() => setPage((p) => p + 1)}
-          className="px-4 py-1 bg-cyan-400 disabled:pointer-events-none text-white rounded-full disabled:opacity-50 cursor-pointer text-sm"
+          className="px-4 py-1 bg-violet-600 hover:bg-violet-700 disabled:pointer-events-none text-white rounded-full disabled:opacity-50 cursor-pointer text-sm"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"

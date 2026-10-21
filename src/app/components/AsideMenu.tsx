@@ -50,7 +50,7 @@ export default function AsideMenu({
       ? [
           {
             href: "/admin/dashboard",
-            title: "Dashboard",
+            title: t("dashboard"),
             iconName: "solar:graph-up-outline",
           },
         ]
@@ -97,7 +97,7 @@ export default function AsideMenu({
       ? [
           {
             href: "/admin/summary",
-            title: "Summary",
+            title: t("summary"),
             iconName: "solar:document-text-linear",
           },
         ]
@@ -140,9 +140,9 @@ export default function AsideMenu({
       <li>
         <button
           onClick={() => signOut()}
-          className="group text-gray-800 hover:text-purple-800 hover:bg-purple-100/60 truncate cursor-pointer rounded-lg w-full p-1 pr-3 gap-3.5 flex items-center text-sm font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-300"
+          className="group text-gray-800 hover:text-violet-800 hover:bg-violet-100/60 truncate cursor-pointer rounded-lg w-full p-1 pr-3 gap-3.5 flex items-center text-sm font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300"
         >
-          <span className="transition-all duration-200 group-hover:border-purple-300 group-hover:shadow-sm p-1.5 bg-gradient-to-b text-purple-800 lg:from-white/75 lg:to-purple-100/75 rounded-lg bg-purple-100 border border-purple-200">
+          <span className="transition-all duration-200 group-hover:border-violet-300 group-hover:shadow-sm p-1.5 bg-gradient-to-b text-violet-800 lg:from-white/75 lg:to-violet-100/75 rounded-lg bg-violet-100 border border-violet-200">
             <Icon icon="solar:inbox-out-linear" fontSize={ICON_SIZE} className="-rotate-90" />
           </span>
           <span className={isContracted ? "lg:hidden" : ""}>{t("sign-out")}</span>

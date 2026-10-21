@@ -55,14 +55,14 @@ export default function UserCard({ user, mutate }: { user: UserType; mutate: () 
       <div title={email} className="truncate text-xs text-slate-500 mb-3 text-center">
         {email}
       </div>
-      <div className="text-xs text-cyan-700 px-2 py-0.5 bg-cyan-100 rounded-full w-fit mx-auto mb-4">
+      <div className="text-xs text-violet-700 px-2 py-0.5 bg-violet-100 rounded-full w-fit mx-auto mb-4">
         {role?.name}
       </div>
       <p className="text-xs text-center mb-5 text-slate-600">
         Creado: {formatTimestamp(created_at, "short")}
       </p>
       <div className="flex gap-2 items-center justify-center">
-        <CircularSecondaryButton href={href} title="Edit">
+        <CircularSecondaryButton href={href} title="Editar">
           <Icon icon="solar:clapperboard-edit-broken" fontSize={ICON_SIZE} />
         </CircularSecondaryButton>
         <CircularSecondaryButton

@@ -2,7 +2,6 @@ export const getAdminPropertiesUserKey = (userId: string) => {
   return `admin-properties-${userId}`;
 };
 
-
 export const adminRolesKey = "admin-roles";
 export const adminPacsKey = "admin-pacs";
 export const adminUsersKey = "admin-users";
@@ -40,7 +39,7 @@ export const SWR_KEY_USER_ROLE = "user-role";
 export const SWR_KEY_PERMISSIONS = "admin-permissions";
 
 export const STYLED_ICON_CLASS =
-  "text-purple-800 p-1.5 block bg-gradient-to-b lg:from-white/75 lg:to-purple-100/75 rounded-lg bg-purple-100 border border-purple-200";
+  "text-violet-800 p-1.5 block bg-gradient-to-b lg:from-white/75 lg:to-violet-100/75 rounded-lg bg-violet-100 border border-violet-200";
 
 // ─── Providers ───────────────────────────────────────────────────────────────
 

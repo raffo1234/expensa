@@ -51,7 +51,7 @@ export function incompleteItemLines(lines: ExpenseItemLine[]): ExpenseItemLine[]
 }
 
 const ICON_BTN_CLASS =
-  "flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-cyan-400 hover:text-cyan-500 transition-colors";
+  "flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-violet-400 hover:text-violet-500 transition-colors";
 
 function GearIcon() {
   return (

@@ -9,7 +9,7 @@ import FormSection from "@/components/FormSection";
 
 export default async function Page() {
   return (
-    <FormSection title="Users">
+    <FormSection title="Usuarios">
       <Suspense
         fallback={
           <>

@@ -378,7 +378,7 @@ export async function initiateMultipartUpload(
   const workspace = (
     Array.isArray(expense.workspace) ? expense.workspace[0] : expense.workspace
   ) as { slug: string } | null;
-  if (!workspace?.slug) throw new Error("Workspace no encontrado");
+  if (!workspace?.slug) throw new Error("Proyecto no encontrado");
 
   const key = `${workspace.slug}/${expenseId}/${crypto.randomUUID()}.${ext}`;
   const { UploadId } = await r2.send(

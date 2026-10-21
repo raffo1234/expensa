@@ -35,7 +35,7 @@ export default async function WorkspacePage() {
   if (!permissions[Permissions.HANDLE_WORKSPACES]) return <NoAccess />;
 
   return (
-    <FormSection title="Workspaces">
+    <FormSection title="Proyectos">
       <WorkspaceClient workspaces={workspaces ?? []} />
     </FormSection>
   );

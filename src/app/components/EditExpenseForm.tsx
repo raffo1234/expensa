@@ -479,7 +479,7 @@ export default function EditExpenseForm() {
                     type="button"
                     onClick={openAddProvider}
                     aria-label="Agregar proveedor"
-                    className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-cyan-400 hover:text-cyan-500 transition-colors"
+                    className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-violet-400 hover:text-violet-500 transition-colors"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                       <path
@@ -556,7 +556,7 @@ export default function EditExpenseForm() {
                     type="button"
                     onClick={openCategoryManager}
                     aria-label="Gestionar categorías"
-                    className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-cyan-400 hover:text-cyan-500 transition-colors"
+                    className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-violet-400 hover:text-violet-500 transition-colors"
                   >
                     <svg
                       width="14"
@@ -655,9 +655,9 @@ export default function EditExpenseForm() {
                         href={url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-10 h-10 rounded-lg bg-cyan-100 flex items-center justify-center flex-shrink-0"
+                        className="w-10 h-10 rounded-lg bg-violet-100 flex items-center justify-center flex-shrink-0"
                       >
-                        <span className="text-[9px] font-bold text-cyan-600">PDF</span>
+                        <span className="text-[9px] font-bold text-violet-600">PDF</span>
                       </a>
                     )}
                     <div className="flex-1 min-w-0">
@@ -678,9 +678,9 @@ export default function EditExpenseForm() {
               {newFiles.map((file, i) => {
                 const pct = uploadProgress[i] ?? null;
                 return (
-                  <div key={i} className="bg-cyan-50 border border-cyan-200 rounded-xl p-3">
+                  <div key={i} className="bg-violet-50 border border-violet-200 rounded-xl p-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-cyan-100 flex items-center justify-center flex-shrink-0">
+                      <div className="w-10 h-10 rounded-lg bg-violet-100 flex items-center justify-center flex-shrink-0">
                         <svg
                           width="14"
                           height="14"
@@ -695,8 +695,8 @@ export default function EditExpenseForm() {
                         </svg>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-cyan-800 truncate">{file.name}</p>
-                        <p className="text-xs text-cyan-400 mt-0.5">
+                        <p className="text-sm font-medium text-violet-800 truncate">{file.name}</p>
+                        <p className="text-xs text-violet-400 mt-0.5">
                           {pct !== null
                             ? `${pct}%`
                             : `${(file.size / 1024).toFixed(0)} KB · Por subir`}
@@ -707,9 +707,9 @@ export default function EditExpenseForm() {
                       )}
                     </div>
                     {pct !== null && (
-                      <div className="mt-2 h-1 rounded-full bg-cyan-200 overflow-hidden">
+                      <div className="mt-2 h-1 rounded-full bg-violet-200 overflow-hidden">
                         <div
-                          className="h-full bg-cyan-500 transition-all duration-200"
+                          className="h-full bg-violet-500 transition-all duration-200"
                           style={{ width: `${pct}%` }}
                         />
                       </div>
@@ -727,8 +727,8 @@ export default function EditExpenseForm() {
                 onDrop={handleDrop}
                 className={`relative focus-within:ring-2 focus-within:ring-violet-500 focus-within:ring-offset-2 w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed py-8 text-sm transition-all cursor-pointer ${
                   isDragging
-                    ? "border-purple-500 bg-purple-50 text-purple-600"
-                    : "border-gray-200 text-gray-400 hover:border-purple-500 hover:text-purple-600 hover:bg-purple-50/40"
+                    ? "border-violet-500 bg-violet-50 text-violet-600"
+                    : "border-gray-200 text-gray-400 hover:border-violet-500 hover:text-violet-600 hover:bg-violet-50/40"
                 }`}
               >
                 <input

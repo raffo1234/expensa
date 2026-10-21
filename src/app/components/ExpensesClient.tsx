@@ -506,7 +506,7 @@ export default function ExpensesClient({
                   <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
                 <span className="sm:hidden">CSV</span>
-                <span className="hidden sm:inline">Export CSV</span>
+                <span className="hidden sm:inline">Exportar CSV</span>
               </button>
               <button
                 onClick={() =>
@@ -525,7 +525,7 @@ export default function ExpensesClient({
               >
                 <Icon icon="hugeicons:pdf-02" fontSize={ICON_SIZE} />
                 <span className="sm:hidden">PDF</span>
-                <span className="hidden sm:inline">Download PDF</span>
+                <span className="hidden sm:inline">Descargar PDF</span>
               </button>
             </div>
           </div>
@@ -582,7 +582,7 @@ export default function ExpensesClient({
         <button
           type="button"
           onClick={() => setShowFilters((v) => !v)}
-          className="mb-3 text-xs text-purple-500 hover:text-purple-700 underline underline-offset-2 transition"
+          className="mb-3 text-xs text-violet-500 hover:text-violet-700 underline underline-offset-2 transition"
         >
           {showFilters ? "Cerrar filtros" : "Más filtros"}
         </button>
@@ -676,7 +676,7 @@ export default function ExpensesClient({
                   type="button"
                   onClick={openCategoriesModal}
                   aria-label="Gestionar categorías"
-                  className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-purple-400 hover:text-purple-500 transition-colors mb-0.5"
+                  className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-violet-400 hover:text-violet-500 transition-colors mb-0.5"
                 >
                   <svg
                     width="14"

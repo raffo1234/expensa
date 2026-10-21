@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import PageTitle from "@/components/PageTitle";
+import FormSection from "@/components/FormSection";
 import SearchInput from "@/components/SearchInput";
 import ClearFiltersButton from "@/components/ClearFiltersButton";
 import InputWithTooltip from "@/components/InputWithTooltip";
@@ -234,226 +234,201 @@ export default function MaterialsClient({
   };
 
   return (
-    <div className="min-h-screen text-gray-900">
-      <nav className="top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-3 text-sm">
-          <Link
-            href={`/admin/workspaces/${workspaceSlug}/expenses`}
-            className="text-gray-500 hover:text-cyan-600 transition-colors px-2 py-1 rounded-md hover:bg-cyan-50"
-          >
-            Gastos
-          </Link>
-          <span className="text-gray-300">/</span>
-          <Link
-            href={`/admin/workspaces/${workspaceSlug}/providers`}
-            className="text-gray-500 hover:text-cyan-600 transition-colors px-2 py-1 rounded-md hover:bg-cyan-50"
-          >
-            Proveedores
-          </Link>
-          <span className="text-gray-300">/</span>
-          <span className="text-gray-900 font-medium px-2 py-1">Materiales</span>
+    <FormSection title="Materiales" backUrl={`/admin/workspaces/${workspaceSlug}/expenses`}>
+      <p className="text-sm text-gray-600 mb-6">
+        Todo lo comprado, agrupado por material y en detalle por gasto.
+      </p>
+
+      {rows.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-24 text-center">
+          <p className="text-sm font-semibold text-gray-700 mb-1">Sin materiales aún</p>
+          <p className="text-xs text-gray-400">Agrega materiales a un gasto para verlos aquí.</p>
         </div>
-      </nav>
-
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
-        <div className="mb-6">
-          <PageTitle>Materiales</PageTitle>
-          <p className="text-sm text-gray-500 mt-1">
-            Todo lo comprado, agrupado por material y en detalle por gasto.
-          </p>
-        </div>
-
-        {rows.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <p className="text-sm font-semibold text-gray-700 mb-1">Sin materiales aún</p>
-            <p className="text-xs text-gray-400">Agrega materiales a un gasto para verlos aquí.</p>
-          </div>
-        ) : (
-          <>
-            {/* Filters */}
-            <div className="flex flex-col gap-3 rounded-xl border border-gray-200 p-3 sm:p-4 mb-6">
-              <div className="flex gap-2 items-center">
-                <SearchInput
-                  value={search}
-                  onChange={setSearch}
-                  placeholder="Buscar material, marca, proveedor o factura..."
-                  className="flex-1"
-                />
-                {hasFilters && <ClearFiltersButton onClick={clearFilters} />}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                <FilterSelect
-                  label="Material"
-                  value={materialId}
-                  onChange={setMaterialId}
-                  allLabel="Todos los materiales"
-                  options={materialOptions}
-                />
-                <FilterSelect
-                  label="Marca"
-                  value={brandId}
-                  onChange={setBrandId}
-                  allLabel="Todas las marcas"
-                  options={brandOptions}
-                />
-                <FilterSelect
-                  label="Proveedor"
-                  value={providerId}
-                  onChange={setProviderId}
-                  allLabel="Todos los proveedores"
-                  options={providerOptions}
-                />
-                <FilterSelect
-                  label="Nivel"
-                  value={levelId}
-                  onChange={setLevelId}
-                  allLabel="Todos los niveles"
-                  options={levelOptions}
-                />
-                <FilterSelect
-                  label="Tipo de compra"
-                  value={taxStatus}
-                  onChange={setTaxStatus}
-                  allLabel="Todas"
-                  options={TAX_STATUS_OPTIONS}
-                />
-              </div>
-
-              <div className={BOX_CLASS}>
-                <p className={LABEL_CLASS}>Fecha de pago</p>
-                <div className="flex flex-wrap sm:flex-nowrap gap-2">
-                  <InputWithTooltip label="Mes de pago" className="w-full sm:w-auto min-w-0">
-                    <input
-                      type="month"
-                      value={month}
-                      onChange={(e) => handleMonthChange(e.target.value)}
-                      className={INPUT_CLASS}
-                    />
-                  </InputWithTooltip>
-                  <InputWithTooltip label="Pagado desde" className="flex-1 min-w-0">
-                    <input
-                      type="date"
-                      value={dateFrom}
-                      onChange={(e) => {
-                        setDateFrom(e.target.value);
-                        setMonth("");
-                      }}
-                      className={INPUT_CLASS}
-                    />
-                  </InputWithTooltip>
-                  <InputWithTooltip label="Pagado hasta" className="flex-1 min-w-0">
-                    <input
-                      type="date"
-                      value={dateTo}
-                      onChange={(e) => {
-                        setDateTo(e.target.value);
-                        setMonth("");
-                      }}
-                      className={INPUT_CLASS}
-                    />
-                  </InputWithTooltip>
-                </div>
-              </div>
+      ) : (
+        <>
+          {/* Filters */}
+          <div className="flex flex-col gap-3 rounded-xl border border-gray-200 p-3 sm:p-4 mb-6">
+            <div className="flex gap-2 items-center">
+              <SearchInput
+                value={search}
+                onChange={setSearch}
+                placeholder="Buscar material, marca, proveedor o factura..."
+                className="flex-1"
+              />
+              {hasFilters && <ClearFiltersButton onClick={clearFilters} />}
             </div>
 
-            {filtered.length === 0 ? (
-              <div className="text-center py-16 text-sm text-gray-400">
-                No se encontraron materiales para ese filtro.
-              </div>
-            ) : (
-              <>
-                {/* Totals summary */}
-                <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden mb-6">
-                  <div className="px-4 sm:px-5 py-3 border-b border-gray-100 bg-gray-50/60">
-                    <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                      Resumen por material
-                    </span>
-                  </div>
-                  {totals.map((t, i) => (
-                    <div
-                      key={`${t.material}-${t.unit}-${i}`}
-                      className={`flex items-center justify-between gap-4 px-4 sm:px-5 py-3 ${
-                        i < totals.length - 1 ? "border-b border-gray-100" : ""
-                      }`}
-                    >
-                      <span className="text-sm font-semibold text-gray-800 min-w-0">
-                        {t.material}
-                      </span>
-                      <div className="flex items-center gap-4 flex-shrink-0">
-                        <span className="text-sm text-gray-500">
-                          {t.quantity} {t.unit}
-                        </span>
-                        <span className="text-sm font-semibold text-gray-700 min-w-24 text-right tabular-nums">
-                          {t.subtotals.some((x) => x.amount > 0) ? formatTotals(t.subtotals) : "—"}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                  <div className="flex items-center justify-between gap-4 px-4 sm:px-5 py-3 border-t border-gray-200 bg-gray-50/60">
-                    <span className="text-sm font-bold text-gray-800">Total</span>
-                    <span className="text-sm font-bold text-gray-900">
-                      {formatTotals(filteredTotals)}
-                    </span>
-                  </div>
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <FilterSelect
+                label="Material"
+                value={materialId}
+                onChange={setMaterialId}
+                allLabel="Todos los materiales"
+                options={materialOptions}
+              />
+              <FilterSelect
+                label="Marca"
+                value={brandId}
+                onChange={setBrandId}
+                allLabel="Todas las marcas"
+                options={brandOptions}
+              />
+              <FilterSelect
+                label="Proveedor"
+                value={providerId}
+                onChange={setProviderId}
+                allLabel="Todos los proveedores"
+                options={providerOptions}
+              />
+              <FilterSelect
+                label="Nivel"
+                value={levelId}
+                onChange={setLevelId}
+                allLabel="Todos los niveles"
+                options={levelOptions}
+              />
+              <FilterSelect
+                label="Tipo de compra"
+                value={taxStatus}
+                onChange={setTaxStatus}
+                allLabel="Todas"
+                options={TAX_STATUS_OPTIONS}
+              />
+            </div>
 
-                {/* Detail list */}
-                <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-                  <div className="px-4 sm:px-5 py-3 border-b border-gray-100 bg-gray-50/60">
-                    <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                      Detalle ({filtered.length})
-                    </span>
-                  </div>
-                  {filtered.map((r, i) => (
-                    <Link
-                      key={r.id}
-                      href={`/admin/workspaces/${workspaceSlug}/expenses/${r.expense_id}`}
-                      className={`flex items-center justify-between gap-4 px-4 sm:px-5 py-3.5 hover:bg-gray-50/60 transition-colors ${
-                        i < filtered.length - 1 ? "border-b border-gray-100" : ""
-                      }`}
-                    >
-                      <div className="min-w-0">
-                        <p className="text-[10px] font-semibold text-cyan-600 uppercase tracking-wide mb-0.5">
-                          {r.level?.name ?? "Sin nivel"}
-                        </p>
-                        <p className="text-sm font-medium text-gray-800 truncate">
-                          {r.material.name}
-                          {r.brand && (
-                            <span className="text-gray-400 font-normal"> · {r.brand.name}</span>
-                          )}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-0.5 truncate">
-                          {formatSafeDate(r.paid_at, "d MMM yyyy")} · {r.quantity} {r.unit.name}
-                          {r.provider && <> · {r.provider.name}</>}
-                        </p>
-                      </div>
-                      <div className="flex-shrink-0 text-right">
-                        <TaxBadge status={r.tax_status} />
-                        {r.unit_price != null && (
-                          <p className="text-xs text-gray-400">
-                            P. unit. {formatAmount(r.unit_price, r.currency)}
-                          </p>
-                        )}
-                        <p className="text-sm font-semibold text-gray-700">
-                          {r.subtotal != null ? formatAmount(r.subtotal, r.currency) : "—"}
-                        </p>
-                      </div>
-                    </Link>
-                  ))}
-                  <div className="flex items-center justify-between gap-4 px-4 sm:px-5 py-3 border-t border-gray-200 bg-gray-50/60">
-                    <span className="text-sm font-bold text-gray-800">Total</span>
-                    <span className="text-sm font-bold text-gray-900">
-                      {formatTotals(filteredTotals)}
-                    </span>
-                  </div>
+            <div className={BOX_CLASS}>
+              <p className={LABEL_CLASS}>Fecha de pago</p>
+              <div className="flex flex-wrap sm:flex-nowrap gap-2">
+                <InputWithTooltip label="Mes de pago" className="w-full sm:w-auto min-w-0">
+                  <input
+                    type="month"
+                    value={month}
+                    onChange={(e) => handleMonthChange(e.target.value)}
+                    className={INPUT_CLASS}
+                  />
+                </InputWithTooltip>
+                <InputWithTooltip label="Pagado desde" className="flex-1 min-w-0">
+                  <input
+                    type="date"
+                    value={dateFrom}
+                    onChange={(e) => {
+                      setDateFrom(e.target.value);
+                      setMonth("");
+                    }}
+                    className={INPUT_CLASS}
+                  />
+                </InputWithTooltip>
+                <InputWithTooltip label="Pagado hasta" className="flex-1 min-w-0">
+                  <input
+                    type="date"
+                    value={dateTo}
+                    onChange={(e) => {
+                      setDateTo(e.target.value);
+                      setMonth("");
+                    }}
+                    className={INPUT_CLASS}
+                  />
+                </InputWithTooltip>
+              </div>
+            </div>
+          </div>
+
+          {filtered.length === 0 ? (
+            <div className="text-center py-16 text-sm text-gray-400">
+              No se encontraron materiales para ese filtro.
+            </div>
+          ) : (
+            <>
+              {/* Totals summary */}
+              <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden mb-6">
+                <div className="px-4 sm:px-5 py-3 border-b border-gray-100 bg-gray-50/60">
+                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                    Resumen por material
+                  </span>
                 </div>
-              </>
-            )}
-          </>
-        )}
-      </div>
-    </div>
+                {totals.map((t, i) => (
+                  <div
+                    key={`${t.material}-${t.unit}-${i}`}
+                    className={`flex items-center justify-between gap-4 px-4 sm:px-5 py-3 ${
+                      i < totals.length - 1 ? "border-b border-gray-100" : ""
+                    }`}
+                  >
+                    <span className="text-sm font-semibold text-gray-800 min-w-0">
+                      {t.material}
+                    </span>
+                    <div className="flex items-center gap-4 flex-shrink-0">
+                      <span className="text-sm text-gray-500">
+                        {t.quantity} {t.unit}
+                      </span>
+                      <span className="text-sm font-semibold text-gray-700 min-w-24 text-right tabular-nums">
+                        {t.subtotals.some((x) => x.amount > 0) ? formatTotals(t.subtotals) : "—"}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                <div className="flex items-center justify-between gap-4 px-4 sm:px-5 py-3 border-t border-gray-200 bg-gray-50/60">
+                  <span className="text-sm font-bold text-gray-800">Total</span>
+                  <span className="text-sm font-bold text-gray-900">
+                    {formatTotals(filteredTotals)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Detail list */}
+              <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                <div className="px-4 sm:px-5 py-3 border-b border-gray-100 bg-gray-50/60">
+                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                    Detalle ({filtered.length})
+                  </span>
+                </div>
+                {filtered.map((r, i) => (
+                  <Link
+                    key={r.id}
+                    href={`/admin/workspaces/${workspaceSlug}/expenses/${r.expense_id}`}
+                    className={`flex items-center justify-between gap-4 px-4 sm:px-5 py-3.5 hover:bg-gray-50/60 transition-colors ${
+                      i < filtered.length - 1 ? "border-b border-gray-100" : ""
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-semibold text-violet-600 uppercase tracking-wide mb-0.5">
+                        {r.level?.name ?? "Sin nivel"}
+                      </p>
+                      <p className="text-sm font-medium text-gray-800 truncate">
+                        {r.material.name}
+                        {r.brand && (
+                          <span className="text-gray-400 font-normal"> · {r.brand.name}</span>
+                        )}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-0.5 truncate">
+                        {formatSafeDate(r.paid_at, "d MMM yyyy")} · {r.quantity} {r.unit.name}
+                        {r.provider && <> · {r.provider.name}</>}
+                      </p>
+                    </div>
+                    <div className="flex-shrink-0 text-right">
+                      <TaxBadge status={r.tax_status} />
+                      {r.unit_price != null && (
+                        <p className="text-xs text-gray-400">
+                          P. unit. {formatAmount(r.unit_price, r.currency)}
+                        </p>
+                      )}
+                      <p className="text-sm font-semibold text-gray-700">
+                        {r.subtotal != null ? formatAmount(r.subtotal, r.currency) : "—"}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+                <div className="flex items-center justify-between gap-4 px-4 sm:px-5 py-3 border-t border-gray-200 bg-gray-50/60">
+                  <span className="text-sm font-bold text-gray-800">Total</span>
+                  <span className="text-sm font-bold text-gray-900">
+                    {formatTotals(filteredTotals)}
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
+        </>
+      )}
+    </FormSection>
   );
 }
 

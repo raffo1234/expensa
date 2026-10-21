@@ -28,6 +28,7 @@ import InputWithTooltip from "./InputWithTooltip";
 import SearchInput from "./SearchInput";
 import ClearFiltersButton from "./ClearFiltersButton";
 import { replaceUrl } from "@/utils/replaceUrl";
+import { sumExpenseAmounts } from "@/lib/sumExpenseAmounts";
 import type { SummaryReportRow } from "./SummaryReportPDF";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -81,6 +82,24 @@ function applyCategoryFilter<T extends { eq: any; in: any }>(query: T, categoryI
   if (ids.length === 1) return query.eq("category_id", ids[0]);
   if (ids.length > 1) return query.in("category_id", ids);
   return query;
+}
+
+// Every expense query on this page (list, total, exports) filters the same way.
+function applyExpenseFilters<T>(query: T, filters: Filters, orClause: string | null): T {
+  // Supabase builder types change with every chained call; treat it loosely here.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let q: any = applyCategoryFilter(query as any, filters.categoryId);
+  if (filters.stageId) q = q.eq("stage_id", filters.stageId);
+  if (filters.levelId) q = q.eq("level_id", filters.levelId);
+  if (filters.providerId) q = q.eq("provider_id", filters.providerId);
+  if (filters.invoiceSeries) q = q.ilike("invoice_series", `%${filters.invoiceSeries}%`);
+  if (filters.invoiceNumber) q = q.ilike("invoice_number", `%${filters.invoiceNumber}%`);
+  if (orClause) q = q.or(orClause);
+  if (filters.issuedFrom) q = q.gte("issued_at", filters.issuedFrom);
+  if (filters.issuedTo) q = q.lte("issued_at", filters.issuedTo);
+  if (filters.amountMin) q = q.gte("amount", Math.round(parseFloat(filters.amountMin) * 100));
+  if (filters.amountMax) q = q.lte("amount", Math.round(parseFloat(filters.amountMax) * 100));
+  return q;
 }
 
 export type Stage = { id: string; name: string; color: string | null };
@@ -159,59 +178,16 @@ const fetchExpenses = async (
     )
     .eq("workspace_id", workspaceId)
     .order("paid_at", { ascending: false })
+    .order("id") // stable paging when several expenses share a date
     .range(from, to);
 
-  let amountsQuery = supabase.from("expense").select("amount").eq("workspace_id", workspaceId);
+  query = applyExpenseFilters(query, filters, orClause);
 
-  query = applyCategoryFilter(query, filters.categoryId);
-  amountsQuery = applyCategoryFilter(amountsQuery, filters.categoryId);
-  if (filters.stageId) {
-    query = query.eq("stage_id", filters.stageId);
-    amountsQuery = amountsQuery.eq("stage_id", filters.stageId);
-  }
-  if (filters.levelId) {
-    query = query.eq("level_id", filters.levelId);
-    amountsQuery = amountsQuery.eq("level_id", filters.levelId);
-  }
-  if (filters.providerId) {
-    query = query.eq("provider_id", filters.providerId);
-    amountsQuery = amountsQuery.eq("provider_id", filters.providerId);
-  }
-  if (filters.invoiceSeries) {
-    query = query.ilike("invoice_series", `%${filters.invoiceSeries}%`);
-    amountsQuery = amountsQuery.ilike("invoice_series", `%${filters.invoiceSeries}%`);
-  }
-  if (filters.invoiceNumber) {
-    query = query.ilike("invoice_number", `%${filters.invoiceNumber}%`);
-    amountsQuery = amountsQuery.ilike("invoice_number", `%${filters.invoiceNumber}%`);
-  }
-  if (orClause) {
-    query = query.or(orClause);
-    amountsQuery = amountsQuery.or(orClause);
-  }
-  if (filters.issuedFrom) {
-    query = query.gte("issued_at", filters.issuedFrom);
-    amountsQuery = amountsQuery.gte("issued_at", filters.issuedFrom);
-  }
-  if (filters.issuedTo) {
-    query = query.lte("issued_at", filters.issuedTo);
-    amountsQuery = amountsQuery.lte("issued_at", filters.issuedTo);
-  }
-  if (filters.amountMin) {
-    const min = Math.round(parseFloat(filters.amountMin) * 100);
-    query = query.gte("amount", min);
-    amountsQuery = amountsQuery.gte("amount", min);
-  }
-  if (filters.amountMax) {
-    const max = Math.round(parseFloat(filters.amountMax) * 100);
-    query = query.lte("amount", max);
-    amountsQuery = amountsQuery.lte("amount", max);
-  }
-
-  const [{ data, error, count }, { data: allAmounts }] = await Promise.all([query, amountsQuery]);
+  const [{ data, error, count }, totalAmount] = await Promise.all([
+    query,
+    sumExpenseAmounts(workspaceId, (q) => applyExpenseFilters(q, filters, orClause)),
+  ]);
   if (error) throw error;
-
-  const totalAmount = (allAmounts ?? []).reduce((acc, r) => acc + (r.amount ?? 0), 0);
 
   return {
     data: ((data as unknown as ExpenseRow[]) ?? []).map(mapExpenseRow),
@@ -255,21 +231,11 @@ const fetchAllFilteredExpenses = async (
       )
       .eq("workspace_id", workspaceId)
       .order("paid_at", { ascending: true })
+      // Tie-breaker: without it, rows sharing a date can be skipped or repeated across pages.
+      .order("id")
       .range(page * size, (page + 1) * size - 1);
 
-    if (orClause) query = query.or(orClause);
-    query = applyCategoryFilter(query, filters.categoryId);
-    if (filters.stageId) query = query.eq("stage_id", filters.stageId);
-    if (filters.levelId) query = query.eq("level_id", filters.levelId);
-    if (filters.providerId) query = query.eq("provider_id", filters.providerId);
-    if (filters.invoiceSeries) query = query.ilike("invoice_series", `%${filters.invoiceSeries}%`);
-    if (filters.invoiceNumber) query = query.ilike("invoice_number", `%${filters.invoiceNumber}%`);
-    if (filters.issuedFrom) query = query.gte("issued_at", filters.issuedFrom);
-    if (filters.issuedTo) query = query.lte("issued_at", filters.issuedTo);
-    if (filters.amountMin)
-      query = query.gte("amount", Math.round(parseFloat(filters.amountMin) * 100));
-    if (filters.amountMax)
-      query = query.lte("amount", Math.round(parseFloat(filters.amountMax) * 100));
+    query = applyExpenseFilters(query, filters, orClause);
 
     const { data } = await query;
     if (!data || data.length === 0) break;

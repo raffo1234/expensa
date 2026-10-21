@@ -84,18 +84,32 @@ export type MaterialReportRow = {
 };
 
 export async function getMaterialsReport(workspaceId: string): Promise<MaterialReportRow[]> {
-  const { data, error } = await supabaseAdmin
-    .from("expense_item")
-    .select(
-      `id, expense_id, quantity, unit_price, subtotal,
+  // Supabase caps each request at 1,000 rows, so read the report page by page.
+  const PAGE_SIZE = 1000;
+  const data: unknown[] = [];
+  let error: { message: string } | null = null;
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const page = await supabaseAdmin
+      .from("expense_item")
+      .select(
+        `id, expense_id, quantity, unit_price, subtotal,
        material:material_id(id, name),
        brand:brand_id(id, name),
        unit:unit_id(id, name),
        expense:expense_id!inner(workspace_id, paid_at, currency, invoice_series, invoice_number, tax_status,
          level:level_id(id, name), provider:provider_id(id, name))`,
-    )
-    .eq("expense.workspace_id", workspaceId)
-    .order("created_at", { ascending: false });
+      )
+      .eq("expense.workspace_id", workspaceId)
+      .order("created_at", { ascending: false })
+      .order("id")
+      .range(from, from + PAGE_SIZE - 1);
+    if (page.error) {
+      error = page.error;
+      break;
+    }
+    data.push(...(page.data ?? []));
+    if ((page.data ?? []).length < PAGE_SIZE) break;
+  }
 
   if (error) throw new Error(error.message);
 

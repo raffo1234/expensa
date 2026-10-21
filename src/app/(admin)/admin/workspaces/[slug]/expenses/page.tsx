@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { supabase } from "@/lib/supabase";
+import { sumExpenseAmounts } from "@/lib/sumExpenseAmounts";
 import ExpensesClient from "@/components/ExpensesClient";
 import FallbackExpenses from "@/components/FallbackExpenses";
 import FormSection from "@/components/FormSection";
@@ -30,7 +31,7 @@ async function ExpensesSection({ slug }: { slug: string }) {
 
   const [
     { data: rows, error: expError, count },
-    { data: allAmounts },
+    initialTotalAmount,
     { data: categories },
     { data: stages },
     { data: levels },
@@ -47,8 +48,9 @@ async function ExpensesSection({ slug }: { slug: string }) {
       )
       .eq("workspace_id", workspace.id)
       .order("paid_at", { ascending: false })
+      .order("id")
       .range(0, ITEMS_PER_PAGE - 1),
-    supabase.from("expense").select("amount").eq("workspace_id", workspace.id),
+    sumExpenseAmounts(workspace.id),
     supabase
       .from("category")
       .select("id, name, color")
@@ -64,8 +66,6 @@ async function ExpensesSection({ slug }: { slug: string }) {
   ]);
 
   if (expError) throw expError;
-
-  const initialTotalAmount = (allAmounts ?? []).reduce((acc, r) => acc + (r.amount ?? 0), 0);
 
   const expenses = (rows ?? []).map((row) => {
     const cat = Array.isArray(row.category) ? row.category[0] : row.category;

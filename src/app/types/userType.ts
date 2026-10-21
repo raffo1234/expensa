@@ -11,7 +11,8 @@ export type UserType = {
   first_name?: string;
   last_name?: string;
   image_url: string;
-  username: string;
+  // Not a column in the database; kept optional for older code paths.
+  username?: string;
   email: string;
   role_id?: string;
   role?: RoleType;

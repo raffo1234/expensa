@@ -19,7 +19,7 @@ export default function UsersTable() {
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
 
-  const { data, isLoading, mutate } = useGetUsers(page, PAGE_SIZE, {
+  const { data, error, isLoading, mutate } = useGetUsers(page, PAGE_SIZE, {
     archivedFilter: option,
     search,
   });
@@ -93,9 +93,26 @@ export default function UsersTable() {
           disabled={!searchInput}
         />
       </div>
-      <p className="mb-4 text-sm text-gray-600 tabular-nums">
-        {total} {total === 1 ? "usuario" : "usuarios"}
-      </p>
+      {error ? (
+        // A failed request must not look like an empty list.
+        <div
+          role="alert"
+          className="mb-4 flex items-center justify-between gap-3 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+        >
+          <span>No se pudieron cargar los usuarios. {error.message}</span>
+          <button
+            type="button"
+            onClick={() => mutate()}
+            className="cursor-pointer font-medium underline underline-offset-2"
+          >
+            Reintentar
+          </button>
+        </div>
+      ) : (
+        <p className="mb-4 text-sm text-gray-600 tabular-nums">
+          {isLoading ? "Cargando…" : `${total} ${total === 1 ? "usuario" : "usuarios"}`}
+        </p>
+      )}
       <PageNavigator
         page={page + 1}
         totalPages={totalPages}

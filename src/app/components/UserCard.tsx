@@ -47,7 +47,7 @@ export default function UserCard({ user, mutate }: { user: UserType; mutate: () 
         <div className={imageBaseClassName} />
       )}
       <div
-        className="font-semibold w-full mb-1 text-center truncate"
+        className="mb-1 w-full truncate text-center font-book text-navy-900"
         title={`${first_name} ${last_name ?? ""}`}
       >
         {first_name} {last_name ?? ""}

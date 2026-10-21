@@ -67,7 +67,7 @@ export default function EditUserContent({ userId }: { userId: string }) {
       </FieldsSection>
 
       <FieldsSection>
-        <h2 className="font-semibold">General Information</h2>
+        <h2 className="font-book text-navy-900">General Information</h2>
         <div>
           <label htmlFor="email" className="inline-block mb-2 text-sm">
             Email
@@ -83,7 +83,7 @@ export default function EditUserContent({ userId }: { userId: string }) {
       </FieldsSection>
 
       <FieldsSection>
-        <h2 className="font-semibold">Role</h2>
+        <h2 className="font-book text-navy-900">Role</h2>
         <div className="flex items-center gap-4 w-full">
           <div className="flex-grow">
             <label htmlFor="role_id" className="inline-block mb-2 text-sm">
@@ -113,7 +113,7 @@ export default function EditUserContent({ userId }: { userId: string }) {
       </FieldsSection>
 
       <FieldsSection>
-        <h2 className="font-semibold">Acceso a proyectos</h2>
+        <h2 className="font-book text-navy-900">Acceso a proyectos</h2>
         <div key={assignedWorkspaces ? "loaded" : "loading"} className="flex flex-col gap-2">
           {!allWorkspaces && <p className="text-sm text-gray-500">Cargando…</p>}
           {allWorkspaces?.map((ws) => (

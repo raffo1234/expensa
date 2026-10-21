@@ -26,7 +26,7 @@ export default function EditUserHeader({ user }: { user: UserType }) {
         className="rounded-full shrink-0"
       />
       <div>
-        <h2 className="font-semibold text-lg">
+        <h2 className="text-lg font-book text-navy-900">
           {user.first_name} {user.last_name}
         </h2>
         {user.role?.name ? (

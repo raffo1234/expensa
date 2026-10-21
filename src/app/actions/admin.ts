@@ -148,7 +148,7 @@ export async function deleteRole(roleId: string): Promise<{ error?: string }> {
 
 // ─── Users ────────────────────────────────────────────────────────────────────
 
-const USER_COLUMNS = `id, image_url, first_name, last_name, username, email, role_id, archived_at, created_at, role(id, name)`;
+const USER_COLUMNS = `id, image_url, first_name, last_name, email, role_id, archived_at, created_at, role(id, name)`;
 
 export async function listAllUsers(): Promise<UserType[]> {
   await requirePermission(Permissions.MANAGE_USERS);
@@ -209,7 +209,6 @@ const EDITABLE_USER_FIELDS = [
   "archived_at",
   "first_name",
   "last_name",
-  "username",
 ] as const;
 type EditableUserField = (typeof EDITABLE_USER_FIELDS)[number];
 

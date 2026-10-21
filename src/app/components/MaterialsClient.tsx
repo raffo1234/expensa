@@ -10,7 +10,7 @@ import Field from "@/components/Field";
 import ListPage from "@/components/ListPage";
 import PageNavigator from "@/components/PageNavigator";
 import DataTable, { DataTableRow, RowLink, Td, type DataTableColumn } from "@/components/DataTable";
-import { usePageSize } from "@/hooks/usePageSize";
+import { useClientPagination } from "@/hooks/useClientPagination";
 import type { MaterialReportRow } from "@/actions/materials";
 import { formatAmount, formatTotals, totalsByCurrency } from "@/utils/formatAmount";
 import { formatSafeDate } from "@/lib/formatSafeDate";
@@ -126,17 +126,6 @@ export default function MaterialsClient({
       searchParams.get(k),
     ),
   );
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSizePref] = usePageSize();
-  const setPageSize = (size: number) => {
-    setPageSizePref(size);
-    setPage(1);
-  };
-
-  // A new filter starts back on the first page.
-  useEffect(() => {
-    setPage(1);
-  }, [search, materialId, brandId, providerId, taxStatus, levelId, dateFrom, dateTo]);
 
   // Restore the saved level after mount (localStorage is not available on the server).
   useEffect(() => {
@@ -291,10 +280,14 @@ export default function MaterialsClient({
     month || dateFrom || dateTo,
   ].filter(Boolean).length;
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const currentPage = Math.min(page, totalPages);
-  const pageStart = (currentPage - 1) * pageSize;
-  const pageRows = filtered.slice(pageStart, pageStart + pageSize);
+  const {
+    rows: pageRows,
+    start: pageStart,
+    pager: pagerProps,
+  } = useClientPagination(
+    filtered,
+    [search, materialId, brandId, providerId, taxStatus, levelId, dateFrom, dateTo].join("|"),
+  );
   const filteredTotal = formatTotals(filteredTotals);
 
   // Largest-impact currency first; soles lead when present (same as expenses).
@@ -308,16 +301,7 @@ export default function MaterialsClient({
       : "No se encontraron materiales para ese filtro.";
 
   // Always shown (disabled on a single page) so the table never jumps.
-  const pager = (
-    <PageNavigator
-      page={currentPage}
-      totalPages={totalPages}
-      onPrev={() => setPage(Math.max(1, currentPage - 1))}
-      onNext={() => setPage(Math.min(totalPages, currentPage + 1))}
-      pageSize={pageSize}
-      onPageSizeChange={setPageSize}
-    />
-  );
+  const pager = <PageNavigator {...pagerProps} />;
 
   return (
     <FormSection title="Materiales" backUrl={`/admin/workspaces/${workspaceSlug}/expenses`}>

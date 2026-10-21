@@ -1,6 +1,11 @@
 "use client";
 
 import { SELECT_CLASS } from "@/constants";
+import DataTable, { DataTableRow, RowLink, Td, type DataTableColumn } from "./DataTable";
+import CategoryBadge from "./CategoryBadge";
+import ClearFiltersButton from "./ClearFiltersButton";
+import { formatAmount } from "@/utils/formatAmount";
+import { formatSafeDate } from "@/lib/formatSafeDate";
 import { useState, useEffect, useTransition, useCallback } from "react";
 import {
   AreaChart,
@@ -404,76 +409,60 @@ const TruncatedTick = ({
 
 // ─── Recent Table ─────────────────────────────────────────────────────────────
 
-function RecentTable({ rows, loading }: { rows: RecentRow[]; loading: boolean }) {
-  if (loading) return <Spinner />;
-  if (rows.length === 0) return <EmptyState message="Sin gastos registrados" />;
+const RECENT_COLUMNS: DataTableColumn[] = [
+  { label: "Factura" },
+  { label: "Proveedor" },
+  { label: "Categoría" },
+  { label: "Etapa" },
+  { label: "Fecha de pago" },
+  { label: "Monto", align: "right" },
+];
 
+function RecentTable({
+  rows,
+  loading,
+  workspaceSlug,
+}: {
+  rows: RecentRow[];
+  loading: boolean;
+  workspaceSlug?: string;
+}) {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-gray-200 text-gray-400 text-xs uppercase tracking-wider">
-            <th className="text-left py-3 px-2 font-medium">Fecha</th>
-            <th className="text-left py-3 px-2 font-medium">Proveedor</th>
-            <th className="text-left py-3 px-2 font-medium">Categoría</th>
-            <th className="text-left py-3 px-2 font-medium hidden md:table-cell">Factura</th>
-            <th className="text-left py-3 px-2 font-medium hidden lg:table-cell">Etapa</th>
-            <th className="text-right py-3 px-2 font-medium">Monto</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr
-              key={row.id}
-              className="border-b border-gray-100 hover:bg-violet-50/40 transition-colors"
-            >
-              <td className="py-3 px-2 text-gray-500 font-mono text-xs whitespace-nowrap">
-                {new Date(row.paid_at).toLocaleDateString("es-PE", {
-                  day: "2-digit",
-                  month: "short",
-                })}
-              </td>
-              <td className="py-3 px-2 text-gray-800 max-w-[140px] truncate">
-                {row.provider_name ?? <span className="text-gray-300">—</span>}
-              </td>
-              <td className="py-3 px-2">
-                {row.category_name ? (
-                  <span
-                    className="text-xs px-2 py-0.5 rounded-full font-medium"
-                    style={{
-                      backgroundColor: `${row.category_color ?? "#9ca3af"}22`,
-                      color: row.category_color ?? "#6b7280",
-                    }}
-                  >
-                    {row.category_name}
-                  </span>
-                ) : (
-                  <span className="text-gray-300">—</span>
-                )}
-              </td>
-              <td className="py-3 px-2 text-gray-500 font-mono text-xs hidden md:table-cell">
-                {row.invoice_series && row.invoice_number
-                  ? `${row.invoice_series}-${row.invoice_number}`
-                  : (row.invoice_number ?? <span className="text-gray-300">—</span>)}
-              </td>
-              <td className="py-3 px-2 hidden lg:table-cell">
-                {row.stage_name ? (
-                  <span className="text-xs text-gray-500">{row.stage_name}</span>
-                ) : (
-                  <span className="text-gray-300">—</span>
-                )}
-              </td>
-              <td className="py-3 px-2 text-right font-mono font-semibold whitespace-nowrap">
-                <span className="text-xs mr-0.5" style={{ color: getCurrencyColor(row.currency) }}>
-                  {getCurrencySymbol(row.currency)}
-                </span>
-                <span className="text-gray-900">{fmtAmount(row.amount)}</span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      columns={RECENT_COLUMNS}
+      numbered
+      isLoading={loading}
+      isEmpty={rows.length === 0}
+      emptyMessage="Sin gastos registrados."
+    >
+      {rows.map((row, i) => {
+        const href = workspaceSlug
+          ? `/admin/workspaces/${workspaceSlug}/expenses/${row.id}`
+          : undefined;
+        const invoice =
+          row.invoice_series && row.invoice_number
+            ? `${row.invoice_series}-${row.invoice_number}`
+            : (row.invoice_number ?? "—");
+        return (
+          <DataTableRow key={row.id} href={href} number={i + 1}>
+            <Td className="font-mono">
+              {href ? <RowLink href={href}>{invoice}</RowLink> : invoice}
+            </Td>
+            <Td>
+              <span className="block max-w-56 truncate">{row.provider_name ?? "—"}</span>
+            </Td>
+            <Td>
+              <CategoryBadge category={row.category_name} color={row.category_color} />
+            </Td>
+            <Td>{row.stage_name ?? "—"}</Td>
+            <Td>{formatSafeDate(row.paid_at, "d MMM yyyy")}</Td>
+            <Td align="right" className="font-book text-navy-900 tabular-nums">
+              {formatAmount(row.amount, row.currency)}
+            </Td>
+          </DataTableRow>
+        );
+      })}
+    </DataTable>
   );
 }
 
@@ -654,17 +643,13 @@ export default function DashboardClient({ workspaces, defaultYear, defaultMonth 
             />
           )}
 
-          {(stageId || levelId) && (
-            <button
-              onClick={() => {
-                setStageId("");
-                setLevelId("");
-              }}
-              className="text-xs text-gray-400 hover:text-gray-700 transition-colors px-2 py-1"
-            >
-              Limpiar filtros
-            </button>
-          )}
+          <ClearFiltersButton
+            onClick={() => {
+              setStageId("");
+              setLevelId("");
+            }}
+            disabled={!stageId && !levelId}
+          />
 
           {isPending && (
             <div className="w-4 h-4 border-2 border-gray-300 border-t-violet-600 rounded-full animate-spin ml-auto" />
@@ -765,7 +750,11 @@ export default function DashboardClient({ workspaces, defaultYear, defaultMonth 
               <span className="text-gray-300 text-xs">10 más recientes</span>
             )}
           </div>
-          <RecentTable rows={data?.recent ?? []} loading={isPending && !data} />
+          <RecentTable
+            rows={data?.recent ?? []}
+            loading={isPending && !data}
+            workspaceSlug={currentWorkspace?.slug}
+          />
         </div>
       </main>
     </div>

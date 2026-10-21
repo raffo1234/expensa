@@ -4,46 +4,56 @@ import toast from "react-hot-toast";
 import { useState } from "react";
 import Link from "next/link";
 import { Workspace } from "@/types/WorkspaceType";
-import {
-  PRIMARY_BUTTON_CLASS,
-  SEARCH_CLASS,
-  SECONDARY_BUTTON_CLASS,
-  SECONDARY_BUTTON_XS_CLASS,
-} from "@/constants";
-import FormSection from "./FormSection";
+import { PRIMARY_BUTTON_CLASS } from "@/constants";
 import DeleteButton from "./DeleteButton";
+import SearchInput from "./SearchInput";
+import ClearFiltersButton from "./ClearFiltersButton";
+import ListPage from "./ListPage";
+import PageNavigator from "./PageNavigator";
+import DataTable, { DataTableRow, RowLink, Td, type DataTableColumn } from "./DataTable";
+import { useClientPagination } from "@/hooks/useClientPagination";
 import { deleteWorkspace } from "@/actions/workspace";
+
+const COLUMNS: DataTableColumn[] = [
+  { label: "Proyecto" },
+  { label: "URL" },
+  { label: "Gastos", align: "right" },
+  { label: "Creado" },
+  { label: "" },
+];
 
 const PlusIcon = () => (
   <svg
-    width="16"
-    height="16"
+    width="14"
+    height="14"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
-    strokeWidth="2"
+    strokeWidth="2.5"
     strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden
   >
-    <line x1="12" y1="5" x2="12" y2="19" />
-    <line x1="5" y1="12" x2="19" y2="12" />
+    <path d="M5 12h14M12 5v14" />
   </svg>
 );
 
-// ── Table View ─────────────────────────────────────────────────────────────
-function TableView({
-  workspaces,
-  onDelete,
-}: {
-  workspaces: Workspace[];
-  onDelete: (id: string) => void;
-}) {
+export default function WorkspaceClient({ workspaces: initial }: { workspaces: Workspace[] }) {
+  const [workspaces, setWorkspaces] = useState(initial);
+  const [search, setSearch] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const q = search.trim().toLowerCase();
+  const filtered = workspaces.filter(
+    (ws) => ws.name.toLowerCase().includes(q) || ws.slug.toLowerCase().includes(q),
+  );
+  const { rows, start, pager } = useClientPagination(filtered, q);
 
   const handleDelete = async (id: string) => {
     setDeletingId(id);
     try {
       await deleteWorkspace(id);
-      onDelete(id);
+      setWorkspaces((prev) => prev.filter((ws) => ws.id !== id));
       toast.success("Proyecto eliminado");
     } catch (err) {
       toast.error(
@@ -57,155 +67,96 @@ function TableView({
   };
 
   return (
-    <FormSection padding={false}>
-      <div className="overflow-hidden">
-        <div className="overflow-y-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="border-b border-gray-200 sticky top-0 z-10">
-                {["Proyecto", "URL", "Gastos", "Creado", ""].map((h, i) => (
-                  <th key={i} className="px-6 py-4 text-left text-sm">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {workspaces.map((ws) => (
-                <tr
-                  key={ws.id}
-                  className="border-b border-violet-100 last:border-0 hover:bg-violet-50/60 transition-colors duration-150"
-                >
-                  <td className="font-semibold text-[15px] text-gray-800">
-                    <Link
-                      href={`/admin/workspaces/${ws.slug}/expenses`}
-                      className="block px-6 py-5"
-                    >
-                      {ws.name}
-                    </Link>
-                  </td>
-                  <td className="text-sm text-gray-500 font-medium">
-                    <Link
-                      href={`/admin/workspaces/${ws.slug}/expenses`}
-                      className="block px-6 py-5"
-                    >
-                      /{ws.slug}
-                    </Link>
-                  </td>
-                  <td className="text-sm text-gray-500 font-medium">
-                    <Link
-                      href={`/admin/workspaces/${ws.slug}/expenses`}
-                      className="block px-6 py-5"
-                    >
-                      {ws.expense?.length ?? 0} gasto{ws.expense?.length === 1 ? "" : "s"}
-                    </Link>
-                  </td>
-                  <td className="text-sm text-gray-500 font-medium">
-                    <Link
-                      href={`/admin/workspaces/${ws.slug}/expenses`}
-                      className="block px-6 py-5"
-                    >
-                      {new Date(ws.created_at).toLocaleDateString("es-PE", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric",
-                      })}
-                    </Link>
-                  </td>
-                  <td className="px-6 py-5">
-                    <div className="flex items-center gap-2 justify-end">
-                      <Link
-                        href={`/admin/workspaces/${ws.slug}/upload-expense`}
-                        className={SECONDARY_BUTTON_XS_CLASS}
-                      >
-                        + Agregar
-                      </Link>
-                      <DeleteButton
-                        title="Eliminar proyecto"
-                        confirmTitle="¿Eliminar proyecto?"
-                        confirmDescription="Se eliminarán todos los gastos y archivos adjuntos. Esta acción no se puede deshacer."
-                        confirmLabel="Eliminar"
-                        cancelLabel="Cancelar"
-                        isDeleting={deletingId === ws.id}
-                        onClick={() => handleDelete(ws.id)}
-                      />
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </FormSection>
-  );
-}
-
-// ── Main ───────────────────────────────────────────────────────────────────
-export default function WorkspaceClient({ workspaces: initial }: { workspaces: Workspace[] }) {
-  const [workspaces, setWorkspaces] = useState(initial);
-  const [search, setSearch] = useState("");
-
-  const handleDelete = (id: string) => {
-    setWorkspaces((prev) => prev.filter((ws) => ws.id !== id));
-  };
-
-  const filtered = workspaces.filter(
-    (ws) =>
-      ws.name.toLowerCase().includes(search.toLowerCase()) ||
-      ws.slug.toLowerCase().includes(search.toLowerCase()),
-  );
-
-  return (
-    <div>
-      <Link href="/admin/workspaces/new" className={PRIMARY_BUTTON_CLASS}>
-        <PlusIcon /> Nuevo proyecto
-      </Link>
-      <div className="relative my-6">
-        <svg
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-        >
-          <circle cx="11" cy="11" r="8" />
-          <path d="m21 21-4.35-4.35" />
-        </svg>
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar proyectos…"
-          className={SEARCH_CLASS}
-        />
-      </div>
-
-      {workspaces.length === 0 && (
-        <div className="text-center py-20">
-          <p className="text-[15px] text-gray-400 mb-4">Aún no tienes proyectos</p>
-          <Link href="/admin/workspaces/new" className={SECONDARY_BUTTON_CLASS}>
-            <PlusIcon /> Crear mi primer proyecto
-          </Link>
-        </div>
-      )}
-
-      {workspaces.length > 0 && filtered.length === 0 && (
-        <div className="text-center py-16 text-gray-400">
-          <p className="text-[15px] m-0">Ningún proyecto coincide con &quot;{search}&quot;</p>
-        </div>
-      )}
-
-      {filtered.length > 0 ? (
+    <ListPage
+      pager={<PageNavigator {...pager} />}
+      controls={
         <>
-          <p className="text-gray-600 mb-4">
-            {filtered.length} proyecto{filtered.length !== 1 ? "s" : ""}
-          </p>
-          <TableView workspaces={filtered} onDelete={handleDelete} />
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-sm text-gray-600">{q ? "Proyectos encontrados" : "Proyectos"}</p>
+              <p className="mt-1 text-3xl font-semibold tracking-tight text-gray-900 tabular-nums">
+                {filtered.length}
+              </p>
+            </div>
+            <Link
+              href="/admin/workspaces/new"
+              className={`${PRIMARY_BUTTON_CLASS} justify-center min-h-11`}
+            >
+              <PlusIcon />
+              Nuevo proyecto
+            </Link>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <SearchInput
+              value={search}
+              onChange={setSearch}
+              placeholder="Buscar proyectos…"
+              className="flex-1"
+            />
+            <ClearFiltersButton onClick={() => setSearch("")} disabled={!search} />
+          </div>
         </>
-      ) : null}
-    </div>
+      }
+    >
+      <DataTable
+        columns={COLUMNS}
+        numbered
+        isEmpty={filtered.length === 0}
+        emptyMessage={
+          workspaces.length === 0
+            ? "Aún no tienes proyectos."
+            : `Ningún proyecto coincide con "${search}".`
+        }
+      >
+        {rows.map((ws, i) => {
+          const href = `/admin/workspaces/${ws.slug}/expenses`;
+          const count = ws.expense?.length ?? 0;
+          return (
+            <DataTableRow
+              key={ws.id}
+              href={href}
+              number={start + i + 1}
+              className={deletingId === ws.id ? "pointer-events-none opacity-40" : ""}
+            >
+              <Td className="font-book text-navy-900">
+                <RowLink href={href}>{ws.name}</RowLink>
+              </Td>
+              <Td className="font-mono">/{ws.slug}</Td>
+              <Td align="right" className="tabular-nums">
+                {count}
+              </Td>
+              <Td>
+                {new Date(ws.created_at).toLocaleDateString("es-PE", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                })}
+              </Td>
+              <Td align="right">
+                <div className="flex items-center justify-end gap-2">
+                  <Link
+                    href={`/admin/workspaces/${ws.slug}/upload-expense`}
+                    className="inline-flex h-9 items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-violet-50 hover:text-violet-700"
+                  >
+                    <PlusIcon />
+                    Gasto
+                  </Link>
+                  <DeleteButton
+                    title="Eliminar proyecto"
+                    confirmTitle="¿Eliminar proyecto?"
+                    confirmDescription="Se eliminarán todos los gastos y archivos adjuntos. Esta acción no se puede deshacer."
+                    confirmLabel="Eliminar"
+                    cancelLabel="Cancelar"
+                    isDeleting={deletingId === ws.id}
+                    onClick={() => handleDelete(ws.id)}
+                  />
+                </div>
+              </Td>
+            </DataTableRow>
+          );
+        })}
+      </DataTable>
+    </ListPage>
   );
 }

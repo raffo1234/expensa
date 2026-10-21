@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import useSWR, { mutate } from "swr";
-import { useRouter, useParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import { getWorkspaceBySlug } from "@/actions/lookups";
 import {
   createProvider,
@@ -11,7 +11,22 @@ import {
   updateProvider,
   type ProviderRecord,
 } from "@/actions/providers";
-import PageTitle from "@/components/PageTitle";
+import Link from "next/link";
+import FormSection from "@/components/FormSection";
+import ListPage from "@/components/ListPage";
+import PageNavigator from "@/components/PageNavigator";
+import SearchInput from "@/components/SearchInput";
+import ClearFiltersButton from "@/components/ClearFiltersButton";
+import DataTable, { DataTableRow, Td, type DataTableColumn } from "@/components/DataTable";
+import { useClientPagination } from "@/hooks/useClientPagination";
+import {
+  HEADER_LINK_CLASS,
+  ICON_SIZE,
+  PRIMARY_BUTTON_CLASS,
+  SECONDARY_BUTTON_CLASS,
+} from "@/constants";
+
+const COLUMNS: DataTableColumn[] = [{ label: "Nombre" }, { label: "RUC" }, { label: "" }];
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type Provider = ProviderRecord;
@@ -185,21 +200,14 @@ function ProviderModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 rounded-lg border border-gray-200 text-sm font-medium
-                         text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+              className={`${SECONDARY_BUTTON_CLASS} flex-1 justify-center`}
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg
-                         text-sm font-semibold text-white transition-all
-                         disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{
-                background: "linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)",
-                boxShadow: "0 2px 10px rgba(6,182,212,0.3)",
-              }}
+              className={`${PRIMARY_BUTTON_CLASS} flex-1 justify-center`}
             >
               {saving ? (
                 <>
@@ -343,7 +351,6 @@ function DeleteDialog({
 export default function ProvidersPage() {
   const params = useParams();
   const workspaceSlug = params.slug as string;
-  const router = useRouter();
 
   const { data: workspace } = useSWR(
     workspaceSlug ? ["workspace", workspaceSlug] : null,
@@ -362,9 +369,9 @@ export default function ProvidersPage() {
     | null
   >(null);
 
-  const filtered = providers.filter(
-    (p) => p.name.toLowerCase().includes(search.toLowerCase()) || p.ruc.includes(search),
-  );
+  const q = search.trim().toLowerCase();
+  const filtered = providers.filter((p) => p.name.toLowerCase().includes(q) || p.ruc.includes(q));
+  const { rows, start, pager } = useClientPagination(filtered, q);
 
   // ── CRUD handlers ──────────────────────────────────────────────────────────
   async function handleCreate(data: { ruc: string; name: string }): Promise<string | null> {
@@ -393,266 +400,138 @@ export default function ProvidersPage() {
     mutate(swrKey);
   }
 
+  const icon =
+    "flex h-9 aspect-square items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500";
+
   return (
-    <div className="min-h-screen text-gray-900">
-      {/* Nav */}
-      <nav className=" top-0 z-10">
-        <div className="max-w-3xl mx-auto px-6 h-14 flex items-center gap-3">
-          <div className="flex items-center gap-1 text-sm">
-            <button
-              onClick={() => router.push(`/admin/workspaces/${workspaceSlug}`)}
-              className="text-gray-500 hover:text-violet-600 transition-colors px-2 py-1 rounded-md hover:bg-violet-50"
-            >
-              Workspace
-            </button>
-            <span className="text-gray-300">/</span>
-            <span className="text-gray-900 font-medium px-2 py-1">Proveedores</span>
-            <span className="text-gray-300">/</span>
-            <button
-              onClick={() => router.push(`/admin/workspaces/${workspaceSlug}/materials`)}
-              className="text-gray-500 hover:text-violet-600 transition-colors px-2 py-1 rounded-md hover:bg-violet-50"
-            >
-              Materiales
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      {/* Content */}
-      <div className="max-w-3xl mx-auto px-6 py-10">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4 mb-8">
-          <div>
-            <PageTitle>Proveedores</PageTitle>
-            <p className="text-sm text-gray-500 mt-1">
-              Gestiona los proveedores asociados a tus gastos.
-            </p>
-          </div>
-          <button
-            onClick={() => setModal({ type: "create" })}
-            disabled={!workspaceId}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold
-                       text-white transition-all active:scale-[0.98] disabled:opacity-40 flex-shrink-0"
-            style={{
-              background: "linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)",
-              boxShadow: "0 2px 12px rgba(6,182,212,0.35)",
-            }}
-          >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-            >
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            Nuevo proveedor
-          </button>
-        </div>
-
-        {/* Search */}
-        <div className="relative mb-4">
-          <svg
-            width="15"
-            height="15"
-            viewBox="0 0 24 24"
-            fill="none"
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-          >
-            <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="1.8" />
-            <path
-              d="M21 21l-4.35-4.35"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-            />
-          </svg>
-          <input
-            type="text"
-            placeholder="Buscar por nombre o RUC..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className={`${inputCls} pl-10`}
-          />
-          {search && (
-            <button
-              onClick={() => setSearch("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition-colors"
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              >
-                <path d="M18 6L6 18M6 6l12 12" />
-              </svg>
-            </button>
-          )}
-        </div>
-
-        {/* Loading */}
-        {isLoading && (
-          <div className="flex items-center justify-center py-32 text-gray-400 text-sm gap-2">
-            <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-              <circle
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="3"
-                strokeOpacity="0.25"
-              />
-              <path
-                d="M12 2a10 10 0 0 1 10 10"
-                stroke="currentColor"
-                strokeWidth="3"
-                strokeLinecap="round"
-              />
-            </svg>
-            Cargando proveedores...
-          </div>
-        )}
-
-        {/* Empty state */}
-        {!isLoading && providers.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
-              <svg
-                width="22"
-                height="22"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#9ca3af"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              >
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                <polyline points="9 22 9 12 15 12 15 22" />
-              </svg>
-            </div>
-            <p className="text-sm font-semibold text-gray-700 mb-1">Sin proveedores aún</p>
-            <p className="text-xs text-gray-400 mb-5">
-              Crea tu primer proveedor para asignarlo a gastos.
-            </p>
-            <button
-              onClick={() => setModal({ type: "create" })}
-              className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all"
-              style={{ background: "linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)" }}
-            >
-              Crear proveedor
-            </button>
-          </div>
-        )}
-
-        {/* No search results */}
-        {!isLoading && providers.length > 0 && filtered.length === 0 && (
-          <div className="text-center py-16 text-sm text-gray-400">
-            No se encontraron proveedores para{" "}
-            <span className="font-medium text-gray-600">{search}</span>.
-          </div>
-        )}
-
-        {/* Table */}
-        {!isLoading && filtered.length > 0 && (
-          <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-            {/* Table header */}
-            <div className="grid grid-cols-[1fr_140px_80px] gap-4 px-5 py-3 border-b border-gray-100 bg-gray-50/60">
-              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                Nombre
-              </span>
-              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                RUC
-              </span>
-              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest text-right">
-                Acciones
-              </span>
-            </div>
-
-            {/* Rows */}
-            {filtered.map((provider, i) => (
-              <div
-                key={provider.id}
-                className={`grid grid-cols-[1fr_140px_80px] gap-4 items-center px-5 py-3.5
-                  ${i < filtered.length - 1 ? "border-b border-gray-100" : ""}
-                  hover:bg-gray-50/60 transition-colors group`}
-              >
-                {/* Name */}
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-gray-800 truncate">{provider.name}</p>
-                </div>
-
-                {/* RUC */}
+    <>
+      <FormSection
+        title="Proveedores"
+        backUrl={`/admin/workspaces/${workspaceSlug}/expenses`}
+        actions={
+          <Link href={`/admin/workspaces/${workspaceSlug}/materials`} className={HEADER_LINK_CLASS}>
+            Materiales
+          </Link>
+        }
+      >
+        <ListPage
+          pager={<PageNavigator {...pager} />}
+          controls={
+            <>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                  <span className="font-mono text-sm text-gray-500 tracking-wider">
-                    {provider.ruc}
-                  </span>
+                  <p className="text-sm text-gray-600">
+                    {search ? "Proveedores encontrados" : "Proveedores"}
+                  </p>
+                  <p className="mt-1 text-3xl font-semibold tracking-tight text-gray-900 tabular-nums">
+                    {filtered.length}
+                  </p>
                 </div>
-
-                {/* Actions */}
-                <div className="flex items-center justify-end gap-1">
-                  <button
-                    onClick={() => setModal({ type: "edit", provider })}
-                    className="p-1.5 rounded-lg text-gray-300 hover:text-violet-500 hover:bg-violet-50
-                               transition-all opacity-0 group-hover:opacity-100"
-                    title="Editar"
+                <button
+                  type="button"
+                  onClick={() => setModal({ type: "create" })}
+                  disabled={!workspaceId}
+                  className={`${PRIMARY_BUTTON_CLASS} justify-center min-h-11`}
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
                   >
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                    >
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => setModal({ type: "delete", provider })}
-                    className="p-1.5 rounded-lg text-gray-300 hover:text-red-400 hover:bg-red-50
-                               transition-all opacity-0 group-hover:opacity-100"
-                    title="Eliminar"
-                  >
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                    >
-                      <polyline points="3 6 5 6 21 6" />
-                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                      <path d="M10 11v6M14 11v6" />
-                      <path d="M9 6V4h6v2" />
-                    </svg>
-                  </button>
-                </div>
+                    <path d="M5 12h14M12 5v14" />
+                  </svg>
+                  Nuevo proveedor
+                </button>
               </div>
-            ))}
 
-            {/* Footer count */}
-            <div className="px-5 py-3 border-t border-gray-100 bg-gray-50/40">
-              <p className="text-xs text-gray-400">
-                {filtered.length === providers.length
-                  ? `${providers.length} proveedor${providers.length !== 1 ? "es" : ""}`
-                  : `${filtered.length} de ${providers.length} proveedores`}
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
+              <div className="flex items-center gap-2">
+                <SearchInput
+                  value={search}
+                  onChange={setSearch}
+                  placeholder="Buscar por nombre o RUC…"
+                  className="flex-1"
+                />
+                <ClearFiltersButton onClick={() => setSearch("")} disabled={!search} />
+              </div>
+            </>
+          }
+        >
+          <DataTable
+            columns={COLUMNS}
+            numbered
+            isLoading={isLoading}
+            isEmpty={filtered.length === 0}
+            emptyMessage={
+              providers.length === 0
+                ? "Sin proveedores aún. Crea el primero para asignarlo a tus gastos."
+                : `No se encontraron proveedores para "${search}".`
+            }
+          >
+            {rows.map((provider, i) => (
+              <DataTableRow key={provider.id} number={start + i + 1}>
+                <Td className="font-book text-navy-900">
+                  <span className="block max-w-96 truncate">{provider.name}</span>
+                </Td>
+                <Td className="font-mono">{provider.ruc}</Td>
+                <Td align="right">
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setModal({ type: "edit", provider })}
+                      aria-label={`Editar ${provider.name}`}
+                      title="Editar"
+                      className={`${icon} hover:bg-violet-50 hover:text-violet-700`}
+                    >
+                      <svg
+                        width={ICON_SIZE}
+                        height={ICON_SIZE}
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        aria-hidden
+                      >
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setModal({ type: "delete", provider })}
+                      aria-label={`Eliminar ${provider.name}`}
+                      title="Eliminar"
+                      className={`${icon} hover:bg-red-50 hover:text-red-600`}
+                    >
+                      <svg
+                        width={ICON_SIZE}
+                        height={ICON_SIZE}
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        aria-hidden
+                      >
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                        <path d="M10 11v6M14 11v6" />
+                        <path d="M9 6V4h6v2" />
+                      </svg>
+                    </button>
+                  </div>
+                </Td>
+              </DataTableRow>
+            ))}
+          </DataTable>
+        </ListPage>
+      </FormSection>
 
       {/* Modals */}
       {modal?.type === "create" && (
@@ -675,6 +554,6 @@ export default function ProvidersPage() {
           onConfirm={() => handleDelete(modal.provider.id)}
         />
       )}
-    </div>
+    </>
   );
 }

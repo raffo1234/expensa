@@ -520,7 +520,7 @@ export default function ExpensesClient({
         controls={
           <>
             {/* 1 · What matters most: how much was spent, and the one primary action. */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:justify-between">
               <div>
                 <p className="text-sm text-gray-600">
                   {hasActiveFilters ? "Total con los filtros aplicados" : "Total gastado"}

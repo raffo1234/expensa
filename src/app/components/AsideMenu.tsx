@@ -56,51 +56,6 @@ export default function AsideMenu({
         ]
       : []),
 
-    ...(checkPermission(Permissions.UPLOAD_DICOM)
-      ? [
-          {
-            href: "/admin/dicom",
-            title: t("upload"),
-            iconName: "solar:cloud-upload-broken",
-          },
-        ]
-      : []),
-    // ...(checkPermission(Permissions.MANAGE_PACS)
-    //   ? [
-    //       {
-    //         href: "/admin/pacs",
-    //         title: t("pacs"),
-    //         iconName: "solar:archive-down-minimlistic-linear",
-    //       },
-    //     ]
-    //   : []),
-    ...(checkPermission(Permissions.MANAGE_PACS)
-      ? [
-          {
-            href: "/admin/studies",
-            title: "PACS",
-            iconName: "solar:archive-down-minimlistic-linear",
-          },
-        ]
-      : []),
-    ...(checkPermission(Permissions.VIEW_DICOMS)
-      ? [
-          {
-            href: "/admin/dicoms",
-            title: t("dicoms"),
-            iconName: "solar:bones-broken",
-          },
-        ]
-      : []),
-    ...(checkPermission(Permissions.VIEW_TEMPLATES)
-      ? [
-          {
-            href: "/admin/templates",
-            title: t("templates"),
-            iconName: "solar:file-favourite-line-duotone",
-          },
-        ]
-      : []),
     ...(checkPermission(Permissions.MANAGE_USERS)
       ? [
           {
@@ -126,24 +81,6 @@ export default function AsideMenu({
             href: "/admin/permissions",
             title: t("permissions"),
             iconName: "solar:lock-keyhole-broken",
-          },
-        ]
-      : []),
-    ...(checkPermission(Permissions.DOWNLOAD_REPORT)
-      ? [
-          {
-            href: "/admin/reports",
-            title: t("reports"),
-            iconName: "solar:file-text-linear",
-          },
-        ]
-      : []),
-    ...(checkPermission(Permissions.VIEW_RESIDENTS)
-      ? [
-          {
-            href: "/admin/residents",
-            title: t("residents"),
-            iconName: "solar:shield-user-outline",
           },
         ]
       : []),

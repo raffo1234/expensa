@@ -4,35 +4,6 @@ import createNextIntlPlugin from "next-intl/plugin";
 const withNextIntl = createNextIntlPlugin();
 
 const nextConfig: NextConfig = {
-  async headers() {
-    return [
-      {
-        // ponytail: excludes /api/* — COEP there broke the browser's native
-        // PDF viewer on direct file links (chrome-extension pdf viewer frame
-        // isn't COEP-compatible); only pages rendering cornerstone.js need this
-        source: "/((?!api/).*)",
-        headers: [
-          { key: "Cross-Origin-Embedder-Policy", value: "require-corp" },
-          { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
-        ],
-      },
-      {
-        source: "/api/dicom-json/:path*",
-        headers: [
-          { key: "Cross-Origin-Resource-Policy", value: "cross-origin" },
-          { key: "Access-Control-Allow-Credentials", value: "true" },
-          { key: "Access-Control-Allow-Origin", value: "*" },
-          { key: "Access-Control-Allow-Methods", value: "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
-          {
-            key: "Access-Control-Allow-Headers",
-            value:
-              "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization",
-          },
-        ],
-      },
-    ];
-  },
-
   transpilePackages: ["@react-pdf/renderer"],
 
   images: {

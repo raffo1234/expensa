@@ -6,13 +6,7 @@ import { listAllSummaryExpenses, listSummaryExpenses } from "@/actions/summaryQu
 import { getCategories } from "@/actions/lookups";
 import { useDebouncedCallback } from "use-debounce";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import {
-  INPUT_CLASS,
-  SECONDARY_BUTTON_CLASS,
-  SELECT_CLASS,
-  HEADER_LINK_CLASS,
-  ICON_SIZE,
-} from "@/constants";
+import { INPUT_CLASS, SELECT_CLASS, HEADER_LINK_CLASS, ICON_SIZE } from "@/constants";
 import { csvEscape } from "@/utils/csv";
 import { formatAmount, totalsByCurrency } from "@/utils/formatAmount";
 import getAttachmentUrl from "@/lib/getAttachmentUrl";
@@ -21,7 +15,10 @@ import { replaceUrl } from "@/utils/replaceUrl";
 import OptionButton from "./OptionButton";
 import Field from "./Field";
 import PageNavigator from "./PageNavigator";
+import ClearFiltersButton from "./ClearFiltersButton";
+import { usePageSize } from "@/hooks/usePageSize";
 import ListPage from "./ListPage";
+import FiltersButton from "./FiltersButton";
 import FormSection from "./FormSection";
 import SearchInput from "./SearchInput";
 import DataTable, {
@@ -34,8 +31,6 @@ import DataTable, {
 import CategoryFilter from "./CategoryFilter";
 import CategoryBadge from "./CategoryBadge";
 import type { SummaryReportRow } from "./SummaryReportPDF";
-
-const PAGE_SIZE = 10;
 
 type SummaryTab = "facturas" | "gastos"; // same values as summaryQueries
 
@@ -90,11 +85,24 @@ const fetcher = async ([
   categoryId,
   invoiceSeries,
   invoiceNumber,
-]: [string, string, number, string, string, string, SummaryTab, string, string, string]) => {
+  pageSize,
+]: [
+  string,
+  string,
+  number,
+  string,
+  string,
+  string,
+  SummaryTab,
+  string,
+  string,
+  string,
+  number,
+]) => {
   const { data, count } = await listSummaryExpenses(
     { workspaceId, search, dateFrom, dateTo, tab, categoryId, invoiceSeries, invoiceNumber },
     page,
-    PAGE_SIZE,
+    pageSize,
   );
   return { data: data as SummaryExpense[], count };
 };
@@ -423,6 +431,12 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
     }
   };
 
+  const [pageSize, setPageSizePref] = usePageSize();
+  const setPageSize = (size: number) => {
+    setPageSizePref(size);
+    setPage(0);
+  };
+
   const { data, isLoading } = useSWR(
     workspaceId
       ? [
@@ -436,14 +450,18 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
           categoryId,
           invoiceSeries,
           invoiceNumber,
+          pageSize,
         ]
       : null,
     fetcher,
+    // Keep the current rows while the next page/filter loads, so the table never
+    // swaps to a skeleton and back.
+    { keepPreviousData: true },
   );
 
   const expenses = data?.data ?? [];
   const total = data?.count ?? 0;
-  const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+  const totalPages = Math.ceil(total / pageSize) || 1;
   // Filters inside the panel (search and invoice reference are always visible).
   const advancedFilterCount = [categoryId, dateFrom || dateTo].filter(Boolean).length;
 
@@ -493,15 +511,18 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
     </>
   );
 
-  const pager =
-    totalPages > 1 ? (
-      <PageNavigator
-        page={page + 1}
-        totalPages={totalPages}
-        onPrev={() => setPage((p) => Math.max(0, p - 1))}
-        onNext={() => setPage((p) => p + 1)}
-      />
-    ) : null;
+  // Always shown (disabled on a single page) so the table never jumps when
+  // filters change the number of pages.
+  const pager = (
+    <PageNavigator
+      page={page + 1}
+      totalPages={totalPages}
+      onPrev={() => setPage((p) => Math.max(0, p - 1))}
+      onNext={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+      pageSize={pageSize}
+      onPageSizeChange={setPageSize}
+    />
+  );
 
   return (
     <FormSection title="Resumen de gastos" actions={headerLinks}>
@@ -577,46 +598,15 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
                   className={`${INPUT_CLASS} sm:w-36`}
                 />
 
-                <button
-                  type="button"
-                  onClick={() => setShowFilters((v) => !v)}
-                  aria-expanded={showFilters}
-                  aria-controls="summary-filters"
-                  className={`${SECONDARY_BUTTON_CLASS} justify-center min-h-11 sm:min-h-0 ${
-                    showFilters || advancedFilterCount ? "border-violet-300 text-violet-700" : ""
-                  }`}
-                >
-                  <svg
-                    width="15"
-                    height="15"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden
-                  >
-                    <line x1="4" y1="6" x2="20" y2="6" />
-                    <line x1="7" y1="12" x2="17" y2="12" />
-                    <line x1="10" y1="18" x2="14" y2="18" />
-                  </svg>
-                  Filtros
-                  {advancedFilterCount > 0 && (
-                    <span className="rounded-full bg-violet-600 px-1.5 text-xs font-semibold text-white tabular-nums">
-                      {advancedFilterCount}
-                    </span>
-                  )}
-                </button>
-                {hasFilters && (
-                  <button
-                    type="button"
-                    onClick={clearFilters}
-                    className="justify-self-start text-sm font-medium text-gray-600 underline-offset-2 hover:text-violet-700 hover:underline min-h-11 sm:min-h-0 px-1"
-                  >
-                    Limpiar todo
-                  </button>
-                )}
+                <div className="col-span-2 flex items-center gap-2 sm:contents">
+                  <FiltersButton
+                    open={showFilters}
+                    count={advancedFilterCount}
+                    controls="summary-filters"
+                    onClick={() => setShowFilters((v) => !v)}
+                  />
+                  <ClearFiltersButton onClick={clearFilters} disabled={!hasFilters} />
+                </div>
               </div>
 
               {/* 4 · The rest, only when asked for: one panel, visible labels. */}
@@ -675,18 +665,24 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
       >
         <DataTable
           columns={summaryColumns(tab)}
-          isLoading={isLoading}
+          numbered
+          isLoading={isLoading && !data}
           isEmpty={expenses.length === 0}
           emptyMessage="No hay gastos con estos filtros"
         >
-          {expenses.map((expense) => {
+          {expenses.map((expense, index) => {
             const prov = Array.isArray(expense.provider) ? expense.provider[0] : expense.provider;
             const cat = Array.isArray(expense.category) ? expense.category[0] : expense.category;
 
             const href = `/admin/summary/${expense.id}`;
 
             return (
-              <DataTableRow key={expense.id} href={href} newTab>
+              <DataTableRow
+                key={expense.id}
+                href={href}
+                newTab
+                number={page * pageSize + index + 1}
+              >
                 {tab === "facturas" ? (
                   <Td className="font-mono">
                     <RowLink href={href} newTab>

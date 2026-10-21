@@ -24,7 +24,13 @@ export default function InputWithTooltip({
         </div>
       }
     >
-      <div className={className} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
+      <div
+        className={className}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        onFocus={() => setHovered(true)}
+        onBlur={() => setHovered(false)}
+      >
         {children}
       </div>
     </Popover>

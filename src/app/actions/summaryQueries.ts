@@ -2,6 +2,7 @@
 
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { requireWorkspaceAccess } from "@/lib/access";
+import { safePageSize } from "@/lib/pageSize";
 
 // Queries for the expenses summary page (invoices / expenses tabs), run on the
 // server after checking the caller can access the workspace.
@@ -59,7 +60,8 @@ async function applySummaryFilters(query: any, f: SummaryFilters): Promise<any> 
 
 export async function listSummaryExpenses(filters: SummaryFilters, page: number, pageSize: number) {
   await requireWorkspaceAccess(filters.workspaceId);
-  const from = page * pageSize;
+  const size = safePageSize(pageSize);
+  const from = page * size;
   const query = await applySummaryFilters(
     supabaseAdmin
       .from("expense")
@@ -73,7 +75,7 @@ export async function listSummaryExpenses(filters: SummaryFilters, page: number,
       .eq("workspace_id", filters.workspaceId)
       .order("paid_at", { ascending: false })
       .order("id") // stable paging when several expenses share a date
-      .range(from, from + pageSize - 1),
+      .range(from, from + size - 1),
     filters,
   );
   const { data, count, error } = await query;

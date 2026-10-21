@@ -18,7 +18,11 @@ import { deleteExpense } from "@/actions/expenses";
 import { getExpenseIdsWithMaterials } from "@/actions/materials";
 import Field from "./Field";
 import PageNavigator from "./PageNavigator";
+import ClearFiltersButton from "./ClearFiltersButton";
+import { usePageSize } from "@/hooks/usePageSize";
+import { DEFAULT_PAGE_SIZE } from "@/lib/pageSize";
 import ListPage from "./ListPage";
+import FiltersButton from "./FiltersButton";
 import FormSection from "./FormSection";
 import CategoryMultiFilter from "./CategoryMultiFilter";
 import ProviderFilter from "./ProviderFilter";
@@ -34,8 +38,6 @@ import { categoryIdList, type ExpenseFilters } from "@/types/expenseFilters";
 import type { SummaryReportRow } from "./SummaryReportPDF";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-
-const ITEMS_PER_PAGE = 10;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -96,16 +98,11 @@ function mapExpenseRow(row: ExpenseRow): Expense {
 const fetchExpenses = async (
   workspaceId: string,
   page: number,
+  pageSize: number,
   search: string,
   filters: Filters,
 ): Promise<FetchResult> => {
-  const { rows, count, totals } = await listExpenses(
-    workspaceId,
-    page,
-    ITEMS_PER_PAGE,
-    search,
-    filters,
-  );
+  const { rows, count, totals } = await listExpenses(workspaceId, page, pageSize, search, filters);
   return { data: rows.map(mapExpenseRow), count, totals };
 };
 
@@ -368,14 +365,24 @@ export default function ExpensesClient({
 
   const hasActiveFilters = debouncedSearch || Object.values(filters).some((v) => v !== "");
 
+  const [pageSize, setPageSizePref] = usePageSize();
+  const setPageSize = (size: number) => {
+    setPageSizePref(size);
+    setPage(1);
+  };
+
+  // The server renders the first page at the default size.
   const isDefaultView =
-    page === 1 && !debouncedSearch && !Object.values(filters).some((v) => v !== "");
+    page === 1 &&
+    pageSize === DEFAULT_PAGE_SIZE &&
+    !debouncedSearch &&
+    !Object.values(filters).some((v) => v !== "");
   // The server already rendered the default view; skip refetching it on mount.
   const [hasServerData] = useState(isDefaultView);
 
   const { data, error, mutate } = useSWR(
-    ["expenses", workspace.id, page, debouncedSearch, filters],
-    () => fetchExpenses(workspace.id, page, debouncedSearch, filters),
+    ["expenses", workspace.id, page, pageSize, debouncedSearch, filters],
+    () => fetchExpenses(workspace.id, page, pageSize, debouncedSearch, filters),
     {
       fallbackData: isDefaultView
         ? ({
@@ -393,7 +400,7 @@ export default function ExpensesClient({
   const expenses = data?.data ?? [];
   const totalCount = data?.count ?? 0;
   const totals = data?.totals ?? [];
-  const totalPages = Math.max(1, Math.ceil(totalCount / ITEMS_PER_PAGE));
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
   const displayCurrency = expenses[0]?.currency ?? "PEN";
   // Largest-impact currency first; soles lead when present.
   const primaryTotals = [...totals]
@@ -493,15 +500,18 @@ export default function ExpensesClient({
     </>
   );
 
-  const pager =
-    totalPages > 1 ? (
-      <PageNavigator
-        page={page}
-        totalPages={totalPages}
-        onPrev={() => setPage((p) => Math.max(1, p - 1))}
-        onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
-      />
-    ) : null;
+  // Always shown (disabled on a single page) so the table never jumps when
+  // filters change the number of pages.
+  const pager = (
+    <PageNavigator
+      page={page}
+      totalPages={totalPages}
+      onPrev={() => setPage((p) => Math.max(1, p - 1))}
+      onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
+      pageSize={pageSize}
+      onPageSizeChange={setPageSize}
+    />
+  );
 
   return (
     <FormSection title={workspace.name} backUrl="/admin/workspaces" actions={headerLinks}>
@@ -595,46 +605,15 @@ export default function ExpensesClient({
                   onChange={(e) => setFilter("invoiceNumber", e.target.value)}
                   className={`${INPUT_CLASS} sm:w-36`}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowFilters((v) => !v)}
-                  aria-expanded={showFilters}
-                  aria-controls="expense-filters"
-                  className={`${SECONDARY_BUTTON_CLASS} justify-center min-h-11 sm:min-h-0 ${
-                    showFilters || advancedFilterCount ? "border-violet-300 text-violet-700" : ""
-                  }`}
-                >
-                  <svg
-                    width="15"
-                    height="15"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden
-                  >
-                    <line x1="4" y1="6" x2="20" y2="6" />
-                    <line x1="7" y1="12" x2="17" y2="12" />
-                    <line x1="10" y1="18" x2="14" y2="18" />
-                  </svg>
-                  Filtros
-                  {advancedFilterCount > 0 && (
-                    <span className="rounded-full bg-violet-600 px-1.5 text-xs font-semibold text-white tabular-nums">
-                      {advancedFilterCount}
-                    </span>
-                  )}
-                </button>
-                {hasActiveFilters && (
-                  <button
-                    type="button"
-                    onClick={clearFilters}
-                    className="justify-self-start text-sm font-medium text-gray-600 underline-offset-2 hover:text-violet-700 hover:underline min-h-11 sm:min-h-0 px-1"
-                  >
-                    Limpiar todo
-                  </button>
-                )}
+                <div className="col-span-2 flex items-center gap-2 sm:contents">
+                  <FiltersButton
+                    open={showFilters}
+                    count={advancedFilterCount}
+                    controls="expense-filters"
+                    onClick={() => setShowFilters((v) => !v)}
+                  />
+                  <ClearFiltersButton onClick={clearFilters} disabled={!hasActiveFilters} />
+                </div>
               </div>
 
               {/* 3 · Everything else, only when asked for: one panel, visible labels. */}
@@ -785,6 +764,7 @@ export default function ExpensesClient({
           deletingId={deletingId}
           workspaceSlug={slug}
           materialExpenseIds={materialExpenseIdSet}
+          startIndex={(page - 1) * pageSize}
         />
       </ListPage>
     </FormSection>

@@ -12,14 +12,14 @@ export default function ListPage({
 }: {
   /** Header, search and filters. Stacked with uniform spacing. */
   controls: ReactNode;
-  /** Pagination, shown above and below the table; null when there's one page. */
+  /** Pagination, shown above and below the table. Keep it rendered on a single page too. */
   pager?: ReactNode;
   /** The table. */
   children: ReactNode;
 }) {
   return (
     <div>
-      <div className="mb-10 space-y-8">{controls}</div>
+      <div className="mb-10 space-y-12">{controls}</div>
       {pager && <div className="mb-4">{pager}</div>}
       {children}
       {pager && <div className="mt-4">{pager}</div>}

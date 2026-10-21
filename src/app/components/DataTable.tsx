@@ -27,11 +27,19 @@ export const ROW_CONTROL = "h-9";
 // Body: 14.5px text on a 1.5 line → ~54px tall, as on Fly.io (~54.25px).
 const CELL = "px-3 py-4 first:pl-6 last:pr-6";
 
-export function Th({ align = "left", children }: { align?: Align; children?: ReactNode }) {
+export function Th({
+  align = "left",
+  className = "",
+  children,
+}: {
+  align?: Align;
+  className?: string;
+  children?: ReactNode;
+}) {
   return (
     <th
       scope="col"
-      className={`${CELL} ${ALIGN[align]} whitespace-nowrap bg-navy-50 text-base leading-6 font-book`}
+      className={`${CELL} ${ALIGN[align]} whitespace-nowrap bg-navy-50 text-base leading-6 font-book ${className}`}
     >
       {children}
     </th>
@@ -88,9 +96,12 @@ export function RowLink({
 export function DataTableRow({
   href,
   newTab = false,
+  number,
   className = "",
   children,
 }: {
+  /** Order number shown in the "#" column (when the table is `numbered`). */
+  number?: number;
   /** Makes the whole row open this page (controls inside the row keep working). */
   href?: string;
   newTab?: boolean;
@@ -115,6 +126,12 @@ export function DataTableRow({
       onClick={handleClick}
       className={`transition-colors hover:bg-navy-50 ${href ? "cursor-pointer" : ""} ${className}`}
     >
+      {number != null && (
+        <Td className="w-0 tabular-nums">
+          {/* Fixed width (3 digits) so the columns don't shift between pages. */}
+          <span className="inline-block min-w-[3ch]">{number}</span>
+        </Td>
+      )}
       {children}
     </tr>
   );
@@ -125,20 +142,26 @@ export default function DataTable({
   isEmpty,
   isLoading,
   emptyMessage,
+  numbered = false,
   children,
 }: {
   columns: DataTableColumn[];
+  /** Adds a leading "#" column; rows pass their order number. */
+  numbered?: boolean;
   isEmpty?: boolean;
   isLoading?: boolean;
   emptyMessage?: string;
   children: ReactNode;
 }) {
+  const columnCount = columns.length + (numbered ? 1 : 0);
+
   return (
     <div className="overflow-hidden rounded-card bg-white shadow-card">
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-navy-200">
           <thead className="text-navy-900">
             <tr>
+              {numbered && <Th className="w-0">#</Th>}
               {columns.map((col, i) => (
                 <Th key={i} align={col.align}>
                   {col.label}
@@ -150,7 +173,7 @@ export default function DataTable({
             {isLoading ? (
               Array.from({ length: 10 }, (_, i) => (
                 <tr key={i}>
-                  {columns.map((_, j) => (
+                  {Array.from({ length: columnCount }, (_, j) => (
                     <Td key={j}>
                       <div className="h-4 animate-pulse rounded bg-navy-100" />
                     </Td>
@@ -159,7 +182,7 @@ export default function DataTable({
               ))
             ) : isEmpty ? (
               <tr>
-                <Td colSpan={columns.length} align="center" className="py-10">
+                <Td colSpan={columnCount} align="center" className="py-10">
                   {emptyMessage ?? "No hay datos"}
                 </Td>
               </tr>

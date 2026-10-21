@@ -33,6 +33,8 @@ interface ExpenseTableProps {
   deletingId?: string | null;
   workspaceSlug: string;
   materialExpenseIds?: Set<string>;
+  /** Number of rows before this page, so "#" continues across pages. */
+  startIndex?: number;
 }
 
 export default function ExpenseTable({
@@ -41,14 +43,16 @@ export default function ExpenseTable({
   deletingId,
   workspaceSlug,
   materialExpenseIds,
+  startIndex = 0,
 }: ExpenseTableProps) {
   return (
     <DataTable
       columns={COLUMNS}
+      numbered
       isEmpty={expenses.length === 0}
       emptyMessage="No hay gastos registrados."
     >
-      {expenses.map((expense) => {
+      {expenses.map((expense, index) => {
         const href = `/admin/workspaces/${workspaceSlug}/expenses/${expense.id}`;
         const isDeleting = deletingId === expense.id;
         const providerName = expense.provider?.name;
@@ -61,6 +65,7 @@ export default function ExpenseTable({
           <DataTableRow
             key={expense.id}
             href={href}
+            number={startIndex + index + 1}
             className={isDeleting ? "pointer-events-none opacity-40" : ""}
           >
             <Td className="font-mono">

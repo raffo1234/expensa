@@ -255,7 +255,7 @@ export default function MaterialsClient({
                 placeholder="Buscar material, marca, proveedor o factura..."
                 className="flex-1"
               />
-              {hasFilters && <ClearFiltersButton onClick={clearFilters} />}
+              <ClearFiltersButton onClick={clearFilters} disabled={!hasFilters} />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">

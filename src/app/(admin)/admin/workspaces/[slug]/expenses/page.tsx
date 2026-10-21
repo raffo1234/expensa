@@ -4,7 +4,11 @@ import { sumExpenseAmounts } from "@/lib/sumExpenseAmounts";
 import ExpensesClient from "@/components/ExpensesClient";
 import FallbackExpenses from "@/components/FallbackExpenses";
 
-const ITEMS_PER_PAGE = 10;
+import { DEFAULT_PAGE_SIZE } from "@/lib/pageSize";
+
+// The first page is rendered at the default size; the list refetches if the
+// user picked another size.
+const ITEMS_PER_PAGE = DEFAULT_PAGE_SIZE;
 
 interface PageProps {
   params: Promise<{ slug: string }>;

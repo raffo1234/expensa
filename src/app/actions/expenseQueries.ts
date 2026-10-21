@@ -3,6 +3,7 @@
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { requireWorkspaceAccess } from "@/lib/access";
 import { sumExpenseAmounts } from "@/lib/sumExpenseAmounts";
+import { safePageSize } from "@/lib/pageSize";
 import { categoryIdList, type ExpenseFilters } from "@/types/expenseFilters";
 import type { ExpenseRow } from "@/types/ExpenseType";
 import type { CurrencyTotal } from "@/utils/formatAmount";
@@ -78,7 +79,8 @@ export async function listExpenses(
   filters: ExpenseFilters,
 ): Promise<{ rows: ExpenseRow[]; count: number; totals: CurrencyTotal[] }> {
   await requireWorkspaceAccess(workspaceId);
-  const from = (page - 1) * pageSize;
+  const size = safePageSize(pageSize);
+  const from = (page - 1) * size;
   const orClause = await buildSearchClause(workspaceId, search);
 
   const query = applyExpenseFilters(
@@ -88,7 +90,7 @@ export async function listExpenses(
       .eq("workspace_id", workspaceId)
       .order("paid_at", { ascending: false })
       .order("id") // stable paging when several expenses share a date
-      .range(from, from + pageSize - 1),
+      .range(from, from + size - 1),
     filters,
     orClause,
   );

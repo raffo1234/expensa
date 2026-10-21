@@ -1,21 +1,5 @@
-import { UserType } from "@/types/userType";
-import { supabase } from "./supabase";
+import { getUserById } from "@/actions/admin";
 
-async function userFetcher(userId: string) {
-  const { data } = (await supabase
-    .from("user")
-    .select(
-      `
-      *,
-      role (
-        id,
-        name
-      )
-    `,
-    )
-    .eq("id", userId)
-    .single()) as { data: UserType | null };
-  return data;
-}
+const userFetcher = (userId: string) => getUserById(userId);
 
 export default userFetcher;

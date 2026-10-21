@@ -2,7 +2,7 @@ import "../globals.css";
 import { auth } from "@/lib/auth";
 import Aside from "@/components/Aside";
 import Header from "@/components/Header";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin as supabase } from "@/lib/supabaseAdmin";
 import { SessionProvider } from "next-auth/react";
 import AdminLayoutContent from "@/components/AdminLayoutContent";
 import { getCurrentUser } from "@/lib/getCurrentUser";

@@ -2,7 +2,7 @@ import NoAccess from "@/components/NoAccess";
 import SettingsContent from "@/components/SettingsContent";
 import SettingsPageFallBack from "@/components/SettingsPageFallBack";
 import { getCurrentUser } from "@/lib/getCurrentUser";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin as supabase } from "@/lib/supabaseAdmin";
 import { RoleType } from "@/types/roleType";
 import { Suspense } from "react";
 

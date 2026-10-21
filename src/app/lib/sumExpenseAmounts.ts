@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin as supabase } from "@/lib/supabaseAdmin";
 
 // Sums expense amounts (in cents) for a workspace with any filters applied.
 // Supabase returns at most 1,000 rows per request, so summing a plain

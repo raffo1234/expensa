@@ -1,7 +1,7 @@
 "use client";
 
 import { message } from "antd";
-import { supabase } from "@/lib/supabase";
+import { deleteUser as deleteUserAction } from "@/actions/admin";
 import { mutate } from "swr";
 import { Icon } from "@iconify/react";
 import { ICON_SIZE } from "@/constants";
@@ -25,12 +25,13 @@ export default function DeleteUser({ userId }: { userId: string }) {
 
   const deleteUser = async () => {
     const confirmationMessage = confirm(
-      "Esta acción no se puede deshacer. ¿Realmente desea eliminar este elemento?"
+      "Esta acción no se puede deshacer. ¿Realmente desea eliminar este elemento?",
     );
     if (!confirmationMessage) return;
 
     try {
-      await supabase.from("user").delete().eq("id", userId);
+      const { error } = await deleteUserAction(userId);
+      if (error) throw new Error(error);
       await mutate("users");
       successMessage();
     } catch (error) {

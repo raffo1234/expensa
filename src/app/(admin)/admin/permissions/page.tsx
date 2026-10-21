@@ -3,7 +3,7 @@ import NoAccess from "@/components/NoAccess";
 import PermissionsPage from "@/components/PermissionsPage";
 import SkeletonPermissionsPage from "@/components/SkeletonPermissionsPage";
 import { getCurrentUser } from "@/lib/getCurrentUser";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin as supabase } from "@/lib/supabaseAdmin";
 import { PermissionType } from "@/types/permissionType";
 import { Suspense } from "react";
 

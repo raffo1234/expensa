@@ -6,27 +6,16 @@ import {
   CompleteMultipartUploadCommand,
   AbortMultipartUploadCommand,
   DeleteObjectsCommand,
-  PutObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import {
-  AccessError,
-  requireRowAccess,
-  requireStorageKeyAccess,
-  requireWorkspaceAccess,
-} from "@/lib/access";
+import { AccessError, requireRowAccess, requireUser, requireWorkspaceAccess } from "@/lib/access";
+import { createUploadToken, verifyUploadToken } from "@/lib/uploadToken";
 import { getCurrentUser } from "@/lib/getCurrentUser";
 import { revalidatePath } from "next/cache";
-import { r2, uploadToR2, BUCKET } from "@/lib/r2";
+import { r2, BUCKET } from "@/lib/r2";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-type SerializedFile = {
-  name: string;
-  type: string;
-  buffer: number[];
-};
 
 type CreateExpenseInput = {
   workspace_id: string;
@@ -98,29 +87,6 @@ async function resolveProvider(
 }
 
 // ─── Actions ──────────────────────────────────────────────────────────────────
-
-export async function getUploadUrl(
-  expenseId: string,
-  workspaceSlug: string,
-  fileName: string,
-  fileType: string,
-): Promise<{ url: string; storagePath: string }> {
-  const ext = fileName.split(".").pop();
-  const storagePath = `${workspaceSlug}/${expenseId}/${crypto.randomUUID()}.${ext}`;
-  await requireStorageKeyAccess(storagePath);
-
-  const url = await getSignedUrl(
-    r2,
-    new PutObjectCommand({
-      Bucket: BUCKET,
-      Key: storagePath,
-      ContentType: fileType,
-    }),
-    { expiresIn: 300 },
-  );
-
-  return { url, storagePath };
-}
 
 export type DuplicateCandidate = {
   id: string;
@@ -231,6 +197,49 @@ async function insertExpenseItems(
   return error ? error.message : null;
 }
 
+export type ExpenseUpdate = {
+  provider_id: string | null;
+  amount: number;
+  currency: string;
+  issued_at: string | null;
+  paid_at: string;
+  payment_method: string | null;
+  tax_status: "con_igv" | "sin_igv" | "sin_comprobante" | null;
+  notes: string | null;
+  category_id: string | null;
+  invoice_series: string | null;
+  invoice_number: string | null;
+  stage_id: string | null;
+  level_id: string | null;
+};
+
+export async function updateExpense(
+  expenseId: string,
+  patch: ExpenseUpdate,
+): Promise<{ error?: string }> {
+  await requireRowAccess("expense", expenseId);
+  // Only these columns can change; workspace and creator stay fixed.
+  const { error } = await supabaseAdmin
+    .from("expense")
+    .update({
+      provider_id: patch.provider_id,
+      amount: patch.amount,
+      currency: patch.currency,
+      issued_at: patch.issued_at,
+      paid_at: patch.paid_at,
+      payment_method: patch.payment_method,
+      tax_status: patch.tax_status,
+      notes: patch.notes,
+      category_id: patch.category_id,
+      invoice_series: patch.invoice_series,
+      invoice_number: patch.invoice_number,
+      stage_id: patch.stage_id,
+      level_id: patch.level_id,
+    })
+    .eq("id", expenseId);
+  return error ? { error: error.message } : {};
+}
+
 export async function getExpenseItems(expenseId: string): Promise<ExpenseItem[]> {
   await requireRowAccess("expense", expenseId);
   const { data, error } = await supabaseAdmin
@@ -263,22 +272,6 @@ export async function saveExpenseItems(
   }
 
   return {};
-}
-
-export async function registerAttachment(
-  expenseId: string,
-  storagePath: string,
-  fileName: string,
-): Promise<{ error?: string }> {
-  await requireStorageKeyAccess(storagePath);
-  if (!storagePath.startsWith(`${storagePath.split("/")[0]}/${expenseId}/`))
-    throw new AccessError();
-  const { error } = await supabaseAdmin.from("expense_attachment").insert({
-    expense_id: expenseId,
-    storage_path: storagePath,
-    file_name: fileName,
-  });
-  return { error: error?.message };
 }
 
 export async function deleteExpense(id: string, workspaceSlug: string): Promise<void> {
@@ -341,59 +334,69 @@ export async function deleteAttachment(attachmentId: string): Promise<{ error?: 
   }
 }
 
-export async function uploadAttachment(
-  expenseId: string,
-  workspaceSlug: string,
-  file: SerializedFile,
-): Promise<{ error?: string }> {
-  try {
-    const ext = file.name.split(".").pop();
-    const storagePath = `${workspaceSlug}/${expenseId}/${crypto.randomUUID()}.${ext}`;
-    await requireStorageKeyAccess(storagePath);
+// ─── Attachment uploads ───────────────────────────────────────────────────────
+// The server picks the storage key from database values and returns a signed
+// upload token; later steps only accept that token, never a path from the client.
 
-    await uploadToR2(storagePath, Buffer.from(file.buffer), file.type);
+// File types an attachment may have, and the extension the server stores them
+// with. Anything else (HTML, SVG, scripts…) is rejected so it can never be served
+// back from our domain.
+const ALLOWED_ATTACHMENT_TYPES: Record<string, string> = {
+  "application/pdf": "pdf",
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+};
 
-    const { error } = await supabaseAdmin.from("expense_attachment").insert({
-      expense_id: expenseId,
-      storage_path: storagePath,
-      file_name: file.name,
-    });
+// 5 MB parts (see PART_SIZE in the forms) × 200 = 1 GB per file at most.
+const MAX_UPLOAD_PARTS = 200;
 
-    if (error) throw new Error(error.message);
-    return {};
-  } catch (err) {
-    return { error: err instanceof Error ? err.message : "Error al subir archivo" };
-  }
+async function verifiedUpload(token: string) {
+  const user = await requireUser();
+  const payload = verifyUploadToken(token, user.id);
+  if (!payload) throw new AccessError("Subida no válida o caducada");
+  await requireRowAccess("expense", payload.expenseId);
+  return payload;
 }
-
-// ─── Multipart upload actions ─────────────────────────────────────────────────
-// Usa el mismo cliente r2 de @/lib/r2 — mismas credenciales CLOUDFLARE_R2_*
 
 export async function initiateMultipartUpload(
   expenseId: string,
-  workspaceSlug: string,
-  fileName: string,
   contentType: string,
-): Promise<{ uploadId: string; key: string }> {
-  // UUID en el key para evitar colisiones si se sube el mismo nombre dos veces
-  const ext = fileName.split(".").pop();
-  const key = `${workspaceSlug}/${expenseId}/${crypto.randomUUID()}.${ext}`;
-  await requireStorageKeyAccess(key);
+): Promise<{ token: string }> {
+  const user = await requireRowAccess("expense", expenseId);
+  const ext = ALLOWED_ATTACHMENT_TYPES[contentType];
+  if (!ext) throw new AccessError("Tipo de archivo no permitido");
 
+  // The workspace slug comes from the database, not from the request.
+  const { data: expense, error } = await supabaseAdmin
+    .from("expense")
+    .select("workspace:workspace_id(slug)")
+    .eq("id", expenseId)
+    .single();
+  if (error) throw new Error(error.message);
+  const workspace = (
+    Array.isArray(expense.workspace) ? expense.workspace[0] : expense.workspace
+  ) as { slug: string } | null;
+  if (!workspace?.slug) throw new Error("Workspace no encontrado");
+
+  const key = `${workspace.slug}/${expenseId}/${crypto.randomUUID()}.${ext}`;
   const { UploadId } = await r2.send(
     new CreateMultipartUploadCommand({ Bucket: BUCKET, Key: key, ContentType: contentType }),
   );
-
   if (!UploadId) throw new Error("R2 no devolvió UploadId");
-  return { uploadId: UploadId, key };
+
+  return { token: createUploadToken({ key, uploadId: UploadId, expenseId, userId: user.id }) };
 }
 
 export async function getPartPresignedUrl(
-  key: string,
-  uploadId: string,
+  token: string,
   partNumber: number,
 ): Promise<{ url: string }> {
-  await requireStorageKeyAccess(key);
+  const { key, uploadId } = await verifiedUpload(token);
+  if (!Number.isInteger(partNumber) || partNumber < 1 || partNumber > MAX_UPLOAD_PARTS) {
+    throw new AccessError("Archivo demasiado grande");
+  }
   const url = await getSignedUrl(
     r2,
     new UploadPartCommand({ Bucket: BUCKET, Key: key, UploadId: uploadId, PartNumber: partNumber }),
@@ -403,11 +406,10 @@ export async function getPartPresignedUrl(
 }
 
 export async function completeMultipartUpload(
-  key: string,
-  uploadId: string,
+  token: string,
   parts: { PartNumber: number; ETag: string }[],
 ): Promise<void> {
-  await requireStorageKeyAccess(key);
+  const { key, uploadId } = await verifiedUpload(token);
   await r2.send(
     new CompleteMultipartUploadCommand({
       Bucket: BUCKET,
@@ -418,7 +420,30 @@ export async function completeMultipartUpload(
   );
 }
 
-export async function abortMultipartUpload(key: string, uploadId: string): Promise<void> {
-  await requireStorageKeyAccess(key);
+export async function abortMultipartUpload(token: string): Promise<void> {
+  const { key, uploadId } = await verifiedUpload(token);
   await r2.send(new AbortMultipartUploadCommand({ Bucket: BUCKET, Key: key, UploadId: uploadId }));
+}
+
+export async function registerAttachment(
+  token: string,
+  fileName: string,
+): Promise<{ error?: string }> {
+  const { key, expenseId } = await verifiedUpload(token);
+
+  // A token registers its file once; replaying it must not create duplicates.
+  const { data: existing } = await supabaseAdmin
+    .from("expense_attachment")
+    .select("id")
+    .eq("storage_path", key)
+    .maybeSingle();
+  if (existing) return {};
+
+  const { error } = await supabaseAdmin.from("expense_attachment").insert({
+    expense_id: expenseId,
+    storage_path: key,
+    // Display name only; trimmed and stripped of path separators.
+    file_name: fileName.replace(/[\\/]/g, "_").slice(0, 200),
+  });
+  return { error: error?.message };
 }

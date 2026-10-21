@@ -34,7 +34,7 @@ export default function Aside({
     initialIsMenuContracted,
   );
 
-  const { data: role } = useSWR(SWR_KEY_USER_ROLE, () => roleFetcher(userRoleId));
+  const { data: role } = useSWR(SWR_KEY_USER_ROLE, () => roleFetcher());
 
   const closeMenu = () => {
     setIsOpen(false);

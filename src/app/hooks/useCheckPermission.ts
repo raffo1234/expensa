@@ -1,7 +1,8 @@
 "use client";
 
 import useSWR from "swr";
-import { fetchRolePermissionSlugs, rolePermissionSlugsKey } from "@/lib/rolePermissions";
+import { rolePermissionSlugsKey } from "@/lib/rolePermissionsKey";
+import { getMyPermissionSlugs } from "@/actions/admin";
 
 function useCheckPermission(
   userRoleId: string | null | undefined,
@@ -15,7 +16,7 @@ function useCheckPermission(
   // so most checks resolve without a network request.
   const { data: granted, isLoading } = useSWR(
     userRoleId && slugs.length > 0 ? rolePermissionSlugsKey(userRoleId) : null,
-    () => fetchRolePermissionSlugs(userRoleId!),
+    () => getMyPermissionSlugs(),
   );
 
   return {

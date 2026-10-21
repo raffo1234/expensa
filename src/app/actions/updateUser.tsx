@@ -1,9 +1,9 @@
-import { supabase } from "@/lib/supabase";
 import { UserType } from "@/types/userType";
+import { updateUserFields } from "@/actions/admin";
 
 export const updateUser = async (id: string, newData: Partial<UserType>) => {
   try {
-    await supabase.from("user").update(newData).eq("id", id);
+    await updateUserFields(id, newData as Parameters<typeof updateUserFields>[1]);
   } catch (error) {
     console.error(error);
   }

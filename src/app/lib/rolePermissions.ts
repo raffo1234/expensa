@@ -1,6 +1,6 @@
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin as supabase } from "@/lib/supabaseAdmin";
 
-export const rolePermissionSlugsKey = (roleId: string) => `role-permission-slugs-${roleId}`;
+export { rolePermissionSlugsKey } from "@/lib/rolePermissionsKey";
 
 // All permission slugs granted to a role, in a single query.
 export async function fetchRolePermissionSlugs(roleId: string): Promise<string[]> {

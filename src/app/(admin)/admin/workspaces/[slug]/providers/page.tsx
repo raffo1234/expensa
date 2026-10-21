@@ -3,35 +3,23 @@
 import { useState, useRef, useEffect } from "react";
 import useSWR, { mutate } from "swr";
 import { useRouter, useParams } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { getWorkspaceBySlug } from "@/actions/lookups";
+import {
+  createProvider,
+  deleteProvider,
+  listProviders,
+  updateProvider,
+  type ProviderRecord,
+} from "@/actions/providers";
 import PageTitle from "@/components/PageTitle";
 
 // ── Types ────────────────────────────────────────────────────────────────────
-type Provider = {
-  id: string;
-  workspace_id: string;
-  ruc: string;
-  name: string;
-  created_at: string;
-  updated_at: string;
-};
+type Provider = ProviderRecord;
 
 // ── Fetchers ──────────────────────────────────────────────────────────────────
-async function fetchWorkspace(slug: string): Promise<{ id: string }> {
-  const { data, error } = await supabase.from("workspace").select("id").eq("slug", slug).single();
-  if (error) throw error;
-  return data;
-}
+const fetchWorkspace = (slug: string): Promise<{ id: string }> => getWorkspaceBySlug(slug);
 
-async function fetchProviders(workspaceId: string): Promise<Provider[]> {
-  const { data, error } = await supabase
-    .from("provider")
-    .select("id, workspace_id, ruc, name, created_at, updated_at")
-    .eq("workspace_id", workspaceId)
-    .order("name");
-  if (error) throw error;
-  return data ?? [];
-}
+const fetchProviders = (workspaceId: string): Promise<Provider[]> => listProviders(workspaceId);
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const inputCls =
@@ -379,12 +367,12 @@ export default function ProvidersPage() {
 
   // ── CRUD handlers ──────────────────────────────────────────────────────────
   async function handleCreate(data: { ruc: string; name: string }): Promise<string | null> {
-    const { error } = await supabase.from("provider").insert({
+    const { error } = await createProvider({
       workspace_id: workspaceId,
       ruc: data.ruc,
       name: data.name,
     });
-    if (error) return error.message;
+    if (error) return error;
     mutate(swrKey);
     return null;
   }
@@ -393,17 +381,14 @@ export default function ProvidersPage() {
     id: string,
     data: { ruc: string; name: string },
   ): Promise<string | null> {
-    const { error } = await supabase
-      .from("provider")
-      .update({ ruc: data.ruc, name: data.name })
-      .eq("id", id);
-    if (error) return error.message;
+    const { error } = await updateProvider(id, { ruc: data.ruc, name: data.name });
+    if (error) return error;
     mutate(swrKey);
     return null;
   }
 
   async function handleDelete(id: string): Promise<void> {
-    await supabase.from("provider").delete().eq("id", id);
+    await deleteProvider(id);
     mutate(swrKey);
   }
 

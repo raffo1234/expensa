@@ -4,7 +4,6 @@ import OptionButton from "@/components/OptionButton";
 import { UserStateEnum } from "@/enums/userStatesEnum";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import UserCard from "./UserCard";
-import { supabase } from "@/lib/supabase";
 import { useGetUsers } from "@/actions/useGetUsers";
 import { useDebouncedCallback } from "use-debounce";
 import { ICON_SIZE, INPUT_CLASS } from "@/constants";
@@ -18,7 +17,7 @@ export default function UsersTable() {
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
 
-  const { data, isLoading, mutate } = useGetUsers(page, PAGE_SIZE, supabase, {
+  const { data, isLoading, mutate } = useGetUsers(page, PAGE_SIZE, {
     archivedFilter: option,
     search,
   });
@@ -66,11 +65,7 @@ export default function UsersTable() {
           </OptionButton>
         ))}
       </div>
-      <input
-        onChange={debouncedSearchInput}
-        placeholder="Search users"
-        className={INPUT_CLASS}
-      />
+      <input onChange={debouncedSearchInput} placeholder="Search users" className={INPUT_CLASS} />
       <div className="my-3 flex justify-end items-center gap-2">
         <span className="text-xs font-semibold">Total: {total}</span>
         <button

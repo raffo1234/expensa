@@ -1,5 +1,5 @@
 import { adminRolesKey } from "@/constants";
-import { supabase } from "@/lib/supabase";
+import { deleteRole } from "@/actions/admin";
 import { useState } from "react";
 import { mutate } from "swr";
 import DeleteButton from "./DeleteButton";
@@ -12,7 +12,7 @@ export default function DeleteRole({ roleId }: { roleId: string }) {
     setIsDeleting(true);
 
     try {
-      await supabase.from("role").delete().eq("id", roleId);
+      await deleteRole(roleId);
       await mutate(adminRolesKey);
     } catch (error) {
       console.error("Error deleting item", error);

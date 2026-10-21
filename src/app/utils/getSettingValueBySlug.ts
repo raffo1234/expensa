@@ -1,26 +1,10 @@
-import { supabase } from "@/lib/supabase";
+import { getGlobalSetting } from "@/actions/admin";
 
 export async function getSettingValueBySlug(slug: string): Promise<string | null> {
-    try {
-      const { data, error } = await supabase
-        .from("global_settings")
-        .select("value")
-        .eq("slug", slug)
-        .maybeSingle();
-  
-      if (error) {
-        console.error(`Error fetching setting with slug "${slug}":`, error);
-        return null;
-      }
-  
-      if (data) {
-        return data.value;
-      } else {
-        console.warn(`Setting with slug "${slug}" not found.`);
-        return null;
-      }
-    } catch (error) {
-      console.error("An unexpected error occurred:", error);
-      return null;
-    }
+  try {
+    return await getGlobalSetting(slug);
+  } catch (error) {
+    console.error(`Error fetching setting with slug "${slug}":`, error);
+    return null;
   }
+}

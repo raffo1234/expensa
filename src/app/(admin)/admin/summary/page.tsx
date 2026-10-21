@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import { supabase } from "@/lib/supabase";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getCurrentUser } from "@/lib/getCurrentUser";
 import { checkPermissions } from "@/lib/checkPermissions";
@@ -32,7 +31,7 @@ async function SummarySection() {
 
   const { data: workspaces } =
     workspaceIds.length > 0
-      ? await supabase
+      ? await supabaseAdmin
           .from("workspace")
           .select("id, name, slug")
           .in("id", workspaceIds)

@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import useSWR from "swr";
-import { supabase } from "@/lib/supabase";
+import { listAllSummaryExpenses, listSummaryExpenses } from "@/actions/summaryQueries";
+import { getCategories } from "@/actions/lookups";
 import { useDebouncedCallback } from "use-debounce";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import {
@@ -26,7 +27,7 @@ import CategoryFilter from "./CategoryFilter";
 import type { SummaryReportRow } from "./SummaryReportPDF";
 
 const PAGE_SIZE = 10;
-type SummaryTab = "facturas" | "gastos";
+type SummaryTab = "facturas" | "gastos"; // same values as summaryQueries
 
 const SUMMARY_TABS: { value: SummaryTab; label: string }[] = [
   { value: "facturas", label: "Facturas" },
@@ -66,14 +67,6 @@ type SummaryExpense = {
   expense_attachment?: Attachment[];
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function applyTabFilter<T extends { not: any; is: any }>(query: T, tab: SummaryTab): T {
-  if (tab === "facturas") {
-    return query.not("invoice_series", "is", null).not("invoice_number", "is", null);
-  }
-  return query.is("invoice_series", null).is("invoice_number", null);
-}
-
 const fetcher = async ([
   ,
   workspaceId,
@@ -86,53 +79,12 @@ const fetcher = async ([
   invoiceSeries,
   invoiceNumber,
 ]: [string, string, number, string, string, string, SummaryTab, string, string, string]) => {
-  const from = page * PAGE_SIZE;
-  const to = from + PAGE_SIZE - 1;
-
-  let providerIds: string[] = [];
-  if (search.trim()) {
-    const { data: providers } = await supabase
-      .from("provider")
-      .select("id")
-      .eq("workspace_id", workspaceId)
-      .ilike("name", `%${search.trim()}%`);
-    providerIds = (providers ?? []).map((p: { id: string }) => p.id);
-  }
-
-  const orClause = search.trim()
-    ? [
-        `invoice_series.ilike.%${search.trim()}%`,
-        `invoice_number.ilike.%${search.trim()}%`,
-        `notes.ilike.%${search.trim()}%`,
-        ...(providerIds.length > 0 ? [`provider_id.in.(${providerIds.join(",")})`] : []),
-      ].join(",")
-    : null;
-
-  let query = supabase
-    .from("expense")
-    .select(
-      `id, invoice_series, invoice_number, amount, currency, issued_at, paid_at, payment_method, notes,
-       provider:provider_id(id, name, ruc),
-       category:category_id(id, name, color),
-       expense_attachment(id, file_name, storage_path)`,
-      { count: "exact" },
-    )
-    .eq("workspace_id", workspaceId)
-    .order("paid_at", { ascending: false })
-    .range(from, to);
-
-  query = applyTabFilter(query, tab);
-
-  if (categoryId) query = query.eq("category_id", categoryId);
-  if (invoiceSeries) query = query.ilike("invoice_series", `%${invoiceSeries}%`);
-  if (invoiceNumber) query = query.ilike("invoice_number", `%${invoiceNumber}%`);
-  if (orClause) query = query.or(orClause);
-  if (dateFrom) query = query.gte("issued_at", dateFrom);
-  if (dateTo) query = query.lte("issued_at", dateTo);
-
-  const { data, count, error } = await query;
-  if (error) throw error;
-  return { data: (data ?? []) as SummaryExpense[], count: count ?? 0 };
+  const { data, count } = await listSummaryExpenses(
+    { workspaceId, search, dateFrom, dateTo, tab, categoryId, invoiceSeries, invoiceNumber },
+    page,
+    PAGE_SIZE,
+  );
+  return { data: data as SummaryExpense[], count };
 };
 
 const fmtDate = (d?: string | null) => {
@@ -156,59 +108,17 @@ const fetchAllFiltered = async (
   categoryId: string,
   invoiceSeries: string,
   invoiceNumber: string,
-): Promise<SummaryExpense[]> => {
-  let providerIds: string[] = [];
-  if (search.trim()) {
-    const { data: providers } = await supabase
-      .from("provider")
-      .select("id")
-      .eq("workspace_id", workspaceId)
-      .ilike("name", `%${search.trim()}%`);
-    providerIds = (providers ?? []).map((p: { id: string }) => p.id);
-  }
-
-  const orClause = search.trim()
-    ? [
-        `invoice_series.ilike.%${search.trim()}%`,
-        `invoice_number.ilike.%${search.trim()}%`,
-        `notes.ilike.%${search.trim()}%`,
-        ...(providerIds.length > 0 ? [`provider_id.in.(${providerIds.join(",")})`] : []),
-      ].join(",")
-    : null;
-
-  const all: SummaryExpense[] = [];
-  let page = 0;
-  const size = 1000;
-  while (true) {
-    let query = supabase
-      .from("expense")
-      .select(
-        `id, invoice_series, invoice_number, amount, currency, paid_at, payment_method, notes,
-         provider:provider_id(id, name, ruc),
-         category:category_id(id, name, color)`,
-      )
-      .eq("workspace_id", workspaceId)
-      .order("paid_at", { ascending: true })
-      .range(page * size, (page + 1) * size - 1);
-
-    query = applyTabFilter(query, tab);
-
-    if (categoryId) query = query.eq("category_id", categoryId);
-    if (invoiceSeries) query = query.ilike("invoice_series", `%${invoiceSeries}%`);
-    if (invoiceNumber) query = query.ilike("invoice_number", `%${invoiceNumber}%`);
-    if (orClause) query = query.or(orClause);
-    if (dateFrom) query = query.gte("issued_at", dateFrom);
-    if (dateTo) query = query.lte("issued_at", dateTo);
-
-    const { data } = await query;
-    if (!data || data.length === 0) break;
-    all.push(...(data as SummaryExpense[]));
-    if (data.length < size) break;
-    page++;
-  }
-
-  return all;
-};
+): Promise<SummaryExpense[]> =>
+  (await listAllSummaryExpenses({
+    workspaceId,
+    search,
+    dateFrom,
+    dateTo,
+    tab,
+    categoryId,
+    invoiceSeries,
+    invoiceNumber,
+  })) as SummaryExpense[];
 
 const prov = (e: SummaryExpense) => (Array.isArray(e.provider) ? e.provider[0] : e.provider);
 const cat = (e: SummaryExpense) => (Array.isArray(e.category) ? e.category[0] : e.category);
@@ -350,15 +260,8 @@ const formatDate = (val?: string | null) =>
 
 type CategoryOption = { id: string; name: string; color: string | null };
 
-async function fetchCategories(workspaceId: string): Promise<CategoryOption[]> {
-  const { data, error } = await supabase
-    .from("category")
-    .select("id, name, color")
-    .eq("workspace_id", workspaceId)
-    .order("name");
-  if (error) throw error;
-  return data ?? [];
-}
+const fetchCategories = (workspaceId: string): Promise<CategoryOption[]> =>
+  getCategories(workspaceId);
 
 const STORAGE_TAB = "summary-tab";
 const STORAGE_WS = "summary-workspace";

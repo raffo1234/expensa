@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { getUserById } from "@/actions/admin";
 import { UserType } from "@/types/userType";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import Image from "next/image";
@@ -7,16 +7,7 @@ import useSWR from "swr";
 import RoleName from "./RoleName";
 import PopoverInnerButton from "./PopoverInnerButton";
 
-const fetcherUser = async (userId: string) => {
-  const { data, error } = await supabase
-    .from("user")
-    .select("id, first_name, last_name")
-    .eq("id", userId)
-    .single();
-
-  if (error) throw error;
-  return data;
-};
+const fetcherUser = (userId: string) => getUserById(userId);
 
 export default function EditUserHeader({ user }: { user: UserType }) {
   const { data: supervisor, isLoading: isLoadingUser } = useSWR(user.supervisor_user_id, () =>

@@ -1,7 +1,7 @@
 "use client";
 
 import { Switch } from "antd";
-import { supabase } from "@/lib/supabase";
+import { listPermissions, listRoles, roleHasPermission, setRolePermission } from "@/actions/admin";
 import { useState } from "react";
 import useSWR from "swr";
 import DeleteRole from "./DeleteRole";
@@ -10,24 +10,10 @@ import toast from "react-hot-toast";
 import FallBackRolesList from "./FallBackRolesList";
 import { RoleType } from "@/types/roleType";
 
-const permissionsFetcher = async () => {
-  const { data, error } = await supabase
-    .from("permission")
-    .select("*")
-    .order("name", { ascending: true });
-  if (error) throw error;
-  return data;
-};
+const permissionsFetcher = () => listPermissions("name");
 
-const rolePermissionFetcher = async (roleId: string, permissionId: string) => {
-  const { count, error } = await supabase
-    .from("role_permission")
-    .select("role_id", { count: "exact" })
-    .eq("role_id", roleId)
-    .eq("permission_id", permissionId);
-  if (error) throw error;
-  return count;
-};
+const rolePermissionFetcher = (roleId: string, permissionId: string) =>
+  roleHasPermission(roleId, permissionId);
 
 export function Permission({
   permission,
@@ -50,12 +36,12 @@ export function Permission({
   const onChange = async (checked: boolean) => {
     setIsUpdating(true);
     if (checked) {
-      await supabase.from("role_permission").insert([{ role_id: roleId, permission_id: id }]);
+      await setRolePermission(roleId, id, true);
       await mutate();
       setIsUpdating(false);
       toast.success("Role updated successfully!");
     } else {
-      await supabase.from("role_permission").delete().eq("role_id", roleId).eq("permission_id", id);
+      await setRolePermission(roleId, id, false);
       await mutate();
       setIsUpdating(false);
       toast.success("Role updated successfully!");
@@ -99,7 +85,7 @@ export function Permissions({ roleId }: { roleId: string }) {
 export function RoleItem({ role }: { role: { id: string; name: string; description: string } }) {
   const [isOpen, setIsOpen] = useState(false);
   const { id, name, description } = role;
-  
+
   return (
     <>
       <div className="relative first:rounded-t-xl first:border-0 border-t border-gray-200 hover:bg-gray-50">
@@ -149,14 +135,7 @@ export function RoleItem({ role }: { role: { id: string; name: string; descripti
   );
 }
 
-const rolesFetcher = async () => {
-  const { data, error } = await supabase
-    .from("role")
-    .select("*")
-    .order("name", { ascending: true });
-  if (error) throw error;
-  return data;
-};
+const rolesFetcher = () => listRoles() as Promise<RoleType[]>;
 
 export default function AdminRoles({ rolesFallBack }: { rolesFallBack: RoleType[] | null }) {
   const {

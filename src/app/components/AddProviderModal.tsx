@@ -2,10 +2,9 @@
 
 import { useState } from "react";
 import { useGlobalState } from "@/lib/globalState";
-import { supabase } from "@/lib/supabase";
 import { INPUT_CLASS, PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from "@/constants";
 import Field from "./Field";
-import { createProvider } from "@/actions/providers";
+import { createProvider, findProviderByRuc } from "@/actions/providers";
 
 type Provider = { id: string; name: string; ruc: string };
 
@@ -47,12 +46,7 @@ export default function AddProviderModal({
 
     setIsPending(true);
     try {
-      const { data: found } = await supabase
-        .from("provider")
-        .select("id, name, ruc")
-        .eq("workspace_id", workspaceId)
-        .eq("ruc", form.ruc)
-        .single();
+      const found = await findProviderByRuc(workspaceId, form.ruc);
 
       if (found) {
         setExisting(found);

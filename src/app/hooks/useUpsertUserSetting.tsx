@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { getMySetting, setMySetting } from "@/actions/admin";
 import useSWR, { mutate } from "swr";
 import toast from "react-hot-toast";
 
@@ -17,19 +17,12 @@ const writeLocalCache = (userId: string, settingKey: string, value: boolean) => 
   localStorage.setItem(getLocalKey(userId, settingKey), String(value));
 };
 
-const fetcher = async ([tableName, userId, settingKey]: [string, string, string]): Promise<
+// The server reads and writes the signed-in user's own settings; the userId
+// argument only scopes the local cache and the SWR key.
+const fetcher = async ([, userId, settingKey]: [string, string, string]): Promise<
   boolean | null
 > => {
-  const { data, error } = await supabase
-    .from(tableName)
-    .select("setting_value")
-    .eq("user_id", userId)
-    .eq("setting_key", settingKey)
-    .single();
-
-  if (error && error.code !== "PGRST116") throw error;
-
-  const value = data?.setting_value === "true";
+  const value = (await getMySetting(settingKey)) ?? false;
   writeLocalCache(userId, settingKey, value);
   return value;
 };
@@ -54,13 +47,7 @@ export const useUpsertUserSetting = (userId: string, settingKey: string, initial
     writeLocalCache(userId, settingKey, newValue);
     mutate([SETTINGS_TABLE, userId, settingKey], newValue, false);
 
-    const { error } = await supabase
-      .from(SETTINGS_TABLE)
-      .upsert(
-        { user_id: userId, setting_key: settingKey, setting_value: String(newValue) },
-        { onConflict: "user_id,setting_key" },
-      )
-      .select();
+    const { error } = await setMySetting(settingKey, newValue);
 
     if (error) {
       toast.error("Failed to update setting.");

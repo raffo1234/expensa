@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import useSWR from "swr";
 import ExpenseTable from "@/components/ExpenseTable";
-import { supabase } from "@/lib/supabase";
 import {
   PRIMARY_BUTTON_CLASS,
   SECONDARY_BUTTON_CLASS,
@@ -28,7 +27,8 @@ import InputWithTooltip from "./InputWithTooltip";
 import SearchInput from "./SearchInput";
 import ClearFiltersButton from "./ClearFiltersButton";
 import { replaceUrl } from "@/utils/replaceUrl";
-import { sumExpenseAmounts } from "@/lib/sumExpenseAmounts";
+import { listAllFilteredExpenses, listExpenses } from "@/actions/expenseQueries";
+import { categoryIdList, type ExpenseFilters } from "@/types/expenseFilters";
 import type { SummaryReportRow } from "./SummaryReportPDF";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -58,49 +58,7 @@ interface FetchResult {
   totalAmount: number;
 }
 
-type Filters = {
-  issuedFrom: string;
-  issuedTo: string;
-  amountMin: string;
-  amountMax: string;
-  // ponytail: comma-joined category ids, avoids widening Filters to string | string[] everywhere
-  categoryId: string;
-  stageId: string;
-  levelId: string;
-  providerId: string;
-  invoiceSeries: string;
-  invoiceNumber: string;
-};
-
-function categoryIdList(categoryId: string): string[] {
-  return categoryId ? categoryId.split(",").filter(Boolean) : [];
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function applyCategoryFilter<T extends { eq: any; in: any }>(query: T, categoryId: string): T {
-  const ids = categoryIdList(categoryId);
-  if (ids.length === 1) return query.eq("category_id", ids[0]);
-  if (ids.length > 1) return query.in("category_id", ids);
-  return query;
-}
-
-// Every expense query on this page (list, total, exports) filters the same way.
-function applyExpenseFilters<T>(query: T, filters: Filters, orClause: string | null): T {
-  // Supabase builder types change with every chained call; treat it loosely here.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let q: any = applyCategoryFilter(query as any, filters.categoryId);
-  if (filters.stageId) q = q.eq("stage_id", filters.stageId);
-  if (filters.levelId) q = q.eq("level_id", filters.levelId);
-  if (filters.providerId) q = q.eq("provider_id", filters.providerId);
-  if (filters.invoiceSeries) q = q.ilike("invoice_series", `%${filters.invoiceSeries}%`);
-  if (filters.invoiceNumber) q = q.ilike("invoice_number", `%${filters.invoiceNumber}%`);
-  if (orClause) q = q.or(orClause);
-  if (filters.issuedFrom) q = q.gte("issued_at", filters.issuedFrom);
-  if (filters.issuedTo) q = q.lte("issued_at", filters.issuedTo);
-  if (filters.amountMin) q = q.gte("amount", Math.round(parseFloat(filters.amountMin) * 100));
-  if (filters.amountMax) q = q.lte("amount", Math.round(parseFloat(filters.amountMax) * 100));
-  return q;
-}
+type Filters = ExpenseFilters;
 
 export type Stage = { id: string; name: string; color: string | null };
 export type Level = { id: string; name: string };
@@ -129,71 +87,20 @@ function mapExpenseRow(row: ExpenseRow): Expense {
 
 // ── Fetcher ───────────────────────────────────────────────────────────────────
 
-async function buildSearchClause(workspaceId: string, search: string): Promise<string | null> {
-  const q = search.trim();
-  if (!q) return null;
-
-  const clauses: string[] = [
-    `invoice_series.ilike.%${q}%`,
-    `invoice_number.ilike.%${q}%`,
-    `notes.ilike.%${q}%`,
-  ];
-
-  const { data: matchingProviders } = await supabase
-    .from("provider")
-    .select("id")
-    .eq("workspace_id", workspaceId)
-    .or(`name.ilike.%${q}%,ruc.ilike.%${q}%`);
-  const providerIds = (matchingProviders ?? []).map((p) => p.id);
-  if (providerIds.length > 0) clauses.push(`provider_id.in.(${providerIds.join(",")})`);
-
-  const num = parseFloat(q);
-  if (!isNaN(num) && num > 0) {
-    const cents = Math.round(num * 100);
-    clauses.push(`amount.eq.${cents}`);
-  }
-
-  return clauses.join(",");
-}
-
 const fetchExpenses = async (
   workspaceId: string,
   page: number,
   search: string,
   filters: Filters,
 ): Promise<FetchResult> => {
-  const from = (page - 1) * ITEMS_PER_PAGE;
-  const to = from + ITEMS_PER_PAGE - 1;
-
-  const orClause = await buildSearchClause(workspaceId, search);
-
-  let query = supabase
-    .from("expense")
-    .select(
-      `id, invoice_series, invoice_number, amount, currency,
-       issued_at, paid_at, payment_method, notes, created_at,
-       provider:provider_id(id, name, ruc),
-       category:category_id(id, name, color)`,
-      { count: "exact" },
-    )
-    .eq("workspace_id", workspaceId)
-    .order("paid_at", { ascending: false })
-    .order("id") // stable paging when several expenses share a date
-    .range(from, to);
-
-  query = applyExpenseFilters(query, filters, orClause);
-
-  const [{ data, error, count }, totalAmount] = await Promise.all([
-    query,
-    sumExpenseAmounts(workspaceId, (q) => applyExpenseFilters(q, filters, orClause)),
-  ]);
-  if (error) throw error;
-
-  return {
-    data: ((data as unknown as ExpenseRow[]) ?? []).map(mapExpenseRow),
-    count: count ?? 0,
-    totalAmount,
-  };
+  const { rows, count, totalAmount } = await listExpenses(
+    workspaceId,
+    page,
+    ITEMS_PER_PAGE,
+    search,
+    filters,
+  );
+  return { data: rows.map(mapExpenseRow), count, totalAmount };
 };
 
 // ── CSV Export ───────────────────────────────────────────────────────────────
@@ -210,42 +117,8 @@ const csvEscape = (v: unknown) => {
   return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s;
 };
 
-const fetchAllFilteredExpenses = async (
-  workspaceId: string,
-  search: string,
-  filters: Filters,
-): Promise<ExpenseRow[]> => {
-  const orClause = await buildSearchClause(workspaceId, search);
-
-  const all: ExpenseRow[] = [];
-  let page = 0;
-  const size = 1000;
-  while (true) {
-    let query = supabase
-      .from("expense")
-      .select(
-        `id, invoice_series, invoice_number, amount, currency,
-         issued_at, paid_at, payment_method, notes,
-         provider:provider_id(id, name, ruc),
-         category:category_id(id, name, color)`,
-      )
-      .eq("workspace_id", workspaceId)
-      .order("paid_at", { ascending: true })
-      // Tie-breaker: without it, rows sharing a date can be skipped or repeated across pages.
-      .order("id")
-      .range(page * size, (page + 1) * size - 1);
-
-    query = applyExpenseFilters(query, filters, orClause);
-
-    const { data } = await query;
-    if (!data || data.length === 0) break;
-    all.push(...(data as unknown as ExpenseRow[]));
-    if (data.length < size) break;
-    page++;
-  }
-
-  return all;
-};
+const fetchAllFilteredExpenses = (workspaceId: string, search: string, filters: Filters) =>
+  listAllFilteredExpenses(workspaceId, search, filters);
 
 const exportExpensesCsv = async (workspaceId: string, search: string, filters: Filters) => {
   const all = await fetchAllFilteredExpenses(workspaceId, search, filters);

@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin as supabase } from "@/lib/supabaseAdmin";
 import { sumExpenseAmounts } from "@/lib/sumExpenseAmounts";
 import ExpensesClient from "@/components/ExpensesClient";
 import FallbackExpenses from "@/components/FallbackExpenses";

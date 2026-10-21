@@ -37,13 +37,24 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
   const body = await res.Body?.transformToByteArray();
   if (!body) return new NextResponse("Not found", { status: 404 });
 
-  return new NextResponse(Buffer.from(body), {
-    headers: {
-      "Content-Type": res.ContentType ?? "application/octet-stream",
-      // Private: invoices must never be stored by a shared CDN cache, which
-      // would serve them to anyone without checking access.
-      "Cache-Control": "private, max-age=3600",
-      "X-Content-Type-Options": "nosniff",
-    },
-  });
+  const contentType = res.ContentType ?? "application/octet-stream";
+  const headers: Record<string, string> = {
+    "Content-Type": contentType,
+    // Private: invoices must never be stored by a shared CDN cache, which
+    // would serve them to anyone without checking access.
+    "Cache-Control": "private, max-age=3600",
+    "X-Content-Type-Options": "nosniff",
+  };
+  // PDFs and images open inline (the browser PDF viewer can't run sandboxed).
+  // Anything else is never rendered on our origin: it's downloaded, and
+  // sandboxed in case a browser tries to display it anyway.
+  if (contentType !== "application/pdf" && !contentType.startsWith("image/")) {
+    headers["Content-Disposition"] = "attachment";
+    headers["Content-Security-Policy"] = "sandbox; default-src 'none'";
+  }
+  if (contentType === "image/svg+xml") {
+    headers["Content-Security-Policy"] = "sandbox; default-src 'none'; style-src 'unsafe-inline'";
+  }
+
+  return new NextResponse(Buffer.from(body), { headers });
 }

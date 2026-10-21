@@ -1,5 +1,5 @@
 import { unstable_serialize } from "swr";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin as supabase } from "@/lib/supabaseAdmin";
 import { getMaterials } from "@/actions/materials";
 import { getBrands } from "@/actions/brands";
 import { getUnits } from "@/actions/units";

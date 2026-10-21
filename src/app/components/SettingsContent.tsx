@@ -6,7 +6,7 @@ import FieldsSection from "./FieldsSection";
 import { RoleType } from "@/types/roleType";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { supabase } from "@/lib/supabase";
+import { updateGlobalSetting } from "@/actions/admin";
 import useCheckPermission from "@/hooks/useCheckPermission";
 import { Permissions } from "@/types/propertyState";
 import { useSettingValueBySlug } from "@/hooks/useSettingValueBySlug";
@@ -33,10 +33,7 @@ export default function SettingsContent({
     setIsSaving(true);
 
     try {
-      const { error } = await supabase
-        .from("global_settings")
-        .update({ value })
-        .eq("slug", "default_signup_role");
+      const { error } = await updateGlobalSetting("default_signup_role", value);
 
       if (error) {
         console.error("Error updating email signup setting:", error);

@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin as supabase } from "@/lib/supabaseAdmin";
 import { getCurrentUser } from "@/lib/getCurrentUser";
 import { checkPermissions } from "@/lib/checkPermissions";
 import { Permissions } from "@/types/propertyState";

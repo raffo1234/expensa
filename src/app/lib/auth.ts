@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { supabaseAdmin } from "./supabaseAdmin";
-import { supabase } from "./supabase";
+import { supabaseAdmin as supabase } from "@/lib/supabaseAdmin";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [

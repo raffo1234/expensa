@@ -1,6 +1,12 @@
 "use client";
 
-import { supabase } from "@/lib/supabase";
+import {
+  getUserWorkspaceIds,
+  listAllWorkspaces,
+  listRoles,
+  setUserWorkspace,
+  updateUserFields,
+} from "@/actions/admin";
 import FieldsSection from "./FieldsSection";
 import useSWR from "swr";
 import { adminRolesKey, INPUT_CLASS, SELECT_CLASS } from "@/constants";
@@ -13,29 +19,11 @@ import userFetcher from "@/lib/userFetcher";
 import NoAccess from "./NoAccess";
 import FallbackEditUser from "./FallbackEditUser";
 
-const rolesFetcher = async () => {
-  const { data, error } = await supabase
-    .from("role")
-    .select("*")
-    .order("name", { ascending: true });
-  if (error) throw error;
-  return data;
-};
+const rolesFetcher = () => listRoles();
 
-const workspacesFetcher = async () => {
-  const { data, error } = await supabase.from("workspace").select("id, name").order("name");
-  if (error) throw error;
-  return data ?? [];
-};
+const workspacesFetcher = () => listAllWorkspaces();
 
-const userWorkspacesFetcher = async (userId: string) => {
-  const { data, error } = await supabase
-    .from("user_workspace")
-    .select("workspace_id")
-    .eq("user_id", userId);
-  if (error) throw error;
-  return new Set((data ?? []).map((r: { workspace_id: string }) => r.workspace_id));
-};
+const userWorkspacesFetcher = async (userId: string) => new Set(await getUserWorkspaceIds(userId));
 
 export default function EditUserContent({ userId }: { userId: string }) {
   const {
@@ -51,13 +39,7 @@ export default function EditUserContent({ userId }: { userId: string }) {
   );
 
   const toggleWorkspace = async (workspaceId: string, nowChecked: boolean) => {
-    const { error } = nowChecked
-      ? await supabase.from("user_workspace").insert({ user_id: userId, workspace_id: workspaceId })
-      : await supabase
-          .from("user_workspace")
-          .delete()
-          .eq("user_id", userId)
-          .eq("workspace_id", workspaceId);
+    const { error } = await setUserWorkspace(userId, workspaceId, nowChecked);
 
     if (error) toast.error("Failed to update workspace access.");
   };
@@ -65,10 +47,8 @@ export default function EditUserContent({ userId }: { userId: string }) {
   const updateUser = async (fieldName: string, value: string | null) => {
     if (value === "") value = null;
     try {
-      await supabase
-        .from("user")
-        .update({ [fieldName]: value })
-        .eq("id", userId);
+      const { error } = await updateUserFields(userId, { [fieldName]: value });
+      if (error) throw new Error(error);
       toast.success("User was updated successfully!");
     } catch (error) {
       console.error(error);

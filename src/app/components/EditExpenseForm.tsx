@@ -11,7 +11,14 @@ import { getUnits } from "@/actions/units";
 import { useState, useEffect, useRef } from "react";
 import useSWR from "swr";
 import { useRouter, useParams } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import {
+  getCategories,
+  getExpenseForEdit,
+  getLevels,
+  getProviders,
+  getStages,
+  getWorkspaceBySlug,
+} from "@/actions/lookups";
 import getAttachmentUrl from "@/lib/getAttachmentUrl";
 import { Expense } from "@/types/ExpenseType";
 import { TAX_STATUS_LABELS, type TaxStatus } from "@/lib/invoiceTax";
@@ -30,17 +37,13 @@ import SectionTitle from "@/components/SectionTitle";
 import Field from "@/components/Field";
 import {
   deleteAttachment,
-  initiateMultipartUpload,
-  getPartPresignedUrl,
-  completeMultipartUpload,
-  abortMultipartUpload,
-  registerAttachment,
   getExpenseItems,
   saveExpenseItems,
+  updateExpense,
 } from "@/actions/expenses";
+import { uploadExpenseAttachment } from "@/lib/uploadExpenseAttachment";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-const PART_SIZE = 5 * 1024 * 1024;
 const CURRENCIES = ["PEN", "USD", "EUR"];
 const PAYMENT_METHODS = ["Efectivo", "Transferencia", "Tarjeta", "Yape", "Plin", "Otro"];
 
@@ -49,128 +52,22 @@ function isImage(path: string) {
   return /\.(jpe?g|png|webp|gif)$/i.test(path);
 }
 
-// ── Multipart uploader ────────────────────────────────────────────────────────
-async function uploadFileMultipart(
-  file: File,
-  expenseId: string,
-  workspaceSlug: string,
-  onProgress: (pct: number) => void,
-  signal: AbortSignal,
-): Promise<string> {
-  const { uploadId, key } = await initiateMultipartUpload(
-    expenseId,
-    workspaceSlug,
-    file.name,
-    file.type,
-  );
-
-  const totalParts = Math.ceil(file.size / PART_SIZE);
-  const parts: { PartNumber: number; ETag: string }[] = [];
-
-  try {
-    for (let i = 0; i < totalParts; i++) {
-      if (signal.aborted) throw new Error("Upload cancelado");
-
-      const partNumber = i + 1;
-      const start = i * PART_SIZE;
-      const end = Math.min(start + PART_SIZE, file.size);
-      const chunk = file.slice(start, end);
-
-      const { url } = await getPartPresignedUrl(key, uploadId, partNumber);
-
-      const res = await fetch(url, {
-        method: "PUT",
-        body: chunk,
-        headers: { "Content-Type": file.type },
-        signal,
-      });
-
-      if (!res.ok) throw new Error(`Parte ${partNumber} falló: ${res.status}`);
-
-      const etag = res.headers.get("ETag");
-      if (!etag) throw new Error(`Sin ETag en parte ${partNumber}`);
-
-      parts.push({ PartNumber: partNumber, ETag: etag });
-      onProgress(Math.round((partNumber / totalParts) * 100));
-    }
-
-    await completeMultipartUpload(key, uploadId, parts);
-    return key;
-  } catch (err) {
-    await abortMultipartUpload(key, uploadId).catch(() => {});
-    throw err;
-  }
-}
-
 // ── Fetchers ──────────────────────────────────────────────────────────────────
 
-async function fetchStages(
-  workspaceId: string,
-): Promise<{ id: string; name: string; order: number; color: string | null }[]> {
-  const { data, error } = await supabase
-    .from("stage")
-    .select("id, name, order, color")
-    .eq("workspace_id", workspaceId)
-    .order("order");
-  if (error) throw error;
-  return data ?? [];
-}
+const fetchStages = (workspaceId: string) => getStages(workspaceId);
 
-async function fetchLevels(
-  workspaceId: string,
-): Promise<{ id: string; name: string; order: number }[]> {
-  const { data, error } = await supabase
-    .from("level")
-    .select("id, name, order")
-    .eq("workspace_id", workspaceId)
-    .order("order");
-  if (error) throw error;
-  return data ?? [];
-}
+const fetchLevels = (workspaceId: string) => getLevels(workspaceId);
 
-async function fetchProviders(workspaceId: string): Promise<Provider[]> {
-  const { data, error } = await supabase
-    .from("provider")
-    .select("id, name")
-    .eq("workspace_id", workspaceId)
-    .order("name");
-  if (error) throw error;
-  return data ?? [];
-}
+const fetchProviders = (workspaceId: string): Promise<Provider[]> => getProviders(workspaceId);
 
 async function fetchExpense(expenseId: string, workspaceId: string): Promise<Expense> {
-  const { data, error } = await supabase
-    .from("expense")
-    .select(
-      `
-      id, amount, currency, issued_at, paid_at, payment_method, notes, created_at, invoice_series, invoice_number, tax_status,
-      provider:provider_id(id, name),
-      category:category_id(id, name, color),
-      stage:stage_id(id, name, color),
-      level:level_id(id, name),
-      expense_attachment(id, file_name, storage_path)
-    `,
-    )
-    .eq("id", expenseId)
-    .eq("workspace_id", workspaceId)
-    .maybeSingle();
-
-  if (error) throw error;
+  const data = await getExpenseForEdit(expenseId, workspaceId);
   if (!data) throw new Error("Expense not found");
   return data as unknown as Expense;
 }
 
-async function fetchWorkspace(slug: string): Promise<{ id: string; name: string }> {
-  const { data, error } = await supabase
-    .from("workspace")
-    .select("id, name")
-    .eq("slug", slug)
-    .maybeSingle();
-
-  if (error) throw error;
-  if (!data) throw new Error("Workspace not found");
-  return data;
-}
+const fetchWorkspace = (slug: string): Promise<{ id: string; name: string }> =>
+  getWorkspaceBySlug(slug);
 
 async function fetchMaterials(workspaceId: string) {
   return getMaterials(workspaceId);
@@ -184,15 +81,7 @@ async function fetchUnits(workspaceId: string) {
   return getUnits(workspaceId);
 }
 
-async function fetchCategories(workspaceId: string): Promise<Category[]> {
-  const { data, error } = await supabase
-    .from("category")
-    .select("id, name, color")
-    .eq("workspace_id", workspaceId)
-    .order("name");
-  if (error) throw error;
-  return data ?? [];
-}
+const fetchCategories = (workspaceId: string): Promise<Category[]> => getCategories(workspaceId);
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 function Input({
@@ -426,25 +315,22 @@ export default function EditExpenseForm() {
 
     try {
       // 1. Update expense row
-      const { error: updateError } = await supabase
-        .from("expense")
-        .update({
-          provider_id: provider_id || null,
-          amount: Math.round(parseFloat(amount) * 100),
-          currency,
-          issued_at: issuedAt || null,
-          paid_at: paidAt,
-          payment_method: paymentMethod || null,
-          tax_status: taxStatus || null,
-          notes: notes.trim() || null,
-          category_id: categoryId || null,
-          invoice_series: invoiceSeries.trim() || null,
-          invoice_number: invoiceNumber.trim() || null,
-          stage_id: stageId || null,
-          level_id: levelId || null,
-        })
-        .eq("id", expenseId);
-      if (updateError) throw updateError;
+      const { error: updateError } = await updateExpense(expenseId, {
+        provider_id: provider_id || null,
+        amount: Math.round(parseFloat(amount) * 100),
+        currency,
+        issued_at: issuedAt || null,
+        paid_at: paidAt,
+        payment_method: paymentMethod || null,
+        tax_status: (taxStatus || null) as TaxStatus | null,
+        notes: notes.trim() || null,
+        category_id: categoryId || null,
+        invoice_series: invoiceSeries.trim() || null,
+        invoice_number: invoiceNumber.trim() || null,
+        stage_id: stageId || null,
+        level_id: levelId || null,
+      });
+      if (updateError) throw new Error(updateError);
 
       // 1b. Save material line items
       const items = itemLines
@@ -473,15 +359,12 @@ export default function EditExpenseForm() {
         newFiles.map(async (file, i) => {
           setUploadProgress((prev) => ({ ...prev, [i]: 0 }));
 
-          const storagePath = await uploadFileMultipart(
+          await uploadExpenseAttachment(
             file,
             expenseId,
-            workspaceSlug,
             (pct) => setUploadProgress((prev) => ({ ...prev, [i]: pct })),
             signal,
           );
-
-          await registerAttachment(expenseId, storagePath, file.name);
         }),
       );
 

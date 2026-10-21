@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin as supabase } from "@/lib/supabaseAdmin";
 import getAttachmentUrl from "@/lib/getAttachmentUrl";
 import FormSection from "@/components/FormSection";
 import FormInnerSection from "@/components/FormInnerSection";

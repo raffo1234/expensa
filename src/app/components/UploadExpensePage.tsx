@@ -3,15 +3,16 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import useSWR, { mutate } from "swr";
 import { useRouter, useParams } from "next/navigation";
-import { supabase } from "@/lib/supabase";
-import { createExpense, registerAttachment, checkDuplicateExpenses } from "@/actions/expenses";
-import type { DuplicateCandidate } from "@/actions/expenses";
 import {
-  initiateMultipartUpload,
-  getPartPresignedUrl,
-  completeMultipartUpload,
-  abortMultipartUpload,
-} from "@/actions/expenses";
+  getCategories,
+  getLevels,
+  getProviders,
+  getStages,
+  getWorkspaceBySlug,
+} from "@/actions/lookups";
+import { createExpense, checkDuplicateExpenses } from "@/actions/expenses";
+import { uploadExpenseAttachment } from "@/lib/uploadExpenseAttachment";
+import type { DuplicateCandidate } from "@/actions/expenses";
 import FormSection from "./FormSection";
 import FormInnerSection from "./FormInnerSection";
 import {
@@ -53,54 +54,17 @@ const PAYMENT_METHODS = [
   "Yape / Plin",
   "Otro",
 ];
-const PART_SIZE = 5 * 1024 * 1024;
 
 // ── SWR fetchers ─────────────────────────────────────────────────────────────
-async function fetchWorkspace(slug: string): Promise<{ id: string }> {
-  const { data, error } = await supabase.from("workspace").select("id").eq("slug", slug).single();
-  if (error) throw error;
-  return data;
-}
+const fetchWorkspace = (slug: string): Promise<{ id: string }> => getWorkspaceBySlug(slug);
 
-async function fetchCategories(workspaceId: string): Promise<Category[]> {
-  const { data, error } = await supabase
-    .from("category")
-    .select("id, name, color")
-    .eq("workspace_id", workspaceId)
-    .order("name");
-  if (error) throw error;
-  return data ?? [];
-}
+const fetchCategories = (workspaceId: string): Promise<Category[]> => getCategories(workspaceId);
 
-async function fetchProviders(workspaceId: string): Promise<Provider[]> {
-  const { data, error } = await supabase
-    .from("provider")
-    .select("id, name, ruc")
-    .eq("workspace_id", workspaceId)
-    .order("name");
-  if (error) throw error;
-  return data ?? [];
-}
+const fetchProviders = (workspaceId: string): Promise<Provider[]> => getProviders(workspaceId);
 
-async function fetchStages(workspaceId: string): Promise<Stage[]> {
-  const { data, error } = await supabase
-    .from("stage")
-    .select("id, name, order, color")
-    .eq("workspace_id", workspaceId)
-    .order("order");
-  if (error) throw error;
-  return data ?? [];
-}
+const fetchStages = (workspaceId: string): Promise<Stage[]> => getStages(workspaceId);
 
-async function fetchLevels(workspaceId: string): Promise<Level[]> {
-  const { data, error } = await supabase
-    .from("level")
-    .select("id, name, order")
-    .eq("workspace_id", workspaceId)
-    .order("order");
-  if (error) throw error;
-  return data ?? [];
-}
+const fetchLevels = (workspaceId: string): Promise<Level[]> => getLevels(workspaceId);
 
 async function fetchMaterials(workspaceId: string) {
   return getMaterials(workspaceId);
@@ -133,59 +97,6 @@ async function extractFromReceipt(file: File, catalog: ReceiptCatalog): Promise<
 
   if (!res.ok) throw new Error("Extraction failed");
   return res.json();
-}
-
-// ── Multipart uploader ────────────────────────────────────────────────────────
-async function uploadFileMultipart(
-  file: File,
-  expenseId: string,
-  workspaceSlug: string,
-  onProgress: (pct: number) => void,
-  signal: AbortSignal,
-): Promise<string> {
-  const { uploadId, key } = await initiateMultipartUpload(
-    expenseId,
-    workspaceSlug,
-    file.name,
-    file.type,
-  );
-
-  const totalParts = Math.ceil(file.size / PART_SIZE);
-  const parts: { PartNumber: number; ETag: string }[] = [];
-
-  try {
-    for (let i = 0; i < totalParts; i++) {
-      if (signal.aborted) throw new Error("Upload cancelado");
-
-      const partNumber = i + 1;
-      const start = i * PART_SIZE;
-      const end = Math.min(start + PART_SIZE, file.size);
-      const chunk = file.slice(start, end);
-
-      const { url } = await getPartPresignedUrl(key, uploadId, partNumber);
-
-      const res = await fetch(url, {
-        method: "PUT",
-        body: chunk,
-        headers: { "Content-Type": file.type },
-        signal,
-      });
-
-      if (!res.ok) throw new Error(`Parte ${partNumber} falló: ${res.status}`);
-
-      const etag = res.headers.get("ETag");
-      if (!etag) throw new Error(`Sin ETag en parte ${partNumber}`);
-
-      parts.push({ PartNumber: partNumber, ETag: etag });
-      onProgress(Math.round((partNumber / totalParts) * 100));
-    }
-
-    await completeMultipartUpload(key, uploadId, parts);
-    return key;
-  } catch (err) {
-    await abortMultipartUpload(key, uploadId).catch(() => {});
-    throw err;
-  }
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -491,14 +402,12 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
       await Promise.all(
         files.map(async (fi) => {
           setUploadProgress((prev) => ({ ...prev, [fi.id]: 0 }));
-          const storagePath = await uploadFileMultipart(
+          await uploadExpenseAttachment(
             fi.file,
             result.id!,
-            workspaceSlug,
             (pct) => setUploadProgress((prev) => ({ ...prev, [fi.id]: pct })),
             signal,
           );
-          await registerAttachment(result.id!, storagePath, fi.file.name);
         }),
       );
 

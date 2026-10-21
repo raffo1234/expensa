@@ -1,6 +1,6 @@
 import { SWRConfig, unstable_serialize } from "swr";
 import { notFound } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin as supabase } from "@/lib/supabaseAdmin";
 import { loadExpenseFormLookups } from "@/lib/expenseFormData";
 import { getExpenseItems } from "@/actions/expenses";
 import EditExpenseForm from "@/components/EditExpenseForm";

@@ -1,7 +1,7 @@
 "use client";
 
 import { Icon } from "@iconify/react";
-import { supabase } from "@/lib/supabase";
+import { createRole } from "@/actions/admin";
 import { useState } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { mutate } from "swr";
@@ -22,7 +22,7 @@ export default function AddRole() {
 
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
     setIsLoading(true);
-    await supabase.from("role").insert([data]);
+    await createRole(data);
     await mutate(adminRolesKey);
     reset();
     setDisplayForm(false);

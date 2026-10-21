@@ -73,25 +73,18 @@ export async function requireRowAccess(table: WorkspaceScopedTable, id: string) 
 }
 
 /**
- * Attachment keys are `<workspace slug>/<expense id>/<file>`. Confirms the key
- * belongs to an expense the caller can access and that the slug matches that
- * expense's workspace, so a key can't point into someone else's files.
+ * Confirms the caller's role has at least one of the given permissions. The
+ * role always comes from the database, never from the request.
  */
-export async function requireStorageKeyAccess(key: string) {
-  const [slug, expenseId, file] = key.split("/");
-  if (!slug || !expenseId || !file || key.includes("..")) throw new AccessError();
-
+export async function requirePermission(...slugs: string[]) {
+  const user = await requireUser();
+  if (!user.roleId) throw new AccessError();
   const { data, error } = await supabaseAdmin
-    .from("expense")
-    .select("workspace_id, workspace:workspace_id(slug)")
-    .eq("id", expenseId)
-    .maybeSingle();
+    .from("role_permission")
+    .select("permission!inner(slug)")
+    .eq("role_id", user.roleId)
+    .in("permission.slug", slugs);
   if (error) throw new Error(error.message);
-
-  const workspace = (Array.isArray(data?.workspace) ? data?.workspace[0] : data?.workspace) as
-    | { slug: string }
-    | null
-    | undefined;
-  if (!data || workspace?.slug !== slug) throw new AccessError();
-  return requireWorkspaceAccess(data.workspace_id as string);
+  if (!data?.length) throw new AccessError();
+  return user;
 }

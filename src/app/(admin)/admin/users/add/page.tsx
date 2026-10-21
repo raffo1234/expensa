@@ -3,7 +3,7 @@ import FallbackPermission from "@/components/FallbackPermission";
 import { auth } from "@/lib/auth";
 import Link from "next/link";
 import { Permissions } from "@/types/propertyState";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin as supabase } from "@/lib/supabaseAdmin";
 
 export default async function Page() {
   const session = await auth();

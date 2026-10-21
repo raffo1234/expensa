@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin as supabase } from "@/lib/supabaseAdmin";
 import { getTranslations } from "next-intl/server";
 import Image from "next/image";
 import { Icon } from "@iconify/react/dist/iconify.js";

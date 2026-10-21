@@ -2,12 +2,13 @@
 
 import useSWR from "swr";
 import React from "react";
-import { fetchRolePermissionSlugs, rolePermissionSlugsKey } from "@/lib/rolePermissions";
+import { rolePermissionSlugsKey } from "@/lib/rolePermissionsKey";
+import { getMyPermissionSlugs } from "@/actions/admin";
 
 function useUserPermissionsMap(userRoleId: string | null | undefined) {
   const { data: slugs, isLoading } = useSWR(
     userRoleId ? rolePermissionSlugsKey(userRoleId) : null,
-    () => fetchRolePermissionSlugs(userRoleId!),
+    () => getMyPermissionSlugs(),
   );
 
   const permissionsMap = React.useMemo(

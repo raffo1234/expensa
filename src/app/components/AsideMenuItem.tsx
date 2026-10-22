@@ -6,7 +6,23 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ICON_SIZE, STYLED_ICON_CLASS } from "@/constants";
+// Fly.io dashboard sidebar, measured from their UI: 40px rows, a 26px white
+// icon box with a 15px duotone violet icon, 10px to the label, 16px label at
+// weight 400, active row on a soft violet background.
+const ITEM =
+  "group flex h-10 w-full items-center gap-2.5 truncate rounded-lg px-2.5 text-base font-normal transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300";
+
+export function menuItemClass(active: boolean) {
+  return `${ITEM} ${active ? "bg-violet-100/70 text-violet-600" : "text-navy-900 hover:text-violet-600"}`;
+}
+
+export function MenuIcon({ icon, className = "" }: { icon: string; className?: string }) {
+  return (
+    <span className="flex size-6.5 flex-shrink-0 items-center justify-center rounded-md border border-violet-200/70 bg-white text-violet-500 shadow-[0_1px_2px_rgb(91_33_182/0.08)]">
+      <Icon icon={icon} fontSize={15} className={className} aria-hidden />
+    </span>
+  );
+}
 
 type PageLink = {
   href: string;
@@ -44,19 +60,13 @@ const MenuItemLink = React.forwardRef<
       title={title}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={closePopover}
-      className={`${
-        href === currentPath
-          ? "text-violet-800 bg-violet-100 ring-1 ring-inset ring-violet-200"
-          : "text-gray-800 hover:text-violet-800 hover:bg-violet-100/60"
-      } group truncate rounded-lg w-full p-1 pr-3 gap-3.5 flex items-center text-sm font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300`}
+      className={menuItemClass(
+        href === currentPath || (href !== "/" && currentPath.startsWith(`${href}/`)),
+      )}
       onClick={closeMenu}
       ref={ref}
     >
-      <span
-        className={`${STYLED_ICON_CLASS} transition-all duration-200 group-hover:border-violet-300 group-hover:shadow-sm`}
-      >
-        <Icon icon={iconName} fontSize={ICON_SIZE} className="flex-shrink-0" />
-      </span>
+      <MenuIcon icon={iconName} />
       <span
         className={`${isContracted ? "lg:invisible lg:opacity-0 lg:w-0" : "lg:visible lg:opacity-100"} transition-all duration-400 overflow-hidden truncate`}
       >

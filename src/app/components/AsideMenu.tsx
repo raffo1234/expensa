@@ -2,13 +2,12 @@
 
 import userFetcher from "@/fetchers/userFetcher";
 import { Permissions } from "@/types/propertyState";
-import { Icon } from "@iconify/react/dist/iconify.js";
 import { preload } from "swr";
-import { adminUsersKey, ICON_SIZE } from "@/constants";
+import { adminUsersKey } from "@/constants";
 import { signOut } from "next-auth/react";
 import React from "react";
 import useUserPermissionsMap from "@/hooks/useUserPermissionsMap";
-import AsideMenuItem from "./AsideMenuItem";
+import AsideMenuItem, { MenuIcon, menuItemClass } from "./AsideMenuItem";
 import { useTranslations } from "next-intl";
 
 interface MenuItem {
@@ -40,111 +39,121 @@ export default function AsideMenu({
     [userRoleId, permissionsMap],
   );
 
-  const pages: MenuItem[] = [
-    {
-      href: "/",
-      title: t("home"),
-      iconName: "solar:home-smile-angle-broken",
-    },
-    ...(checkPermission(Permissions.VIEW_DASHBOARD)
-      ? [
-          {
-            href: "/admin/dashboard",
-            title: t("dashboard"),
-            iconName: "solar:graph-up-outline",
-          },
-        ]
-      : []),
+  const item = (
+    allowed: boolean,
+    href: string,
+    title: string,
+    iconName: string,
+    extra?: Partial<MenuItem>,
+  ): MenuItem[] => (allowed ? [{ href, title, iconName, ...extra }] : []);
 
-    ...(checkPermission(Permissions.MANAGE_USERS)
-      ? [
-          {
-            href: "/admin/users",
-            title: t("users"),
-            iconName: "solar:user-linear",
-            onMouseEnter: () => preload(adminUsersKey, userFetcher),
-          },
-        ]
-      : []),
-    ...(checkPermission(Permissions.MANAGE_ROLES)
-      ? [
-          {
-            href: "/admin/roles",
-            title: t("roles"),
-            iconName: "solar:user-check-broken",
-          },
-        ]
-      : []),
-    ...(checkPermission(Permissions.MANAGE_PERMISSIONS)
-      ? [
-          {
-            href: "/admin/permissions",
-            title: t("permissions"),
-            iconName: "solar:lock-keyhole-broken",
-          },
-        ]
-      : []),
-    ...(checkPermission(Permissions.HANDLE_WORKSPACES)
-      ? [
-          {
-            href: "/admin/workspaces",
-            title: t("my-workspaces"),
-            iconName: "solar:wallet-2-linear",
-          },
-        ]
-      : []),
-    ...(checkPermission(Permissions.VIEW_EXPENSES_SUMMARY)
-      ? [
-          {
-            href: "/admin/summary",
-            title: t("summary"),
-            iconName: "solar:document-text-linear",
-          },
-        ]
-      : []),
-    ...(checkPermission(Permissions.HANDLE_SETTINGS)
-      ? [
-          {
-            href: "/admin/settings",
-            title: t("settings"),
-            iconName: "solar:settings-linear",
-          },
-        ]
-      : []),
+  // Grouped like Fly.io's sidebar; a group with no allowed items is hidden.
+  const groups: { label?: string; items: MenuItem[] }[] = [
+    { items: item(true, "/", t("home"), "solar:home-smile-angle-bold-duotone") },
     {
-      href: "/admin/my-settings",
-      title: t("my-settings"),
-      iconName: "solar:settings-minimalistic-linear",
+      label: t("group-expenses"),
+      items: [
+        ...item(
+          checkPermission(Permissions.HANDLE_WORKSPACES),
+          "/admin/workspaces",
+          t("my-workspaces"),
+          "solar:wallet-2-bold-duotone",
+        ),
+        ...item(
+          checkPermission(Permissions.VIEW_EXPENSES_SUMMARY),
+          "/admin/summary",
+          t("summary"),
+          "solar:document-text-bold-duotone",
+        ),
+        ...item(
+          checkPermission(Permissions.VIEW_DASHBOARD),
+          "/admin/dashboard",
+          t("dashboard"),
+          "solar:graph-up-bold-duotone",
+        ),
+      ],
+    },
+    {
+      label: t("group-admin"),
+      items: [
+        ...item(
+          checkPermission(Permissions.MANAGE_USERS),
+          "/admin/users",
+          t("users"),
+          "solar:users-group-rounded-bold-duotone",
+          { onMouseEnter: () => preload(adminUsersKey, userFetcher) },
+        ),
+        ...item(
+          checkPermission(Permissions.MANAGE_ROLES),
+          "/admin/roles",
+          t("roles"),
+          "solar:user-check-bold-duotone",
+        ),
+        ...item(
+          checkPermission(Permissions.MANAGE_PERMISSIONS),
+          "/admin/permissions",
+          t("permissions"),
+          "solar:lock-keyhole-bold-duotone",
+        ),
+        ...item(
+          checkPermission(Permissions.HANDLE_SETTINGS),
+          "/admin/settings",
+          t("settings"),
+          "solar:settings-bold-duotone",
+        ),
+      ],
+    },
+    {
+      label: t("group-account"),
+      items: item(true, "/admin/my-settings", t("my-settings"), "solar:tuning-2-bold-duotone"),
     },
   ];
 
   if (isLoading)
     return (
-      <div className="flex flex-col gap-1">
-        {Array.from({ length: 4 }, (_, i) => (
-          <div
-            key={i}
-            className={`h-[43px] w-full ${isContracted ? "lg:w-[51px]" : "w-auto"} rounded-xl bg-navy-100 animate-pulse`}
-          />
+      <div className="flex flex-col">
+        {Array.from({ length: 5 }, (_, i) => (
+          <div key={i} className="flex h-10 items-center gap-2.5 px-2.5">
+            <div className="size-6.5 flex-shrink-0 animate-pulse rounded-md bg-navy-100" />
+            <div
+              className={`h-3.5 w-28 animate-pulse rounded bg-navy-100 ${isContracted ? "lg:hidden" : ""}`}
+            />
+          </div>
         ))}
       </div>
     );
 
   return (
     <>
-      {pages.map((page) => (
-        <li key={page.href}>
-          <AsideMenuItem page={page} closeMenu={closeMenu} isContracted={isContracted} />
-        </li>
-      ))}
-      <li>
-        <button
-          onClick={() => signOut()}
-          className="group text-gray-800 hover:text-violet-800 hover:bg-violet-100/60 truncate cursor-pointer rounded-lg w-full p-1 pr-3 gap-3.5 flex items-center text-sm font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300"
-        >
-          <span className="transition-all duration-200 group-hover:border-violet-300 group-hover:shadow-sm p-1.5 bg-gradient-to-b text-violet-800 lg:from-white/75 lg:to-violet-100/75 rounded-lg bg-violet-100 border border-violet-200">
-            <Icon icon="solar:inbox-out-linear" fontSize={ICON_SIZE} className="-rotate-90" />
-          </span>
+      {groups
+        .filter((group) => group.items.length > 0)
+        .map((group, gi) => (
+          <React.Fragment key={group.label ?? gi}>
+            {group.label && (
+              <li aria-hidden={isContracted || undefined}>
+                {/* Section label; a thin divider takes its place when the menu is contracted. */}
+                <p
+                  className={`px-2.5 pt-6 pb-2 text-xs font-book uppercase tracking-[0.08em] text-navy-400 ${
+                    isContracted ? "lg:hidden" : ""
+                  }`}
+                >
+                  {group.label}
+                </p>
+                {isContracted && (
+                  <span className="mx-2.5 my-3 hidden border-t border-navy-100 lg:block" />
+                )}
+              </li>
+            )}
+            {group.items.map((page) => (
+              <li key={page.href}>
+                <AsideMenuItem page={page} closeMenu={closeMenu} isContracted={isContracted} />
+              </li>
+            ))}
+          </React.Fragment>
+        ))}
+      <li className="mt-1">
+        <button type="button" onClick={() => signOut()} className={menuItemClass(false)}>
+          <MenuIcon icon="solar:logout-2-bold-duotone" />
           <span className={isContracted ? "lg:hidden" : ""}>{t("sign-out")}</span>
         </button>
       </li>

@@ -103,7 +103,10 @@
     "my-settings": "Mis Configuraciones",
     "sign-out": "Salir",
     "dashboard": "Dashboard",
-    "summary": "Resumen"
+    "summary": "Resumen",
+    "group-expenses": "Gastos",
+    "group-admin": "Administración",
+    "group-account": "Cuenta"
   },
   "My-Studies": {
     "title": "Mis Estudios",

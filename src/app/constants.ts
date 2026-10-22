@@ -62,6 +62,10 @@ export const SELECT_CLASS = `${INPUT_CLASS} select-field`;
 export const PRIMARY_BUTTON_CLASS =
   "whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:pointer-events-none inline-flex items-center gap-2 px-4 py-2 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium transition-colors";
 
+// Destructive actions (delete). Same shape as the primary button.
+export const DANGER_BUTTON_CLASS =
+  "whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:pointer-events-none inline-flex items-center gap-2 px-4 py-2 rounded-md bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium transition-colors";
+
 export const SECONDARY_BUTTON_CLASS =
   "whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:pointer-events-none inline-flex items-center gap-2 px-4 py-2 rounded-md border border-zinc-200 bg-white hover:bg-violet-50 text-zinc-700 hover:text-violet-700 text-sm font-medium transition-colors";
 

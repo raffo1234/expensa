@@ -1,11 +1,12 @@
 "use client";
 
+import toast from "react-hot-toast";
 import { Icon } from "@iconify/react";
 import { createRole } from "@/actions/admin";
 import { useState } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { mutate } from "swr";
-import PrimaryButton from "./PrimaryButton";
+import SubmitButton from "./SubmitButton";
 import { adminRolesKey, ICON_SIZE } from "@/constants";
 
 type Inputs = {
@@ -22,11 +23,17 @@ export default function AddRole() {
 
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
     setIsLoading(true);
-    await createRole(data);
-    await mutate(adminRolesKey);
-    reset();
-    setDisplayForm(false);
-    setIsLoading(false);
+    try {
+      await createRole(data);
+      await mutate(adminRolesKey);
+      reset();
+      setDisplayForm(false);
+    } catch {
+      toast.error("No se pudo crear el rol.");
+    } finally {
+      // Always release the button, also when saving fails.
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -70,7 +77,7 @@ export default function AddRole() {
             >
               Cancel
             </button>
-            <PrimaryButton type="submit" label="Agregar" isLoading={isLoading} />
+            <SubmitButton pending={isLoading}>Agregar</SubmitButton>
           </div>
         </form>
       ) : (

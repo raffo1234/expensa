@@ -1,8 +1,9 @@
 "use client";
 
+import SubmitButton from "./SubmitButton";
 import { useState } from "react";
 import { useGlobalState } from "@/lib/globalState";
-import { INPUT_CLASS, PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from "@/constants";
+import { INPUT_CLASS, SECONDARY_BUTTON_CLASS } from "@/constants";
 import Field from "./Field";
 import { createProvider, findProviderByRuc } from "@/actions/providers";
 
@@ -123,14 +124,9 @@ export default function AddProviderModal({
         >
           Cancelar
         </button>
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={isPending}
-          className={PRIMARY_BUTTON_CLASS}
-        >
-          {isPending ? "Guardando..." : "Agregar proveedor"}
-        </button>
+        <SubmitButton type="button" onClick={handleSubmit} pending={isPending}>
+          Agregar proveedor
+        </SubmitButton>
       </div>
     </div>
   );

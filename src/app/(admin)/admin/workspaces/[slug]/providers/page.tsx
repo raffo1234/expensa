@@ -17,6 +17,7 @@ import ListPage from "@/components/ListPage";
 import PageNavigator from "@/components/PageNavigator";
 import SearchInput from "@/components/SearchInput";
 import ClearFiltersButton from "@/components/ClearFiltersButton";
+import SubmitButton from "@/components/SubmitButton";
 import DataTable, { DataTableRow, Td } from "@/components/DataTable";
 import { useClientPagination } from "@/hooks/useClientPagination";
 import { PROVIDER_COLUMNS } from "@/lib/tableColumns";
@@ -25,6 +26,7 @@ import {
   ICON_SIZE,
   PRIMARY_BUTTON_CLASS,
   SECONDARY_BUTTON_CLASS,
+  DANGER_BUTTON_CLASS,
 } from "@/constants";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -203,37 +205,9 @@ function ProviderModal({
             >
               Cancelar
             </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className={`${PRIMARY_BUTTON_CLASS} flex-1 justify-center`}
-            >
-              {saving ? (
-                <>
-                  <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      strokeOpacity="0.25"
-                    />
-                    <path
-                      d="M12 2a10 10 0 0 1 10 10"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  Guardando...
-                </>
-              ) : mode === "create" ? (
-                "Crear proveedor"
-              ) : (
-                "Guardar cambios"
-              )}
-            </button>
+            <SubmitButton pending={saving} className="flex-1 justify-center">
+              {mode === "create" ? "Crear proveedor" : "Guardar cambios"}
+            </SubmitButton>
           </div>
         </form>
       </div>
@@ -303,43 +277,22 @@ function DeleteDialog({
         </p>
         <div className="flex gap-3">
           <button
+            type="button"
             onClick={onClose}
-            className="flex-1 px-4 py-2.5 rounded-lg border border-gray-200 text-sm font-medium
-                       text-gray-600 hover:bg-gray-50 transition-all"
+            className={`${SECONDARY_BUTTON_CLASS} flex-1 justify-center`}
           >
             Cancelar
           </button>
-          <button
+          <SubmitButton
+            type="button"
             onClick={handleDelete}
-            disabled={deleting}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg
-                       text-sm font-semibold text-white bg-red-500 hover:bg-red-600
-                       disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            pending={deleting}
+            pendingLabel="Eliminando…"
+            base={DANGER_BUTTON_CLASS}
+            className="flex-1 justify-center"
           >
-            {deleting ? (
-              <>
-                <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeOpacity="0.25"
-                  />
-                  <path
-                    d="M12 2a10 10 0 0 1 10 10"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                  />
-                </svg>
-                Eliminando...
-              </>
-            ) : (
-              "Eliminar"
-            )}
-          </button>
+            Eliminar
+          </SubmitButton>
         </div>
       </div>
     </div>

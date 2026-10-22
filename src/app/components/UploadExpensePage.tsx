@@ -1,5 +1,6 @@
 "use client";
 
+import SubmitButton from "./SubmitButton";
 import { useState, useCallback, useRef, useEffect } from "react";
 import useSWR, { mutate } from "swr";
 import { useRouter, useParams } from "next/navigation";
@@ -538,6 +539,8 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
       return;
     }
 
+    // Busy from the click itself: the duplicate check below already waits on the server.
+    setIsPending(true);
     try {
       const dupes = await checkDuplicateExpenses(
         workspaceId,
@@ -546,6 +549,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
         form.provider_id || null,
       );
       if (dupes.length > 0) {
+        setIsPending(false);
         showDuplicateModal(dupes);
         return;
       }
@@ -1119,52 +1123,29 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
           >
             Cancelar
           </button>
-          <button
-            type="submit"
-            disabled={isPending || success || !workspaceId || !userId || extracting}
-            className={`${PRIMARY_BUTTON_CLASS} flex-1 justify-center sm:flex-none min-h-11`}
+          <SubmitButton
+            // Stays busy after saving, until the redirect to the list.
+            pending={isPending || success}
+            disabled={!workspaceId || !userId || extracting}
+            className="flex-1 justify-center sm:flex-none min-h-11"
           >
-            {isPending ? (
-              <>
-                <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeOpacity="0.25"
-                  />
-                  <path
-                    d="M12 2a10 10 0 0 1 10 10"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                  />
-                </svg>
-                Guardando...
-              </>
-            ) : (
-              <>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M17 21v-8H7v8M7 3v5h8"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-                Guardar gasto
-              </>
-            )}
-          </button>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path
+                d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M17 21v-8H7v8M7 3v5h8"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+            Guardar gasto
+          </SubmitButton>
         </div>
       </form>
     </FormSection>

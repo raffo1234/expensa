@@ -1,5 +1,6 @@
 "use client";
 
+import SubmitButton from "./SubmitButton";
 import { useGlobalState } from "@/lib/globalState";
 import { mutate } from "swr";
 import AddProviderModal from "@/components/AddProviderModal";
@@ -29,12 +30,7 @@ import { Category } from "@/types/CategoryType";
 import { ExpenseAttachment } from "@/types/ExpenseAttachment";
 import { Provider } from "@/types/ProviderType";
 import FormSection from "@/components/FormSection";
-import {
-  INPUT_CLASS,
-  PRIMARY_BUTTON_CLASS,
-  SECONDARY_BUTTON_CLASS,
-  SELECT_CLASS,
-} from "@/constants";
+import { INPUT_CLASS, SECONDARY_BUTTON_CLASS, SELECT_CLASS } from "@/constants";
 import FormInnerSection from "@/components/FormInnerSection";
 import SectionTitle from "@/components/SectionTitle";
 import Field from "@/components/Field";
@@ -331,6 +327,7 @@ export default function EditExpenseForm() {
       return;
     }
 
+    let saved = false;
     setSaving(true);
     setSaveError(null);
     setUploadProgress({});
@@ -393,6 +390,7 @@ export default function EditExpenseForm() {
         }),
       );
 
+      saved = true;
       router.push(`/admin/workspaces/${workspaceSlug}/expenses/${expenseId}`);
     } catch (err: unknown) {
       if ((err as Error)?.message === "Upload cancelado") {
@@ -401,7 +399,8 @@ export default function EditExpenseForm() {
         setSaveError(err instanceof Error ? err.message : "Error al guardar");
       }
     } finally {
-      setSaving(false);
+      // After a save the button stays busy until the page changes.
+      if (!saved) setSaving(false);
     }
   }
 
@@ -783,31 +782,15 @@ export default function EditExpenseForm() {
             >
               Cancelar
             </button>
-            <button
+            <SubmitButton
+              type="button"
               onClick={handleSave}
-              disabled={saving || !amount || !paidAt}
-              className={`${PRIMARY_BUTTON_CLASS} flex-1 justify-center sm:flex-none min-h-11`}
+              pending={saving}
+              disabled={!amount || !paidAt}
+              className="flex-1 justify-center sm:flex-none min-h-11"
             >
-              {saving && (
-                <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeOpacity="0.25"
-                  />
-                  <path
-                    d="M12 2a10 10 0 0 1 10 10"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              )}
-              {saving ? "Guardando..." : "Guardar cambios"}
-            </button>
+              Guardar cambios
+            </SubmitButton>
           </div>
         </div>
       )}

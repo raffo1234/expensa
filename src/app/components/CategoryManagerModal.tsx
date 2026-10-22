@@ -1,8 +1,9 @@
 "use client";
 
+import SubmitButton from "./SubmitButton";
 import { useState } from "react";
 import { useGlobalState } from "@/lib/globalState";
-import { INPUT_CLASS, PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from "@/constants";
+import { INPUT_CLASS, SECONDARY_BUTTON_CLASS } from "@/constants";
 import { createCategory, updateCategory, deleteCategory } from "@/actions/categories";
 import Field from "./Field";
 
@@ -192,14 +193,9 @@ export default function CategoryManagerModal({
               Cancelar
             </button>
           )}
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={isPending}
-            className={PRIMARY_BUTTON_CLASS}
-          >
-            {isPending ? "Guardando..." : isEditing ? "Actualizar" : "Agregar"}
-          </button>
+          <SubmitButton type="button" onClick={handleSave} pending={isPending}>
+            {isEditing ? "Actualizar" : "Agregar"}
+          </SubmitButton>
         </div>
       </div>
 

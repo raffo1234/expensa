@@ -1,5 +1,6 @@
 import { signIn } from "@/lib/auth";
 import LogoLink from "@/components/LogoLink";
+import FormPendingButton from "@/components/FormPendingButton";
 import { ICON_SIZE } from "@/constants";
 import Image from "next/image";
 
@@ -21,9 +22,9 @@ export default function Page() {
               await signIn("google");
             }}
           >
-            <button
-              type="submit"
+            <FormPendingButton
               className="flex justify-center items-center gap-3 w-full cursor-pointer font-medium text-sm px-4 py-3.5 rounded-xl border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 text-gray-700"
+              pendingLabel="Signing in…"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -49,7 +50,7 @@ export default function Page() {
                 />
               </svg>
               Continue with Google
-            </button>
+            </FormPendingButton>
           </form>
 
           <p className="text-xs text-gray-400 text-center mt-8">

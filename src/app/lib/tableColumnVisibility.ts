@@ -1,0 +1,47 @@
+// Generated: one literal class per column position, so Tailwind can see them.
+// A column hidden "below" a level is hidden until the TABLE'S CARD (its
+// @container) is at least that wide: md 768px, lg 896px, xl 1152px.
+export const HIDE_BELOW: Record<"md" | "lg" | "xl", Record<number, string>> = {
+  md: {
+    1: "[&_tr>*:nth-child(1)]:hidden @3xl:[&_tr>*:nth-child(1)]:table-cell",
+    2: "[&_tr>*:nth-child(2)]:hidden @3xl:[&_tr>*:nth-child(2)]:table-cell",
+    3: "[&_tr>*:nth-child(3)]:hidden @3xl:[&_tr>*:nth-child(3)]:table-cell",
+    4: "[&_tr>*:nth-child(4)]:hidden @3xl:[&_tr>*:nth-child(4)]:table-cell",
+    5: "[&_tr>*:nth-child(5)]:hidden @3xl:[&_tr>*:nth-child(5)]:table-cell",
+    6: "[&_tr>*:nth-child(6)]:hidden @3xl:[&_tr>*:nth-child(6)]:table-cell",
+    7: "[&_tr>*:nth-child(7)]:hidden @3xl:[&_tr>*:nth-child(7)]:table-cell",
+    8: "[&_tr>*:nth-child(8)]:hidden @3xl:[&_tr>*:nth-child(8)]:table-cell",
+    9: "[&_tr>*:nth-child(9)]:hidden @3xl:[&_tr>*:nth-child(9)]:table-cell",
+    10: "[&_tr>*:nth-child(10)]:hidden @3xl:[&_tr>*:nth-child(10)]:table-cell",
+    11: "[&_tr>*:nth-child(11)]:hidden @3xl:[&_tr>*:nth-child(11)]:table-cell",
+    12: "[&_tr>*:nth-child(12)]:hidden @3xl:[&_tr>*:nth-child(12)]:table-cell",
+  },
+  lg: {
+    1: "[&_tr>*:nth-child(1)]:hidden @4xl:[&_tr>*:nth-child(1)]:table-cell",
+    2: "[&_tr>*:nth-child(2)]:hidden @4xl:[&_tr>*:nth-child(2)]:table-cell",
+    3: "[&_tr>*:nth-child(3)]:hidden @4xl:[&_tr>*:nth-child(3)]:table-cell",
+    4: "[&_tr>*:nth-child(4)]:hidden @4xl:[&_tr>*:nth-child(4)]:table-cell",
+    5: "[&_tr>*:nth-child(5)]:hidden @4xl:[&_tr>*:nth-child(5)]:table-cell",
+    6: "[&_tr>*:nth-child(6)]:hidden @4xl:[&_tr>*:nth-child(6)]:table-cell",
+    7: "[&_tr>*:nth-child(7)]:hidden @4xl:[&_tr>*:nth-child(7)]:table-cell",
+    8: "[&_tr>*:nth-child(8)]:hidden @4xl:[&_tr>*:nth-child(8)]:table-cell",
+    9: "[&_tr>*:nth-child(9)]:hidden @4xl:[&_tr>*:nth-child(9)]:table-cell",
+    10: "[&_tr>*:nth-child(10)]:hidden @4xl:[&_tr>*:nth-child(10)]:table-cell",
+    11: "[&_tr>*:nth-child(11)]:hidden @4xl:[&_tr>*:nth-child(11)]:table-cell",
+    12: "[&_tr>*:nth-child(12)]:hidden @4xl:[&_tr>*:nth-child(12)]:table-cell",
+  },
+  xl: {
+    1: "[&_tr>*:nth-child(1)]:hidden @6xl:[&_tr>*:nth-child(1)]:table-cell",
+    2: "[&_tr>*:nth-child(2)]:hidden @6xl:[&_tr>*:nth-child(2)]:table-cell",
+    3: "[&_tr>*:nth-child(3)]:hidden @6xl:[&_tr>*:nth-child(3)]:table-cell",
+    4: "[&_tr>*:nth-child(4)]:hidden @6xl:[&_tr>*:nth-child(4)]:table-cell",
+    5: "[&_tr>*:nth-child(5)]:hidden @6xl:[&_tr>*:nth-child(5)]:table-cell",
+    6: "[&_tr>*:nth-child(6)]:hidden @6xl:[&_tr>*:nth-child(6)]:table-cell",
+    7: "[&_tr>*:nth-child(7)]:hidden @6xl:[&_tr>*:nth-child(7)]:table-cell",
+    8: "[&_tr>*:nth-child(8)]:hidden @6xl:[&_tr>*:nth-child(8)]:table-cell",
+    9: "[&_tr>*:nth-child(9)]:hidden @6xl:[&_tr>*:nth-child(9)]:table-cell",
+    10: "[&_tr>*:nth-child(10)]:hidden @6xl:[&_tr>*:nth-child(10)]:table-cell",
+    11: "[&_tr>*:nth-child(11)]:hidden @6xl:[&_tr>*:nth-child(11)]:table-cell",
+    12: "[&_tr>*:nth-child(12)]:hidden @6xl:[&_tr>*:nth-child(12)]:table-cell",
+  },
+};

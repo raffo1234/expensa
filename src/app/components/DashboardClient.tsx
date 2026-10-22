@@ -416,9 +416,9 @@ const TruncatedTick = ({
 const RECENT_COLUMNS: DataTableColumn[] = [
   { label: "Factura" },
   { label: "Proveedor" },
-  { label: "Categoría" },
-  { label: "Etapa" },
-  { label: "Fecha de pago" },
+  { label: "Categoría", hideBelow: "lg" },
+  { label: "Etapa", hideBelow: "xl" },
+  { label: "Fecha de pago", hideBelow: "md" },
   { label: "Monto", align: "right" },
 ];
 

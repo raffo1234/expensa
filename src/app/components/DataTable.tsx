@@ -3,12 +3,21 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { MouseEvent, ReactNode } from "react";
+import { HIDE_BELOW } from "@/lib/tableColumnVisibility";
 
 // Data table styled after Fly.io's dashboard tables. Spacing, type and color
 // live in Th/Td so every table that uses them stays identical.
 
 type Align = "left" | "right" | "center";
-export type DataTableColumn = { label: string; align?: Align };
+export type DataTableColumn = {
+  label: string;
+  align?: Align;
+  /**
+   * Low-priority column: hidden while the table's card is narrower than this
+   * level (md 768px, lg 896px, xl 1152px), so the table fits without scrolling.
+   */
+  hideBelow?: "md" | "lg" | "xl";
+};
 
 const ALIGN: Record<Align, string> = {
   left: "text-left",
@@ -157,11 +166,17 @@ export default function DataTable({
   children?: ReactNode;
 }) {
   const columnCount = columns.length + (numbered ? 1 : 0);
+  // Classes on the <table> that hide low-priority columns (header and cells
+  // alike, by position) until the card is wide enough for them.
+  const offset = numbered ? 1 : 0;
+  const hideClasses = columns
+    .map((col, i) => (col.hideBelow ? HIDE_BELOW[col.hideBelow][i + 1 + offset] : ""))
+    .join(" ");
 
   return (
-    <div className="overflow-hidden rounded-card bg-white shadow-card">
+    <div className="@container overflow-hidden rounded-card bg-white shadow-card">
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-navy-200">
+        <table className={`w-full divide-y divide-navy-200 ${hideClasses}`}>
           <thead className="text-navy-900">
             <tr>
               {numbered && <Th className="w-0">#</Th>}

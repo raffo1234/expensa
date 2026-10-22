@@ -2,25 +2,26 @@ import type { DataTableColumn } from "@/components/DataTable";
 
 // Column sets shared by each table and its loading skeleton, so the skeleton
 // always shows the same headers as the real table. Kept outside the client
-// components so server pages can import them.
+// components so server pages can import them. `hideBelow` marks the columns
+// that give way first when the table's card is narrow, so it never scrolls.
 
 export const EXPENSE_COLUMNS: DataTableColumn[] = [
   { label: "Factura" },
   { label: "Proveedor" },
-  { label: "Categoría" },
-  { label: "Método" },
-  { label: "Fecha de emisión" },
+  { label: "Categoría", hideBelow: "lg" },
+  { label: "Método", hideBelow: "xl" },
+  { label: "Fecha de emisión", hideBelow: "md" },
   { label: "Monto", align: "right" },
-  { label: "Materiales", align: "center" },
+  { label: "Materiales", align: "center", hideBelow: "xl" },
   { label: "" },
 ];
 
 export const summaryColumns = (tab: "facturas" | "gastos"): DataTableColumn[] => [
   { label: tab === "facturas" ? "Factura" : "Descripción" },
   { label: "Proveedor" },
-  { label: "Categoría" },
-  { label: "Método de pago" },
-  { label: "Fecha emisión" },
+  { label: "Categoría", hideBelow: "lg" },
+  { label: "Método de pago", hideBelow: "xl" },
+  { label: "Fecha emisión", hideBelow: "md" },
   { label: "Monto", align: "right" },
   { label: "Adjuntos" },
 ];
@@ -33,20 +34,20 @@ export const MATERIAL_SUMMARY_COLUMNS: DataTableColumn[] = [
 
 export const MATERIAL_DETAIL_COLUMNS: DataTableColumn[] = [
   { label: "Material" },
-  { label: "Marca" },
-  { label: "Nivel" },
-  { label: "Proveedor" },
-  { label: "Fecha de pago" },
+  { label: "Marca", hideBelow: "xl" },
+  { label: "Nivel", hideBelow: "lg" },
+  { label: "Proveedor", hideBelow: "md" },
+  { label: "Fecha de pago", hideBelow: "md" },
   { label: "Cantidad", align: "right" },
-  { label: "P. unit.", align: "right" },
+  { label: "P. unit.", align: "right", hideBelow: "xl" },
   { label: "Subtotal", align: "right" },
 ];
 
 export const WORKSPACE_COLUMNS: DataTableColumn[] = [
   { label: "Proyecto" },
-  { label: "URL" },
+  { label: "URL", hideBelow: "md" },
   { label: "Gastos", align: "right" },
-  { label: "Creado" },
+  { label: "Creado", hideBelow: "md" },
   { label: "" },
 ];
 

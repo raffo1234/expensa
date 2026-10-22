@@ -66,7 +66,7 @@ export default async function AdminLayout({ children }: Readonly<AdminLayoutProp
               ) : null}
             </Suspense>
             <Suspense>
-              <AdminLayoutContent isContracted={isMenuContracted}>{children}</AdminLayoutContent>
+              <AdminLayoutContent>{children}</AdminLayoutContent>
             </Suspense>
           </main>
         </div>

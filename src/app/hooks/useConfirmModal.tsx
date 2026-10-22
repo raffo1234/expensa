@@ -2,6 +2,7 @@
 
 import FormSection from "@/components/FormSection";
 import { useGlobalState } from "@/lib/globalState";
+import { DANGER_BUTTON_CLASS, PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from "@/constants";
 
 interface ConfirmModalOptions {
   title?: string;
@@ -26,10 +27,14 @@ function ConfirmModalContent({
     await onConfirm();
   };
 
-  const confirmColors = {
-    danger: "bg-rose-600 hover:bg-rose-700 text-white",
-    warning: "bg-amber-500 hover:bg-amber-600 text-white",
-    default: "bg-violet-600 hover:bg-violet-700 text-white",
+  // Same buttons as the rest of the app (constants), not a modal-only style.
+  const confirmClass = {
+    danger: DANGER_BUTTON_CLASS,
+    warning: DANGER_BUTTON_CLASS.replace(
+      "bg-rose-600 hover:bg-rose-700",
+      "bg-amber-500 hover:bg-amber-600",
+    ),
+    default: PRIMARY_BUTTON_CLASS,
   };
 
   const iconColors = {
@@ -72,18 +77,10 @@ function ConfirmModalContent({
         <h2 className="text-xl mb-2 font-book text-navy-900">{title}</h2>
         {description && <p className="text-slate-500 text-sm mb-8 max-w-sm">{description}</p>}
         <div className="flex gap-3 mt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-6 py-2 cursor-pointer rounded-full border border-slate-200 hover:bg-slate-100 active:bg-slate-200 transition-colors duration-200"
-          >
+          <button type="button" onClick={onClose} className={SECONDARY_BUTTON_CLASS}>
             {cancelLabel}
           </button>
-          <button
-            type="button"
-            onClick={handleConfirm}
-            className={`px-6 py-2 rounded-full cursor-pointer transition-colors duration-200 ${confirmColors[variant]}`}
-          >
+          <button type="button" onClick={handleConfirm} className={confirmClass[variant]}>
             {confirmLabel}
           </button>
         </div>

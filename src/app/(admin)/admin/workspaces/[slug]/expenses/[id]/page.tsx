@@ -8,6 +8,7 @@ import FormInnerSection from "@/components/FormInnerSection";
 import SectionTitle from "@/components/SectionTitle";
 import { Bone } from "@/components/Skeleton";
 import DeleteAttachmentButton from "@/components/DeleteAttachmentButton";
+import AttachmentDropArea from "@/components/AttachmentDropArea";
 import { ICON_SIZE, PRIMARY_BUTTON_CLASS } from "@/constants";
 import { formatAmount } from "@/utils/formatAmount";
 import { formatSafeDate } from "@/lib/formatSafeDate";
@@ -302,35 +303,25 @@ async function ExpenseDetail({ slug, expenseId }: { slug: string; expenseId: str
           </section>
         )}
 
-        <section>
-          <SectionTitle>Adjuntos ({attachments.length})</SectionTitle>
-          {attachments.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              {attachments.map((att) => (
-                <FileTile key={att.id} attachment={att} />
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-xl border border-dashed border-gray-200 px-5 py-8 text-center">
-              <p className="text-sm text-gray-500">Este gasto no tiene adjuntos.</p>
-              <Link
-                href={editUrl}
-                className="mt-1 inline-block text-sm font-medium text-violet-600 hover:text-violet-700"
-              >
-                Agregar factura o comprobante
-              </Link>
-            </div>
-          )}
-        </section>
-
-        {/* Footer: who registered it, and Editar again so it's at hand after scrolling. */}
-        <div className="flex flex-col-reverse gap-4 border-t border-gray-100 pt-6 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-gray-400">
-            Registrado el {registeredAtFormatter.format(new Date(expense.created_at))}
-            {expense.created_by_user && <> por {expense.created_by_user.email}</>}
-          </p>
+        {/* Editar again, closing the expense data; attachments below are managed on their own. */}
+        <div className="flex justify-end">
           <EditLink href={editUrl} />
         </div>
+
+        <section>
+          <SectionTitle>Adjuntos ({attachments.length})</SectionTitle>
+          {/* Drop files anywhere on the grid, or click the last tile, to add more. */}
+          <AttachmentDropArea expenseId={expense.id} empty={attachments.length === 0}>
+            {attachments.map((att) => (
+              <FileTile key={att.id} attachment={att} />
+            ))}
+          </AttachmentDropArea>
+        </section>
+
+        <p className="border-t border-gray-100 pt-6 text-xs text-gray-400">
+          Registrado el {registeredAtFormatter.format(new Date(expense.created_at))}
+          {expense.created_by_user && <> por {expense.created_by_user.email}</>}
+        </p>
       </div>
     </FormSection>
   );

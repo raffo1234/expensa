@@ -7,7 +7,8 @@ import FormSection from "@/components/FormSection";
 import FormInnerSection from "@/components/FormInnerSection";
 import SectionTitle from "@/components/SectionTitle";
 import { Bone } from "@/components/Skeleton";
-import { PRIMARY_BUTTON_CLASS } from "@/constants";
+import DeleteAttachmentButton from "@/components/DeleteAttachmentButton";
+import { ICON_SIZE, PRIMARY_BUTTON_CLASS } from "@/constants";
 import { formatAmount } from "@/utils/formatAmount";
 import { formatSafeDate } from "@/lib/formatSafeDate";
 import { getExpenseItems, type ExpenseItem } from "@/actions/expenses";
@@ -82,6 +83,28 @@ const registeredAtFormatter = new Intl.DateTimeFormat("es-PE", {
 
 const Empty = () => <span className="text-gray-300">—</span>;
 
+function EditLink({ href }: { href: string }) {
+  return (
+    <Link href={href} className={`${PRIMARY_BUTTON_CLASS} justify-center`}>
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+      >
+        <path d="M12 20h9" />
+        <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+      </svg>
+      Editar
+    </Link>
+  );
+}
+
 function Fact({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="min-w-0">
@@ -97,47 +120,53 @@ function FileTile({ attachment }: { attachment: ExpenseAttachment }) {
   const name = attachment.file_name ?? attachment.storage_path.split("/").pop();
 
   return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      title={name}
-      className="group block rounded-xl border border-gray-200 bg-gray-50 overflow-hidden hover:border-violet-300 hover:shadow-md transition-all"
-    >
-      <div className="aspect-[4/3] flex items-center justify-center bg-white border-b border-gray-100 overflow-hidden">
-        {image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={url}
-            alt={name ?? "adjunto"}
-            loading="lazy"
-            className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
-          />
-        ) : (
-          <span className="w-12 h-14 rounded-md bg-rose-50 border border-rose-100 flex items-end justify-center pb-2 text-[10px] font-bold text-rose-500">
-            PDF
-          </span>
-        )}
+    // The delete button sits on top of the tile, outside the link, so it never opens the file.
+    <div className="relative">
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        title={name}
+        className="group block rounded-xl border border-gray-200 bg-gray-50 overflow-hidden hover:border-violet-300 hover:shadow-md transition-all"
+      >
+        <div className="aspect-[4/3] flex items-center justify-center bg-white border-b border-gray-100 overflow-hidden">
+          {image ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={url}
+              alt={name ?? "adjunto"}
+              loading="lazy"
+              className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
+            />
+          ) : (
+            <span className="w-12 h-14 rounded-md bg-rose-50 border border-rose-100 flex items-end justify-center pb-2 text-[10px] font-bold text-rose-500">
+              PDF
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2 px-3 py-2">
+          <p className="flex-1 min-w-0 text-xs font-medium text-gray-700 truncate">{name}</p>
+          <svg
+            width={ICON_SIZE}
+            height={ICON_SIZE}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            className="text-gray-300 group-hover:text-violet-500 flex-shrink-0 transition-colors"
+            aria-hidden
+          >
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+            <polyline points="15 3 21 3 21 9" />
+            <line x1="10" y1="14" x2="21" y2="3" />
+          </svg>
+        </div>
+      </a>
+      <div className="absolute top-2 right-2">
+        <DeleteAttachmentButton attachmentId={attachment.id} fileName={name ?? "adjunto"} />
       </div>
-      <div className="flex items-center gap-2 px-3 py-2">
-        <p className="flex-1 min-w-0 text-xs font-medium text-gray-700 truncate">{name}</p>
-        <svg
-          width="12"
-          height="12"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          className="text-gray-300 group-hover:text-violet-500 flex-shrink-0 transition-colors"
-          aria-hidden
-        >
-          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-          <polyline points="15 3 21 3 21 9" />
-          <line x1="10" y1="14" x2="21" y2="3" />
-        </svg>
-      </div>
-    </a>
+    </div>
   );
 }
 
@@ -233,23 +262,7 @@ async function ExpenseDetail({ slug, expenseId }: { slug: string; expenseId: str
                 )}
               </div>
             </div>
-            <Link href={editUrl} className={`${PRIMARY_BUTTON_CLASS} justify-center`}>
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                <path d="M12 20h9" />
-                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
-              </svg>
-              Editar
-            </Link>
+            <EditLink href={editUrl} />
           </div>
 
           <dl className="mt-6 pt-5 border-t border-gray-100 grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-5">
@@ -310,10 +323,14 @@ async function ExpenseDetail({ slug, expenseId }: { slug: string; expenseId: str
           )}
         </section>
 
-        <p className="text-xs text-gray-400">
-          Registrado el {registeredAtFormatter.format(new Date(expense.created_at))}
-          {expense.created_by_user && <> por {expense.created_by_user.email}</>}
-        </p>
+        {/* Footer: who registered it, and Editar again so it's at hand after scrolling. */}
+        <div className="flex flex-col-reverse gap-4 border-t border-gray-100 pt-6 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-gray-400">
+            Registrado el {registeredAtFormatter.format(new Date(expense.created_at))}
+            {expense.created_by_user && <> por {expense.created_by_user.email}</>}
+          </p>
+          <EditLink href={editUrl} />
+        </div>
       </div>
     </FormSection>
   );

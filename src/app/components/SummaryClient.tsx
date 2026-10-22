@@ -6,7 +6,14 @@ import { listAllSummaryExpenses, listSummaryExpenses } from "@/actions/summaryQu
 import { getCategories } from "@/actions/lookups";
 import { useDebouncedCallback } from "use-debounce";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { INPUT_CLASS, SELECT_CLASS, HEADER_LINK_CLASS, ICON_SIZE } from "@/constants";
+import {
+  INPUT_CLASS,
+  SELECT_CLASS,
+  HEADER_LINK_CLASS,
+  HEADER_LINK_ICON,
+  HEADER_LINK_LABEL,
+  ICON_SIZE,
+} from "@/constants";
 import { csvEscape } from "@/utils/csv";
 import { formatAmount, totalsByCurrency } from "@/utils/formatAmount";
 import getAttachmentUrl from "@/lib/getAttachmentUrl";
@@ -461,7 +468,8 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
         disabled={!workspaceId}
         className={HEADER_LINK_CLASS}
       >
-        Exportar CSV
+        <Icon icon="solar:file-download-linear" className={HEADER_LINK_ICON} aria-hidden />
+        <span className={HEADER_LINK_LABEL}>Exportar CSV</span>
       </button>
       <button
         type="button"
@@ -482,7 +490,8 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
         disabled={!workspaceId}
         className={HEADER_LINK_CLASS}
       >
-        Descargar PDF
+        <Icon icon="solar:download-minimalistic-linear" className={HEADER_LINK_ICON} aria-hidden />
+        <span className={HEADER_LINK_LABEL}>Descargar PDF</span>
       </button>
     </>
   );

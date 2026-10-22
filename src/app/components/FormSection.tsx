@@ -48,7 +48,7 @@ export default function FormSection({
           {actions && (
             <nav
               aria-label="Acciones de la sección"
-              className="flex flex-wrap items-center gap-x-4 gap-y-1"
+              className="flex flex-wrap items-center gap-x-1 gap-y-1 sm:gap-x-4"
             >
               {actions}
             </nav>

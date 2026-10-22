@@ -73,8 +73,14 @@ export const SECONDARY_BUTTON_CLASS =
 
 // Section-header text links (Fly.io style): plain navy text, darker on hover.
 // Used for secondary actions such as exports next to a page's main action.
+// Section-header links (Fly.io style): Fly's link violet, an icon before the
+// label and a soft underline on hover, so they read as links, not text.
+// On phones they're icon-only 44px targets (wrap the label in HEADER_LINK_LABEL).
 export const HEADER_LINK_CLASS =
-  "inline-flex min-h-11 sm:min-h-0 items-center rounded-sm text-base text-link-muted transition-colors hover:text-link-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none cursor-pointer";
+  "inline-flex size-11 justify-center sm:size-auto sm:justify-start items-center gap-1.5 rounded-sm text-base text-link-hover decoration-violet-300 underline-offset-4 transition-colors hover:text-violet-900 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none cursor-pointer";
+
+export const HEADER_LINK_LABEL = "sr-only sm:not-sr-only";
+export const HEADER_LINK_ICON = "size-[19px] sm:size-4";
 
 export const PRIMARY_BUTTON_XS_CLASS =
   "whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:pointer-events-none inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-violet-600 hover:bg-violet-700 text-white text-xs font-medium transition-colors";

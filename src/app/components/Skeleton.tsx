@@ -42,9 +42,12 @@ export function LabeledFieldSkeleton({ className = "" }: { className?: string })
 /** Section-header links (Fly.io style), e.g. "Exportar CSV". */
 export function HeaderLinksSkeleton({ count }: { count: number }) {
   return (
-    <span className="flex items-center gap-x-4">
+    // Icon-only on phones, icon + label from sm, like the real header links.
+    <span className="flex items-center gap-x-1 sm:gap-x-4">
       {Array.from({ length: count }, (_, i) => (
-        <Bone key={i} className="h-3.5 w-20" />
+        <span key={i} className="flex size-11 items-center justify-center sm:size-auto">
+          <Bone className="size-[19px] rounded-md sm:h-3.5 sm:w-24 sm:rounded" />
+        </span>
       ))}
     </span>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@iconify/react/dist/iconify.js";
 import { useState, useEffect, useCallback } from "react";
 import toast from "react-hot-toast";
 import useSWR from "swr";
@@ -10,6 +11,8 @@ import {
   INPUT_CLASS,
   SELECT_CLASS,
   HEADER_LINK_CLASS,
+  HEADER_LINK_ICON,
+  HEADER_LINK_LABEL,
 } from "@/constants";
 import Link from "next/link";
 import { Expense, ExpenseRow } from "@/types/ExpenseType";
@@ -470,14 +473,16 @@ export default function ExpensesClient({
   const headerLinks = (
     <>
       <Link href={`/admin/workspaces/${slug}/materials`} className={HEADER_LINK_CLASS}>
-        Materiales
+        <Icon icon="solar:box-minimalistic-linear" className={HEADER_LINK_ICON} aria-hidden />
+        <span className={HEADER_LINK_LABEL}>Materiales</span>
       </Link>
       <button
         type="button"
         onClick={() => exportExpensesCsv(workspace.id, debouncedSearch, filters)}
         className={HEADER_LINK_CLASS}
       >
-        Exportar CSV
+        <Icon icon="solar:file-download-linear" className={HEADER_LINK_ICON} aria-hidden />
+        <span className={HEADER_LINK_LABEL}>Exportar CSV</span>
       </button>
       <button
         type="button"
@@ -495,7 +500,8 @@ export default function ExpensesClient({
         }
         className={HEADER_LINK_CLASS}
       >
-        Descargar PDF
+        <Icon icon="solar:download-minimalistic-linear" className={HEADER_LINK_ICON} aria-hidden />
+        <span className={HEADER_LINK_LABEL}>Descargar PDF</span>
       </button>
     </>
   );

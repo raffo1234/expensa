@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@iconify/react/dist/iconify.js";
 import { useState, useRef, useEffect } from "react";
 import useSWR, { mutate } from "swr";
 import { useParams } from "next/navigation";
@@ -23,6 +24,8 @@ import { useClientPagination } from "@/hooks/useClientPagination";
 import { PROVIDER_COLUMNS } from "@/lib/tableColumns";
 import {
   HEADER_LINK_CLASS,
+  HEADER_LINK_ICON,
+  HEADER_LINK_LABEL,
   ICON_SIZE,
   PRIMARY_BUTTON_CLASS,
   SECONDARY_BUTTON_CLASS,
@@ -362,7 +365,8 @@ export default function ProvidersPage() {
         backUrl={`/admin/workspaces/${workspaceSlug}/expenses`}
         actions={
           <Link href={`/admin/workspaces/${workspaceSlug}/materials`} className={HEADER_LINK_CLASS}>
-            Materiales
+            <Icon icon="solar:box-minimalistic-linear" className={HEADER_LINK_ICON} aria-hidden />
+            <span className={HEADER_LINK_LABEL}>Materiales</span>
           </Link>
         }
       >

@@ -9,9 +9,12 @@ import FormInnerSection from "@/components/FormInnerSection";
 import SectionTitle from "@/components/SectionTitle";
 import { Bone } from "@/components/Skeleton";
 import DeleteAttachmentButton from "@/components/DeleteAttachmentButton";
-import AttachmentKindSelect from "@/components/AttachmentKindSelect";
-import GuideStatusBadge from "@/components/GuideStatusBadge";
-import { guideStatus, type AttachmentKind } from "@/lib/dispatchGuide";
+import {
+  AttachmentKindSelect,
+  AttachmentKindsProvider,
+  GuideNotice,
+} from "@/components/AttachmentKinds";
+import { requiresGuide, type AttachmentKind } from "@/lib/dispatchGuide";
 import AttachmentDropArea from "@/components/AttachmentDropArea";
 import { ICON_SIZE, PRIMARY_BUTTON_CLASS } from "@/constants";
 import { formatAmount } from "@/utils/formatAmount";
@@ -174,7 +177,7 @@ function FileTile({ attachment }: { attachment: ExpenseAttachment }) {
         <DeleteAttachmentButton attachmentId={attachment.id} fileName={name ?? "adjunto"} />
       </div>
       <div className="mt-2">
-        <AttachmentKindSelect attachmentId={attachment.id} kind={attachment.kind} />
+        <AttachmentKindSelect attachmentId={attachment.id} />
       </div>
     </div>
   );
@@ -241,7 +244,6 @@ async function ExpenseDetail({ slug, expenseId }: { slug: string; expenseId: str
   const ref = invoiceRef(expense);
   const categoryColor = expense.category?.color ?? DEFAULT_CATEGORY_COLOR;
   const attachments = expense.expense_attachment ?? [];
-  const guide = guideStatus(expense, attachments.filter((a) => a.kind === "guia_remision").length);
   const editUrl = `/admin/workspaces/${slug}/expenses/${expense.id}/edit`;
 
   return (
@@ -322,27 +324,20 @@ async function ExpenseDetail({ slug, expenseId }: { slug: string; expenseId: str
           <EditLink href={editUrl} />
         </div>
 
-        <section>
-          <SectionTitle>Adjuntos ({attachments.length})</SectionTitle>
-          {guide === "missing" && (
-            <div
-              role="status"
-              className="mb-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
-            >
-              <GuideStatusBadge status="missing" />
-              <span>
-                Esta factura necesita su guía de remisión. Súbela aquí o, si ya está entre los
-                adjuntos, cambia su tipo a «Guía de remisión».
-              </span>
-            </div>
-          )}
-          {/* Drop files anywhere on the grid, or click the last tile, to add more. */}
-          <AttachmentDropArea expenseId={expense.id} empty={attachments.length === 0}>
-            {attachments.map((att) => (
-              <FileTile key={att.id} attachment={att} />
-            ))}
-          </AttachmentDropArea>
-        </section>
+        <AttachmentKindsProvider
+          initial={Object.fromEntries(attachments.map((a) => [a.id, a.kind]))}
+        >
+          <section>
+            <SectionTitle>Adjuntos ({attachments.length})</SectionTitle>
+            <GuideNotice requiresGuide={requiresGuide(expense)} />
+            {/* Drop files anywhere on the grid, or click the last tile, to add more. */}
+            <AttachmentDropArea expenseId={expense.id} empty={attachments.length === 0}>
+              {attachments.map((att) => (
+                <FileTile key={att.id} attachment={att} />
+              ))}
+            </AttachmentDropArea>
+          </section>
+        </AttachmentKindsProvider>
 
         <p className="border-t border-gray-100 pt-6 text-xs text-gray-400">
           Registrado el {registeredAtFormatter.format(new Date(expense.created_at))}

@@ -84,7 +84,14 @@ export function AttachmentKindSelect({ attachmentId }: { attachmentId: string })
 }
 
 /** "This invoice needs its guide" notice, following the types as they change. */
-export function GuideNotice({ requiresGuide }: { requiresGuide: boolean }) {
+export function GuideNotice({
+  requiresGuide,
+  readOnly = false,
+}: {
+  requiresGuide: boolean;
+  /** View-only screens state the fact without asking to upload. */
+  readOnly?: boolean;
+}) {
   const { kinds } = useKinds();
   const hasGuide = Object.values(kinds).includes("guia_remision");
   if (!requiresGuide || hasGuide) return null;
@@ -95,8 +102,9 @@ export function GuideNotice({ requiresGuide }: { requiresGuide: boolean }) {
     >
       <GuideStatusBadge status="missing" />
       <span>
-        Esta factura necesita su guía de remisión. Súbela aquí o, si ya está entre los adjuntos,
-        cambia su tipo a «Guía de remisión».
+        {readOnly
+          ? "Esta factura aún no tiene su guía de remisión."
+          : "Esta factura necesita su guía de remisión. Súbela aquí o, si ya está entre los adjuntos, cambia su tipo a «Guía de remisión»."}
       </span>
     </div>
   );

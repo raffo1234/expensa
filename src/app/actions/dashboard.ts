@@ -2,7 +2,8 @@
 
 import { getCurrentUser } from "@/lib/getCurrentUser";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { requireWorkspaceAccess } from "@/lib/access";
+import { getAccessibleWorkspaceIds, requirePermission, requireWorkspaceAccess } from "@/lib/access";
+import { Permissions } from "@/types/propertyState";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -69,13 +70,15 @@ export type DashboardData = {
 // ─── Queries ──────────────────────────────────────────────────────────────────
 
 export async function getWorkspaces(): Promise<Workspace[]> {
-  const user = await getCurrentUser();
-  if (!user) throw new Error("No autenticado");
+  await requirePermission(Permissions.VIEW_DASHBOARD);
+  // Projects the user created or was assigned to (same rule as everywhere else).
+  const ids = await getAccessibleWorkspaceIds();
+  if (!ids.length) return [];
 
   const { data, error } = await supabaseAdmin
     .from("workspace")
     .select("id, name, slug")
-    .eq("created_by", user.id)
+    .in("id", ids)
     .order("name");
 
   if (error) throw new Error(error.message);
@@ -83,6 +86,7 @@ export async function getWorkspaces(): Promise<Workspace[]> {
 }
 
 export async function getFiltersData(workspaceId: string): Promise<FiltersData> {
+  await requirePermission(Permissions.VIEW_DASHBOARD);
   await requireWorkspaceAccess(workspaceId);
   const [s, l] = await Promise.all([
     supabaseAdmin
@@ -100,6 +104,7 @@ export async function getFiltersData(workspaceId: string): Promise<FiltersData> 
  * Solo trae currency + amount para minimizar la transferencia.
  */
 export async function getWorkspaceTotal(workspaceId: string): Promise<WorkspaceTotal[]> {
+  await requirePermission(Permissions.VIEW_DASHBOARD);
   await requireWorkspaceAccess(workspaceId);
   const user = await getCurrentUser();
   if (!user) throw new Error("No autenticado");
@@ -130,6 +135,7 @@ export async function getDashboardData(
   stageId?: string | null,
   levelId?: string | null,
 ): Promise<DashboardData> {
+  await requirePermission(Permissions.VIEW_DASHBOARD);
   await requireWorkspaceAccess(workspaceId);
   const user = await getCurrentUser();
   if (!user) throw new Error("No autenticado");

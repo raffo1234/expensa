@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { getAccessibleWorkspaceIds } from "@/lib/access";
 import { getCurrentUser } from "@/lib/getCurrentUser";
 import { checkPermissions } from "@/lib/checkPermissions";
 import { Permissions } from "@/types/propertyState";
@@ -46,13 +47,12 @@ async function SummarySection() {
   const user = await getCurrentUser();
   if (!user || !user.roleId) return <NoAccess />;
 
-  const [permissions, { data: userWorkspaces }] = await Promise.all([
+  const [permissions, workspaceIds] = await Promise.all([
     checkPermissions(user.roleId, [Permissions.VIEW_EXPENSES_SUMMARY]),
-    supabaseAdmin.from("user_workspace").select("workspace_id").eq("user_id", user.id),
+    // Projects the user created or was assigned to (same rule as everywhere else).
+    getAccessibleWorkspaceIds(),
   ]);
   if (!permissions[Permissions.VIEW_EXPENSES_SUMMARY]) return <NoAccess />;
-
-  const workspaceIds = (userWorkspaces ?? []).map((r) => r.workspace_id);
 
   const { data: workspaces } =
     workspaceIds.length > 0

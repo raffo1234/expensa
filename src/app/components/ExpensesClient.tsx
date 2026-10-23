@@ -57,6 +57,9 @@ interface Props {
   stages: Stage[];
   levels: Level[];
   providers: Provider[];
+  /** What the user's role allows; actions they can't use aren't shown. */
+  canCreateExpense: boolean;
+  canViewMaterials: boolean;
 }
 
 interface FetchResult {
@@ -265,6 +268,8 @@ export default function ExpensesClient({
   stages,
   levels,
   providers,
+  canCreateExpense,
+  canViewMaterials,
 }: Props) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -472,10 +477,12 @@ export default function ExpensesClient({
   // Secondary actions live in the section header, like Fly.io's section links.
   const headerLinks = (
     <>
-      <Link href={`/admin/workspaces/${slug}/materials`} className={HEADER_LINK_CLASS}>
-        <Icon icon="solar:box-minimalistic-linear" className={HEADER_LINK_ICON} aria-hidden />
-        <span className={HEADER_LINK_LABEL}>Materiales</span>
-      </Link>
+      {canViewMaterials && (
+        <Link href={`/admin/workspaces/${slug}/materials`} className={HEADER_LINK_CLASS}>
+          <Icon icon="solar:box-minimalistic-linear" className={HEADER_LINK_ICON} aria-hidden />
+          <span className={HEADER_LINK_LABEL}>Materiales</span>
+        </Link>
+      )}
       <button
         type="button"
         onClick={() => exportExpensesCsv(workspace.id, debouncedSearch, filters)}
@@ -558,27 +565,29 @@ export default function ExpensesClient({
                 </p>
               </div>
 
-              <div className="flex flex-col gap-6 sm:items-end">
-                <Link
-                  href={`/admin/workspaces/${slug}/upload-expense`}
-                  className={`${PRIMARY_BUTTON_CLASS} justify-center min-h-11`}
-                >
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden
+              {canCreateExpense && (
+                <div className="flex flex-col gap-6 sm:items-end">
+                  <Link
+                    href={`/admin/workspaces/${slug}/upload-expense`}
+                    className={`${PRIMARY_BUTTON_CLASS} justify-center min-h-11`}
                   >
-                    <path d="M5 12h14M12 5v14" />
-                  </svg>
-                  Agregar gasto
-                </Link>
-              </div>
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden
+                    >
+                      <path d="M5 12h14M12 5v14" />
+                    </svg>
+                    Agregar gasto
+                  </Link>
+                </div>
+              )}
             </div>
 
             {/* 2 · Finding an expense: search plus the invoice reference, in one row. */}

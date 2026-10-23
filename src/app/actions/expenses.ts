@@ -9,7 +9,14 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { AccessError, requireRowAccess, requireUser, requireWorkspaceAccess } from "@/lib/access";
+import {
+  AccessError,
+  requirePermission,
+  requireRowAccess,
+  requireUser,
+  requireWorkspaceAccess,
+} from "@/lib/access";
+import { Permissions } from "@/types/propertyState";
 import { createUploadToken, verifyUploadToken } from "@/lib/uploadToken";
 import { getCurrentUser } from "@/lib/getCurrentUser";
 import { revalidatePath } from "next/cache";
@@ -134,6 +141,7 @@ export async function createExpense(
 ): Promise<{ id?: string; error?: string }> {
   const user = await getCurrentUser();
   if (!user) return { error: "No autenticado" };
+  await requirePermission(Permissions.CREATE_EXPENSE);
   await requireWorkspaceAccess(input.workspace_id);
 
   // 1. Resolve provider

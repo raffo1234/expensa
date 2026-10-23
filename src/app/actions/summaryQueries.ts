@@ -1,7 +1,8 @@
 "use server";
 
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { requireWorkspaceAccess } from "@/lib/access";
+import { requirePermission, requireWorkspaceAccess } from "@/lib/access";
+import { Permissions } from "@/types/propertyState";
 import { safePageSize } from "@/lib/pageSize";
 
 // Queries for the expenses summary page (invoices / expenses tabs), run on the
@@ -59,6 +60,7 @@ async function applySummaryFilters(query: any, f: SummaryFilters): Promise<any> 
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 export async function listSummaryExpenses(filters: SummaryFilters, page: number, pageSize: number) {
+  await requirePermission(Permissions.VIEW_EXPENSES_SUMMARY);
   await requireWorkspaceAccess(filters.workspaceId);
   const size = safePageSize(pageSize);
   const from = page * size;
@@ -84,6 +86,7 @@ export async function listSummaryExpenses(filters: SummaryFilters, page: number,
 }
 
 export async function listAllSummaryExpenses(filters: SummaryFilters) {
+  await requirePermission(Permissions.VIEW_EXPENSES_SUMMARY);
   await requireWorkspaceAccess(filters.workspaceId);
   const all: unknown[] = [];
   for (let from = 0; ; from += EXPORT_PAGE_SIZE) {

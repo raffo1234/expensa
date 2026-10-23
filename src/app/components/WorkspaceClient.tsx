@@ -31,7 +31,17 @@ const PlusIcon = () => (
   </svg>
 );
 
-export default function WorkspaceClient({ workspaces: initial }: { workspaces: Workspace[] }) {
+export default function WorkspaceClient({
+  workspaces: initial,
+  currentUserId,
+  canCreateExpense,
+}: {
+  workspaces: Workspace[];
+  /** Role may add expenses (shows the row's "+ Gasto" button). */
+  canCreateExpense: boolean;
+  /** Only a project's creator may delete it (the server enforces this too). */
+  currentUserId: string;
+}) {
   const [workspaces, setWorkspaces] = useState(initial);
   const [search, setSearch] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -128,22 +138,26 @@ export default function WorkspaceClient({ workspaces: initial }: { workspaces: W
               </Td>
               <Td align="right">
                 <div className="flex items-center justify-end gap-2">
-                  <Link
-                    href={`/admin/workspaces/${ws.slug}/upload-expense`}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-violet-50 hover:text-violet-700"
-                  >
-                    <PlusIcon />
-                    Gasto
-                  </Link>
-                  <DeleteButton
-                    title="Eliminar proyecto"
-                    confirmTitle="¿Eliminar proyecto?"
-                    confirmDescription="Se eliminarán todos los gastos y archivos adjuntos. Esta acción no se puede deshacer."
-                    confirmLabel="Eliminar"
-                    cancelLabel="Cancelar"
-                    isDeleting={deletingId === ws.id}
-                    onClick={() => handleDelete(ws.id)}
-                  />
+                  {canCreateExpense && (
+                    <Link
+                      href={`/admin/workspaces/${ws.slug}/upload-expense`}
+                      className="inline-flex h-9 items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-violet-50 hover:text-violet-700"
+                    >
+                      <PlusIcon />
+                      Gasto
+                    </Link>
+                  )}
+                  {ws.created_by === currentUserId && (
+                    <DeleteButton
+                      title="Eliminar proyecto"
+                      confirmTitle="¿Eliminar proyecto?"
+                      confirmDescription="Se eliminarán todos los gastos y archivos adjuntos. Esta acción no se puede deshacer."
+                      confirmLabel="Eliminar"
+                      cancelLabel="Cancelar"
+                      isDeleting={deletingId === ws.id}
+                      onClick={() => handleDelete(ws.id)}
+                    />
+                  )}
                 </div>
               </Td>
             </DataTableRow>

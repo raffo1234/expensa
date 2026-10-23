@@ -1,7 +1,13 @@
 "use server";
 
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { getAccessibleWorkspaceIds, requireRowAccess, requireWorkspaceAccess } from "@/lib/access";
+import {
+  getAccessibleWorkspaceIds,
+  requirePermission,
+  requireRowAccess,
+  requireWorkspaceAccess,
+} from "@/lib/access";
+import { Permissions } from "@/types/propertyState";
 
 export type Material = { id: string; name: string };
 
@@ -91,6 +97,7 @@ export type MaterialReportRow = {
 };
 
 export async function getMaterialsReport(workspaceId: string): Promise<MaterialReportRow[]> {
+  await requirePermission(Permissions.VIEW_MATERIALS);
   await requireWorkspaceAccess(workspaceId);
   // Supabase caps each request at 1,000 rows, so read the report page by page.
   const PAGE_SIZE = 1000;

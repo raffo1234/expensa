@@ -2,6 +2,7 @@ import NoAccess from "@/components/NoAccess";
 import WorkspaceClient from "@/components/WorkspaceClient";
 import { getCurrentUser } from "@/lib/getCurrentUser";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { getAccessibleWorkspaceIds } from "@/lib/access";
 import { Permissions } from "@/types/propertyState";
 import { checkPermissions } from "@/lib/checkPermissions";
 import FormSection from "@/components/FormSection";
@@ -45,19 +46,32 @@ async function WorkspacesSection() {
   if (!user) return <NoAccess />;
   if (!user.roleId) return <NoAccess />;
 
-  const { data: workspaces, error } = await supabaseAdmin
-    .from("workspace")
-    .select("id, name, slug, created_by, created_at, expense(*)")
-    .eq("created_by", user.id)
-    .order("created_at", { ascending: false });
+  // Projects the user created or was assigned to (same rule as everywhere else).
+  const ids = await getAccessibleWorkspaceIds();
+  const { data: workspaces, error } = ids.length
+    ? await supabaseAdmin
+        .from("workspace")
+        .select("id, name, slug, created_by, created_at, expense(*)")
+        .in("id", ids)
+        .order("created_at", { ascending: false })
+    : { data: [], error: null };
 
   if (error) {
     console.error("workspace fetch error:", error);
   }
 
-  const permissions = await checkPermissions(user.roleId, [Permissions.HANDLE_WORKSPACES]);
+  const permissions = await checkPermissions(user.roleId, [
+    Permissions.HANDLE_WORKSPACES,
+    Permissions.CREATE_EXPENSE,
+  ]);
 
   if (!permissions[Permissions.HANDLE_WORKSPACES]) return <NoAccess />;
 
-  return <WorkspaceClient workspaces={workspaces ?? []} />;
+  return (
+    <WorkspaceClient
+      workspaces={workspaces ?? []}
+      currentUserId={user.id}
+      canCreateExpense={!!permissions[Permissions.CREATE_EXPENSE]}
+    />
+  );
 }

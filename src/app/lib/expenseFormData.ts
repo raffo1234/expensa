@@ -1,4 +1,5 @@
 import { unstable_serialize } from "swr";
+import { findAccessibleWorkspaceBySlug } from "@/lib/access";
 import { supabaseAdmin as supabase } from "@/lib/supabaseAdmin";
 import { getMaterials } from "@/actions/materials";
 import { getBrands } from "@/actions/brands";
@@ -16,12 +17,8 @@ async function rows<T>(query: PromiseLike<{ data: T[] | null; error: unknown }>)
 }
 
 export async function loadExpenseFormLookups(slug: string) {
-  const { data: workspace, error } = await supabase
-    .from("workspace")
-    .select("id, name")
-    .eq("slug", slug)
-    .maybeSingle();
-  if (error) throw error;
+  // null (404) unless the caller owns or was assigned to this project.
+  const workspace = await findAccessibleWorkspaceBySlug(slug);
   if (!workspace) return null;
 
   const wid = workspace.id;

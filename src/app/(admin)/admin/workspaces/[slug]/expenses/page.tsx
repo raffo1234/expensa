@@ -1,4 +1,9 @@
 import { Suspense } from "react";
+import { notFound } from "next/navigation";
+import { findAccessibleWorkspaceBySlug } from "@/lib/access";
+import { getCurrentUser } from "@/lib/getCurrentUser";
+import { checkPermissions } from "@/lib/checkPermissions";
+import { Permissions } from "@/types/propertyState";
 import { supabaseAdmin as supabase } from "@/lib/supabaseAdmin";
 import { sumExpenseAmounts } from "@/lib/sumExpenseAmounts";
 import ExpensesClient from "@/components/ExpensesClient";
@@ -24,13 +29,16 @@ export default async function ExpensesPage({ params }: PageProps) {
 }
 
 async function ExpensesSection({ slug }: { slug: string }) {
-  const { data: workspace, error: wsError } = await supabase
-    .from("workspace")
-    .select("id, name, slug, created_at")
-    .eq("slug", slug)
-    .single();
-
-  if (wsError || !workspace) throw new Error("Workspace not found");
+  // Only users who own or were assigned to this project may see it.
+  const [workspace, user] = await Promise.all([
+    findAccessibleWorkspaceBySlug(slug),
+    getCurrentUser(),
+  ]);
+  if (!workspace || !user?.roleId) notFound();
+  const permissions = await checkPermissions(user.roleId, [
+    Permissions.CREATE_EXPENSE,
+    Permissions.VIEW_MATERIALS,
+  ]);
 
   const [
     { data: rows, error: expError, count },
@@ -101,6 +109,8 @@ async function ExpensesSection({ slug }: { slug: string }) {
       stages={stages ?? []}
       levels={levels ?? []}
       providers={providers ?? []}
+      canCreateExpense={!!permissions[Permissions.CREATE_EXPENSE]}
+      canViewMaterials={!!permissions[Permissions.VIEW_MATERIALS]}
     />
   );
 }

@@ -5,10 +5,12 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { revalidatePath } from "next/cache";
 import { DeleteObjectsCommand } from "@aws-sdk/client-s3";
 import { r2 } from "@/lib/r2";
+import { requirePermission } from "@/lib/access";
+import { Permissions } from "@/types/propertyState";
 
 export async function createWorkspace(name: string, slug: string) {
-  const user = await getCurrentUser();
-  if (!user) throw new Error("No autenticado");
+  // Same permission the "Nuevo proyecto" page requires.
+  const user = await requirePermission(Permissions.HANDLE_WORKSPACES);
 
   const { data, error } = await supabaseAdmin
     .from("workspace")

@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { supabaseAdmin as supabase } from "@/lib/supabaseAdmin";
+import { findAccessibleWorkspaceBySlug } from "@/lib/access";
 import getAttachmentUrl from "@/lib/getAttachmentUrl";
 import FormSection from "@/components/FormSection";
 import FormInnerSection from "@/components/FormInnerSection";
@@ -39,7 +40,7 @@ type Expense = {
 };
 
 // ── Data ─────────────────────────────────────────────────────────────────────
-async function fetchExpense(expenseId: string): Promise<Expense | null> {
+async function fetchExpense(expenseId: string, workspaceId: string): Promise<Expense | null> {
   const { data, error } = await supabase
     .from("expense")
     .select(
@@ -53,6 +54,7 @@ async function fetchExpense(expenseId: string): Promise<Expense | null> {
     `,
     )
     .eq("id", expenseId)
+    .eq("workspace_id", workspaceId)
     .maybeSingle();
   if (error) throw error;
   return data as unknown as Expense | null;
@@ -219,11 +221,12 @@ export default async function ExpenseDetailPage({ params }: PageProps) {
 }
 
 async function ExpenseDetail({ slug, expenseId }: { slug: string; expenseId: string }) {
-  const [expense, materialItems] = await Promise.all([
-    fetchExpense(expenseId),
-    getExpenseItems(expenseId),
-  ]);
+  // Only users with access to the project see its expenses; others get a 404.
+  const workspace = await findAccessibleWorkspaceBySlug(slug);
+  if (!workspace) notFound();
+  const expense = await fetchExpense(expenseId, workspace.id);
   if (!expense) notFound();
+  const materialItems = await getExpenseItems(expenseId);
 
   const ref = invoiceRef(expense);
   const categoryColor = expense.category?.color ?? DEFAULT_CATEGORY_COLOR;

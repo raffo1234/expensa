@@ -5,5 +5,6 @@ export type Workspace = {
   name: string;
   slug: string;
   created_at: string;
+  created_by?: string;
   expense?: Expense[];
 };

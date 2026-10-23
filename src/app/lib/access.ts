@@ -48,6 +48,22 @@ export async function requireWorkspaceAccess(workspaceId: string | null | undefi
   return user;
 }
 
+/**
+ * For pages: the workspace behind `slug` if the caller may access it, else
+ * null so the page can answer 404 (without revealing that it exists).
+ */
+export async function findAccessibleWorkspaceBySlug(slug: string) {
+  const user = await requireUser();
+  const { data, error } = await supabaseAdmin
+    .from("workspace")
+    .select("id, name, slug, created_at, created_by")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data || !(await accessibleWorkspaceIds(user.id)).has(data.id)) return null;
+  return data;
+}
+
 export async function requireWorkspaceAccessBySlug(slug: string) {
   const { data, error } = await supabaseAdmin
     .from("workspace")

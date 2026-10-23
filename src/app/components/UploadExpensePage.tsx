@@ -133,13 +133,15 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
     ([, wid]) => fetchProviders(wid),
   );
 
-  const { data: stages = [] } = useSWR(workspaceId ? ["stages", workspaceId] : null, ([, wid]) =>
+  const { data: stagesData } = useSWR(workspaceId ? ["stages", workspaceId] : null, ([, wid]) =>
     fetchStages(wid),
   );
+  const stages = stagesData ?? [];
 
-  const { data: levels = [] } = useSWR(workspaceId ? ["levels", workspaceId] : null, ([, wid]) =>
+  const { data: levelsData } = useSWR(workspaceId ? ["levels", workspaceId] : null, ([, wid]) =>
     fetchLevels(wid),
   );
+  const levels = levelsData ?? [];
 
   const { data: materials = [] } = useSWR(
     workspaceId ? ["materials", workspaceId] : null,
@@ -173,6 +175,41 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
     tax_status: "" as TaxStatus | "",
   });
   const [totalsCheck, setTotalsCheck] = useState<TotalsCheck | null>(null);
+
+  // Stage and level stay the same for weeks, so the last ones used are
+  // remembered per project (in this browser) and prefilled on the next expense.
+  const rememberKey = workspaceId ? `upload-stage-level:${workspaceId}` : null;
+  const [restored, setRestored] = useState(false);
+  useEffect(() => {
+    if (!rememberKey || restored || !stagesData || !levelsData) return;
+    try {
+      const saved = JSON.parse(localStorage.getItem(rememberKey) ?? "{}") as {
+        stage_id?: string;
+        level_id?: string;
+      };
+      // Only ids that still exist (a stage or level may have been deleted since).
+      setForm((f) => ({
+        ...f,
+        stage_id: stagesData.some((x) => x.id === saved.stage_id) ? saved.stage_id! : f.stage_id,
+        level_id: levelsData.some((x) => x.id === saved.level_id) ? saved.level_id! : f.level_id,
+      }));
+    } catch {
+      // Unreadable or blocked storage: start empty.
+    }
+    setRestored(true);
+  }, [rememberKey, restored, stagesData, levelsData]);
+
+  useEffect(() => {
+    if (!rememberKey || !restored) return;
+    try {
+      localStorage.setItem(
+        rememberKey,
+        JSON.stringify({ stage_id: form.stage_id, level_id: form.level_id }),
+      );
+    } catch {
+      // Not saved; the choice still applies to this expense.
+    }
+  }, [rememberKey, restored, form.stage_id, form.level_id]);
 
   const [resolvedProvider, setResolvedProvider] = useState<{
     ruc: string | null;

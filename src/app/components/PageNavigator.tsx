@@ -27,13 +27,18 @@ export default function PageNavigator({
   onPageSizeChange?: (size: number) => void;
   /**
    * True while the list waits for results that aren't cached yet (a new page,
-   * filter, search or page size): the right arrow shows loading dots. Use SWR
-   * `isLoading`, not `isValidating`, so a cached page shows no dots.
+   * filter, search or page size): the current page number shows loading dots.
+   * Use SWR `isLoading`, not `isValidating`, so a cached page shows no dots.
    */
   loading?: boolean;
   className?: string;
 }) {
   const sizeId = useId();
+  // Both numbers get the width of the longest possible one (the total; digits
+  // are tabular, so 1ch each), and at least room for the loading dots. The "/"
+  // then stays centered for 2 / 9, 12 / 35 or 7 / 120 alike.
+  const slot = { minWidth: `${Math.max(String(totalPages).length, 2.5)}ch` };
+
   // Arrows sit inside one shared border with the page count, so the three
   // read as a single control (‹ 2 / 9 ›).
   const button =
@@ -50,24 +55,25 @@ export default function PageNavigator({
         // the arrows fill it from inside.
         className="flex h-11 items-stretch overflow-hidden rounded-lg border border-navy-200 bg-white sm:h-9.5"
       >
-        <PagerButton
-          direction="prev"
-          busy={false}
-          disabled={page <= 1}
-          onClick={onPrev}
-          className={button}
-        />
+        <PagerButton direction="prev" disabled={page <= 1} onClick={onPrev} className={button} />
         {/* Fixed width so the arrows don't move as the numbers grow (9 → 10 → 100). */}
         <span
           aria-live="polite"
           aria-label={`Página ${page} de ${totalPages}`}
           className="flex min-w-14 items-center justify-center px-1 text-cell text-navy-700 tabular-nums"
         >
-          {page} / {totalPages}
+          {/* While loading, the current page number turns into the loading dots. */}
+          <span className="inline-flex justify-center" style={slot}>
+            <LoadingSwap busy={loading}>{page}</LoadingSwap>
+          </span>
+          <span className="px-1">/</span>
+          {/* Same slot as the current page, so the "/" stays centered. */}
+          <span className="inline-flex justify-center" style={slot}>
+            {totalPages}
+          </span>
         </span>
         <PagerButton
           direction="next"
-          busy={loading}
           disabled={page >= totalPages}
           onClick={onNext}
           className={button}
@@ -77,20 +83,14 @@ export default function PageNavigator({
   );
 }
 
-/**
- * Pager arrow; the right one turns into three loading dots while the list loads.
- * The dots sit on top of the arrow (cross-fade), so nothing moves, and it
- * only appears after 150ms so quick loads don't flicker.
- */
+/** Pager arrow button (‹ or ›). */
 function PagerButton({
   direction,
-  busy,
   disabled,
   onClick,
   className,
 }: {
   direction: "prev" | "next";
-  busy: boolean;
   disabled: boolean;
   onClick: () => void;
   className: string;
@@ -100,19 +100,14 @@ function PagerButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      aria-busy={busy}
       aria-label={direction === "prev" ? "Página anterior" : "Página siguiente"}
       className={className}
     >
-      <LoadingSwap busy={busy}>
-        <Icon
-          icon={
-            direction === "prev" ? "solar:alt-arrow-left-linear" : "solar:alt-arrow-right-linear"
-          }
-          fontSize={ICON_SIZE}
-          aria-hidden
-        />
-      </LoadingSwap>
+      <Icon
+        icon={direction === "prev" ? "solar:alt-arrow-left-linear" : "solar:alt-arrow-right-linear"}
+        fontSize={ICON_SIZE}
+        aria-hidden
+      />
     </button>
   );
 }

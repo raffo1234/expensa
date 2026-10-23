@@ -1,10 +1,20 @@
-import { signIn } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import { auth, signIn } from "@/lib/auth";
+import { safeCallbackPath } from "@/lib/safeCallbackPath";
 import LogoLink from "@/components/LogoLink";
 import FormPendingButton from "@/components/FormPendingButton";
 import { ICON_SIZE } from "@/constants";
 import Image from "next/image";
 
-export default function Page() {
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ callbackUrl?: string }>;
+}) {
+  // Where to go after signing in (e.g. the expenses page they opened first).
+  const redirectTo = safeCallbackPath((await searchParams).callbackUrl);
+  if (await auth()) redirect(redirectTo);
+
   return (
     <div className="min-h-screen flex">
       {/* Left panel */}
@@ -19,7 +29,7 @@ export default function Page() {
           <form
             action={async () => {
               "use server";
-              await signIn("google");
+              await signIn("google", { redirectTo });
             }}
           >
             <FormPendingButton

@@ -17,7 +17,11 @@ export default auth((req) => {
   }
 
   if (pathname.startsWith("/admin") && !isAuthenticated) {
-    return NextResponse.redirect(new URL("/", req.url));
+    // Send them to sign in, remembering the page they asked for so they land
+    // back on it afterwards (validated in safeCallbackPath).
+    const login = new URL("/session/new", req.url);
+    login.searchParams.set("callbackUrl", pathname + req.nextUrl.search);
+    return NextResponse.redirect(login);
   }
 
   return NextResponse.next();

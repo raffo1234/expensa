@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { supabaseAdmin } from "./supabaseAdmin";
+import { safeCallbackPath } from "./safeCallbackPath";
 import { supabaseAdmin as supabase } from "@/lib/supabaseAdmin";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -96,8 +97,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       return session;
     },
-    async redirect({ baseUrl }) {
-      return `${baseUrl}/admin/dashboard`;
+    async redirect({ url, baseUrl }) {
+      // Back to the page the user asked for before signing in, only if it's
+      // an internal admin path; anything else goes to the dashboard.
+      const path = url.startsWith(baseUrl) ? url.slice(baseUrl.length) : url;
+      return `${baseUrl}${safeCallbackPath(path)}`;
     },
   },
   debug: process.env.NODE_ENV === "development",

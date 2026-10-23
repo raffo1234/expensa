@@ -9,6 +9,8 @@ import { ICON_SIZE } from "@/constants";
 import { Expense } from "@/types/ExpenseType";
 import { formatSafeDate } from "@/lib/formatSafeDate";
 import { EXPENSE_COLUMNS } from "@/lib/tableColumns";
+import { guideStatus } from "@/lib/dispatchGuide";
+import GuideStatusBadge from "./GuideStatusBadge";
 import DataTable, { DataTableRow, ROW_CONTROL, RowLink, Td } from "./DataTable";
 
 interface ExpenseTableProps {
@@ -119,6 +121,10 @@ export default function ExpenseTable({
               ) : (
                 "—"
               )}
+            </Td>
+
+            <Td align="center">
+              <GuideStatusBadge status={guideStatus(expense, expense.guias?.length ?? 0)} />
             </Td>
 
             <Td align="right">

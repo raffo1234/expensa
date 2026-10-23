@@ -13,6 +13,7 @@ export const EXPENSE_COLUMNS: DataTableColumn[] = [
   { label: "Fecha de emisión", hideBelow: "md" },
   { label: "Monto", align: "right" },
   { label: "Materiales", align: "center", hideBelow: "xl" },
+  { label: "Guía", align: "center" },
   { label: "" },
 ];
 

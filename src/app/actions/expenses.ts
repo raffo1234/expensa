@@ -17,6 +17,8 @@ import {
   requireWorkspaceAccess,
 } from "@/lib/access";
 import { Permissions } from "@/types/propertyState";
+import { isAttachmentKind, parseGuideFileName } from "@/lib/dispatchGuide";
+import { classifyAttachment } from "@/lib/classifyAttachment";
 import { createUploadToken, verifyUploadToken } from "@/lib/uploadToken";
 import { getCurrentUser } from "@/lib/getCurrentUser";
 import { revalidatePath } from "next/cache";
@@ -449,11 +451,50 @@ export async function registerAttachment(
     .maybeSingle();
   if (existing) return {};
 
+  // Display name only; trimmed and stripped of path separators.
+  const safeName = fileName.replace(/[\\/]/g, "_").slice(0, 200);
+  // Factura or guía de remisión, read from the PDF header (or a SUNAT file name).
+  const classified = await classifyAttachment(key, safeName);
+
   const { error } = await supabaseAdmin.from("expense_attachment").insert({
     expense_id: expenseId,
     storage_path: key,
-    // Display name only; trimmed and stripped of path separators.
-    file_name: fileName.replace(/[\\/]/g, "_").slice(0, 200),
+    file_name: safeName,
+    ...(classified ?? {}),
   });
   return { error: error?.message };
+}
+
+/** Marks what an attachment is (factura, guía de remisión, ...). */
+export async function setAttachmentKind(
+  attachmentId: string,
+  kind: string,
+): Promise<{ error?: string }> {
+  if (!isAttachmentKind(kind)) return { error: "Tipo de adjunto no válido" };
+  try {
+    const { data: attachment, error: fetchError } = await supabaseAdmin
+      .from("expense_attachment")
+      .select("expense_id, file_name")
+      .eq("id", attachmentId)
+      .maybeSingle();
+    if (fetchError) throw new Error(fetchError.message);
+    if (!attachment) throw new AccessError();
+    await requireRowAccess("expense", attachment.expense_id);
+
+    // Keep the guide's RUC/series/number when the file name carries them.
+    const guide = kind === "guia_remision" ? parseGuideFileName(attachment.file_name) : null;
+    const { error } = await supabaseAdmin
+      .from("expense_attachment")
+      .update({
+        kind,
+        doc_ruc: guide?.ruc ?? null,
+        doc_serie: guide?.serie ?? null,
+        doc_numero: guide?.numero ?? null,
+      })
+      .eq("id", attachmentId);
+    if (error) throw new Error(error.message);
+    return {};
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "No se pudo cambiar el tipo" };
+  }
 }

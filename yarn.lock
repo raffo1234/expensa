@@ -7447,6 +7447,11 @@ unicode-trie@^2.0.0:
     pako "^0.2.5"
     tiny-inflate "^1.0.0"
 
+unpdf@1.8.1:
+  version "1.8.1"
+  resolved "https://registry.yarnpkg.com/unpdf/-/unpdf-1.8.1.tgz#9fb1ccc04817dc03fc5668e346edeccddec504be"
+  integrity sha512-xkURhy2SoGpOIH0a1gLHNkASPIQYonadDJs2AQwPEfUakafeD9EA1WTWWsaR++gfTCXJpV27W7tU1nXuk82UKQ==
+
 unpipe@1.0.0:
   version "1.0.0"
   resolved "https://registry.npmjs.org/unpipe/-/unpipe-1.0.0.tgz"

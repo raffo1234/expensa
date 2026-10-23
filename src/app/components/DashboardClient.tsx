@@ -14,7 +14,14 @@ import { SELECT_CLASS } from "@/constants";
 import FormSection from "./FormSection";
 import ClearFiltersButton from "./ClearFiltersButton";
 import { Bone } from "./Skeleton";
-import { getDashboardData, getFiltersData, getWorkspaceTotal } from "@/actions/dashboard";
+import {
+  getDashboardData,
+  getFiltersData,
+  getMissingGuidesCount,
+  getWorkspaceTotal,
+} from "@/actions/dashboard";
+import Link from "next/link";
+import GuideStatusBadge from "./GuideStatusBadge";
 import type {
   DashboardData,
   Level,
@@ -293,6 +300,7 @@ export default function DashboardClient({ workspaces, defaultYear, defaultMonth 
   const [levels, setLevels] = useState<Level[]>([]);
   const [data, setData] = useState<DashboardData | null>(null);
   const [projectTotals, setProjectTotals] = useState<WorkspaceTotal[] | null>(null);
+  const [missingGuides, setMissingGuides] = useState(0);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -306,6 +314,8 @@ export default function DashboardClient({ workspaces, defaultYear, defaultMonth 
       setLevels(l);
     });
     getWorkspaceTotal(workspaceId).then(setProjectTotals);
+    setMissingGuides(0);
+    getMissingGuidesCount(workspaceId).then(setMissingGuides);
   }, [workspaceId]);
 
   const loadData = useCallback(() => {
@@ -334,6 +344,7 @@ export default function DashboardClient({ workspaces, defaultYear, defaultMonth 
     } else setMonth((m) => m + 1);
   };
 
+  const currentSlug = workspaces.find((w) => w.id === workspaceId)?.slug;
   const monthName = MONTHS[month - 1];
   const prevMonthName = MONTHS[(month + 10) % 12];
   const loading = !data || isPending;
@@ -463,6 +474,29 @@ export default function DashboardClient({ workspaces, defaultYear, defaultMonth 
             disabled={!stageId && !levelId}
           />
         </div>
+
+        {/* A to-do for the accountant: invoices still waiting for their guide. */}
+        {missingGuides > 0 && (
+          <div
+            role="status"
+            className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900"
+          >
+            <GuideStatusBadge status="missing" />
+            <span className="mr-auto">
+              {missingGuides === 1
+                ? "1 factura no tiene su guía de remisión."
+                : `${missingGuides} facturas no tienen su guía de remisión.`}
+            </span>
+            {currentSlug && (
+              <Link
+                href={`/admin/workspaces/${currentSlug}/expenses?missingGuide=1`}
+                className="font-medium text-amber-900 underline decoration-amber-400 underline-offset-4 hover:decoration-amber-700"
+              >
+                Ver cuáles
+              </Link>
+            )}
+          </div>
+        )}
 
         {/* Headline numbers. */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">

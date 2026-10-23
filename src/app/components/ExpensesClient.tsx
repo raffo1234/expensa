@@ -255,6 +255,7 @@ const EMPTY_FILTERS: Filters = {
   providerId: "",
   invoiceSeries: "",
   invoiceNumber: "",
+  missingGuide: "",
 };
 
 export default function ExpensesClient({
@@ -287,6 +288,7 @@ export default function ExpensesClient({
     providerId: searchParams.get("providerId") ?? "",
     invoiceSeries: searchParams.get("invoiceSeries") ?? "",
     invoiceNumber: searchParams.get("invoiceNumber") ?? "",
+    missingGuide: searchParams.get("missingGuide") === "1" ? "1" : "",
   }));
   const [issuedMonth, setIssuedMonth] = useState(() => searchParams.get("issuedMonth") ?? "");
   const [showFilters, setShowFilters] = useState(() => {
@@ -299,6 +301,7 @@ export default function ExpensesClient({
       "stageId",
       "levelId",
       "providerId",
+      "missingGuide",
     ] as const;
     return f.some((k) => searchParams.get(k));
   });
@@ -446,6 +449,7 @@ export default function ExpensesClient({
     filters.levelId,
     filters.issuedFrom || filters.issuedTo,
     filters.amountMin || filters.amountMax,
+    filters.missingGuide,
   ].filter(Boolean).length;
 
   // Comes with each row (expense_item(count)), no extra request.
@@ -789,6 +793,17 @@ export default function ExpensesClient({
                         className={INPUT_CLASS}
                       />
                     </div>
+                  </FilterField>
+
+                  <FilterField label="Guía de remisión">
+                    <select
+                      value={filters.missingGuide ?? ""}
+                      onChange={(e) => setFilter("missingGuide", e.target.value)}
+                      className={SELECT_CLASS}
+                    >
+                      <option value="">Todas</option>
+                      <option value="1">Facturas sin guía</option>
+                    </select>
                   </FilterField>
                 </div>
               )}

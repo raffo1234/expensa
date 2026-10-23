@@ -9,6 +9,9 @@ import FormInnerSection from "@/components/FormInnerSection";
 import SectionTitle from "@/components/SectionTitle";
 import { Bone } from "@/components/Skeleton";
 import DeleteAttachmentButton from "@/components/DeleteAttachmentButton";
+import AttachmentKindSelect from "@/components/AttachmentKindSelect";
+import GuideStatusBadge from "@/components/GuideStatusBadge";
+import { guideStatus, type AttachmentKind } from "@/lib/dispatchGuide";
 import AttachmentDropArea from "@/components/AttachmentDropArea";
 import { ICON_SIZE, PRIMARY_BUTTON_CLASS } from "@/constants";
 import { formatAmount } from "@/utils/formatAmount";
@@ -20,6 +23,7 @@ type ExpenseAttachment = {
   id: string;
   file_name: string | null;
   storage_path: string;
+  kind: AttachmentKind;
 };
 
 type Expense = {
@@ -50,7 +54,7 @@ async function fetchExpense(expenseId: string, workspaceId: string): Promise<Exp
       payment_method, notes, created_at,
       category(id, name, color),
       created_by_user:user(id, email),
-      expense_attachment(id, file_name, storage_path)
+      expense_attachment(id, file_name, storage_path, kind)
     `,
     )
     .eq("id", expenseId)
@@ -169,6 +173,9 @@ function FileTile({ attachment }: { attachment: ExpenseAttachment }) {
       <div className="absolute top-2 right-2">
         <DeleteAttachmentButton attachmentId={attachment.id} fileName={name ?? "adjunto"} />
       </div>
+      <div className="mt-2">
+        <AttachmentKindSelect attachmentId={attachment.id} kind={attachment.kind} />
+      </div>
     </div>
   );
 }
@@ -234,6 +241,7 @@ async function ExpenseDetail({ slug, expenseId }: { slug: string; expenseId: str
   const ref = invoiceRef(expense);
   const categoryColor = expense.category?.color ?? DEFAULT_CATEGORY_COLOR;
   const attachments = expense.expense_attachment ?? [];
+  const guide = guideStatus(expense, attachments.filter((a) => a.kind === "guia_remision").length);
   const editUrl = `/admin/workspaces/${slug}/expenses/${expense.id}/edit`;
 
   return (
@@ -316,6 +324,18 @@ async function ExpenseDetail({ slug, expenseId }: { slug: string; expenseId: str
 
         <section>
           <SectionTitle>Adjuntos ({attachments.length})</SectionTitle>
+          {guide === "missing" && (
+            <div
+              role="status"
+              className="mb-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+            >
+              <GuideStatusBadge status="missing" />
+              <span>
+                Esta factura necesita su guía de remisión. Súbela aquí o, si ya está entre los
+                adjuntos, cambia su tipo a «Guía de remisión».
+              </span>
+            </div>
+          )}
           {/* Drop files anywhere on the grid, or click the last tile, to add more. */}
           <AttachmentDropArea expenseId={expense.id} empty={attachments.length === 0}>
             {attachments.map((att) => (

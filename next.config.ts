@@ -6,6 +6,10 @@ const withNextIntl = createNextIntlPlugin();
 const nextConfig: NextConfig = {
   transpilePackages: ["@react-pdf/renderer"],
 
+  // Loaded as-is from node_modules on the server (it reads PDFs to classify
+  // attachments); bundling it breaks its use of import.meta.
+  serverExternalPackages: ["unpdf"],
+
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "img.freepik.com" },

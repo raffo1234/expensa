@@ -18,6 +18,8 @@ export interface Expense {
   level?: { id: string; name: string } | null;
   /** Embedded count of material lines (expense_item(count)). */
   expense_item?: { count: number }[];
+  /** Embedded guía de remisión attachments (ids only). */
+  guias?: { id: string }[];
 }
 
 export interface ExpenseRow {
@@ -37,4 +39,6 @@ export interface ExpenseRow {
   stage?: { id: string; name: string; color?: string | null } | null;
   level?: { id: string; name: string } | null;
   expense_item?: { count: number }[];
+  /** Embedded guía de remisión attachments (ids only). */
+  guias?: { id: string }[];
 }

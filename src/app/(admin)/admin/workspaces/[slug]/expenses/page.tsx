@@ -6,11 +6,12 @@ import { checkPermissions } from "@/lib/checkPermissions";
 import { Permissions } from "@/types/propertyState";
 import { supabaseAdmin as supabase } from "@/lib/supabaseAdmin";
 import { sumExpenseAmounts } from "@/lib/sumExpenseAmounts";
-import { EXPENSE_LIST_COLUMNS } from "@/lib/expenseListColumns";
+import { EXPENSE_LIST_COLUMNS, onlyGuides } from "@/lib/expenseListColumns";
 import ExpensesClient from "@/components/ExpensesClient";
 import FallbackExpenses from "@/components/FallbackExpenses";
 
 import { DEFAULT_PAGE_SIZE } from "@/lib/pageSize";
+import type { ExpenseRow } from "@/types/ExpenseType";
 
 // The first page is rendered at the default size; the list refetches if the
 // user picked another size.
@@ -48,9 +49,7 @@ async function ExpensesSection({ slug }: { slug: string }) {
     { data: providers },
   ] = await Promise.all([
     checkPermissions(user.roleId, [Permissions.CREATE_EXPENSE, Permissions.VIEW_MATERIALS]),
-    supabase
-      .from("expense")
-      .select(EXPENSE_LIST_COLUMNS, { count: "exact" })
+    onlyGuides(supabase.from("expense").select(EXPENSE_LIST_COLUMNS, { count: "exact" }))
       .eq("workspace_id", workspace.id)
       .order("paid_at", { ascending: false })
       .order("id")
@@ -72,7 +71,7 @@ async function ExpensesSection({ slug }: { slug: string }) {
 
   if (expError) throw expError;
 
-  const expenses = (rows ?? []).map((row) => {
+  const expenses = ((rows ?? []) as ExpenseRow[]).map((row) => {
     const cat = Array.isArray(row.category) ? row.category[0] : row.category;
     const prov = Array.isArray(row.provider) ? row.provider[0] : row.provider;
 

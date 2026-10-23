@@ -10,6 +10,8 @@ export type ExpenseFilters = {
   providerId: string;
   invoiceSeries: string;
   invoiceNumber: string;
+  /** "1": only invoices that still lack their guía de remisión. */
+  missingGuide?: string;
 };
 
 export function categoryIdList(categoryId: string): string[] {

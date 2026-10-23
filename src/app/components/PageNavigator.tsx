@@ -37,29 +37,32 @@ export default function PageNavigator({
   const button =
     "flex h-11 w-11 sm:h-9 sm:w-9 items-center justify-center rounded-lg border border-navy-200 text-navy-700 hover:bg-navy-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:cursor-not-allowed disabled:border-navy-100 disabled:text-navy-300 disabled:hover:bg-transparent cursor-pointer transition-colors";
   return (
-    <div className={`flex items-center justify-between gap-3 px-1 ${className}`}>
-      <span className="text-cell text-navy-500 tabular-nums">
-        Página {page} de {totalPages}
+    <div className={`flex items-center justify-end gap-2 px-1 ${className}`}>
+      {pageSize != null && onPageSizeChange && (
+        <PageSizeInput id={sizeId} value={pageSize} onChange={onPageSizeChange} />
+      )}
+      <PagerButton
+        direction="prev"
+        busy={false}
+        disabled={page <= 1}
+        onClick={onPrev}
+        className={button}
+      />
+      {/* Fixed width so the arrows don't move as the numbers grow (9 → 10 → 100). */}
+      <span
+        aria-live="polite"
+        aria-label={`Página ${page} de ${totalPages}`}
+        className="min-w-20 text-center text-cell text-navy-500 tabular-nums"
+      >
+        {page} / {totalPages}
       </span>
-      <div className="flex items-center gap-2">
-        {pageSize != null && onPageSizeChange && (
-          <PageSizeInput id={sizeId} value={pageSize} onChange={onPageSizeChange} />
-        )}
-        <PagerButton
-          direction="prev"
-          busy={false}
-          disabled={page <= 1}
-          onClick={onPrev}
-          className={button}
-        />
-        <PagerButton
-          direction="next"
-          busy={loading}
-          disabled={page >= totalPages}
-          onClick={onNext}
-          className={button}
-        />
-      </div>
+      <PagerButton
+        direction="next"
+        busy={loading}
+        disabled={page >= totalPages}
+        onClick={onNext}
+        className={button}
+      />
     </div>
   );
 }

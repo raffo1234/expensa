@@ -6,9 +6,9 @@ export default function Page() {
   return (
     <div className="w-full flex items-center justify-center h-lvh">
       <div>
-        <Image src="/404.svg" width={600} height={600} alt="404" className="" />
+        <Image src="/404.svg" width={600} height={600} alt="Página no encontrada" className="" />
         <div className="flex justify-center mt-10">
-          <Link href="/" title="Back Home" className={PRIMARY_BUTTON_CLASS}>
+          <Link href="/" className={PRIMARY_BUTTON_CLASS}>
             <svg
               className="rotate-180"
               xmlns="http://www.w3.org/2000/svg"
@@ -25,7 +25,7 @@ export default function Page() {
                 d="M4 12h16m0 0l-6-6m6 6l-6 6"
               />
             </svg>
-            <span>Back Home</span>
+            <span>Ir al inicio</span>
           </Link>
         </div>
       </div>

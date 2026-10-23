@@ -16,20 +16,22 @@ export function LoadingDots() {
 }
 
 /**
- * Shows `children` (an icon), or the loading dots in its place while `busy`.
- * The two cross-fade in the same box, so nothing moves, and the dots only
- * appear after 150ms so quick loads don't flicker.
+ * Shows `children`, or the loading dots in its place while `busy`.
+ * Asymmetric on purpose: the dots fade in only after 150ms (quick loads never
+ * flash them), but leave instantly the moment the data is there, so they
+ * never linger after the content has updated.
  */
 export default function LoadingSwap({ busy, children }: { busy: boolean; children: ReactNode }) {
-  const fade = "transition-opacity duration-200";
+  // Only the way in is animated; with no transition class, the way out is instant.
+  const enter = "transition-opacity duration-200 delay-150";
   return (
     <span className="relative inline-flex items-center justify-center">
-      <span className={`inline-flex ${fade} ${busy ? "opacity-0 delay-150" : "opacity-100"}`}>
+      <span className={`inline-flex ${busy ? `opacity-0 ${enter}` : "opacity-100"}`}>
         {children}
       </span>
       <span
-        className={`absolute inset-0 flex items-center justify-center ${fade} ${
-          busy ? "opacity-100 delay-150" : "opacity-0"
+        className={`absolute inset-0 flex items-center justify-center ${
+          busy ? `opacity-100 ${enter}` : "opacity-0"
         }`}
       >
         <LoadingDots />

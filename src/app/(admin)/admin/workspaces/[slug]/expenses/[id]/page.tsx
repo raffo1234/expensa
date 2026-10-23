@@ -224,9 +224,12 @@ async function ExpenseDetail({ slug, expenseId }: { slug: string; expenseId: str
   // Only users with access to the project see its expenses; others get a 404.
   const workspace = await findAccessibleWorkspaceBySlug(slug);
   if (!workspace) notFound();
-  const expense = await fetchExpense(expenseId, workspace.id);
+  const [expense, materialItems] = await Promise.all([
+    fetchExpense(expenseId, workspace.id),
+    // Own access check inside; an expense from another project 404s just below.
+    getExpenseItems(expenseId).catch(() => []),
+  ]);
   if (!expense) notFound();
-  const materialItems = await getExpenseItems(expenseId);
 
   const ref = invoiceRef(expense);
   const categoryColor = expense.category?.color ?? DEFAULT_CATEGORY_COLOR;

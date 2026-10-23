@@ -1,40 +1,34 @@
 "use client";
 
-import { SELECT_CLASS } from "@/constants";
-import DataTable, { DataTableRow, RowLink, Td, type DataTableColumn } from "./DataTable";
-import CategoryBadge from "./CategoryBadge";
-import ClearFiltersButton from "./ClearFiltersButton";
-import { Bone } from "./Skeleton";
-import { formatAmount } from "@/utils/formatAmount";
-import { formatSafeDate } from "@/lib/formatSafeDate";
-import { useState, useEffect, useTransition, useCallback } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import {
-  AreaChart,
   Area,
-  BarChart,
-  Bar,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid,
-  Cell,
 } from "recharts";
-import { getFiltersData, getDashboardData, getWorkspaceTotal } from "@/actions/dashboard";
+import { SELECT_CLASS } from "@/constants";
+import FormSection from "./FormSection";
+import ClearFiltersButton from "./ClearFiltersButton";
+import { Bone } from "./Skeleton";
+import { getDashboardData, getFiltersData, getWorkspaceTotal } from "@/actions/dashboard";
 import type {
-  Workspace,
-  Stage,
-  Level,
   DashboardData,
+  Level,
+  MonthTotal,
+  Stage,
   TrendPoint,
-  CategoryRow,
-  ProviderRow,
-  KpiRow,
-  RecentRow,
+  Workspace,
   WorkspaceTotal,
 } from "@/actions/dashboard";
 
-// ─── Utilities ────────────────────────────────────────────────────────────────
+// Manager view: how much this month (vs last), the project total, how spending
+// moved through the month, and where the money goes (categories, providers).
+// Amounts in different currencies are never added together; the "primary"
+// currency (soles when present) drives the chart and the ranked lists.
 
 const MONTHS = [
   "Enero",
@@ -51,455 +45,236 @@ const MONTHS = [
   "Diciembre",
 ];
 
-const CURRENCY_COLOR: Record<string, string> = {
-  PEN: "#7c3aed", // violet-500  (antes amber)
-  USD: "#0284c7", // sky-400     (antes blue-400)
-  EUR: "#9333ea", // purple-400  (antes violet-300)
-};
+const SYMBOL: Record<string, string> = { PEN: "S/", USD: "$", EUR: "€" };
+const symbol = (c: string) => SYMBOL[c] ?? c;
 
-const getCurrencyColor = (c: string) => CURRENCY_COLOR[c] ?? "#6b7280";
-const getCurrencySymbol = (c: string) => (c === "USD" ? "$" : c === "EUR" ? "€" : "S/");
+const money = (centavos: number, currency: string) =>
+  `${symbol(currency)} ${(centavos / 100).toLocaleString("es-PE", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 
-const fmtAmount = (centavos: number) =>
-  (centavos / 100).toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-const fmtCompact = (centavos: number) => {
+const compact = (centavos: number) => {
   const n = centavos / 100;
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
   return n.toFixed(0);
 };
 
-// ─── Tooltip types ────────────────────────────────────────────────────────────
-
-interface TooltipItem<TData = Record<string, unknown>> {
-  dataKey?: string | number;
-  value?: number;
-  stroke?: string;
-  fill?: string;
-  payload?: TData;
+/** Soles first, then the currency with the most spent. */
+function byImportance<T extends { currency: string; total: number }>(rows: T[]): T[] {
+  return [...rows]
+    .filter((r) => r.total !== 0)
+    .sort((a, b) => (a.currency === "PEN" ? -1 : b.currency === "PEN" ? 1 : b.total - a.total));
 }
 
-interface ChartTooltipProps<TData = Record<string, unknown>> {
-  active?: boolean;
-  payload?: TooltipItem<TData>[];
-  label?: string | number;
-}
+const CARD = "rounded-xl border border-navy-100 bg-white p-5";
+// One accent hue for magnitude (sequential), as in the dataviz guidance.
+const ACCENT = "#7c3aed";
 
-// ─── Spinner / Empty ──────────────────────────────────────────────────────────
+// ─── Small pieces ─────────────────────────────────────────────────────────────
 
-// Same 220px height as the charts, so the card doesn't resize when data arrives.
-const CHART_BARS = [55, 80, 40, 95, 65, 75, 45, 85];
-function ChartSkeleton() {
+function CardTitle({ title, hint }: { title: string; hint?: string }) {
   return (
-    <div aria-hidden className="flex h-[220px] items-end gap-3 px-2 pb-6">
-      {CHART_BARS.map((h, i) => (
-        <Bone key={i} className="flex-1 rounded-t-md rounded-b-none" style={{ height: `${h}%` }} />
-      ))}
+    <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+      <h2 className="font-book text-navy-900">{title}</h2>
+      {hint && <span className="text-xs text-navy-400">{hint}</span>}
     </div>
   );
 }
 
-function EmptyState({ message }: { message: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center h-full min-h-[120px] gap-2">
-      <div className="text-gray-300 text-3xl">—</div>
-      <p className="text-gray-500 text-sm">{message}</p>
-    </div>
-  );
-}
-
-// ─── Historical Total Banner ──────────────────────────────────────────────────
-
-function HistoricalBanner({ totals, loading }: { totals: WorkspaceTotal[]; loading: boolean }) {
-  if (loading) {
-    return (
-      <div className="border-b border-gray-200/60 bg-gray-50/60">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex gap-6">
-          <Bone className="h-4 w-32" />
-          <Bone className="h-4 w-24" />
-        </div>
-      </div>
-    );
+/**
+ * Change against the previous month. Neutral ink with an arrow and words, not
+ * red/green: spending more isn't automatically bad, and color alone would hide
+ * the meaning from some readers.
+ */
+function Delta({ now, before, label }: { now: number; before: number; label: string }) {
+  if (!before) {
+    return <p className="mt-2 text-xs text-navy-400">Sin datos de {label} para comparar</p>;
   }
-
-  if (totals.length === 0) return null;
-
+  const pct = Math.round(((now - before) / before) * 100);
+  const arrow = pct > 0 ? "↑" : pct < 0 ? "↓" : "→";
+  const words = pct === 0 ? "igual que" : `${Math.abs(pct)}% ${pct > 0 ? "más" : "menos"} que`;
   return (
-    <div>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex flex-wrap items-center gap-x-6 gap-y-1">
-        <span className="text-gray-600 text-xs uppercase tracking-widest font-medium shrink-0">
-          Acumulado total
-        </span>
-        {totals.map((t) => (
-          <div key={t.currency} className="flex items-baseline gap-1.5">
-            <span className="text-xs font-semibold" style={{ color: getCurrencyColor(t.currency) }}>
-              {getCurrencySymbol(t.currency)}
-            </span>
-            <span className="text-gray-800 font-mono text-sm font-semibold">
-              {fmtAmount(t.total)}
-            </span>
-            <span className="text-xs">{t.currency}</span>
-            <span className="text-xs">· {t.count.toLocaleString()} fact.</span>
-          </div>
-        ))}
-      </div>
+    <p className="mt-2 text-xs text-navy-500">
+      <span aria-hidden className="mr-1 font-medium text-navy-700">
+        {arrow}
+      </span>
+      {words} {label}
+    </p>
+  );
+}
+
+function StatTile({
+  label,
+  loading,
+  children,
+}: {
+  label: string;
+  loading: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={CARD}>
+      <p className="text-sm text-navy-500">{label}</p>
+      {loading ? (
+        <>
+          <Bone className="mt-2 h-8 w-40" />
+          <Bone className="mt-3 h-3 w-32" />
+        </>
+      ) : (
+        children
+      )}
     </div>
   );
 }
 
-// ─── KPI Card ─────────────────────────────────────────────────────────────────
-
-function KpiCard({ kpi }: { kpi: KpiRow }) {
-  const color = getCurrencyColor(kpi.currency);
-  const symbol = getCurrencySymbol(kpi.currency);
+/** Amounts per currency: the main one large, others smaller beside it. */
+function Amounts({ rows }: { rows: { currency: string; total: number }[] }) {
+  const ordered = byImportance(rows);
+  if (!ordered.length) return <p className="mt-1 text-3xl text-navy-300 tabular-nums">—</p>;
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5 flex flex-col gap-3">
-      <div className="flex items-center justify-between">
+    <p className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1 tabular-nums">
+      {ordered.map((r, i) => (
         <span
-          className="text-xs font-semibold tracking-widest uppercase px-2 py-0.5 rounded"
-          style={{ color, backgroundColor: `${color}18` }}
+          key={r.currency}
+          className={
+            i === 0
+              ? "text-3xl font-semibold tracking-tight text-navy-900"
+              : "text-base font-medium text-navy-700"
+          }
         >
-          {kpi.currency}
+          {money(r.total, r.currency)}
         </span>
-        <span className="text-gray-400 text-xs">{kpi.count} facturas</span>
-      </div>
-      <div>
-        <p className="text-gray-500 text-xs mb-1">Total gastado de este mes</p>
-        <p className="text-2xl font-bold text-gray-900 font-mono tracking-tight">
-          <span className="text-sm mr-1" style={{ color }}>
-            {symbol}
-          </span>
-          {fmtAmount(kpi.total)}
-        </p>
-      </div>
-      <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-200">
-        <div>
-          <p className="text-gray-400 text-xs mb-0.5">Promedio</p>
-          <p className="text-gray-800 text-sm font-mono">
-            {symbol}
-            {fmtCompact(kpi.average)}
-          </p>
-        </div>
-        <div>
-          <p className="text-gray-400 text-xs mb-0.5">Máximo</p>
-          <p className="text-gray-800 text-sm font-mono">
-            {symbol}
-            {fmtCompact(kpi.max)}
-          </p>
-        </div>
-      </div>
-    </div>
+      ))}
+    </p>
   );
 }
 
-// ─── Trend Chart ──────────────────────────────────────────────────────────────
+// ─── Trend ────────────────────────────────────────────────────────────────────
 
-function TrendTooltip({ active, payload, label }: ChartTooltipProps<TrendPoint>) {
+function TrendTooltip({
+  active,
+  payload,
+  label,
+  currency,
+}: {
+  active?: boolean;
+  payload?: { value?: number }[];
+  label?: string | number;
+  currency: string;
+}) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-gray-100 border border-gray-300 rounded-lg px-3 py-2 shadow-xl">
-      <p className="text-gray-500 text-xs mb-1">Día {label}</p>
-      {payload.map((p) => {
-        const key = String(p.dataKey);
-        return (
-          <p key={key} className="text-sm font-mono" style={{ color: p.stroke }}>
-            {getCurrencySymbol(key)}
-            {fmtAmount(p.value ?? 0)}
-          </p>
-        );
-      })}
+    <div className="rounded-lg border border-navy-100 bg-white px-3 py-2 shadow-card">
+      <p className="text-xs text-navy-500">Día {label}</p>
+      <p className="text-sm font-medium text-navy-900 tabular-nums">
+        {money(payload[0].value ?? 0, currency)}
+      </p>
     </div>
   );
 }
 
-function TrendChart({
-  trend,
-  currencies,
-  loading,
-}: {
-  trend: TrendPoint[];
-  currencies: string[];
-  loading: boolean;
-}) {
-  if (loading) return <ChartSkeleton />;
-  if (trend.length === 0) return <EmptyState message="Sin gastos este mes" />;
-
+function TrendChart({ trend, currency }: { trend: TrendPoint[]; currency: string }) {
   return (
     <ResponsiveContainer width="100%" height={220}>
-      <AreaChart data={trend} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+      <AreaChart data={trend} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
         <defs>
-          {currencies.map((cur) => (
-            <linearGradient key={cur} id={`grad-${cur}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor={getCurrencyColor(cur)} stopOpacity={0.25} />
-              <stop offset="95%" stopColor={getCurrencyColor(cur)} stopOpacity={0} />
-            </linearGradient>
-          ))}
+          <linearGradient id="trend-fill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={ACCENT} stopOpacity={0.18} />
+            <stop offset="100%" stopColor={ACCENT} stopOpacity={0} />
+          </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+        <CartesianGrid stroke="#ecebf5" vertical={false} />
         <XAxis
           dataKey="day"
-          tick={{ fill: "#9ca3af", fontSize: 11 }}
+          tick={{ fill: "#8a87a8", fontSize: 11 }}
           axisLine={false}
           tickLine={false}
+          interval="preserveStartEnd"
+          minTickGap={16}
         />
         <YAxis
-          type="category"
-          dataKey="name"
+          tickFormatter={(v: number) => compact(v)}
+          tick={{ fill: "#8a87a8", fontSize: 11 }}
           axisLine={false}
           tickLine={false}
-          width={140}
-          tick={<TruncatedTick />}
+          width={44}
         />
-        <Tooltip content={<TrendTooltip />} cursor={{ stroke: "#f3f4f6" }} />
-        {currencies.map((cur) => (
-          <Area
-            key={cur}
-            type="monotone"
-            dataKey={cur}
-            stroke={getCurrencyColor(cur)}
-            strokeWidth={2}
-            fill={`url(#grad-${cur})`}
-            dot={false}
-            activeDot={{ r: 4, fill: getCurrencyColor(cur) }}
-          />
-        ))}
+        <Tooltip
+          content={<TrendTooltip currency={currency} />}
+          cursor={{ stroke: "#c4b5fd", strokeWidth: 1 }}
+        />
+        <Area
+          type="monotone"
+          dataKey={currency}
+          stroke={ACCENT}
+          strokeWidth={2}
+          fill="url(#trend-fill)"
+          dot={false}
+          activeDot={{ r: 4, fill: ACCENT, stroke: "#fff", strokeWidth: 2 }}
+        />
       </AreaChart>
     </ResponsiveContainer>
   );
 }
 
-// ─── Category Chart ───────────────────────────────────────────────────────────
+// ─── Ranked list (categories, providers) ──────────────────────────────────────
 
-function CategoryTooltip({ active, payload }: ChartTooltipProps<CategoryRow>) {
-  if (!active || !payload?.length) return null;
-  const item = payload[0].payload;
-  if (!item) return null;
-  return (
-    <div className="bg-gray-100 border border-gray-300 rounded-lg px-3 py-2 shadow-xl">
-      <p className="text-gray-700 text-sm">{item.name}</p>
-      <p className="text-sm font-mono text-violet-600">
-        {getCurrencySymbol(item.currency)}
-        {fmtAmount(payload[0].value ?? 0)}
-      </p>
-    </div>
-  );
-}
-
-function CategoryChart({ categories, loading }: { categories: CategoryRow[]; loading: boolean }) {
-  if (loading) return <ChartSkeleton />;
-  if (categories.length === 0) return <EmptyState message="Sin datos de categorías" />;
-
-  const primary = categories[0]?.currency ?? "PEN";
-  const filtered = categories
-    .filter((c) => c.currency === primary)
-    .slice(0, 6)
-    .map((c) => ({ ...c, name: c.name }));
-
-  return (
-    <ResponsiveContainer width="100%" height={220}>
-      <BarChart
-        data={filtered}
-        layout="vertical"
-        margin={{ top: 0, right: 16, left: 0, bottom: 0 }}
-      >
-        <XAxis
-          type="number"
-          tickFormatter={(v: number) => fmtCompact(v)}
-          tick={{ fill: "#9ca3af", fontSize: 11 }}
-          axisLine={false}
-          tickLine={false}
-        />
-        <YAxis
-          type="category"
-          dataKey="name"
-          tick={{ fill: "#6b7280", fontSize: 12 }}
-          axisLine={false}
-          tickLine={false}
-          width={100}
-        />
-        <Tooltip content={<CategoryTooltip />} cursor={{ fill: "#e5e7eb" }} />
-        <Bar dataKey="total" radius={[0, 4, 4, 0]}>
-          {filtered.map((entry, i) => (
-            <Cell
-              key={i}
-              fill={entry.color ?? getCurrencyColor(entry.currency)}
-              fillOpacity={0.85}
-            />
-          ))}
-        </Bar>
-      </BarChart>
-    </ResponsiveContainer>
-  );
-}
-
-// ─── Provider Chart ───────────────────────────────────────────────────────────
-
-function ProviderTooltip({ active, payload }: ChartTooltipProps<ProviderRow>) {
-  if (!active || !payload?.length) return null;
-  const item = payload[0].payload;
-  if (!item) return null;
-  const color = getCurrencyColor(item.currency);
-  return (
-    <div className="bg-gray-100 border border-gray-300 rounded-lg px-3 py-2 shadow-xl">
-      <p className="text-gray-700 text-sm">{item.name}</p>
-      <p className="text-sm font-mono" style={{ color }}>
-        {getCurrencySymbol(item.currency)}
-        {fmtAmount(payload[0].value ?? 0)}
-      </p>
-      <p className="text-gray-400 text-xs">{item.count} facturas</p>
-    </div>
-  );
-}
-
-function ProviderChart({ providers, loading }: { providers: ProviderRow[]; loading: boolean }) {
-  if (loading) return <ChartSkeleton />;
-  if (providers.length === 0) return <EmptyState message="Sin datos de proveedores" />;
-
-  const truncate = (str: string, max: number) => (str.length > max ? `${str.slice(0, max)}…` : str);
-  const primary = providers[0]?.currency ?? "PEN";
-  const filtered = providers
-    .filter((p) => p.currency === primary)
-    .slice(0, 6)
-    .map((p) => ({ ...p, name: truncate(p.name ?? "", 20) }));
-  const color = getCurrencyColor(primary);
-
-  return (
-    <ResponsiveContainer width="100%" height={220}>
-      <BarChart
-        data={filtered}
-        layout="vertical"
-        margin={{ top: 0, right: 16, left: 0, bottom: 0 }}
-      >
-        <XAxis
-          type="number"
-          tickFormatter={(v: number) => fmtCompact(v)}
-          tick={{ fill: "#9ca3af", fontSize: 11 }}
-          axisLine={false}
-          tickLine={false}
-        />
-        <YAxis
-          type="category"
-          dataKey="name"
-          tick={{ fill: "#6b7280", fontSize: 12 }}
-          axisLine={false}
-          tickLine={false}
-          width={150}
-        />
-        <Tooltip content={<ProviderTooltip />} cursor={{ fill: "#e5e7eb" }} />
-        <Bar dataKey="total" fill={color} fillOpacity={0.8} radius={[0, 4, 4, 0]} />
-      </BarChart>
-    </ResponsiveContainer>
-  );
-}
-
-const TruncatedTick = ({
-  x = 0,
-  y = 0,
-  payload = { value: "" },
-}: {
-  x?: number;
-  y?: number;
-  payload?: { value: string };
-}) => {
-  const max = 18; // caracteres máximos
-  const text = payload.value?.length > max ? `${payload.value.slice(0, max)}…` : payload.value;
-  return (
-    <text x={x} y={y} dy={4} textAnchor="end" fill="#6b7280" fontSize={12}>
-      {text}
-    </text>
-  );
-};
-
-// ─── Recent Table ─────────────────────────────────────────────────────────────
-
-const RECENT_COLUMNS: DataTableColumn[] = [
-  { label: "Factura" },
-  { label: "Proveedor" },
-  { label: "Categoría", hideBelow: "lg" },
-  { label: "Etapa", hideBelow: "xl" },
-  { label: "Fecha de pago", hideBelow: "md" },
-  { label: "Monto", align: "right" },
-];
-
-function RecentTable({
+/** Name, amount and a single-hue bar against the largest; values are labeled. */
+function RankedList({
   rows,
-  loading,
-  workspaceSlug,
+  currency,
+  empty,
 }: {
-  rows: RecentRow[];
-  loading: boolean;
-  workspaceSlug?: string;
+  rows: { name: string; total: number; detail?: string }[];
+  currency: string;
+  empty: string;
 }) {
+  if (!rows.length) return <p className="py-8 text-center text-sm text-navy-400">{empty}</p>;
+  const max = Math.max(...rows.map((r) => r.total));
   return (
-    <DataTable
-      columns={RECENT_COLUMNS}
-      numbered
-      isLoading={loading}
-      isEmpty={rows.length === 0}
-      emptyMessage="Sin gastos registrados."
-    >
-      {rows.map((row, i) => {
-        const href = workspaceSlug
-          ? `/admin/workspaces/${workspaceSlug}/expenses/${row.id}`
-          : undefined;
-        const invoice =
-          row.invoice_series && row.invoice_number
-            ? `${row.invoice_series}-${row.invoice_number}`
-            : (row.invoice_number ?? "—");
-        return (
-          <DataTableRow key={row.id} href={href} number={i + 1}>
-            <Td className="font-mono">
-              {href ? <RowLink href={href}>{invoice}</RowLink> : invoice}
-            </Td>
-            <Td>
-              <span className="block max-w-56 truncate">{row.provider_name ?? "—"}</span>
-            </Td>
-            <Td>
-              <CategoryBadge category={row.category_name} color={row.category_color} />
-            </Td>
-            <Td>{row.stage_name ?? "—"}</Td>
-            <Td>{formatSafeDate(row.paid_at, "d MMM yyyy")}</Td>
-            <Td align="right" className="font-book text-navy-900 tabular-nums">
-              {formatAmount(row.amount, row.currency)}
-            </Td>
-          </DataTableRow>
-        );
-      })}
-    </DataTable>
-  );
-}
-
-// ─── Filter Select ────────────────────────────────────────────────────────────
-
-function FilterSelect({
-  value,
-  onChange,
-  placeholder,
-  options,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  placeholder: string;
-  options: { id: string; name: string; color?: string | null }[];
-}) {
-  return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className={`${SELECT_CLASS} w-auto cursor-pointer`}
-    >
-      <option value="">{placeholder}</option>
-      {options.map((o) => (
-        <option key={o.id} value={o.id}>
-          {o.name}
-        </option>
+    <ol className="space-y-3.5">
+      {rows.map((r) => (
+        <li key={r.name}>
+          <div className="mb-1.5 flex items-baseline justify-between gap-3 text-sm">
+            <span className="min-w-0 truncate text-navy-900" title={r.name}>
+              {r.name}
+            </span>
+            <span className="flex-shrink-0 text-navy-700 tabular-nums">
+              {money(r.total, currency)}
+              {r.detail && <span className="ml-2 text-xs text-navy-400">{r.detail}</span>}
+            </span>
+          </div>
+          <div className="h-1.5 overflow-hidden rounded-full bg-navy-50" aria-hidden>
+            <div
+              className="h-full rounded-full"
+              style={{ width: `${Math.max(2, (r.total / max) * 100)}%`, background: ACCENT }}
+            />
+          </div>
+        </li>
       ))}
-    </select>
+    </ol>
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+function RankedSkeleton() {
+  return (
+    <div className="space-y-3.5" aria-hidden>
+      {[80, 62, 48, 35, 24].map((w) => (
+        <div key={w}>
+          <div className="mb-1.5 flex justify-between">
+            <Bone className="h-3.5 w-32" />
+            <Bone className="h-3.5 w-20" />
+          </div>
+          <Bone className="h-1.5 rounded-full" style={{ width: `${w}%` }} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 interface Props {
   workspaces: Workspace[];
@@ -511,15 +286,13 @@ export default function DashboardClient({ workspaces, defaultYear, defaultMonth 
   const [workspaceId, setWorkspaceId] = useState<string>(workspaces[0]?.id ?? "");
   const [year, setYear] = useState(defaultYear);
   const [month, setMonth] = useState(defaultMonth);
-  const [stageId, setStageId] = useState<string>("");
-  const [levelId, setLevelId] = useState<string>("");
+  const [stageId, setStageId] = useState("");
+  const [levelId, setLevelId] = useState("");
 
   const [stages, setStages] = useState<Stage[]>([]);
   const [levels, setLevels] = useState<Level[]>([]);
   const [data, setData] = useState<DashboardData | null>(null);
-  const [historicalTotals, setHistoricalTotals] = useState<WorkspaceTotal[]>([]);
-  const [historicalLoading, setHistoricalLoading] = useState(false);
-
+  const [projectTotals, setProjectTotals] = useState<WorkspaceTotal[] | null>(null);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -527,29 +300,18 @@ export default function DashboardClient({ workspaces, defaultYear, defaultMonth 
     setStageId("");
     setLevelId("");
     setData(null);
-
+    setProjectTotals(null);
     getFiltersData(workspaceId).then(({ stages: s, levels: l }) => {
       setStages(s);
       setLevels(l);
     });
-
-    setHistoricalLoading(true);
-    getWorkspaceTotal(workspaceId)
-      .then(setHistoricalTotals)
-      .finally(() => setHistoricalLoading(false));
+    getWorkspaceTotal(workspaceId).then(setProjectTotals);
   }, [workspaceId]);
 
   const loadData = useCallback(() => {
     if (!workspaceId) return;
     startTransition(async () => {
-      const result = await getDashboardData(
-        workspaceId,
-        year,
-        month,
-        stageId || null,
-        levelId || null,
-      );
-      setData(result);
+      setData(await getDashboardData(workspaceId, year, month, stageId || null, levelId || null));
     });
   }, [workspaceId, year, month, stageId, levelId]);
 
@@ -557,6 +319,7 @@ export default function DashboardClient({ workspaces, defaultYear, defaultMonth 
     loadData();
   }, [loadData]);
 
+  const isCurrentMonth = year === defaultYear && month === defaultMonth;
   const prevMonth = () => {
     if (month === 1) {
       setMonth(12);
@@ -564,89 +327,134 @@ export default function DashboardClient({ workspaces, defaultYear, defaultMonth 
     } else setMonth((m) => m - 1);
   };
   const nextMonth = () => {
-    const now = new Date();
-    if (year === now.getFullYear() && month === now.getMonth() + 1) return;
+    if (isCurrentMonth) return;
     if (month === 12) {
       setMonth(1);
       setYear((y) => y + 1);
     } else setMonth((m) => m + 1);
   };
-  const isCurrentMonth = year === defaultYear && month === defaultMonth;
-  const currentWorkspace = workspaces.find((w) => w.id === workspaceId);
+
+  const monthName = MONTHS[month - 1];
+  const prevMonthName = MONTHS[(month + 10) % 12];
+  const loading = !data || isPending;
+
+  // This month, per currency, from the KPI rows.
+  const thisMonth: MonthTotal[] = (data?.kpis ?? []).map((k) => ({
+    currency: k.currency,
+    total: k.total,
+    count: k.count,
+  }));
+  const primary = byImportance(thisMonth)[0]?.currency ?? "PEN";
+  const now = thisMonth.find((t) => t.currency === primary);
+  const before = data?.previous.find((t) => t.currency === primary);
+  const countNow = thisMonth.reduce((s, t) => s + t.count, 0);
+  const countBefore = (data?.previous ?? []).reduce((s, t) => s + t.count, 0);
+  const otherCurrencies = thisMonth.filter((t) => t.currency !== primary).map((t) => t.currency);
+
+  const categories = (data?.categories ?? [])
+    .filter((c) => c.currency === primary)
+    .slice(0, 6)
+    .map((c) => ({ name: c.name, total: c.total }));
+  const providers = (data?.providers ?? [])
+    .filter((p) => p.currency === primary)
+    .slice(0, 6)
+    .map((p) => ({
+      name: p.name ?? "Sin proveedor",
+      total: p.total,
+      detail: `${p.count} ${p.count === 1 ? "gasto" : "gastos"}`,
+    }));
+
+  const navButton =
+    "flex w-11 items-center justify-center text-navy-700 transition-colors hover:bg-navy-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-500 disabled:cursor-not-allowed disabled:text-navy-300 disabled:hover:bg-transparent sm:w-9.5 cursor-pointer";
+
+  if (!workspaces.length) {
+    return (
+      <FormSection title="Dashboard">
+        <p className="py-16 text-center text-sm text-navy-500">
+          Aún no tienes proyectos para mostrar.
+        </p>
+      </FormSection>
+    );
+  }
 
   return (
-    <div className="min-h-screen">
-      {/* ── Header ────────────────────────────────────────────────────────── */}
-      <header className="border-b border-gray-200  z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4 flex-wrap">
-          <div>
-            {/* Same title style as the other screens (FormSection). */}
-            <h1 className="text-lg font-book text-navy-900">Dashboard</h1>
-            {currentWorkspace && (
-              <p className="text-gray-500 text-sm mt-0.5">{currentWorkspace.name}</p>
-            )}
-          </div>
+    <FormSection title="Dashboard">
+      <div className="space-y-6">
+        {/* Filters: one row above everything they affect. */}
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={workspaceId}
+            onChange={(e) => setWorkspaceId(e.target.value)}
+            aria-label="Proyecto"
+            className={`${SELECT_CLASS} w-full sm:w-auto`}
+          >
+            {workspaces.map((w) => (
+              <option key={w.id} value={w.id}>
+                {w.name}
+              </option>
+            ))}
+          </select>
 
-          {workspaces.length > 0 && (
-            <select
-              value={workspaceId}
-              onChange={(e) => setWorkspaceId(e.target.value)}
-              aria-label="Proyecto"
-              className={`${SELECT_CLASS} w-auto font-medium`}
-            >
-              {workspaces.map((w) => (
-                <option key={w.id} value={w.id}>
-                  {w.name}
-                </option>
-              ))}
-            </select>
-          )}
-        </div>
-
-        <HistoricalBanner totals={historicalTotals} loading={historicalLoading} />
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-        {/* ── Filters ─────────────────────────────────────────────────────── */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg p-1">
+          <div
+            role="group"
+            aria-label="Mes"
+            className="flex h-11 items-stretch overflow-hidden rounded-lg border border-navy-200 bg-white sm:h-9.5"
+          >
             <button
+              type="button"
               onClick={prevMonth}
               aria-label="Mes anterior"
-              className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-200/70 rounded-md transition-colors"
+              className={navButton}
             >
               ‹
             </button>
-            <span className="text-gray-800 text-sm font-medium px-3 min-w-[130px] text-center">
-              {MONTHS[month - 1]} {year}
+            <span
+              aria-live="polite"
+              className="flex min-w-36 items-center justify-center px-2 text-sm text-navy-900 tabular-nums"
+            >
+              {monthName} {year}
             </span>
             <button
+              type="button"
               onClick={nextMonth}
-              aria-label="Mes siguiente"
               disabled={isCurrentMonth}
-              className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-200/70 rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              aria-label="Mes siguiente"
+              className={navButton}
             >
               ›
             </button>
           </div>
 
           {stages.length > 0 && (
-            <FilterSelect
+            <select
               value={stageId}
-              onChange={setStageId}
-              placeholder="Todas las etapas"
-              options={stages}
-            />
+              onChange={(e) => setStageId(e.target.value)}
+              aria-label="Etapa"
+              className={`${SELECT_CLASS} w-auto`}
+            >
+              <option value="">Todas las etapas</option>
+              {stages.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
           )}
           {levels.length > 0 && (
-            <FilterSelect
+            <select
               value={levelId}
-              onChange={setLevelId}
-              placeholder="Todos los niveles"
-              options={levels}
-            />
+              onChange={(e) => setLevelId(e.target.value)}
+              aria-label="Nivel"
+              className={`${SELECT_CLASS} w-auto`}
+            >
+              <option value="">Todos los niveles</option>
+              {levels.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.name}
+                </option>
+              ))}
+            </select>
           )}
-
           <ClearFiltersButton
             onClick={() => {
               setStageId("");
@@ -654,117 +462,75 @@ export default function DashboardClient({ workspaces, defaultYear, defaultMonth 
             }}
             disabled={!stageId && !levelId}
           />
-
-          {isPending && (
-            <div className="w-4 h-4 border-2 border-gray-300 border-t-violet-600 rounded-full animate-spin ml-auto" />
-          )}
         </div>
 
-        {/* ── KPI Cards ───────────────────────────────────────────────────── */}
-        {data && data.kpis.length > 0 ? (
-          <div
-            className={`grid gap-4 ${data.kpis.length >= 2 ? "grid-cols-2 lg:grid-cols-4" : "grid-cols-1 sm:grid-cols-2"}`}
-          >
-            {data.kpis.map((kpi) => (
-              <KpiCard key={kpi.currency} kpi={kpi} />
-            ))}
-            <div className="bg-white border border-gray-200 rounded-xl p-5 flex flex-col gap-3">
-              <span className="text-xs font-semibold tracking-widest uppercase text-gray-400">
-                Resumen
-              </span>
-              <div>
-                <p className="text-gray-500 text-xs mb-1">Total facturas</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {data.kpis.reduce((s, k) => s + k.count, 0)}
-                </p>
-              </div>
-              <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-200">
-                {data.currencies.map((cur) => {
-                  const kpi = data.kpis.find((k) => k.currency === cur)!;
-                  return (
-                    <div key={cur}>
-                      <p className="text-gray-400 text-xs mb-0.5">{cur}</p>
-                      <p className="text-gray-700 text-sm font-mono">{kpi.count} fact.</p>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        ) : !isPending && data?.kpis.length === 0 ? (
-          <div className="bg-white border border-gray-200 rounded-xl p-8 text-center">
-            <p className="text-gray-400">
-              Sin gastos en {MONTHS[month - 1]} {year}
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div
-                key={i}
-                className="flex h-[140px] flex-col gap-3 rounded-xl border border-gray-200 bg-white p-5"
-              >
-                <Bone className="h-3 w-16" />
-                <Bone className="h-7 w-32" />
-                <Bone className="mt-auto h-3 w-20" />
-              </div>
-            ))}
-          </div>
-        )}
+        {/* Headline numbers. */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <StatTile label={`Gastado en ${monthName}`} loading={loading}>
+            <Amounts rows={thisMonth} />
+            <Delta now={now?.total ?? 0} before={before?.total ?? 0} label={prevMonthName} />
+          </StatTile>
 
-        {/* ── Trend Chart ─────────────────────────────────────────────────── */}
-        <div className="bg-white border border-gray-200 rounded-xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-book text-navy-900">
-              Gastos por día
-              <span className="text-gray-300 font-normal ml-2 text-xs">fecha de pago</span>
-            </h2>
-            <div className="flex gap-3">
-              {(data?.currencies ?? []).map((cur) => (
-                <div key={cur} className="flex items-center gap-1.5">
-                  <div
-                    className="w-2 h-2 rounded-full"
-                    style={{ backgroundColor: getCurrencyColor(cur) }}
-                  />
-                  <span className="text-gray-400 text-xs">{cur}</span>
-                </div>
+          <StatTile label="Gastos registrados" loading={loading}>
+            <p className="mt-1 text-3xl font-semibold tracking-tight text-navy-900 tabular-nums">
+              {countNow}
+            </p>
+            <Delta now={countNow} before={countBefore} label={prevMonthName} />
+          </StatTile>
+
+          <StatTile label="Total del proyecto" loading={projectTotals === null}>
+            <Amounts rows={projectTotals ?? []} />
+            <p className="mt-2 text-xs text-navy-500 tabular-nums">
+              {(projectTotals ?? []).reduce((s, t) => s + t.count, 0)} gastos desde el inicio
+            </p>
+          </StatTile>
+        </div>
+
+        {/* How the month went. */}
+        <section className={CARD}>
+          <CardTitle
+            title="Gasto por día"
+            hint={
+              otherCurrencies.length
+                ? `En ${symbol(primary)} · ${otherCurrencies.join(", ")} no se suma aquí`
+                : `En ${symbol(primary)}, por fecha de pago`
+            }
+          />
+          {loading ? (
+            <div className="flex h-[220px] items-end gap-2 pb-6" aria-hidden>
+              {[30, 55, 40, 70, 45, 85, 50, 65, 35, 60].map((h, i) => (
+                <Bone key={i} className="flex-1 rounded-b-none" style={{ height: `${h}%` }} />
               ))}
             </div>
-          </div>
-          <TrendChart
-            trend={data?.trend ?? []}
-            currencies={data?.currencies ?? []}
-            loading={isPending && !data}
-          />
-        </div>
+          ) : (data?.trend.length ?? 0) === 0 || !now ? (
+            <p className="flex h-[220px] items-center justify-center text-sm text-navy-400">
+              Sin gastos en {monthName} {year}
+            </p>
+          ) : (
+            <TrendChart trend={data!.trend} currency={primary} />
+          )}
+        </section>
 
-        {/* ── Category + Provider Charts ───────────────────────────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="bg-white border border-gray-200 rounded-xl p-5">
-            <h2 className="text-sm mb-4 font-book text-navy-900">Top categorías</h2>
-            <CategoryChart categories={data?.categories ?? []} loading={isPending && !data} />
-          </div>
-          <div className="bg-white border border-gray-200 rounded-xl p-5">
-            <h2 className="text-sm mb-4 font-book text-navy-900">Top proveedores</h2>
-            <ProviderChart providers={data?.providers ?? []} loading={isPending && !data} />
-          </div>
-        </div>
-
-        {/* ── Recent Expenses ──────────────────────────────────────────────── */}
-        <div className="bg-white border border-gray-200 rounded-xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-book text-navy-900">Últimos gastos</h2>
-            {data?.recent.length === 10 && (
-              <span className="text-gray-300 text-xs">10 más recientes</span>
+        {/* Where the money goes. */}
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <section className={CARD}>
+            <CardTitle title="¿En qué se gasta?" hint={`Top categorías · ${symbol(primary)}`} />
+            {loading ? (
+              <RankedSkeleton />
+            ) : (
+              <RankedList rows={categories} currency={primary} empty="Sin gastos este mes" />
             )}
-          </div>
-          <RecentTable
-            rows={data?.recent ?? []}
-            loading={isPending && !data}
-            workspaceSlug={currentWorkspace?.slug}
-          />
+          </section>
+          <section className={CARD}>
+            <CardTitle title="Principales proveedores" hint={symbol(primary)} />
+            {loading ? (
+              <RankedSkeleton />
+            ) : (
+              <RankedList rows={providers} currency={primary} empty="Sin gastos este mes" />
+            )}
+          </section>
         </div>
-      </main>
-    </div>
+      </div>
+    </FormSection>
   );
 }

@@ -114,7 +114,7 @@ export default function WorkspaceClient({
       >
         {rows.map((ws, i) => {
           const href = `/admin/workspaces/${ws.slug}/expenses`;
-          const count = ws.expense?.length ?? 0;
+          const count = ws.expense_count?.[0]?.count ?? 0;
           return (
             <DataTableRow
               key={ws.id}

@@ -22,17 +22,17 @@ const EXPENSE_COLUMNS = `
 export default async function Page({ params }: PageProps) {
   const { slug, id } = await params;
 
-  const [lookups, items] = await Promise.all([loadExpenseFormLookups(slug), getExpenseItems(id)]);
+  // Project lookups (with the access check), the expense and its materials all
+  // load at once; the expense is only used if it belongs to that project.
+  const [lookups, items, { data: row, error }] = await Promise.all([
+    loadExpenseFormLookups(slug),
+    getExpenseItems(id).catch(() => []),
+    supabase.from("expense").select(`workspace_id, ${EXPENSE_COLUMNS}`).eq("id", id).maybeSingle(),
+  ]);
   if (!lookups) notFound();
-
-  const { data: expense, error } = await supabase
-    .from("expense")
-    .select(EXPENSE_COLUMNS)
-    .eq("id", id)
-    .eq("workspace_id", lookups.workspace.id)
-    .maybeSingle();
   if (error) throw error;
-  if (!expense) notFound();
+  if (!row || row.workspace_id !== lookups.workspace.id) notFound();
+  const expense = row; // the extra workspace_id field is ignored by the form
 
   const fallback = {
     ...lookups.fallback,

@@ -51,7 +51,8 @@ async function WorkspacesSection() {
   const { data: workspaces, error } = ids.length
     ? await supabaseAdmin
         .from("workspace")
-        .select("id, name, slug, created_by, created_at, expense(*)")
+        // expense(count): the database counts them; no expense rows are sent.
+        .select("id, name, slug, created_by, created_at, expense_count:expense(count)")
         .in("id", ids)
         .order("created_at", { ascending: false })
     : { data: [], error: null };

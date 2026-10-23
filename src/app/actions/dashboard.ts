@@ -1,6 +1,5 @@
 "use server";
 
-import { getCurrentUser } from "@/lib/getCurrentUser";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getAccessibleWorkspaceIds, requireAccess, requirePermission } from "@/lib/access";
 import { Permissions } from "@/types/propertyState";
@@ -42,28 +41,16 @@ export type ProviderRow = {
   count: number;
 };
 
-export type RecentRow = {
-  id: string;
-  paid_at: string;
-  amount: number;
-  currency: string;
-  invoice_series: string | null;
-  invoice_number: string | null;
-  category_name: string | null;
-  category_color: string | null;
-  provider_name: string | null;
-  stage_name: string | null;
-  level_name: string | null;
-  notes: string | null;
-};
+export type MonthTotal = { currency: string; total: number; count: number };
 
 export type DashboardData = {
   kpis: KpiRow[];
+  /** Same filters, previous month: for "vs mes anterior". */
+  previous: MonthTotal[];
   trend: TrendPoint[];
   currencies: string[];
   categories: CategoryRow[];
   providers: ProviderRow[];
-  recent: RecentRow[];
   totalDays: number;
 };
 
@@ -103,27 +90,98 @@ export async function getFiltersData(workspaceId: string): Promise<FiltersData> 
  * Solo trae currency + amount para minimizar la transferencia.
  */
 export async function getWorkspaceTotal(workspaceId: string): Promise<WorkspaceTotal[]> {
-  await requireAccess({ workspaceId, permissions: [Permissions.VIEW_DASHBOARD] });
-  const user = await getCurrentUser();
-  if (!user) throw new Error("No autenticado");
+  const guard = requireAccess({ workspaceId, permissions: [Permissions.VIEW_DASHBOARD] });
+  guard.catch(() => {}); // rejection is handled by Promise.all below
 
-  const { data, error } = await supabaseAdmin
-    .from("expense")
-    .select("currency, amount")
-    .eq("workspace_id", workspaceId);
-
-  if (error) throw new Error(error.message);
+  // The database adds it up (one small row per currency) instead of sending
+  // every expense of the project to be summed here.
+  const [, aggregate] = await Promise.all([
+    guard,
+    supabaseAdmin
+      .from("expense")
+      .select("currency, total:amount.sum(), count:id.count()")
+      .eq("workspace_id", workspaceId),
+  ]);
 
   const map = new Map<string, WorkspaceTotal>();
-  for (const e of data ?? []) {
-    const cur = (e.currency as string).trim();
-    if (!map.has(cur)) map.set(cur, { currency: cur, total: 0, count: 0 });
-    const row = map.get(cur)!;
-    row.total += e.amount as number;
-    row.count += 1;
+  const add = (currency: string, total: number, count: number) => {
+    const cur = currency.trim();
+    const row = map.get(cur) ?? { currency: cur, total: 0, count: 0 };
+    row.total += total;
+    row.count += count;
+    map.set(cur, row);
+  };
+
+  if (!aggregate.error) {
+    for (const r of (aggregate.data ?? []) as unknown as {
+      currency: string;
+      total: number | null;
+      count: number | null;
+    }[]) {
+      add(r.currency, Number(r.total ?? 0), Number(r.count ?? 0));
+    }
+  } else {
+    // Aggregates turned off in the database API: fall back to summing here.
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await supabaseAdmin
+        .from("expense")
+        .select("currency, amount")
+        .eq("workspace_id", workspaceId)
+        .order("id")
+        .range(from, from + 999);
+      if (error) throw new Error(error.message);
+      for (const e of data ?? []) add(e.currency as string, e.amount as number, 1);
+      if (!data || data.length < 1000) break;
+    }
   }
 
   return [...map.values()].sort((a, b) => b.total - a.total);
+}
+
+/**
+ * Total and count per currency for a date range, added up by the database (one
+ * row per currency). Falls back to summing here if aggregates are turned off.
+ */
+async function monthTotals(
+  workspaceId: string,
+  from: string,
+  to: string,
+  stageId?: string | null,
+  levelId?: string | null,
+): Promise<MonthTotal[]> {
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  const scope = (q: any) => {
+    let r = q.eq("workspace_id", workspaceId).gte("paid_at", from).lte("paid_at", to);
+    if (stageId) r = r.eq("stage_id", stageId);
+    if (levelId) r = r.eq("level_id", levelId);
+    return r;
+  };
+  /* eslint-enable @typescript-eslint/no-explicit-any */
+  const map = new Map<string, MonthTotal>();
+  const add = (currency: string, total: number, count: number) => {
+    const cur = currency.trim();
+    const row = map.get(cur) ?? { currency: cur, total: 0, count: 0 };
+    row.total += total;
+    row.count += count;
+    map.set(cur, row);
+  };
+  const agg = await scope(
+    supabaseAdmin.from("expense").select("currency, total:amount.sum(), count:id.count()"),
+  );
+  if (!agg.error) {
+    for (const r of (agg.data ?? []) as {
+      currency: string;
+      total: number | null;
+      count: number | null;
+    }[])
+      add(r.currency, Number(r.total ?? 0), Number(r.count ?? 0));
+  } else {
+    const { data, error } = await scope(supabaseAdmin.from("expense").select("currency, amount"));
+    if (error) throw new Error(error.message);
+    for (const e of (data ?? []) as { currency: string; amount: number }[])
+      add(e.currency, e.amount, 1);
+  }
+  return [...map.values()];
 }
 
 export async function getDashboardData(
@@ -133,9 +191,9 @@ export async function getDashboardData(
   stageId?: string | null,
   levelId?: string | null,
 ): Promise<DashboardData> {
-  await requireAccess({ workspaceId, permissions: [Permissions.VIEW_DASHBOARD] });
-  const user = await getCurrentUser();
-  if (!user) throw new Error("No autenticado");
+  // Access check alongside the query; if it fails, no data leaves the server.
+  const guard = requireAccess({ workspaceId, permissions: [Permissions.VIEW_DASHBOARD] });
+  guard.catch(() => {}); // rejection is handled by Promise.all below
 
   const startDate = new Date(year, month - 1, 1).toISOString();
   const daysInMonth = new Date(year, month, 0).getDate();
@@ -143,8 +201,12 @@ export async function getDashboardData(
 
   let q = supabaseAdmin
     .from("expense")
+    // Names come embedded in the same query (they used to be 4 more lookups after it).
     .select(
-      "id, paid_at, amount, currency, invoice_series, invoice_number, notes, category_id, provider_id, stage_id, level_id",
+      `id, paid_at, amount, currency,
+       category_id, provider_id, stage_id, level_id,
+       category:category_id(id, name, color), provider:provider_id(id, name),
+       stage:stage_id(id, name), level:level_id(id, name)`,
     )
     .eq("workspace_id", workspaceId)
     .gte("paid_at", startDate)
@@ -153,43 +215,43 @@ export async function getDashboardData(
   if (stageId) q = q.eq("stage_id", stageId);
   if (levelId) q = q.eq("level_id", levelId);
 
-  const { data: expenses, error } = await q;
+  const prevStart = new Date(year, month - 2, 1).toISOString();
+  const prevEnd = new Date(year, month - 1, 0, 23, 59, 59, 999).toISOString();
+
+  const [, { data: expenses, error }, previous] = await Promise.all([
+    guard,
+    q,
+    monthTotals(workspaceId, prevStart, prevEnd, stageId, levelId),
+  ]);
   if (error) throw new Error(error.message);
   const list = expenses ?? [];
 
   if (list.length === 0) {
     return {
       kpis: [],
+      previous,
       trend: [],
       currencies: [],
       categories: [],
       providers: [],
-      recent: [],
       totalDays: daysInMonth,
     };
   }
 
-  // Collect unique IDs for lookups
-  const catIds = [...new Set(list.map((e) => e.category_id).filter(Boolean))];
-  const provIds = [...new Set(list.map((e) => e.provider_id).filter(Boolean))];
-  const stgIds = [...new Set(list.map((e) => e.stage_id).filter(Boolean))];
-  const lvlIds = [...new Set(list.map((e) => e.level_id).filter(Boolean))];
-
-  const [catsRes, provsRes, stgsRes, lvlsRes] = await Promise.all([
-    catIds.length
-      ? supabaseAdmin.from("category").select("id, name, color").in("id", catIds)
-      : { data: [] },
-    provIds.length
-      ? supabaseAdmin.from("provider").select("id, name").in("id", provIds)
-      : { data: [] },
-    stgIds.length ? supabaseAdmin.from("stage").select("id, name").in("id", stgIds) : { data: [] },
-    lvlIds.length ? supabaseAdmin.from("level").select("id, name").in("id", lvlIds) : { data: [] },
-  ]);
-
-  const catMap = new Map((catsRes.data ?? []).map((x) => [x.id, x]));
-  const provMap = new Map((provsRes.data ?? []).map((x) => [x.id, x]));
-  const stgMap = new Map((stgsRes.data ?? []).map((x) => [x.id, x]));
-  const lvlMap = new Map((lvlsRes.data ?? []).map((x) => [x.id, x]));
+  // Lookup maps from the embedded rows (same shape the code below expects).
+  type Named = { id: string; name: string; color?: string | null };
+  const one = (v: unknown) => (Array.isArray(v) ? v[0] : v) as Named | null | undefined;
+  const catMap = new Map<string, Named>();
+  const provMap = new Map<string, Named>();
+  const stgMap = new Map<string, Named>();
+  const lvlMap = new Map<string, Named>();
+  for (const e of list) {
+    const [c, p, st, l] = [one(e.category), one(e.provider), one(e.stage), one(e.level)];
+    if (c) catMap.set(c.id, c);
+    if (p) provMap.set(p.id, p);
+    if (st) stgMap.set(st.id, st);
+    if (l) lvlMap.set(l.id, l);
+  }
 
   // ── KPIs ────────────────────────────────────────────────────────────────────
   const kpiMap = new Map<string, KpiRow>();
@@ -250,26 +312,13 @@ export async function getDashboardData(
   }
   const providers = [...provTmp.values()].sort((a, b) => b.total - a.total).slice(0, 6);
 
-  // ── Recent ──────────────────────────────────────────────────────────────────
-  const recent: RecentRow[] = list
-    .sort(
-      (a, b) => new Date(b.paid_at as string).getTime() - new Date(a.paid_at as string).getTime(),
-    )
-    .slice(0, 10)
-    .map((e) => ({
-      id: e.id,
-      paid_at: e.paid_at,
-      amount: e.amount,
-      currency: (e.currency as string).trim(),
-      invoice_series: e.invoice_series,
-      invoice_number: e.invoice_number,
-      category_name: catMap.get(e.category_id)?.name ?? null,
-      category_color: catMap.get(e.category_id)?.color ?? null,
-      provider_name: provMap.get(e.provider_id)?.name ?? null,
-      stage_name: stgMap.get(e.stage_id)?.name ?? null,
-      level_name: lvlMap.get(e.level_id)?.name ?? null,
-      notes: e.notes,
-    }));
-
-  return { kpis, trend, currencies, categories, providers, recent, totalDays: daysInMonth };
+  return {
+    kpis,
+    previous,
+    trend,
+    currencies,
+    categories,
+    providers,
+    totalDays: daysInMonth,
+  };
 }

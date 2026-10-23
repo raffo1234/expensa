@@ -82,15 +82,24 @@ export async function requireWorkspaceAccessBySlug(slug: string) {
 
 type WorkspaceScopedTable = "expense" | "material" | "brand" | "unit" | "category" | "provider";
 
-/** Confirms the caller can access the workspace that owns this row. */
+/**
+ * Confirms the caller can access the workspace that owns this row. The row's
+ * workspace, the user and the user's projects are looked up side by side.
+ */
 export async function requireRowAccess(table: WorkspaceScopedTable, id: string) {
-  const { data, error } = await supabaseAdmin
-    .from(table)
-    .select("workspace_id")
-    .eq("id", id)
-    .maybeSingle();
+  const session = await auth();
+  const sessionUserId = session?.user?.id;
+  if (!sessionUserId) throw new AccessError("No autenticado");
+  const [{ data, error }, user, ids] = await Promise.all([
+    supabaseAdmin.from(table).select("workspace_id").eq("id", id).maybeSingle(),
+    getCurrentUser(),
+    accessibleWorkspaceIds(sessionUserId),
+  ]);
   if (error) throw new Error(error.message);
-  return requireWorkspaceAccess(data?.workspace_id as string | undefined);
+  if (!user || user.id !== sessionUserId) throw new AccessError("No autenticado");
+  const workspaceId = data?.workspace_id as string | undefined;
+  if (!workspaceId || !ids.has(workspaceId)) throw new AccessError();
+  return user;
 }
 
 /**

@@ -675,6 +675,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
           columns={summaryColumns(tab)}
           numbered
           isLoading={isLoading && !data}
+          busy={isLoading || searchText !== search}
           isEmpty={expenses.length === 0}
           emptyMessage="No hay gastos con estos filtros"
         >

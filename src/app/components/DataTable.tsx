@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { MouseEvent, ReactNode } from "react";
 import { HIDE_BELOW } from "@/lib/tableColumnVisibility";
+import LoadingSwap from "./LoadingSwap";
 
 // Data table styled after Fly.io's dashboard tables. Spacing, type and color
 // live in Th/Td so every table that uses them stays identical.
@@ -152,12 +153,18 @@ export default function DataTable({
   isLoading,
   emptyMessage,
   numbered = false,
+  busy = false,
   loadingRows = 10,
   children,
 }: {
   columns: DataTableColumn[];
   /** Adds a leading "#" column; rows pass their order number. */
   numbered?: boolean;
+  /**
+   * New results are on their way while the current rows stay visible: the
+   * "#" header turns into loading dots (same signal as the pager).
+   */
+  busy?: boolean;
   /** Skeleton rows shown while loading. */
   loadingRows?: number;
   isEmpty?: boolean;
@@ -179,7 +186,11 @@ export default function DataTable({
         <table className={`w-full divide-y divide-navy-200 ${hideClasses}`}>
           <thead className="text-navy-900">
             <tr>
-              {numbered && <Th className="w-0">#</Th>}
+              {numbered && (
+                <Th className="w-0">
+                  <LoadingSwap busy={busy}>#</LoadingSwap>
+                </Th>
+              )}
               {columns.map((col, i) => (
                 <Th key={i} align={col.align}>
                   {col.label}

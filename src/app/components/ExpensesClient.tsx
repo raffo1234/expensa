@@ -818,6 +818,7 @@ export default function ExpensesClient({
           workspaceSlug={slug}
           materialExpenseIds={materialExpenseIdSet}
           startIndex={(page - 1) * pageSize}
+          busy={isLoading || search !== debouncedSearch}
         />
       </ListPage>
     </FormSection>

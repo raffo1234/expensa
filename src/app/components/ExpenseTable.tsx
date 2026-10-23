@@ -21,6 +21,8 @@ interface ExpenseTableProps {
   materialExpenseIds?: Set<string>;
   /** Number of rows before this page, so "#" continues across pages. */
   startIndex?: number;
+  /** Next results loading (keeps rows visible; dots in the "#" header). */
+  busy?: boolean;
 }
 
 export default function ExpenseTable({
@@ -30,11 +32,13 @@ export default function ExpenseTable({
   workspaceSlug,
   materialExpenseIds,
   startIndex = 0,
+  busy = false,
 }: ExpenseTableProps) {
   return (
     <DataTable
       columns={EXPENSE_COLUMNS}
       numbered
+      busy={busy}
       isEmpty={expenses.length === 0}
       emptyMessage="No hay gastos registrados."
     >

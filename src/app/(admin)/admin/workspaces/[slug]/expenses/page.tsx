@@ -6,6 +6,7 @@ import { checkPermissions } from "@/lib/checkPermissions";
 import { Permissions } from "@/types/propertyState";
 import { supabaseAdmin as supabase } from "@/lib/supabaseAdmin";
 import { sumExpenseAmounts } from "@/lib/sumExpenseAmounts";
+import { EXPENSE_LIST_COLUMNS } from "@/lib/expenseListColumns";
 import ExpensesClient from "@/components/ExpensesClient";
 import FallbackExpenses from "@/components/FallbackExpenses";
 
@@ -35,12 +36,10 @@ async function ExpensesSection({ slug }: { slug: string }) {
     getCurrentUser(),
   ]);
   if (!workspace || !user?.roleId) notFound();
-  const permissions = await checkPermissions(user.roleId, [
-    Permissions.CREATE_EXPENSE,
-    Permissions.VIEW_MATERIALS,
-  ]);
 
+  // Everything else in one round: rows, totals, filter options and permissions.
   const [
+    permissions,
     { data: rows, error: expError, count },
     initialTotals,
     { data: categories },
@@ -48,15 +47,10 @@ async function ExpensesSection({ slug }: { slug: string }) {
     { data: levels },
     { data: providers },
   ] = await Promise.all([
+    checkPermissions(user.roleId, [Permissions.CREATE_EXPENSE, Permissions.VIEW_MATERIALS]),
     supabase
       .from("expense")
-      .select(
-        `id, invoice_series, invoice_number, amount, currency,
-         issued_at, paid_at, payment_method, notes, created_at,
-         provider:provider_id(id, name, ruc),
-         category:category_id(id, name, color)`,
-        { count: "exact" },
-      )
+      .select(EXPENSE_LIST_COLUMNS, { count: "exact" })
       .eq("workspace_id", workspace.id)
       .order("paid_at", { ascending: false })
       .order("id")

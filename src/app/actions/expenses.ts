@@ -11,7 +11,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import {
   AccessError,
-  requirePermission,
+  requireAccess,
   requireRowAccess,
   requireUser,
   requireWorkspaceAccess,
@@ -141,8 +141,10 @@ export async function createExpense(
 ): Promise<{ id?: string; error?: string }> {
   const user = await getCurrentUser();
   if (!user) return { error: "No autenticado" };
-  await requirePermission(Permissions.CREATE_EXPENSE);
-  await requireWorkspaceAccess(input.workspace_id);
+  await requireAccess({
+    workspaceId: input.workspace_id,
+    permissions: [Permissions.CREATE_EXPENSE],
+  });
 
   // 1. Resolve provider
   let providerId: string | null = null;

@@ -1,7 +1,12 @@
 "use server";
 
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { requireRowAccess, requireWorkspaceAccess } from "@/lib/access";
+import {
+  AccessError,
+  findAccessibleWorkspaceBySlug,
+  requireRowAccess,
+  requireWorkspaceAccess,
+} from "@/lib/access";
 
 export async function createProvider({
   workspace_id,
@@ -33,14 +38,37 @@ export type ProviderRecord = {
 };
 
 export async function listProviders(workspaceId: string): Promise<ProviderRecord[]> {
-  await requireWorkspaceAccess(workspaceId);
+  // Access check alongside the query; if it fails, no data leaves the server.
+  const guard = requireWorkspaceAccess(workspaceId);
+  guard.catch(() => {}); // rejection is handled by Promise.all below
+  const [, { data, error }] = await Promise.all([
+    guard,
+    supabaseAdmin
+      .from("provider")
+      .select("id, workspace_id, ruc, name, created_at, updated_at")
+      .eq("workspace_id", workspaceId)
+      .order("name"),
+  ]);
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+/**
+ * The providers page in one request: the project for `slug` (if the caller
+ * may access it) and its providers. Replaces "find project, then list".
+ */
+export async function listProvidersBySlug(
+  slug: string,
+): Promise<{ workspaceId: string; providers: ProviderRecord[] }> {
+  const workspace = await findAccessibleWorkspaceBySlug(slug);
+  if (!workspace) throw new AccessError();
   const { data, error } = await supabaseAdmin
     .from("provider")
     .select("id, workspace_id, ruc, name, created_at, updated_at")
-    .eq("workspace_id", workspaceId)
+    .eq("workspace_id", workspace.id)
     .order("name");
   if (error) throw new Error(error.message);
-  return data ?? [];
+  return { workspaceId: workspace.id, providers: data ?? [] };
 }
 
 export async function findProviderByRuc(

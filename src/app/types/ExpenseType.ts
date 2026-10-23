@@ -16,6 +16,8 @@ export interface Expense {
   invoice_ref?: string;
   stage?: { id: string; name: string; color?: string | null } | null;
   level?: { id: string; name: string } | null;
+  /** Embedded count of material lines (expense_item(count)). */
+  expense_item?: { count: number }[];
 }
 
 export interface ExpenseRow {
@@ -34,4 +36,5 @@ export interface ExpenseRow {
   category?: { id: string; name: string; color?: string | null } | null;
   stage?: { id: string; name: string; color?: string | null } | null;
   level?: { id: string; name: string } | null;
+  expense_item?: { count: number }[];
 }

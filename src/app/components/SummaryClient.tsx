@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import useSWR from "swr";
+import useSWR, { preload } from "swr";
 import { listAllSummaryExpenses, listSummaryExpenses } from "@/actions/summaryQueries";
 import { getCategories } from "@/actions/lookups";
 import { useDebouncedCallback } from "use-debounce";
@@ -445,6 +445,17 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
   const expenses = data?.data ?? [];
   const total = data?.count ?? 0;
   const totalPages = Math.ceil(total / pageSize) || 1;
+
+  // Fetch the next page in the background once this one is shown, so "›" is instant.
+  useEffect(() => {
+    if (!workspaceId || !data || isLoading || page + 1 >= totalPages) return;
+    const next = [...swrKey] as unknown as Parameters<typeof fetcher>[0];
+    next[2] = page + 1;
+    preload(next, fetcher);
+    // swrKey is rebuilt each render from these same values.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, isLoading, page, totalPages, workspaceId]);
+
   // Filters inside the panel (search and invoice reference are always visible).
   const advancedFilterCount = [categoryId, dateFrom || dateTo].filter(Boolean).length;
 

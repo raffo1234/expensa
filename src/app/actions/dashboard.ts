@@ -2,7 +2,7 @@
 
 import { getCurrentUser } from "@/lib/getCurrentUser";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { getAccessibleWorkspaceIds, requirePermission, requireWorkspaceAccess } from "@/lib/access";
+import { getAccessibleWorkspaceIds, requireAccess, requirePermission } from "@/lib/access";
 import { Permissions } from "@/types/propertyState";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -86,8 +86,7 @@ export async function getWorkspaces(): Promise<Workspace[]> {
 }
 
 export async function getFiltersData(workspaceId: string): Promise<FiltersData> {
-  await requirePermission(Permissions.VIEW_DASHBOARD);
-  await requireWorkspaceAccess(workspaceId);
+  await requireAccess({ workspaceId, permissions: [Permissions.VIEW_DASHBOARD] });
   const [s, l] = await Promise.all([
     supabaseAdmin
       .from("stage")
@@ -104,8 +103,7 @@ export async function getFiltersData(workspaceId: string): Promise<FiltersData> 
  * Solo trae currency + amount para minimizar la transferencia.
  */
 export async function getWorkspaceTotal(workspaceId: string): Promise<WorkspaceTotal[]> {
-  await requirePermission(Permissions.VIEW_DASHBOARD);
-  await requireWorkspaceAccess(workspaceId);
+  await requireAccess({ workspaceId, permissions: [Permissions.VIEW_DASHBOARD] });
   const user = await getCurrentUser();
   if (!user) throw new Error("No autenticado");
 
@@ -135,8 +133,7 @@ export async function getDashboardData(
   stageId?: string | null,
   levelId?: string | null,
 ): Promise<DashboardData> {
-  await requirePermission(Permissions.VIEW_DASHBOARD);
-  await requireWorkspaceAccess(workspaceId);
+  await requireAccess({ workspaceId, permissions: [Permissions.VIEW_DASHBOARD] });
   const user = await getCurrentUser();
   if (!user) throw new Error("No autenticado");
 

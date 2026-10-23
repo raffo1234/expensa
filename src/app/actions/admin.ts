@@ -1,5 +1,6 @@
 "use server";
 
+import { safePageSize } from "@/lib/pageSize";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { fetchRolePermissionSlugs } from "@/lib/rolePermissions";
 import { AccessError, requirePermission, requireUser } from "@/lib/access";
@@ -166,7 +167,11 @@ export type UserListOptions = {
 };
 
 export async function listUsersPage(page: number, pageSize: number, options?: UserListOptions) {
-  await requirePermission(Permissions.MANAGE_USERS);
+  // Permission check runs alongside the query; if it fails, Promise.all
+  // rejects and no data ever leaves the server.
+  const guard = requirePermission(Permissions.MANAGE_USERS);
+  guard.catch(() => {}); // rejection is handled by Promise.all below
+  pageSize = safePageSize(pageSize);
   const from = page * pageSize;
   let query = supabaseAdmin
     .from("user")
@@ -186,7 +191,7 @@ export async function listUsersPage(page: number, pageSize: number, options?: Us
     query = query.or(`first_name.ilike.%${term}%,last_name.ilike.%${term}%,email.ilike.%${term}%`);
   }
 
-  const { data, count, error } = await query;
+  const [, { data, count, error }] = await Promise.all([guard, query]);
   throwIf(error);
   return { data: (data ?? []) as unknown as UserType[], count };
 }
@@ -204,12 +209,7 @@ export async function getUserById(userId: string): Promise<UserType | null> {
 }
 
 // Only these columns can be changed from the admin screens.
-const EDITABLE_USER_FIELDS = [
-  "role_id",
-  "archived_at",
-  "first_name",
-  "last_name",
-] as const;
+const EDITABLE_USER_FIELDS = ["role_id", "archived_at", "first_name", "last_name"] as const;
 type EditableUserField = (typeof EDITABLE_USER_FIELDS)[number];
 
 export async function updateUserFields(

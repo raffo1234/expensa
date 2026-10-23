@@ -4,11 +4,10 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import { useState, useRef, useEffect } from "react";
 import useSWR, { mutate } from "swr";
 import { useParams } from "next/navigation";
-import { getWorkspaceBySlug } from "@/actions/lookups";
 import {
   createProvider,
   deleteProvider,
-  listProviders,
+  listProvidersBySlug,
   updateProvider,
   type ProviderRecord,
 } from "@/actions/providers";
@@ -36,9 +35,6 @@ import {
 type Provider = ProviderRecord;
 
 // ── Fetchers ──────────────────────────────────────────────────────────────────
-const fetchWorkspace = (slug: string): Promise<{ id: string }> => getWorkspaceBySlug(slug);
-
-const fetchProviders = (workspaceId: string): Promise<Provider[]> => listProviders(workspaceId);
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const inputCls =
@@ -307,14 +303,11 @@ export default function ProvidersPage() {
   const params = useParams();
   const workspaceSlug = params.slug as string;
 
-  const { data: workspace } = useSWR(
-    workspaceSlug ? ["workspace", workspaceSlug] : null,
-    ([, slug]) => fetchWorkspace(slug),
-  );
-  const workspaceId = workspace?.id ?? "";
-
-  const swrKey = workspaceId ? ["providers", workspaceId] : null;
-  const { data: providers = [], isLoading } = useSWR(swrKey, ([, wid]) => fetchProviders(wid));
+  // Project and providers in one request (no "find project, then list" waterfall).
+  const swrKey = workspaceSlug ? ["providers-by-slug", workspaceSlug] : null;
+  const { data, isLoading } = useSWR(swrKey, ([, slug]) => listProvidersBySlug(slug));
+  const workspaceId = data?.workspaceId ?? "";
+  const providers = data?.providers ?? [];
 
   const [search, setSearch] = useState("");
   const [modal, setModal] = useState<
@@ -421,7 +414,7 @@ export default function ProvidersPage() {
           <DataTable
             columns={PROVIDER_COLUMNS}
             numbered
-            isLoading={isLoading || !workspace}
+            isLoading={isLoading}
             isEmpty={filtered.length === 0}
             emptyMessage={
               providers.length === 0

@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { requireWorkspaceAccess } from "@/lib/access";
 import { sumExpenseAmounts } from "@/lib/sumExpenseAmounts";
 import { safePageSize } from "@/lib/pageSize";
+import { EXPENSE_LIST_COLUMNS as LIST_COLUMNS } from "@/lib/expenseListColumns";
 import { categoryIdList, type ExpenseFilters } from "@/types/expenseFilters";
 import type { ExpenseRow } from "@/types/ExpenseType";
 import type { CurrencyTotal } from "@/utils/formatAmount";
@@ -11,11 +12,6 @@ import type { CurrencyTotal } from "@/utils/formatAmount";
 // Expense list, totals and exports for the expenses page. They run on the
 // server with the caller's workspace access checked, instead of querying the
 // database from the browser.
-
-const LIST_COLUMNS = `id, invoice_series, invoice_number, amount, currency,
-  issued_at, paid_at, payment_method, notes, created_at,
-  provider:provider_id(id, name, ruc),
-  category:category_id(id, name, color)`;
 
 const EXPORT_COLUMNS = `id, invoice_series, invoice_number, amount, currency,
   issued_at, paid_at, payment_method, notes,
@@ -77,31 +73,52 @@ export async function listExpenses(
   pageSize: number,
   search: string,
   filters: ExpenseFilters,
-): Promise<{ rows: ExpenseRow[]; count: number; totals: CurrencyTotal[] }> {
-  await requireWorkspaceAccess(workspaceId);
+): Promise<{ rows: ExpenseRow[]; count: number }> {
+  // The access check runs alongside the queries instead of before them; if it
+  // fails, Promise.all rejects and no data ever leaves the server.
+  const guard = requireWorkspaceAccess(workspaceId);
+  guard.catch(() => {}); // rejection is handled by Promise.all below
+
   const size = safePageSize(pageSize);
   const from = (page - 1) * size;
   const orClause = await buildSearchClause(workspaceId, search);
 
-  const query = applyExpenseFilters(
-    supabaseAdmin
-      .from("expense")
-      .select(LIST_COLUMNS, { count: "exact" })
-      .eq("workspace_id", workspaceId)
-      .order("paid_at", { ascending: false })
-      .order("id") // stable paging when several expenses share a date
-      .range(from, from + size - 1),
-    filters,
-    orClause,
-  );
-
-  const [{ data, error, count }, totals] = await Promise.all([
-    query,
-    sumExpenseAmounts(workspaceId, (q) => applyExpenseFilters(q, filters, orClause)),
+  const [, { data, error, count }] = await Promise.all([
+    guard,
+    applyExpenseFilters(
+      supabaseAdmin
+        .from("expense")
+        .select(LIST_COLUMNS, { count: "exact" })
+        .eq("workspace_id", workspaceId)
+        .order("paid_at", { ascending: false })
+        .order("id") // stable paging when several expenses share a date
+        .range(from, from + size - 1),
+      filters,
+      orClause,
+    ),
   ]);
   if (error) throw new Error(error.message);
 
-  return { rows: (data ?? []) as unknown as ExpenseRow[], count: count ?? 0, totals };
+  return { rows: (data ?? []) as unknown as ExpenseRow[], count: count ?? 0 };
+}
+
+/**
+ * Totals per currency for the current filters. Separate from the list so
+ * changing page doesn't recompute them (they don't depend on the page).
+ */
+export async function getExpenseTotals(
+  workspaceId: string,
+  search: string,
+  filters: ExpenseFilters,
+): Promise<CurrencyTotal[]> {
+  const guard = requireWorkspaceAccess(workspaceId);
+  guard.catch(() => {}); // rejection is handled by Promise.all below
+  const orClause = await buildSearchClause(workspaceId, search);
+  const [, totals] = await Promise.all([
+    guard,
+    sumExpenseAmounts(workspaceId, (q) => applyExpenseFilters(q, filters, orClause)),
+  ]);
+  return totals;
 }
 
 export async function listAllFilteredExpenses(

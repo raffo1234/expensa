@@ -3,7 +3,7 @@
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { useState, useEffect, useCallback } from "react";
 import toast from "react-hot-toast";
-import useSWR from "swr";
+import useSWR, { preload } from "swr";
 import ExpenseTable from "@/components/ExpenseTable";
 import {
   PRIMARY_BUTTON_CLASS,
@@ -18,7 +18,6 @@ import Link from "next/link";
 import { Expense, ExpenseRow } from "@/types/ExpenseType";
 import { Workspace } from "@/types/WorkspaceType";
 import { deleteExpense } from "@/actions/expenses";
-import { getExpenseIdsWithMaterials } from "@/actions/materials";
 import Field from "./Field";
 import PageNavigator from "./PageNavigator";
 import ClearFiltersButton from "./ClearFiltersButton";
@@ -36,7 +35,7 @@ import CategoryManagerModal from "./CategoryManagerModal";
 import { useSearchParams, usePathname } from "next/navigation";
 import SearchInput from "./SearchInput";
 import { replaceUrl } from "@/utils/replaceUrl";
-import { listAllFilteredExpenses, listExpenses } from "@/actions/expenseQueries";
+import { getExpenseTotals, listAllFilteredExpenses, listExpenses } from "@/actions/expenseQueries";
 import { categoryIdList, type ExpenseFilters } from "@/types/expenseFilters";
 import type { SummaryReportRow } from "./SummaryReportPDF";
 
@@ -65,7 +64,6 @@ interface Props {
 interface FetchResult {
   data: Expense[];
   count: number;
-  totals: CurrencyTotal[];
 }
 
 type Filters = ExpenseFilters;
@@ -108,8 +106,8 @@ const fetchExpenses = async (
   search: string,
   filters: Filters,
 ): Promise<FetchResult> => {
-  const { rows, count, totals } = await listExpenses(workspaceId, page, pageSize, search, filters);
-  return { data: rows.map(mapExpenseRow), count, totals };
+  const { rows, count } = await listExpenses(workspaceId, page, pageSize, search, filters);
+  return { data: rows.map(mapExpenseRow), count };
 };
 
 // ── CSV Export ───────────────────────────────────────────────────────────────
@@ -388,18 +386,28 @@ export default function ExpensesClient({
   // The server already rendered the default view; skip refetching it on mount.
   const [hasServerData] = useState(isDefaultView);
 
-  const { data, error, mutate, isLoading } = useSWR(
-    ["expenses", workspace.id, page, pageSize, debouncedSearch, filters],
-    () => fetchExpenses(workspace.id, page, pageSize, debouncedSearch, filters),
+  const listKey = (p: number) =>
+    ["expenses", workspace.id, p, pageSize, debouncedSearch, filters] as const;
+  const fetchPage = (p: number) =>
+    fetchExpenses(workspace.id, p, pageSize, debouncedSearch, filters);
+
+  const { data, error, mutate, isLoading } = useSWR(listKey(page), () => fetchPage(page), {
+    fallbackData: isDefaultView
+      ? ({ data: initialExpenses, count: initialCount } as FetchResult)
+      : undefined,
+    revalidateOnMount: !hasServerData,
+    revalidateOnFocus: false,
+    keepPreviousData: true,
+  });
+
+  // Totals depend on the filters only, not the page, so they have their own
+  // cache entry: paging doesn't recompute them.
+  const { data: totals = [], mutate: mutateTotals } = useSWR(
+    ["expense-totals", workspace.id, debouncedSearch, filters],
+    () => getExpenseTotals(workspace.id, debouncedSearch, filters),
     {
-      fallbackData: isDefaultView
-        ? ({
-            data: initialExpenses,
-            count: initialCount,
-            totals: initialTotals,
-          } as FetchResult)
-        : undefined,
-      revalidateOnMount: !hasServerData,
+      fallbackData: hasActiveFilters ? undefined : initialTotals,
+      revalidateOnMount: !(hasServerData && !hasActiveFilters),
       revalidateOnFocus: false,
       keepPreviousData: true,
     },
@@ -407,8 +415,15 @@ export default function ExpensesClient({
 
   const expenses = data?.data ?? [];
   const totalCount = data?.count ?? 0;
-  const totals = data?.totals ?? [];
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+
+  // Fetch the next page in the background once this one is shown, so "›" is instant.
+  useEffect(() => {
+    if (!data || isLoading || page >= totalPages) return;
+    preload(listKey(page + 1), () => fetchPage(page + 1));
+    // listKey/fetchPage are rebuilt each render from these same values.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, isLoading, page, totalPages, pageSize, debouncedSearch, filters, workspace.id]);
   const displayCurrency = expenses[0]?.currency ?? "PEN";
   // Largest-impact currency first; soles lead when present.
   const primaryTotals = [...totals]
@@ -424,15 +439,10 @@ export default function ExpensesClient({
     filters.amountMin || filters.amountMax,
   ].filter(Boolean).length;
 
-  const expenseIdsKey = expenses
-    .map((e) => e.id)
-    .sort()
-    .join(",");
-  const { data: materialExpenseIds = [] } = useSWR(
-    expenseIdsKey ? ["expenses-with-materials", expenseIdsKey] : null,
-    () => getExpenseIdsWithMaterials(expenses.map((e) => e.id)),
+  // Comes with each row (expense_item(count)), no extra request.
+  const materialExpenseIdSet = new Set(
+    expenses.filter((e) => (e.expense_item?.[0]?.count ?? 0) > 0).map((e) => e.id),
   );
-  const materialExpenseIdSet = new Set(materialExpenseIds);
 
   const handleDelete = async (id: string) => {
     const snapshot = data;
@@ -447,6 +457,7 @@ export default function ExpensesClient({
             : prev,
         { revalidate: true },
       );
+      mutateTotals();
       toast.success("Gasto eliminado");
     } catch {
       mutate(snapshot, { revalidate: false });

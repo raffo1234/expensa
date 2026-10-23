@@ -1,12 +1,7 @@
 "use server";
 
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import {
-  getAccessibleWorkspaceIds,
-  requirePermission,
-  requireRowAccess,
-  requireWorkspaceAccess,
-} from "@/lib/access";
+import { requireAccess, requireRowAccess, requireWorkspaceAccess } from "@/lib/access";
 import { Permissions } from "@/types/propertyState";
 
 export type Material = { id: string; name: string };
@@ -65,20 +60,6 @@ export async function deleteMaterial(id: string): Promise<{ error?: string }> {
   return {};
 }
 
-export async function getExpenseIdsWithMaterials(expenseIds: string[]): Promise<string[]> {
-  if (!expenseIds.length) return [];
-
-  const workspaceIds = await getAccessibleWorkspaceIds();
-  const { data, error } = await supabaseAdmin
-    .from("expense_item")
-    .select("expense_id, expense:expense_id!inner(workspace_id)")
-    .in("expense_id", expenseIds)
-    .in("expense.workspace_id", workspaceIds);
-
-  if (error) throw new Error(error.message);
-  return [...new Set((data ?? []).map((r) => r.expense_id))];
-}
-
 export type MaterialReportRow = {
   id: string;
   expense_id: string;
@@ -97,8 +78,7 @@ export type MaterialReportRow = {
 };
 
 export async function getMaterialsReport(workspaceId: string): Promise<MaterialReportRow[]> {
-  await requirePermission(Permissions.VIEW_MATERIALS);
-  await requireWorkspaceAccess(workspaceId);
+  await requireAccess({ workspaceId, permissions: [Permissions.VIEW_MATERIALS] });
   // Supabase caps each request at 1,000 rows, so read the report page by page.
   const PAGE_SIZE = 1000;
   const data: unknown[] = [];

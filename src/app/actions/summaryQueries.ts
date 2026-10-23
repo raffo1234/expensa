@@ -1,7 +1,7 @@
 "use server";
 
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { requirePermission, requireWorkspaceAccess } from "@/lib/access";
+import { requireAccess } from "@/lib/access";
 import { Permissions } from "@/types/propertyState";
 import { safePageSize } from "@/lib/pageSize";
 
@@ -60,8 +60,13 @@ async function applySummaryFilters(query: any, f: SummaryFilters): Promise<any> 
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 export async function listSummaryExpenses(filters: SummaryFilters, page: number, pageSize: number) {
-  await requirePermission(Permissions.VIEW_EXPENSES_SUMMARY);
-  await requireWorkspaceAccess(filters.workspaceId);
+  // The access check runs alongside the query instead of before it; if it
+  // fails, Promise.all rejects and no data ever leaves the server.
+  const guard = requireAccess({
+    workspaceId: filters.workspaceId,
+    permissions: [Permissions.VIEW_EXPENSES_SUMMARY],
+  });
+  guard.catch(() => {}); // rejection is handled by Promise.all below
   const size = safePageSize(pageSize);
   const from = page * size;
   const query = await applySummaryFilters(
@@ -80,14 +85,16 @@ export async function listSummaryExpenses(filters: SummaryFilters, page: number,
       .range(from, from + size - 1),
     filters,
   );
-  const { data, count, error } = await query;
+  const [, { data, count, error }] = await Promise.all([guard, query]);
   if (error) throw new Error(error.message);
   return { data: data ?? [], count: (count as number | null) ?? 0 };
 }
 
 export async function listAllSummaryExpenses(filters: SummaryFilters) {
-  await requirePermission(Permissions.VIEW_EXPENSES_SUMMARY);
-  await requireWorkspaceAccess(filters.workspaceId);
+  await requireAccess({
+    workspaceId: filters.workspaceId,
+    permissions: [Permissions.VIEW_EXPENSES_SUMMARY],
+  });
   const all: unknown[] = [];
   for (let from = 0; ; from += EXPORT_PAGE_SIZE) {
     const query = await applySummaryFilters(

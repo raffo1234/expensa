@@ -1,3 +1,4 @@
+import { ICON_SIZE } from "@/constants";
 import Link from "next/link";
 
 export default function FormSection({
@@ -25,12 +26,16 @@ export default function FormSection({
                 href={backUrl}
                 title="Volver"
                 aria-label="Volver"
-                className="px-3 py-1 bg-navy-50 text-navy-700 rounded-md hover:text-navy-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 transition-colors duration-300"
+                // Standard square icon button (44px phones, 38px from sm). The negative
+                // margin makes it take the old button's 33.5px in the layout, so the
+                // header keeps its exact height.
+                className="-my-[5.25px] flex size-11 flex-shrink-0 items-center justify-center rounded-md bg-navy-50 text-navy-700 transition-colors duration-300 hover:bg-navy-100 hover:text-navy-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 sm:-my-[2.25px] sm:size-9.5"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  width="1em"
-                  height="1em"
+                  width={ICON_SIZE}
+                  height={ICON_SIZE}
+                  aria-hidden
                   viewBox="0 0 24 24"
                 >
                   <path d="M0 0h24v24H0z" fill="none" />

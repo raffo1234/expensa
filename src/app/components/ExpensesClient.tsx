@@ -538,7 +538,8 @@ export default function ExpensesClient({
   const pager = (
     <PageNavigator
       page={page}
-      totalPages={totalPages}
+      // Last known total while the next page loads; null ("–") before the first load.
+      totalPages={data ? totalPages : null}
       onPrev={() => setPage((p) => Math.max(1, p - 1))}
       onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
       pageSize={pageSize}

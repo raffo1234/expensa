@@ -117,7 +117,8 @@ export default function UsersTable() {
       )}
       <PageNavigator
         page={page + 1}
-        totalPages={totalPages}
+        // Last known total while the next page loads; null ("–") before the first load.
+        totalPages={data ? totalPages : null}
         onPrev={() => setPage((p) => Math.max(0, p - 1))}
         onNext={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
         // Also while the search text waits for its debounce.

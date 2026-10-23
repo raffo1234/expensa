@@ -19,7 +19,8 @@ export default function PageNavigator({
   className = "",
 }: {
   page: number;
-  totalPages: number;
+  /** null while still unknown (first load): shown as "–", never a made-up 1. */
+  totalPages: number | null;
   onPrev: () => void;
   onNext: () => void;
   /** Rows per page; pass with onPageSizeChange to show the selector. */
@@ -37,7 +38,7 @@ export default function PageNavigator({
   // Both numbers get the width of the longest possible one (the total; digits
   // are tabular, so 1ch each), and at least room for the loading dots. The "/"
   // then stays centered for 2 / 9, 12 / 35 or 7 / 120 alike.
-  const slot = { minWidth: `${Math.max(String(totalPages).length, 2.5)}ch` };
+  const slot = { minWidth: `${Math.max(String(totalPages ?? page).length, 2.5)}ch` };
 
   // Arrows sit inside one shared border with the page count, so the three
   // read as a single control (‹ 2 / 9 ›).
@@ -59,7 +60,7 @@ export default function PageNavigator({
         {/* Fixed width so the arrows don't move as the numbers grow (9 → 10 → 100). */}
         <span
           aria-live="polite"
-          aria-label={`Página ${page} de ${totalPages}`}
+          aria-label={totalPages ? `Página ${page} de ${totalPages}` : `Página ${page}`}
           className="flex min-w-14 items-center justify-center px-1 text-cell text-navy-700 tabular-nums"
         >
           {/* While loading, the current page number turns into the loading dots. */}
@@ -68,13 +69,17 @@ export default function PageNavigator({
           </span>
           <span className="px-1">/</span>
           {/* Same slot as the current page, so the "/" stays centered. */}
-          <span className="inline-flex justify-center" style={slot}>
-            {totalPages}
+          <span
+            className={`inline-flex justify-center ${totalPages ? "" : "text-navy-300"}`}
+            style={slot}
+          >
+            {totalPages ?? "–"}
           </span>
         </span>
         <PagerButton
           direction="next"
-          disabled={page >= totalPages}
+          // Unknown total: there may or may not be a next page yet.
+          disabled={totalPages === null || page >= totalPages}
           onClick={onNext}
           className={button}
         />

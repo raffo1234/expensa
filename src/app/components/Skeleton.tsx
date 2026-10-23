@@ -107,20 +107,22 @@ export function SearchRowSkeleton({
 
 /** PageNavigator: rows-per-page box, then ‹ x / y › on the right. */
 export function PagerSkeleton({ pageSize = true }: { pageSize?: boolean }) {
-  const button = "size-11 rounded-lg border border-navy-100 sm:size-9";
   return (
     <div aria-hidden className="flex items-center justify-end gap-2 px-1">
       {pageSize && (
         <div className="mr-2 flex items-center gap-2">
           <Bone className="hidden h-3.5 w-24 sm:block" />
-          <span className="h-11 w-16 rounded-lg border border-navy-200 sm:h-9" />
+          <span className="h-11 w-16 rounded-lg border border-navy-200 sm:h-9.5" />
         </div>
       )}
-      <span className={button} />
-      <span className="flex min-w-20 justify-center">
-        <Bone className="h-3.5 w-12" />
+      {/* One bordered group: ‹ x / y › */}
+      <span className="flex h-11 items-stretch rounded-lg border border-navy-200 sm:h-9.5">
+        <span className="w-11 sm:w-9.5" />
+        <span className="flex min-w-14 items-center justify-center px-1">
+          <Bone className="h-3.5 w-10" />
+        </span>
+        <span className="w-11 sm:w-9.5" />
       </span>
-      <span className={button} />
     </div>
   );
 }

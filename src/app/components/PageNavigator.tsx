@@ -34,35 +34,45 @@ export default function PageNavigator({
   className?: string;
 }) {
   const sizeId = useId();
+  // Arrows sit inside one shared border with the page count, so the three
+  // read as a single control (‹ 2 / 9 ›).
   const button =
-    "flex h-11 w-11 sm:h-9 sm:w-9 items-center justify-center rounded-lg border border-navy-200 text-navy-700 hover:bg-navy-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:cursor-not-allowed disabled:border-navy-100 disabled:text-navy-300 disabled:hover:bg-transparent cursor-pointer transition-colors";
+    "flex w-11 sm:w-9.5 items-center justify-center text-navy-700 hover:bg-navy-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-500 disabled:cursor-not-allowed disabled:text-navy-300 disabled:hover:bg-transparent cursor-pointer transition-colors";
   return (
     <div className={`flex items-center justify-end gap-2 px-1 ${className}`}>
       {pageSize != null && onPageSizeChange && (
         <PageSizeInput id={sizeId} value={pageSize} onChange={onPageSizeChange} />
       )}
-      <PagerButton
-        direction="prev"
-        busy={false}
-        disabled={page <= 1}
-        onClick={onPrev}
-        className={button}
-      />
-      {/* Fixed width so the arrows don't move as the numbers grow (9 → 10 → 100). */}
-      <span
-        aria-live="polite"
-        aria-label={`Página ${page} de ${totalPages}`}
-        className="min-w-20 text-center text-cell text-navy-500 tabular-nums"
+      <div
+        role="group"
+        aria-label="Paginación"
+        // Standard control height, like inputs and buttons (44px phones, 38px from sm);
+        // the arrows fill it from inside.
+        className="flex h-11 items-stretch overflow-hidden rounded-lg border border-navy-200 bg-white sm:h-9.5"
       >
-        {page} / {totalPages}
-      </span>
-      <PagerButton
-        direction="next"
-        busy={loading}
-        disabled={page >= totalPages}
-        onClick={onNext}
-        className={button}
-      />
+        <PagerButton
+          direction="prev"
+          busy={false}
+          disabled={page <= 1}
+          onClick={onPrev}
+          className={button}
+        />
+        {/* Fixed width so the arrows don't move as the numbers grow (9 → 10 → 100). */}
+        <span
+          aria-live="polite"
+          aria-label={`Página ${page} de ${totalPages}`}
+          className="flex min-w-14 items-center justify-center px-1 text-cell text-navy-700 tabular-nums"
+        >
+          {page} / {totalPages}
+        </span>
+        <PagerButton
+          direction="next"
+          busy={loading}
+          disabled={page >= totalPages}
+          onClick={onNext}
+          className={button}
+        />
+      </div>
     </div>
   );
 }
@@ -175,7 +185,7 @@ function PageSizeInput({
         }}
         aria-label={`Filas por página (de ${MIN_PAGE_SIZE} a ${MAX_PAGE_SIZE})`}
         title={`De ${MIN_PAGE_SIZE} a ${MAX_PAGE_SIZE} filas`}
-        className="h-11 w-16 sm:h-9 rounded-lg border border-navy-200 bg-white px-2 text-center text-cell text-navy-700 tabular-nums transition-colors hover:bg-navy-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+        className="h-11 w-16 sm:h-9.5 rounded-lg border border-navy-200 bg-white px-2 text-center text-cell text-navy-700 tabular-nums transition-colors hover:bg-navy-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
       />
     </div>
   );

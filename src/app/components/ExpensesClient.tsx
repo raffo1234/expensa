@@ -24,6 +24,7 @@ import ClearFiltersButton from "./ClearFiltersButton";
 import { usePageSize } from "@/hooks/usePageSize";
 import { DEFAULT_PAGE_SIZE } from "@/lib/pageSize";
 import ListPage from "./ListPage";
+import { pageFromParam } from "@/lib/pageParam";
 import FiltersButton from "./FiltersButton";
 import FormSection from "./FormSection";
 import CategoryMultiFilter from "./CategoryMultiFilter";
@@ -272,7 +273,7 @@ export default function ExpensesClient({
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
-  const [page, setPage] = useState(() => Number(searchParams.get("page") ?? "1") || 1);
+  const [page, setPage] = useState(() => pageFromParam(searchParams.get("page")));
   const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
   const [debouncedSearch, setDebouncedSearch] = useState(() => searchParams.get("q") ?? "");
   const [filters, setFilters] = useState<Filters>(() => ({
@@ -334,12 +335,15 @@ export default function ExpensesClient({
   };
 
   useEffect(() => {
+    // Only a real change in the search box goes back to page 1. On first load
+    // both already match the URL, so ?page=3 is kept.
+    if (search === debouncedSearch) return;
     const t = setTimeout(() => {
       setDebouncedSearch(search);
       setPage(1);
     }, 400);
     return () => clearTimeout(t);
-  }, [search]);
+  }, [search, debouncedSearch]);
 
   function setFilter(key: keyof Filters, value: string) {
     setFilters((prev) => ({ ...prev, [key]: value }));
@@ -416,6 +420,11 @@ export default function ExpensesClient({
   const expenses = data?.data ?? [];
   const totalCount = data?.count ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+
+  // A page past the end (old link, or rows deleted meanwhile) goes to the last one.
+  useEffect(() => {
+    if (data && !isLoading && page > totalPages) setPage(totalPages);
+  }, [data, isLoading, page, totalPages]);
 
   // Fetch the next page in the background once this one is shown, so "›" is instant.
   useEffect(() => {

@@ -25,6 +25,7 @@ import PageNavigator from "./PageNavigator";
 import ClearFiltersButton from "./ClearFiltersButton";
 import { usePageSize } from "@/hooks/usePageSize";
 import ListPage from "./ListPage";
+import { pageFromParam } from "@/lib/pageParam";
 import { summaryColumns } from "@/lib/tableColumns";
 import FiltersButton from "./FiltersButton";
 import FormSection from "./FormSection";
@@ -292,7 +293,10 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
     return workspaces[0]?.id ?? "";
   });
 
-  const [page, setPage] = useState(() => Number(searchParams.get("page") ?? "0"));
+  const [page, setPage] = useState(
+    // Kept 0-based inside; the URL shows the page as seen on screen (?page=3).
+    () => pageFromParam(searchParams.get("page")) - 1,
+  );
   const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
   const [dateFrom, setDateFrom] = useState(() => searchParams.get("from") ?? "");
   const [dateTo, setDateTo] = useState(() => searchParams.get("to") ?? "");
@@ -336,7 +340,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
     if (categoryId) params.set("cat", categoryId);
     if (invoiceSeries) params.set("series", invoiceSeries);
     if (invoiceNumber) params.set("number", invoiceNumber);
-    if (page > 0) params.set("page", String(page));
+    if (page > 0) params.set("page", String(page + 1));
     const qs = params.toString();
     replaceUrl(qs ? `${pathname}?${qs}` : pathname);
   }, [
@@ -445,6 +449,11 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
   const expenses = data?.data ?? [];
   const total = data?.count ?? 0;
   const totalPages = Math.ceil(total / pageSize) || 1;
+
+  // A page past the end (old link, or fewer rows now) goes to the last one.
+  useEffect(() => {
+    if (data && !isLoading && page + 1 > totalPages) setPage(totalPages - 1);
+  }, [data, isLoading, page, totalPages]);
 
   // Fetch the next page in the background once this one is shown, so "›" is instant.
   useEffect(() => {

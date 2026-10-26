@@ -60,6 +60,8 @@ interface Props {
   /** What the user's role allows; actions they can't use aren't shown. */
   canCreateExpense: boolean;
   canViewMaterials: boolean;
+  /** Can switch a category's guía de remisión rule (EXEMPT_GUIDE). */
+  canManageGuideRules: boolean;
 }
 
 interface FetchResult {
@@ -255,7 +257,7 @@ const EMPTY_FILTERS: Filters = {
   providerId: "",
   invoiceSeries: "",
   invoiceNumber: "",
-  missingGuide: "",
+  pendingDocs: "",
 };
 
 export default function ExpensesClient({
@@ -270,6 +272,7 @@ export default function ExpensesClient({
   providers,
   canCreateExpense,
   canViewMaterials,
+  canManageGuideRules,
 }: Props) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -288,7 +291,7 @@ export default function ExpensesClient({
     providerId: searchParams.get("providerId") ?? "",
     invoiceSeries: searchParams.get("invoiceSeries") ?? "",
     invoiceNumber: searchParams.get("invoiceNumber") ?? "",
-    missingGuide: searchParams.get("missingGuide") === "1" ? "1" : "",
+    pendingDocs: searchParams.get("pendingDocs") === "1" ? "1" : "",
   }));
   const [issuedMonth, setIssuedMonth] = useState(() => searchParams.get("issuedMonth") ?? "");
   const [showFilters, setShowFilters] = useState(() => {
@@ -301,7 +304,7 @@ export default function ExpensesClient({
       "stageId",
       "levelId",
       "providerId",
-      "missingGuide",
+      "pendingDocs",
     ] as const;
     return f.some((k) => searchParams.get(k));
   });
@@ -332,6 +335,7 @@ export default function ExpensesClient({
         workspaceId={workspace.id}
         categories={localCategories}
         onUpdate={setLocalCategories}
+        canManageGuideRules={canManageGuideRules}
       />,
     );
     setModalOpen(true);
@@ -449,7 +453,7 @@ export default function ExpensesClient({
     filters.levelId,
     filters.issuedFrom || filters.issuedTo,
     filters.amountMin || filters.amountMax,
-    filters.missingGuide,
+    filters.pendingDocs,
   ].filter(Boolean).length;
 
   // Comes with each row (expense_item(count)), no extra request.
@@ -795,14 +799,14 @@ export default function ExpensesClient({
                     </div>
                   </FilterField>
 
-                  <FilterField label="Guía de remisión">
+                  <FilterField label="Documentos">
                     <select
-                      value={filters.missingGuide ?? ""}
-                      onChange={(e) => setFilter("missingGuide", e.target.value)}
+                      value={filters.pendingDocs ?? ""}
+                      onChange={(e) => setFilter("pendingDocs", e.target.value)}
                       className={SELECT_CLASS}
                     >
-                      <option value="">Todas</option>
-                      <option value="1">Facturas sin guía</option>
+                      <option value="">Todos</option>
+                      <option value="1">Con documentos pendientes</option>
                     </select>
                   </FilterField>
                 </div>

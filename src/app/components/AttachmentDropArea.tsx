@@ -1,5 +1,6 @@
 "use client";
 
+import { useInvalidateExpenseLists } from "@/hooks/useInvalidateExpenseLists";
 import { useRef, useState, useTransition, type DragEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -26,6 +27,7 @@ export default function AttachmentDropArea({
   children: ReactNode;
 }) {
   const router = useRouter();
+  const invalidateLists = useInvalidateExpenseLists();
   const inputRef = useRef<HTMLInputElement>(null);
   // dragenter/dragleave also fire for child elements; count them so the
   // highlight doesn't flicker while moving over the tiles.
@@ -68,6 +70,7 @@ export default function AttachmentDropArea({
           : `No se pudieron subir ${failed} archivos. Inténtalo de nuevo.`,
       );
     }
+    invalidateLists(); // lists show the new documents status when reopened
     // Stay busy until the refreshed page shows the new tiles.
     startRefresh(() => {
       router.refresh();

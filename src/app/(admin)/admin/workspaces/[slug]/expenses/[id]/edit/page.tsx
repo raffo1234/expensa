@@ -4,30 +4,30 @@ import { supabaseAdmin as supabase } from "@/lib/supabaseAdmin";
 import { loadExpenseFormLookups } from "@/lib/expenseFormData";
 import { getExpenseItems } from "@/actions/expenses";
 import EditExpenseForm from "@/components/EditExpenseForm";
+import { EXPENSE_EDIT_COLUMNS } from "@/lib/expenseEditColumns";
+import { getCurrentUser } from "@/lib/getCurrentUser";
+import { checkPermissions } from "@/lib/checkPermissions";
+import { Permissions } from "@/types/propertyState";
 
 interface PageProps {
   params: Promise<{ slug: string; id: string }>;
 }
-
-// Same columns the form's own fetcher reads, so the prefilled data matches.
-const EXPENSE_COLUMNS = `
-  id, amount, currency, issued_at, paid_at, payment_method, notes, created_at, invoice_series, invoice_number, tax_status,
-  provider:provider_id(id, name),
-  category:category_id(id, name, color),
-  stage:stage_id(id, name, color),
-  level:level_id(id, name),
-  expense_attachment(id, file_name, storage_path)
-`;
 
 export default async function Page({ params }: PageProps) {
   const { slug, id } = await params;
 
   // Project lookups (with the access check), the expense and its materials all
   // load at once; the expense is only used if it belongs to that project.
-  const [lookups, items, { data: row, error }] = await Promise.all([
+  const user = await getCurrentUser();
+  const [lookups, items, { data: row, error }, permissions] = await Promise.all([
     loadExpenseFormLookups(slug),
     getExpenseItems(id).catch(() => []),
-    supabase.from("expense").select(`workspace_id, ${EXPENSE_COLUMNS}`).eq("id", id).maybeSingle(),
+    supabase
+      .from("expense")
+      .select(`workspace_id, ${EXPENSE_EDIT_COLUMNS}`)
+      .eq("id", id)
+      .maybeSingle(),
+    user?.roleId ? checkPermissions(user.roleId, [Permissions.EXEMPT_GUIDE]) : {},
   ]);
   if (!lookups) notFound();
   if (error) throw error;
@@ -42,7 +42,9 @@ export default async function Page({ params }: PageProps) {
 
   return (
     <SWRConfig value={{ fallback }}>
-      <EditExpenseForm />
+      <EditExpenseForm
+        canExemptGuide={!!(permissions as Record<string, boolean>)[Permissions.EXEMPT_GUIDE]}
+      />
     </SWRConfig>
   );
 }

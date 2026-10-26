@@ -1,5 +1,6 @@
 "use client";
 
+import { useInvalidateExpenseLists } from "@/hooks/useInvalidateExpenseLists";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -19,6 +20,7 @@ export default function DeleteAttachmentButton({
   fileName: string;
 }) {
   const router = useRouter();
+  const invalidateLists = useInvalidateExpenseLists();
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async () => {
@@ -31,6 +33,7 @@ export default function DeleteAttachmentButton({
     }
     toast.success("Adjunto eliminado");
     // Stays busy until the refreshed page removes this tile.
+    invalidateLists(); // lists show the new documents status when reopened
     router.refresh();
   };
 

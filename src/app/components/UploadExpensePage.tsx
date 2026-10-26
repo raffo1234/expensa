@@ -1,5 +1,6 @@
 "use client";
 
+import { useInvalidateExpenseLists } from "@/hooks/useInvalidateExpenseLists";
 import SubmitButton from "./SubmitButton";
 import { useState, useCallback, useRef, useEffect } from "react";
 import useSWR, { mutate } from "swr";
@@ -106,6 +107,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
   const params = useParams();
   const workspaceSlug = params.slug as string;
   const router = useRouter();
+  const invalidateLists = useInvalidateExpenseLists();
   const dropRef = useRef<HTMLLabelElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const filesRef = useRef<FileItem[]>([]);
@@ -458,6 +460,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
         }),
       );
 
+      invalidateLists(); // the list it returns to shows the new expense
       setSuccess(true);
       setTimeout(() => router.push(`/admin/workspaces/${workspaceSlug}/expenses`), 1200);
     } catch (err) {

@@ -1,5 +1,6 @@
 "use server";
 
+import { EXPENSE_EDIT_COLUMNS } from "@/lib/expenseEditColumns";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { requireWorkspaceAccess, requireWorkspaceAccessBySlug } from "@/lib/access";
 
@@ -61,15 +62,6 @@ export async function getLevels(workspaceId: string) {
       .order("order"),
   );
 }
-
-const EXPENSE_EDIT_COLUMNS = `
-  id, amount, currency, issued_at, paid_at, payment_method, notes, created_at, invoice_series, invoice_number, tax_status,
-  provider:provider_id(id, name),
-  category:category_id(id, name, color),
-  stage:stage_id(id, name, color),
-  level:level_id(id, name),
-  expense_attachment(id, file_name, storage_path)
-`;
 
 export async function getExpenseForEdit(expenseId: string, workspaceId: string) {
   await requireWorkspaceAccess(workspaceId);

@@ -2,7 +2,7 @@
 
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getAccessibleWorkspaceIds, requireAccess, requirePermission } from "@/lib/access";
-import { GUIDE_DATE_CLAUSE } from "@/lib/dispatchGuide";
+import { pendingDocsExpenseIds } from "@/lib/pendingDocs";
 import { Permissions } from "@/types/propertyState";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -325,33 +325,13 @@ export async function getDashboardData(
 }
 
 /**
- * How many invoices of the project still lack their guía de remisión (all
- * dates under the rule, not just the selected month): it's a to-do, not a stat.
+ * How many invoices of the project still lack a required document (factura,
+ * guía, comprobante). All dates under the rule, not just the selected month:
+ * it's a to-do, not a stat.
  */
-export async function getMissingGuidesCount(workspaceId: string): Promise<number> {
+export async function getPendingDocsCount(workspaceId: string): Promise<number> {
   const guard = requireAccess({ workspaceId, permissions: [Permissions.VIEW_DASHBOARD] });
   guard.catch(() => {}); // rejection is handled by Promise.all below
-
-  const [, withGuide] = await Promise.all([
-    guard,
-    supabaseAdmin
-      .from("expense_attachment")
-      .select("expense_id, expense!inner(workspace_id)")
-      .eq("kind", "guia_remision")
-      .eq("expense.workspace_id", workspaceId),
-  ]);
-  if (withGuide.error) throw new Error(withGuide.error.message);
-  const ids = [...new Set((withGuide.data ?? []).map((r) => r.expense_id as string))];
-
-  let q = supabaseAdmin
-    .from("expense")
-    .select("id", { count: "exact", head: true })
-    .eq("workspace_id", workspaceId)
-    .not("invoice_series", "is", null)
-    .not("invoice_number", "is", null)
-    .or(GUIDE_DATE_CLAUSE);
-  if (ids.length) q = q.not("id", "in", `(${ids.join(",")})`);
-  const { count, error } = await q;
-  if (error) throw new Error(error.message);
-  return count ?? 0;
+  const [, ids] = await Promise.all([guard, pendingDocsExpenseIds(workspaceId)]);
+  return ids.length;
 }

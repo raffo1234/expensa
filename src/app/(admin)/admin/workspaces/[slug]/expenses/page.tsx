@@ -6,7 +6,7 @@ import { checkPermissions } from "@/lib/checkPermissions";
 import { Permissions } from "@/types/propertyState";
 import { supabaseAdmin as supabase } from "@/lib/supabaseAdmin";
 import { sumExpenseAmounts } from "@/lib/sumExpenseAmounts";
-import { EXPENSE_LIST_COLUMNS, onlyGuides } from "@/lib/expenseListColumns";
+import { EXPENSE_LIST_COLUMNS, onlyRequiredDocs } from "@/lib/expenseListColumns";
 import ExpensesClient from "@/components/ExpensesClient";
 import FallbackExpenses from "@/components/FallbackExpenses";
 
@@ -48,8 +48,12 @@ async function ExpensesSection({ slug }: { slug: string }) {
     { data: levels },
     { data: providers },
   ] = await Promise.all([
-    checkPermissions(user.roleId, [Permissions.CREATE_EXPENSE, Permissions.VIEW_MATERIALS]),
-    onlyGuides(supabase.from("expense").select(EXPENSE_LIST_COLUMNS, { count: "exact" }))
+    checkPermissions(user.roleId, [
+      Permissions.CREATE_EXPENSE,
+      Permissions.VIEW_MATERIALS,
+      Permissions.EXEMPT_GUIDE,
+    ]),
+    onlyRequiredDocs(supabase.from("expense").select(EXPENSE_LIST_COLUMNS, { count: "exact" }))
       .eq("workspace_id", workspace.id)
       .order("paid_at", { ascending: false })
       .order("id")
@@ -57,7 +61,7 @@ async function ExpensesSection({ slug }: { slug: string }) {
     sumExpenseAmounts(workspace.id),
     supabase
       .from("category")
-      .select("id, name, color")
+      .select("id, name, color, requires_guide")
       .eq("workspace_id", workspace.id)
       .order("name"),
     supabase
@@ -104,6 +108,7 @@ async function ExpensesSection({ slug }: { slug: string }) {
       providers={providers ?? []}
       canCreateExpense={!!permissions[Permissions.CREATE_EXPENSE]}
       canViewMaterials={!!permissions[Permissions.VIEW_MATERIALS]}
+      canManageGuideRules={!!permissions[Permissions.EXEMPT_GUIDE]}
     />
   );
 }

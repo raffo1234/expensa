@@ -4,10 +4,23 @@ import SubmitButton from "./SubmitButton";
 import { useState } from "react";
 import { useGlobalState } from "@/lib/globalState";
 import { INPUT_CLASS, SECONDARY_BUTTON_CLASS } from "@/constants";
-import { createCategory, updateCategory, deleteCategory } from "@/actions/categories";
+import {
+  createCategory,
+  updateCategory,
+  deleteCategory,
+  setCategoryRequiresGuide,
+} from "@/actions/categories";
+import toast from "react-hot-toast";
+import { useInvalidateExpenseLists } from "@/hooks/useInvalidateExpenseLists";
 import Field from "./Field";
 
-type Category = { id: string; name: string; color: string | null };
+type Category = {
+  id: string;
+  name: string;
+  color: string | null;
+  /** Expenses in it need a guía de remisión (default true). */
+  requires_guide?: boolean | null;
+};
 
 const COLORS = [
   "#ef4444",
@@ -25,12 +38,16 @@ export default function CategoryManagerModal({
   workspaceId,
   categories: initial,
   onUpdate,
+  canManageGuideRules = false,
 }: {
   workspaceId: string;
   categories: Category[];
   onUpdate: (categories: Category[]) => void;
+  /** Can switch a category's guía de remisión rule (EXEMPT_GUIDE). */
+  canManageGuideRules?: boolean;
 }) {
   const { setModalOpen } = useGlobalState();
+  const invalidateLists = useInvalidateExpenseLists();
   const [categories, setCategories] = useState<Category[]>(initial);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", color: COLORS[0] });
@@ -39,6 +56,30 @@ export default function CategoryManagerModal({
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const isEditing = editingId !== null;
+
+  // Optimistic: the switch moves at once and rolls back if saving fails.
+  const toggleGuide = (cat: Category) => {
+    const next = cat.requires_guide === false;
+    const apply = (value: boolean) => {
+      setCategories((list) => {
+        const updated = list.map((c) => (c.id === cat.id ? { ...c, requires_guide: value } : c));
+        onUpdate(updated);
+        return updated;
+      });
+    };
+    apply(next);
+    setCategoryRequiresGuide(cat.id, next).then(({ error }) => {
+      if (error) {
+        apply(!next);
+        toast.error("No se pudo guardar. Se restauró el valor anterior.");
+      } else {
+        invalidateLists(); // the documents status of its expenses changes
+        toast.success(
+          next ? `«${cat.name}» requiere guía de remisión` : `«${cat.name}» ya no requiere guía`,
+        );
+      }
+    });
+  };
 
   const resetForm = () => {
     setEditingId(null);
@@ -128,6 +169,23 @@ export default function CategoryManagerModal({
                 style={{ backgroundColor: cat.color || "#6b7280" }}
               />
               <span className="flex-1 text-sm text-gray-700 truncate">{cat.name}</span>
+              {canManageGuideRules ? (
+                <label className="flex flex-shrink-0 cursor-pointer items-center gap-1.5 text-xs text-navy-500">
+                  <input
+                    type="checkbox"
+                    checked={cat.requires_guide !== false}
+                    onChange={() => toggleGuide(cat)}
+                    className="size-4 cursor-pointer accent-violet-600"
+                  />
+                  Requiere guía
+                </label>
+              ) : (
+                cat.requires_guide === false && (
+                  <span className="flex-shrink-0 rounded-full bg-navy-50 px-2 py-0.5 text-xs text-navy-500">
+                    Sin guía
+                  </span>
+                )
+              )}
               <button
                 type="button"
                 onClick={() => startEdit(cat)}

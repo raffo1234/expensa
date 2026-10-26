@@ -4,8 +4,8 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { requireWorkspaceAccess } from "@/lib/access";
 import { sumExpenseAmounts } from "@/lib/sumExpenseAmounts";
 import { safePageSize } from "@/lib/pageSize";
-import { EXPENSE_LIST_COLUMNS as LIST_COLUMNS, onlyGuides } from "@/lib/expenseListColumns";
-import { GUIDE_DATE_CLAUSE } from "@/lib/dispatchGuide";
+import { EXPENSE_LIST_COLUMNS as LIST_COLUMNS, onlyRequiredDocs } from "@/lib/expenseListColumns";
+import { NO_ID, pendingDocsExpenseIds } from "@/lib/pendingDocs";
 import { categoryIdList, type ExpenseFilters } from "@/types/expenseFilters";
 import type { ExpenseRow } from "@/types/ExpenseType";
 import type { CurrencyTotal } from "@/utils/formatAmount";
@@ -27,14 +27,11 @@ function applyExpenseFilters(
   query: any,
   filters: ExpenseFilters,
   orClause: string | null,
-  guideIds: string[] | null = null,
+  pendingIds: string[] | null = null,
 ): any {
   let q = query;
-  if (filters.missingGuide && guideIds) {
-    // Invoices under the guide rule that have no guía de remisión attached.
-    q = q.not("invoice_series", "is", null).not("invoice_number", "is", null).or(GUIDE_DATE_CLAUSE);
-    if (guideIds.length) q = q.not("id", "in", `(${guideIds.join(",")})`);
-  }
+  // Invoices still missing a required document (computed by pendingDocsExpenseIds).
+  if (filters.pendingDocs && pendingIds) q = q.in("id", pendingIds.length ? pendingIds : [NO_ID]);
   const ids = categoryIdList(filters.categoryId);
   if (ids.length === 1) q = q.eq("category_id", ids[0]);
   if (ids.length > 1) q = q.in("category_id", ids);
@@ -78,24 +75,13 @@ async function buildSearchClause(workspaceId: string, search: string): Promise<s
   return clauses.join(",");
 }
 
-/** Ids of the workspace's expenses that have at least one guía de remisión. */
-async function expenseIdsWithGuide(workspaceId: string): Promise<string[]> {
-  const { data, error } = await supabaseAdmin
-    .from("expense_attachment")
-    .select("expense_id, expense!inner(workspace_id)")
-    .eq("kind", "guia_remision")
-    .eq("expense.workspace_id", workspaceId);
-  if (error) throw new Error(error.message);
-  return [...new Set((data ?? []).map((r) => r.expense_id as string))];
-}
-
-/** Search clause and (only when filtering by it) the guide lookup, side by side. */
+/** Search clause and (only when filtering by it) the documents lookup, side by side. */
 async function prepareFilters(workspaceId: string, search: string, filters: ExpenseFilters) {
-  const [orClause, guideIds] = await Promise.all([
+  const [orClause, pendingIds] = await Promise.all([
     buildSearchClause(workspaceId, search),
-    filters.missingGuide ? expenseIdsWithGuide(workspaceId) : null,
+    filters.pendingDocs ? pendingDocsExpenseIds(workspaceId) : null,
   ]);
-  return { orClause, guideIds };
+  return { orClause, pendingIds };
 }
 
 export async function listExpenses(
@@ -112,12 +98,12 @@ export async function listExpenses(
 
   const size = safePageSize(pageSize);
   const from = (page - 1) * size;
-  const { orClause, guideIds } = await prepareFilters(workspaceId, search, filters);
+  const { orClause, pendingIds } = await prepareFilters(workspaceId, search, filters);
 
   const [, { data, error, count }] = await Promise.all([
     guard,
     applyExpenseFilters(
-      onlyGuides(
+      onlyRequiredDocs(
         supabaseAdmin
           .from("expense")
           .select(LIST_COLUMNS, { count: "exact" })
@@ -128,7 +114,7 @@ export async function listExpenses(
       ),
       filters,
       orClause,
-      guideIds,
+      pendingIds,
     ),
   ]);
   if (error) throw new Error(error.message);
@@ -147,10 +133,10 @@ export async function getExpenseTotals(
 ): Promise<CurrencyTotal[]> {
   const guard = requireWorkspaceAccess(workspaceId);
   guard.catch(() => {}); // rejection is handled by Promise.all below
-  const { orClause, guideIds } = await prepareFilters(workspaceId, search, filters);
+  const { orClause, pendingIds } = await prepareFilters(workspaceId, search, filters);
   const [, totals] = await Promise.all([
     guard,
-    sumExpenseAmounts(workspaceId, (q) => applyExpenseFilters(q, filters, orClause, guideIds)),
+    sumExpenseAmounts(workspaceId, (q) => applyExpenseFilters(q, filters, orClause, pendingIds)),
   ]);
   return totals;
 }
@@ -161,7 +147,7 @@ export async function listAllFilteredExpenses(
   filters: ExpenseFilters,
 ): Promise<ExpenseRow[]> {
   await requireWorkspaceAccess(workspaceId);
-  const { orClause, guideIds } = await prepareFilters(workspaceId, search, filters);
+  const { orClause, pendingIds } = await prepareFilters(workspaceId, search, filters);
 
   const all: ExpenseRow[] = [];
   for (let from = 0; ; from += EXPORT_PAGE_SIZE) {
@@ -176,7 +162,7 @@ export async function listAllFilteredExpenses(
         .range(from, from + EXPORT_PAGE_SIZE - 1),
       filters,
       orClause,
-      guideIds,
+      pendingIds,
     );
     if (error) throw new Error(error.message);
     all.push(...((data ?? []) as unknown as ExpenseRow[]));

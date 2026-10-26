@@ -9,10 +9,11 @@ import DeleteAttachmentButton from "@/components/DeleteAttachmentButton";
 import {
   AttachmentKindSelect,
   AttachmentKindsProvider,
-  GuideNotice,
+  DocsNotice,
 } from "@/components/AttachmentKinds";
-import { ATTACHMENT_KIND_LABELS, requiresGuide, type AttachmentKind } from "@/lib/dispatchGuide";
+import { ATTACHMENT_KIND_LABELS, type AttachmentKind } from "@/lib/expenseDocs";
 import AttachmentDropArea from "@/components/AttachmentDropArea";
+import GuideExemption from "@/components/GuideExemption";
 import { ICON_SIZE, PRIMARY_BUTTON_CLASS } from "@/constants";
 import { formatAmount } from "@/utils/formatAmount";
 import { formatSafeDate } from "@/lib/formatSafeDate";
@@ -38,7 +39,16 @@ export type ExpenseDetail = {
   payment_method: string | null;
   notes: string | null;
   created_at: string;
-  category: { id: string; name: string; color: string | null } | null;
+  category: {
+    id: string;
+    name: string;
+    color: string | null;
+    requires_guide: boolean | null;
+  } | null;
+  guide_exempt_reason: string | null;
+  guide_exempt_note: string | null;
+  guide_exempt_at: string | null;
+  guide_exempt_by_user: { email: string } | null;
   created_by_user: { id: string; email: string } | null;
   expense_attachment: ExpenseAttachment[];
   workspace: { slug: string } | null;
@@ -62,8 +72,10 @@ export async function fetchExpenseDetail(
       id, invoice_series, invoice_number, amount, currency, issued_at, paid_at,
       provider:provider_id(name, ruc),
       payment_method, notes, created_at,
-      category(id, name, color),
-      created_by_user:user(id, email),
+      category(id, name, color, requires_guide),
+      guide_exempt_reason, guide_exempt_note, guide_exempt_at,
+      guide_exempt_by_user:user!guide_exempt_by(email),
+      created_by_user:user!created_by(id, email),
       expense_attachment(id, file_name, storage_path, kind),
       workspace:workspace_id(slug)
     `,
@@ -243,6 +255,7 @@ export default function ExpenseDetailView({
   slug,
   backUrl,
   readOnly = false,
+  canExemptGuide = false,
 }: {
   expense: Expense;
   materialItems: ExpenseItem[];
@@ -254,6 +267,8 @@ export default function ExpenseDetailView({
    * retyping attachments.
    */
   readOnly?: boolean;
+  /** Can mark this expense as not needing a guide (EXEMPT_GUIDE). */
+  canExemptGuide?: boolean;
 }) {
   const ref = invoiceRef(expense);
   const categoryColor = expense.category?.color ?? DEFAULT_CATEGORY_COLOR;
@@ -342,7 +357,26 @@ export default function ExpenseDetailView({
         >
           <section>
             <SectionTitle>Adjuntos ({attachments.length})</SectionTitle>
-            <GuideNotice requiresGuide={requiresGuide(expense)} readOnly={readOnly} />
+            <DocsNotice invoice={expense} readOnly={readOnly} />
+            {expense.invoice_series && expense.invoice_number && (
+              <GuideExemption
+                expenseId={expense.id}
+                exemption={
+                  expense.guide_exempt_reason
+                    ? {
+                        reason: expense.guide_exempt_reason,
+                        note: expense.guide_exempt_note,
+                        at: expense.guide_exempt_at,
+                        by: expense.guide_exempt_by_user?.email ?? null,
+                      }
+                    : null
+                }
+                categoryName={expense.category?.name ?? null}
+                categoryRequiresGuide={expense.category?.requires_guide !== false}
+                canExempt={canExemptGuide}
+                readOnly={readOnly}
+              />
+            )}
             {readOnly ? (
               attachments.length ? (
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">

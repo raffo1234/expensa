@@ -4,7 +4,7 @@ import "server-only";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { getDocumentProxy } from "unpdf";
 import { r2, BUCKET } from "@/lib/r2";
-import { classifyDocumentText, parseGuideFileName } from "@/lib/dispatchGuide";
+import { classifyDocumentText, parseGuideFileName } from "@/lib/expenseDocs";
 
 // Uploaded files are untrusted: cap how much we read and how long we try.
 const MAX_PDF_BYTES = 15 * 1024 * 1024;

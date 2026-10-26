@@ -1,5 +1,7 @@
 "use client";
 
+import GuideExemption from "./GuideExemption";
+import { useInvalidateExpenseLists } from "@/hooks/useInvalidateExpenseLists";
 import SubmitButton from "./SubmitButton";
 import { useGlobalState } from "@/lib/globalState";
 import { mutate } from "swr";
@@ -134,11 +136,17 @@ function Select({
 Select.acceptsFieldId = true;
 
 // ── Page ──────────────────────────────────────────────────────────────────────
-export default function EditExpenseForm() {
+export default function EditExpenseForm({
+  canExemptGuide = false,
+}: {
+  /** Can mark the expense as not needing a guide (EXEMPT_GUIDE). */
+  canExemptGuide?: boolean;
+}) {
   const params = useParams();
   const workspaceSlug = params.slug as string;
   const expenseId = params.id as string;
   const router = useRouter();
+  const invalidateLists = useInvalidateExpenseLists();
   const [stageId, setStageId] = useState("");
   const [levelId, setLevelId] = useState("");
 
@@ -390,6 +398,7 @@ export default function EditExpenseForm() {
         }),
       );
 
+      invalidateLists(); // lists show the edited values when reopened
       saved = true;
       router.push(`/admin/workspaces/${workspaceSlug}/expenses/${expenseId}`);
     } catch (err: unknown) {
@@ -625,6 +634,27 @@ export default function EditExpenseForm() {
           </FormInnerSection>
 
           <SectionTitle>Adjuntos</SectionTitle>
+          {expense.invoice_series && expense.invoice_number && (
+            <GuideExemption
+              expenseId={expense.id}
+              exemption={
+                expense.guide_exempt_reason
+                  ? {
+                      reason: expense.guide_exempt_reason,
+                      note: expense.guide_exempt_note ?? null,
+                      at: expense.guide_exempt_at ?? null,
+                      by: expense.guide_exempt_by_user?.email ?? null,
+                    }
+                  : null
+              }
+              categoryName={expense.category?.name ?? null}
+              categoryRequiresGuide={expense.category?.requires_guide !== false}
+              canExempt={canExemptGuide}
+              readOnly={false}
+              // This form caches the expense itself; reload it after saving.
+              onSaved={() => mutate(["expense", expenseId, workspaceId])}
+            />
+          )}
           <FormInnerSection>
             <div className="space-y-3">
               {/* Existing attachments */}

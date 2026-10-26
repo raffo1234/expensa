@@ -12,12 +12,13 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import {
   AccessError,
   requireAccess,
+  requirePermission,
   requireRowAccess,
   requireUser,
   requireWorkspaceAccess,
 } from "@/lib/access";
 import { Permissions } from "@/types/propertyState";
-import { isAttachmentKind, parseGuideFileName } from "@/lib/dispatchGuide";
+import { isAttachmentKind, isGuideExemptReason, parseGuideFileName } from "@/lib/expenseDocs";
 import { classifyAttachment } from "@/lib/classifyAttachment";
 import { createUploadToken, verifyUploadToken } from "@/lib/uploadToken";
 import { getCurrentUser } from "@/lib/getCurrentUser";
@@ -496,5 +497,46 @@ export async function setAttachmentKind(
     return {};
   } catch (err) {
     return { error: err instanceof Error ? err.message : "No se pudo cambiar el tipo" };
+  }
+}
+
+/**
+ * Marks an expense as not needing a guía de remisión (with a reason), or
+ * clears that mark (reason null). Admins only: an exemption is exactly what
+ * the accountant's control must be able to trust, so it records who and when.
+ */
+export async function setGuideExemption(
+  expenseId: string,
+  reason: string | null,
+  note?: string,
+): Promise<{ error?: string }> {
+  if (reason !== null && !isGuideExemptReason(reason)) return { error: "Motivo no válido" };
+  try {
+    const [user] = await Promise.all([
+      requireRowAccess("expense", expenseId),
+      requirePermission(Permissions.EXEMPT_GUIDE),
+    ]);
+    const { error } = await supabaseAdmin
+      .from("expense")
+      .update(
+        reason
+          ? {
+              guide_exempt_reason: reason,
+              guide_exempt_note: note?.trim().slice(0, 300) || null,
+              guide_exempt_by: user.id,
+              guide_exempt_at: new Date().toISOString(),
+            }
+          : {
+              guide_exempt_reason: null,
+              guide_exempt_note: null,
+              guide_exempt_by: null,
+              guide_exempt_at: null,
+            },
+      )
+      .eq("id", expenseId);
+    if (error) throw new Error(error.message);
+    return {};
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "No se pudo guardar la excepción" };
   }
 }

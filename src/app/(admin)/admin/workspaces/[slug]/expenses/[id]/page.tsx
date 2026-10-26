@@ -2,6 +2,9 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { findAccessibleWorkspaceBySlug } from "@/lib/access";
 import { getExpenseItems } from "@/actions/expenses";
+import { getCurrentUser } from "@/lib/getCurrentUser";
+import { checkPermissions } from "@/lib/checkPermissions";
+import { Permissions } from "@/types/propertyState";
 import ExpenseDetailView, {
   ExpenseDetailFallback,
   fetchExpenseDetail,
@@ -33,10 +36,12 @@ async function ExpenseDetail({
   // Only users with access to the project see its expenses; others get a 404.
   const workspace = await findAccessibleWorkspaceBySlug(slug);
   if (!workspace) notFound();
-  const [expense, materialItems] = await Promise.all([
+  const user = await getCurrentUser();
+  const [expense, materialItems, permissions] = await Promise.all([
     fetchExpenseDetail(expenseId, workspace.id),
     // Own access check inside; an expense from another project 404s just below.
     getExpenseItems(expenseId).catch(() => []),
+    user?.roleId ? checkPermissions(user.roleId, [Permissions.EXEMPT_GUIDE]) : {},
   ]);
   if (!expense) notFound();
 
@@ -46,6 +51,7 @@ async function ExpenseDetail({
       materialItems={materialItems}
       slug={slug}
       backUrl={backUrl}
+      canExemptGuide={!!(permissions as Record<string, boolean>)[Permissions.EXEMPT_GUIDE]}
     />
   );
 }

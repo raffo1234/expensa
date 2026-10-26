@@ -17,11 +17,11 @@ import { Bone } from "./Skeleton";
 import {
   getDashboardData,
   getFiltersData,
-  getMissingGuidesCount,
+  getPendingDocsCount,
   getWorkspaceTotal,
 } from "@/actions/dashboard";
 import Link from "next/link";
-import GuideStatusBadge from "./GuideStatusBadge";
+
 import type {
   DashboardData,
   Level,
@@ -300,7 +300,7 @@ export default function DashboardClient({ workspaces, defaultYear, defaultMonth 
   const [levels, setLevels] = useState<Level[]>([]);
   const [data, setData] = useState<DashboardData | null>(null);
   const [projectTotals, setProjectTotals] = useState<WorkspaceTotal[] | null>(null);
-  const [missingGuides, setMissingGuides] = useState(0);
+  const [pendingDocs, setPendingDocs] = useState(0);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -314,8 +314,8 @@ export default function DashboardClient({ workspaces, defaultYear, defaultMonth 
       setLevels(l);
     });
     getWorkspaceTotal(workspaceId).then(setProjectTotals);
-    setMissingGuides(0);
-    getMissingGuidesCount(workspaceId).then(setMissingGuides);
+    setPendingDocs(0);
+    getPendingDocsCount(workspaceId).then(setPendingDocs);
   }, [workspaceId]);
 
   const loadData = useCallback(() => {
@@ -475,21 +475,41 @@ export default function DashboardClient({ workspaces, defaultYear, defaultMonth 
           />
         </div>
 
-        {/* A to-do for the accountant: invoices still waiting for their guide. */}
-        {missingGuides > 0 && (
+        {/* A to-do for the accountant: invoices missing factura, guía or comprobante. */}
+        {pendingDocs > 0 && (
           <div
             role="status"
             className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900"
           >
-            <GuideStatusBadge status="missing" />
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              aria-hidden
+              className="flex-shrink-0"
+            >
+              <path
+                d="M12 8v5m0 3.5v.5"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              />
+              <path
+                d="M10.3 3.9 2.6 17.3A2 2 0 0 0 4.3 20.3h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinejoin="round"
+              />
+            </svg>
             <span className="mr-auto">
-              {missingGuides === 1
-                ? "1 factura no tiene su guía de remisión."
-                : `${missingGuides} facturas no tienen su guía de remisión.`}
+              {pendingDocs === 1
+                ? "1 factura tiene documentos pendientes (factura, guía o comprobante)."
+                : `${pendingDocs} facturas tienen documentos pendientes (factura, guía o comprobante).`}
             </span>
             {currentSlug && (
               <Link
-                href={`/admin/workspaces/${currentSlug}/expenses?missingGuide=1`}
+                href={`/admin/workspaces/${currentSlug}/expenses?pendingDocs=1`}
                 className="font-medium text-amber-900 underline decoration-amber-400 underline-offset-4 hover:decoration-amber-700"
               >
                 Ver cuáles

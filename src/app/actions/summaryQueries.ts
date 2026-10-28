@@ -51,8 +51,10 @@ async function applySummaryFilters(query: any, f: SummaryFilters): Promise<any> 
   }
 
   if (f.categoryId) q = q.eq("category_id", f.categoryId);
-  if (f.invoiceSeries) q = q.ilike("invoice_series", `%${f.invoiceSeries}%`);
-  if (f.invoiceNumber) q = q.ilike("invoice_number", `%${f.invoiceNumber}%`);
+  const series = f.invoiceSeries?.trim();
+  const number = f.invoiceNumber?.trim();
+  if (series) q = q.ilike("invoice_series", `%${series}%`);
+  if (number) q = q.ilike("invoice_number", `%${number}%`);
   if (f.dateFrom) q = q.gte("issued_at", f.dateFrom);
   if (f.dateTo) q = q.lte("issued_at", f.dateTo);
   return q;

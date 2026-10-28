@@ -38,8 +38,10 @@ function applyExpenseFilters(
   if (filters.stageId) q = q.eq("stage_id", filters.stageId);
   if (filters.levelId) q = q.eq("level_id", filters.levelId);
   if (filters.providerId) q = q.eq("provider_id", filters.providerId);
-  if (filters.invoiceSeries) q = q.ilike("invoice_series", `%${filters.invoiceSeries}%`);
-  if (filters.invoiceNumber) q = q.ilike("invoice_number", `%${filters.invoiceNumber}%`);
+  const series = filters.invoiceSeries?.trim();
+  const number = filters.invoiceNumber?.trim();
+  if (series) q = q.ilike("invoice_series", `%${series}%`);
+  if (number) q = q.ilike("invoice_number", `%${number}%`);
   if (orClause) q = q.or(orClause);
   if (filters.issuedFrom) q = q.gte("issued_at", filters.issuedFrom);
   if (filters.issuedTo) q = q.lte("issued_at", filters.issuedTo);

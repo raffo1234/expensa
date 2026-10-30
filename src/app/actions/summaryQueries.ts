@@ -83,6 +83,7 @@ export async function listSummaryExpenses(filters: SummaryFilters, page: number,
       )
       .eq("workspace_id", filters.workspaceId)
       .order("paid_at", { ascending: false })
+      .order("created_at", { ascending: false })
       .order("id") // stable paging when several expenses share a date
       .range(from, from + size - 1),
     filters,
@@ -109,6 +110,7 @@ export async function listAllSummaryExpenses(filters: SummaryFilters) {
         )
         .eq("workspace_id", filters.workspaceId)
         .order("paid_at", { ascending: true })
+        .order("created_at", { ascending: true })
         .order("id")
         .range(from, from + EXPORT_PAGE_SIZE - 1),
       filters,

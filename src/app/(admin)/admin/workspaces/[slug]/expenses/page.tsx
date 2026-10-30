@@ -56,6 +56,7 @@ async function ExpensesSection({ slug }: { slug: string }) {
     onlyRequiredDocs(supabase.from("expense").select(EXPENSE_LIST_COLUMNS, { count: "exact" }))
       .eq("workspace_id", workspace.id)
       .order("paid_at", { ascending: false })
+      .order("created_at", { ascending: false })
       .order("id")
       .range(0, ITEMS_PER_PAGE - 1),
     sumExpenseAmounts(workspace.id),

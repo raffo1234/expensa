@@ -111,6 +111,7 @@ export async function listExpenses(
           .select(LIST_COLUMNS, { count: "exact" })
           .eq("workspace_id", workspaceId)
           .order("paid_at", { ascending: false })
+          .order("created_at", { ascending: false })
           .order("id") // stable paging when several expenses share a date
           .range(from, from + size - 1),
       ),
@@ -159,6 +160,7 @@ export async function listAllFilteredExpenses(
         .select(EXPORT_COLUMNS)
         .eq("workspace_id", workspaceId)
         .order("paid_at", { ascending: true })
+        .order("created_at", { ascending: true })
         // Tie-breaker: without it, rows sharing a date can be skipped or repeated across pages.
         .order("id")
         .range(from, from + EXPORT_PAGE_SIZE - 1),

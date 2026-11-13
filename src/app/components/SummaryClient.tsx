@@ -1,5 +1,6 @@
 "use client";
 
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
 import useSWR, { preload } from "swr";
@@ -387,6 +388,11 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
   };
   // "Documentos pendientes" only means something for invoices.
   const queryExtra: ExtraFilters = tab === "facturas" ? extra : { ...extra, pendingDocs: "" };
+  // Typed filters (Serie, Número, Monto...) update on every key; queries use
+  // the settled copy, so typing sends one request instead of one per key.
+  const typed = { invoiceSeries, invoiceNumber, extra: queryExtra };
+  const settled = useDebouncedValue(typed);
+  const typedPending = JSON.stringify(typed) !== JSON.stringify(settled);
   const [searchText, setSearchText] = useState(search);
   const [showFilters, setShowFilters] = useState(() =>
     ["cat", "month", "from", "to", ...Object.keys(EMPTY_EXTRA)].some((k) => searchParams.get(k)),
@@ -527,10 +533,10 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
     dateTo,
     tab,
     categoryId,
-    invoiceSeries,
-    invoiceNumber,
+    settled.invoiceSeries,
+    settled.invoiceNumber,
     pageSize,
-    queryExtra,
+    settled.extra,
   ] as const;
 
   const { data, isLoading, error, mutate } = useSWR(
@@ -553,9 +559,9 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
           dateTo,
           tab,
           categoryId,
-          invoiceSeries,
-          invoiceNumber,
-          queryExtra,
+          settled.invoiceSeries,
+          settled.invoiceNumber,
+          settled.extra,
         ]
       : null,
     () =>
@@ -566,9 +572,9 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
         dateTo,
         tab,
         categoryId,
-        invoiceSeries,
-        invoiceNumber,
-        ...queryExtra,
+        invoiceSeries: settled.invoiceSeries,
+        invoiceNumber: settled.invoiceNumber,
+        ...settled.extra,
       }),
     { keepPreviousData: true, revalidateOnFocus: false },
   );
@@ -633,9 +639,9 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
             dateTo,
             tab,
             categoryId,
-            invoiceSeries,
-            invoiceNumber,
-            queryExtra,
+            settled.invoiceSeries,
+            settled.invoiceNumber,
+            settled.extra,
           )
         }
         disabled={!workspaceId}
@@ -659,9 +665,9 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
               .map((id) => nameOf(categories, id))
               .filter(Boolean)
               .join(", "),
-            invoiceSeries,
-            invoiceNumber,
-            queryExtra,
+            settled.invoiceSeries,
+            settled.invoiceNumber,
+            settled.extra,
             extraLabels,
           )
         }
@@ -686,7 +692,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
       pageSize={pageSize}
       onPageSizeChange={setPageSize}
       // Also while the search text waits for its debounce.
-      loading={isLoading || searchText !== search}
+      loading={isLoading || searchText !== search || typedPending}
     />
   );
 
@@ -991,7 +997,7 @@ export default function SummaryClient({ workspaces }: { workspaces: Workspace[] 
           columns={summaryColumns(tab)}
           numbered
           isLoading={isLoading && !data}
-          busy={isLoading || searchText !== search}
+          busy={isLoading || searchText !== search || typedPending}
           isEmpty={expenses.length === 0}
           emptyMessage={
             tab === "facturas"

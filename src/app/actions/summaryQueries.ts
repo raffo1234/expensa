@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { requireAccess } from "@/lib/access";
 import { Permissions } from "@/types/propertyState";
 import { safePageSize } from "@/lib/pageSize";
+import { timed } from "@/lib/perf";
 import { sumExpenseAmounts } from "@/lib/sumExpenseAmounts";
 import type { CurrencyTotal } from "@/utils/formatAmount";
 import { categoryIdList } from "@/types/expenseFilters";
@@ -105,6 +106,10 @@ function applySummaryFilters(query: any, f: SummaryFilters, p: PreparedFilters):
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 export async function listSummaryExpenses(filters: SummaryFilters, page: number, pageSize: number) {
+  return timed("listSummary total", () => listSummaryExpensesInner(filters, page, pageSize));
+}
+
+async function listSummaryExpensesInner(filters: SummaryFilters, page: number, pageSize: number) {
   // The access check runs alongside the query instead of before it; if it
   // fails, Promise.all rejects and no data ever leaves the server.
   const guard = requireAccess({
@@ -114,7 +119,7 @@ export async function listSummaryExpenses(filters: SummaryFilters, page: number,
   guard.catch(() => {}); // rejection is handled by Promise.all below
   const size = safePageSize(pageSize);
   const from = page * size;
-  const prepared = await prepareSummaryFilters(filters);
+  const prepared = await timed("listSummary prepare", () => prepareSummaryFilters(filters));
   const query = applySummaryFilters(
     supabaseAdmin
       .from("expense")
@@ -133,7 +138,10 @@ export async function listSummaryExpenses(filters: SummaryFilters, page: number,
     filters,
     prepared,
   );
-  const [, { data, count, error }] = await Promise.all([guard, query]);
+  const [, { data, count, error }] = await Promise.all([
+    timed("listSummary access", () => guard),
+    timed("listSummary query", async () => query),
+  ]);
   if (error) throw new Error(error.message);
   return { data: data ?? [], count: (count as number | null) ?? 0 };
 }
@@ -175,6 +183,10 @@ export async function listAllSummaryExpenses(filters: SummaryFilters) {
  * page. Separate from the list, so changing page doesn't recompute them.
  */
 export async function getSummaryTotals(filters: SummaryFilters): Promise<CurrencyTotal[]> {
+  return timed("getSummaryTotals total", () => getSummaryTotalsInner(filters));
+}
+
+async function getSummaryTotalsInner(filters: SummaryFilters): Promise<CurrencyTotal[]> {
   const guard = requireAccess({
     workspaceId: filters.workspaceId,
     permissions: [Permissions.VIEW_EXPENSES_SUMMARY],

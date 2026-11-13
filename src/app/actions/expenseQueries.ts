@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { requireWorkspaceAccess } from "@/lib/access";
 import { sumExpenseAmounts } from "@/lib/sumExpenseAmounts";
 import { safePageSize } from "@/lib/pageSize";
+import { timed } from "@/lib/perf";
 import { EXPENSE_LIST_COLUMNS as LIST_COLUMNS, onlyRequiredDocs } from "@/lib/expenseListColumns";
 import { NO_ID, pendingDocsExpenseIds } from "@/lib/pendingDocs";
 import { categoryIdList, type ExpenseFilters } from "@/types/expenseFilters";
@@ -93,36 +94,42 @@ export async function listExpenses(
   search: string,
   filters: ExpenseFilters,
 ): Promise<{ rows: ExpenseRow[]; count: number }> {
-  // The access check runs alongside the queries instead of before them; if it
-  // fails, Promise.all rejects and no data ever leaves the server.
-  const guard = requireWorkspaceAccess(workspaceId);
-  guard.catch(() => {}); // rejection is handled by Promise.all below
+  return timed("listExpenses total", async () => {
+    // The access check runs alongside the queries instead of before them; if it
+    // fails, Promise.all rejects and no data ever leaves the server.
+    const guard = timed("listExpenses access", () => requireWorkspaceAccess(workspaceId));
+    guard.catch(() => {}); // rejection is handled by Promise.all below
 
-  const size = safePageSize(pageSize);
-  const from = (page - 1) * size;
-  const { orClause, pendingIds } = await prepareFilters(workspaceId, search, filters);
+    const size = safePageSize(pageSize);
+    const from = (page - 1) * size;
+    const { orClause, pendingIds } = await timed("listExpenses prepare", () =>
+      prepareFilters(workspaceId, search, filters),
+    );
 
-  const [, { data, error, count }] = await Promise.all([
-    guard,
-    applyExpenseFilters(
-      onlyRequiredDocs(
-        supabaseAdmin
-          .from("expense")
-          .select(LIST_COLUMNS, { count: "exact" })
-          .eq("workspace_id", workspaceId)
-          .order("paid_at", { ascending: false })
-          .order("created_at", { ascending: false })
-          .order("id") // stable paging when several expenses share a date
-          .range(from, from + size - 1),
+    const [, { data, error, count }] = await Promise.all([
+      guard,
+      timed("listExpenses query", async () =>
+        applyExpenseFilters(
+          onlyRequiredDocs(
+            supabaseAdmin
+              .from("expense")
+              .select(LIST_COLUMNS, { count: "exact" })
+              .eq("workspace_id", workspaceId)
+              .order("paid_at", { ascending: false })
+              .order("created_at", { ascending: false })
+              .order("id") // stable paging when several expenses share a date
+              .range(from, from + size - 1),
+          ),
+          filters,
+          orClause,
+          pendingIds,
+        ),
       ),
-      filters,
-      orClause,
-      pendingIds,
-    ),
-  ]);
-  if (error) throw new Error(error.message);
+    ]);
+    if (error) throw new Error(error.message);
 
-  return { rows: (data ?? []) as unknown as ExpenseRow[], count: count ?? 0 };
+    return { rows: (data ?? []) as unknown as ExpenseRow[], count: count ?? 0 };
+  });
 }
 
 /**
@@ -134,14 +141,20 @@ export async function getExpenseTotals(
   search: string,
   filters: ExpenseFilters,
 ): Promise<CurrencyTotal[]> {
-  const guard = requireWorkspaceAccess(workspaceId);
-  guard.catch(() => {}); // rejection is handled by Promise.all below
-  const { orClause, pendingIds } = await prepareFilters(workspaceId, search, filters);
-  const [, totals] = await Promise.all([
-    guard,
-    sumExpenseAmounts(workspaceId, (q) => applyExpenseFilters(q, filters, orClause, pendingIds)),
-  ]);
-  return totals;
+  return timed("getExpenseTotals total", async () => {
+    const guard = requireWorkspaceAccess(workspaceId);
+    guard.catch(() => {}); // rejection is handled by Promise.all below
+    const { orClause, pendingIds } = await prepareFilters(workspaceId, search, filters);
+    const [, totals] = await Promise.all([
+      guard,
+      timed("getExpenseTotals sum", () =>
+        sumExpenseAmounts(workspaceId, (q) =>
+          applyExpenseFilters(q, filters, orClause, pendingIds),
+        ),
+      ),
+    ]);
+    return totals;
+  });
 }
 
 export async function listAllFilteredExpenses(

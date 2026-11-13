@@ -1,5 +1,6 @@
 "use client";
 
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { useState, useEffect, useCallback } from "react";
 import toast from "react-hot-toast";
@@ -380,6 +381,10 @@ export default function ExpensesClient({
     setPage(1);
   }
 
+  // Inputs update `filters` on every keystroke; queries use the settled copy,
+  // so typing in Serie/Número/Monto sends one request, not one per key.
+  const queryFilters = useDebouncedValue(filters);
+  const filtersPending = JSON.stringify(filters) !== JSON.stringify(queryFilters);
   const hasActiveFilters = debouncedSearch || Object.values(filters).some((v) => v !== "");
 
   const [pageSize, setPageSizePref] = usePageSize();
@@ -393,14 +398,14 @@ export default function ExpensesClient({
     page === 1 &&
     pageSize === DEFAULT_PAGE_SIZE &&
     !debouncedSearch &&
-    !Object.values(filters).some((v) => v !== "");
+    !Object.values(queryFilters).some((v) => v !== "");
   // The server already rendered the default view; skip refetching it on mount.
   const [hasServerData] = useState(isDefaultView);
 
   const listKey = (p: number) =>
-    ["expenses", workspace.id, p, pageSize, debouncedSearch, filters] as const;
+    ["expenses", workspace.id, p, pageSize, debouncedSearch, queryFilters] as const;
   const fetchPage = (p: number) =>
-    fetchExpenses(workspace.id, p, pageSize, debouncedSearch, filters);
+    fetchExpenses(workspace.id, p, pageSize, debouncedSearch, queryFilters);
 
   const { data, error, mutate, isLoading } = useSWR(listKey(page), () => fetchPage(page), {
     fallbackData: isDefaultView
@@ -414,8 +419,8 @@ export default function ExpensesClient({
   // Totals depend on the filters only, not the page, so they have their own
   // cache entry: paging doesn't recompute them.
   const { data: totals = [], mutate: mutateTotals } = useSWR(
-    ["expense-totals", workspace.id, debouncedSearch, filters],
-    () => getExpenseTotals(workspace.id, debouncedSearch, filters),
+    ["expense-totals", workspace.id, debouncedSearch, queryFilters],
+    () => getExpenseTotals(workspace.id, debouncedSearch, queryFilters),
     {
       fallbackData: hasActiveFilters ? undefined : initialTotals,
       revalidateOnMount: !(hasServerData && !hasActiveFilters),
@@ -439,7 +444,7 @@ export default function ExpensesClient({
     preload(listKey(page + 1), () => fetchPage(page + 1));
     // listKey/fetchPage are rebuilt each render from these same values.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, isLoading, page, totalPages, pageSize, debouncedSearch, filters, workspace.id]);
+  }, [data, isLoading, page, totalPages, pageSize, debouncedSearch, queryFilters, workspace.id]);
   const displayCurrency = expenses[0]?.currency ?? "PEN";
   // Largest-impact currency first; soles lead when present.
   const primaryTotals = [...totals]
@@ -513,7 +518,7 @@ export default function ExpensesClient({
       )}
       <button
         type="button"
-        onClick={() => exportExpensesCsv(workspace.id, debouncedSearch, filters)}
+        onClick={() => exportExpensesCsv(workspace.id, debouncedSearch, queryFilters)}
         className={HEADER_LINK_CLASS}
       >
         <Icon icon="solar:file-download-linear" className={HEADER_LINK_ICON} aria-hidden />
@@ -526,7 +531,7 @@ export default function ExpensesClient({
             workspace.id,
             workspace.name,
             debouncedSearch,
-            filters,
+            queryFilters,
             localCategories,
             stages,
             levels,
@@ -553,7 +558,7 @@ export default function ExpensesClient({
       pageSize={pageSize}
       onPageSizeChange={setPageSize}
       // Also while the search text waits for its debounce.
-      loading={isLoading || search !== debouncedSearch}
+      loading={isLoading || search !== debouncedSearch || filtersPending}
     />
   );
 
@@ -822,7 +827,7 @@ export default function ExpensesClient({
           workspaceSlug={slug}
           materialExpenseIds={materialExpenseIdSet}
           startIndex={(page - 1) * pageSize}
-          busy={isLoading || search !== debouncedSearch}
+          busy={isLoading || search !== debouncedSearch || filtersPending}
         />
       </ListPage>
     </FormSection>

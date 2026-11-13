@@ -4,7 +4,7 @@ import { useSWRConfig } from "swr";
 
 // SWR keys of the cached lists that show expense data (rows, guide status,
 // totals). Kept in sync with the keys used in ExpensesClient and SummaryClient.
-const LIST_KEYS = new Set(["expenses", "expense-totals", "summary"]);
+const LIST_KEYS = new Set(["expenses", "expense-totals", "summary", "summary-totals"]);
 
 /**
  * Returns a function that drops the cached expense lists, so going back to

@@ -8,12 +8,12 @@ import NoAccess from "@/components/NoAccess";
 import SummaryClient from "@/components/SummaryClient";
 import FormSection from "@/components/FormSection";
 import {
-  Bone,
   HeaderLinksSkeleton,
   LabeledFieldSkeleton,
   ListPageSkeleton,
   SearchRowSkeleton,
   TabsSkeleton,
+  TotalHeaderSkeleton,
 } from "@/components/Skeleton";
 import { summaryColumns } from "@/lib/tableColumns";
 
@@ -26,9 +26,10 @@ export default async function Page() {
             columns={summaryColumns("facturas")}
             controls={
               <>
-                <div className="w-full sm:max-w-xs">
-                  <LabeledFieldSkeleton />
-                  <Bone className="mt-3 h-3.5 w-20" />
+                {/* Total on the left, project on the right, like the real header. */}
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                  <TotalHeaderSkeleton action={false} />
+                  <LabeledFieldSkeleton className="w-full sm:max-w-xs" />
                 </div>
                 <TabsSkeleton />
                 <SearchRowSkeleton inputs={["sm:w-28", "sm:w-36"]} />

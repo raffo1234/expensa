@@ -1,5 +1,6 @@
 "use client";
 
+import { ATTACHMENT_KINDS, ATTACHMENT_KIND_LABELS, type AttachmentKind } from "@/lib/expenseDocs";
 import { useInvalidateExpenseLists } from "@/hooks/useInvalidateExpenseLists";
 import SubmitButton from "./SubmitButton";
 import { useState, useCallback, useRef, useEffect } from "react";
@@ -19,6 +20,7 @@ import FormSection from "./FormSection";
 import FormInnerSection from "./FormInnerSection";
 import {
   INPUT_CLASS,
+  ICON_SIZE,
   PRIMARY_BUTTON_CLASS,
   SECONDARY_BUTTON_CLASS,
   SELECT_CLASS,
@@ -45,9 +47,16 @@ type Category = { id: string; name: string; color: string | null };
 type Provider = { id: string; name: string; ruc: string };
 type Stage = { id: string; name: string; order: number; color: string | null };
 type Level = { id: string; name: string; order: number };
-type FileItem = { id: string; file: File; preview?: string };
+type FileItem = {
+  id: string;
+  file: File;
+  preview?: string;
+  /** Attachment type picked by the user; "auto" = detected when saving. */
+  kind: AttachmentKind | "auto";
+};
 
 // ── Constants ─────────────────────────────────────────────────────────────────
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
 const CURRENCIES = ["PEN", "USD", "EUR"];
 const PAYMENT_METHODS = [
   "Efectivo",
@@ -278,21 +287,28 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
     }
   };
 
+  /** Adds files to the expense's attachments (saved with it). No AI reading. */
+  const appendFiles = useCallback((incoming: File[]) => {
+    const allowed = incoming.filter((f) => ALLOWED_TYPES.includes(f.type));
+    if (allowed.length < incoming.length) setError("Solo se pueden adjuntar imágenes o PDF.");
+    if (!allowed.length) return [];
+    setFiles((prev) => [
+      ...prev,
+      ...allowed.map((file) => ({
+        id: crypto.randomUUID(),
+        file,
+        preview: file.type.startsWith("image/") ? URL.createObjectURL(file) : undefined,
+        kind: "auto" as const,
+      })),
+    ]);
+    return allowed;
+  }, []);
+
+  /** Top section: adds the receipt AND reads it with AI to fill the form. */
   const addFiles = useCallback(
     async (incoming: File[]) => {
-      const allowed = incoming.filter((f) =>
-        ["image/jpeg", "image/png", "image/webp", "application/pdf"].includes(f.type),
-      );
+      const allowed = appendFiles(incoming);
       if (!allowed.length) return;
-
-      setFiles((prev) => [
-        ...prev,
-        ...allowed.map((file) => ({
-          id: crypto.randomUUID(),
-          file,
-          preview: file.type.startsWith("image/") ? URL.createObjectURL(file) : undefined,
-        })),
-      ]);
 
       // Prefer the invoice PDF when several files are dropped (e.g. PDF + payment screenshot).
       const toRead = allowed.find((f) => f.type === "application/pdf") ?? allowed[0];
@@ -377,7 +393,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
         setExtracting(false);
       }
     },
-    [providers, materials, brands, units],
+    [appendFiles, providers, materials, brands, units],
   );
 
   const onDrop = useCallback(
@@ -456,6 +472,7 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
             result.id!,
             (pct) => setUploadProgress((prev) => ({ ...prev, [fi.id]: pct })),
             signal,
+            fi.kind === "auto" ? undefined : fi.kind,
           );
         }),
       );
@@ -783,106 +800,11 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
                 )}
               </div>
             )}
-
             {files.length > 0 && (
-              <ul className="space-y-2 pt-1">
-                {files.map((fi) => {
-                  const pct = uploadProgress[fi.id] ?? null;
-                  return (
-                    <li
-                      key={fi.id}
-                      className="bg-gray-50 border border-gray-200 rounded-lg px-3.5 py-2.5 group"
-                    >
-                      <div className="flex items-center gap-3">
-                        {fi.preview ? (
-                          <img
-                            src={fi.preview}
-                            alt=""
-                            className="w-8 h-8 rounded-md object-cover flex-shrink-0"
-                          />
-                        ) : (
-                          <div className="w-8 h-8 rounded-md bg-violet-100 flex items-center justify-center text-[9px] font-bold text-violet-600 flex-shrink-0">
-                            PDF
-                          </div>
-                        )}
-                        <span className="flex-1 text-sm text-gray-700 truncate">
-                          {fi.file.name}
-                        </span>
-                        <span className="text-xs text-gray-400 flex-shrink-0">
-                          {(fi.file.size / (1024 * 1024)).toFixed(1)} MB
-                        </span>
-                        {pct !== null && (
-                          <span className="text-xs text-violet-600 font-medium flex-shrink-0">
-                            {pct}%
-                          </span>
-                        )}
-                        {pct === null && (
-                          <button
-                            type="button"
-                            onClick={() => removeFile(fi.id)}
-                            aria-label={`Quitar ${fi.file.name}`}
-                            title={`Quitar ${fi.file.name}`}
-                            className="ml-1 flex-shrink-0 w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 transition-colors cursor-pointer"
-                          >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-                              <path
-                                d="M18 6L6 18M6 6l12 12"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                              />
-                            </svg>
-                          </button>
-                        )}
-                      </div>
-                      {pct !== null && (
-                        <div className="mt-2 h-1 rounded-full bg-gray-200 overflow-hidden">
-                          <div
-                            className="h-full bg-violet-500 transition-all duration-200"
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-
-            {overallProgress !== null && (
-              <div className="flex items-center gap-2.5 bg-violet-50 border border-violet-200 rounded-lg px-4 py-3">
-                <svg
-                  className="animate-spin w-4 h-4 text-violet-500 flex-shrink-0"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeOpacity="0.25"
-                  />
-                  <path
-                    d="M12 2a10 10 0 0 1 10 10"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <div className="flex-1">
-                  <p className="text-xs font-semibold text-violet-700">
-                    Subiendo archivos... {overallProgress}%
-                  </p>
-                  <div className="mt-1.5 h-1 rounded-full bg-violet-200 overflow-hidden">
-                    <div
-                      className="h-full bg-violet-500 transition-all duration-200"
-                      style={{ width: `${overallProgress}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
+              <p className="text-xs text-navy-500">
+                {files.length === 1 ? "1 archivo" : `${files.length} archivos`} en «Adjuntos», al
+                final del formulario. Ahí puedes quitarlos, elegir su tipo o agregar más.
+              </p>
             )}
           </section>
         </FormInnerSection>
@@ -1116,6 +1038,177 @@ export default function UploadExpensePage({ userId }: { userId: string }) {
             onBrandsChange={() => mutate(["brands", workspaceId])}
             onUnitsChange={() => mutate(["units", workspaceId])}
           />
+        </FormInnerSection>
+
+        <SectionTitle>Adjuntos ({files.length})</SectionTitle>
+        <FormInnerSection>
+          <div className="space-y-4">
+            <p className="text-xs text-navy-500">
+              Todo lo que se guardará con el gasto. Agrega aquí la guía de remisión, vouchers u
+              otros archivos: solo se adjuntan, no se leen ni cambian el formulario.
+            </p>
+            <div
+              onDragOver={(e) => {
+                if (e.dataTransfer.types.includes("Files")) e.preventDefault();
+              }}
+              onDrop={(e) => {
+                if (!e.dataTransfer.types.includes("Files")) return;
+                e.preventDefault();
+                appendFiles(Array.from(e.dataTransfer.files));
+              }}
+              className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"
+            >
+              {files.map((fi) => {
+                const pct = uploadProgress[fi.id] ?? null;
+                return (
+                  <div key={fi.id}>
+                    <div className="relative overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
+                      <div className="flex aspect-[4/3] items-center justify-center overflow-hidden border-b border-gray-100 bg-white">
+                        {fi.preview ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={fi.preview} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          <span className="flex h-14 w-12 items-end justify-center rounded-md border border-rose-100 bg-rose-50 pb-2 text-[10px] font-bold text-rose-500">
+                            PDF
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 px-3 py-2">
+                        <p
+                          className="min-w-0 flex-1 truncate text-xs font-medium text-gray-700"
+                          title={fi.file.name}
+                        >
+                          {fi.file.name}
+                        </p>
+                        <span className="flex-shrink-0 text-xs text-gray-400 tabular-nums">
+                          {pct !== null
+                            ? `${pct}%`
+                            : `${(fi.file.size / (1024 * 1024)).toFixed(1)} MB`}
+                        </span>
+                      </div>
+                      {pct !== null && (
+                        <div className="h-1 bg-gray-200">
+                          <div
+                            className="h-full bg-violet-500 transition-all duration-200"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      )}
+                      {pct === null && (
+                        <button
+                          type="button"
+                          onClick={() => removeFile(fi.id)}
+                          aria-label={`Quitar ${fi.file.name}`}
+                          title="Quitar"
+                          className="absolute top-2 right-2 flex size-9 cursor-pointer items-center justify-center rounded-full border border-gray-200 bg-white/90 text-gray-500 shadow-sm transition-colors hover:bg-red-50 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+                            <path
+                              d="M18 6L6 18M6 6l12 12"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                            />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                    <select
+                      value={fi.kind}
+                      onChange={(e) =>
+                        setFiles((prev) =>
+                          prev.map((x) =>
+                            x.id === fi.id ? { ...x, kind: e.target.value as FileItem["kind"] } : x,
+                          ),
+                        )
+                      }
+                      disabled={pct !== null}
+                      aria-label={`Tipo de ${fi.file.name}`}
+                      className={`${SELECT_CLASS} mt-2`}
+                    >
+                      <option value="auto">Detectar automáticamente</option>
+                      {ATTACHMENT_KINDS.map((k) => (
+                        <option key={k} value={k}>
+                          {ATTACHMENT_KIND_LABELS[k]}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                );
+              })}
+
+              {/* Add more: attach only, no AI reading. */}
+              <label
+                className={`flex min-h-40 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-navy-200 px-4 py-6 text-center text-navy-500 transition-colors hover:border-violet-300 hover:bg-violet-50/50 hover:text-violet-700 focus-within:ring-2 focus-within:ring-violet-500 ${
+                  files.length === 0 ? "col-span-full" : ""
+                }`}
+              >
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*,application/pdf"
+                  className="sr-only"
+                  aria-label="Adjuntar más archivos: imágenes o PDF"
+                  onChange={(e) => {
+                    appendFiles(Array.from(e.target.files ?? []));
+                    e.target.value = "";
+                  }}
+                />
+                <svg
+                  width={ICON_SIZE}
+                  height={ICON_SIZE}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <path d="M12 16V4m0 0-4 4m4-4 4 4" />
+                  <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+                </svg>
+                <span className="text-sm">Arrastra archivos o haz clic</span>
+                <span className="text-xs text-navy-400">Imágenes o PDF · solo se adjuntan</span>
+              </label>
+            </div>
+
+            {overallProgress !== null && (
+              <div className="flex items-center gap-2.5 bg-violet-50 border border-violet-200 rounded-lg px-4 py-3">
+                <svg
+                  className="animate-spin w-4 h-4 text-violet-500 flex-shrink-0"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeOpacity="0.25"
+                  />
+                  <path
+                    d="M12 2a10 10 0 0 1 10 10"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <div className="flex-1">
+                  <p className="text-xs font-semibold text-violet-700">
+                    Subiendo archivos... {overallProgress}%
+                  </p>
+                  <div className="mt-1.5 h-1 rounded-full bg-violet-200 overflow-hidden">
+                    <div
+                      className="h-full bg-violet-500 transition-all duration-200"
+                      style={{ width: `${overallProgress}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </FormInnerSection>
 
         {error && (

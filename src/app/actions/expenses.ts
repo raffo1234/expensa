@@ -441,6 +441,8 @@ export async function abortMultipartUpload(token: string): Promise<void> {
 export async function registerAttachment(
   token: string,
   fileName: string,
+  /** Type chosen by the user before uploading; otherwise it's detected. */
+  kind?: string,
 ): Promise<{ error?: string }> {
   const { key, expenseId } = await verifiedUpload(token);
 
@@ -456,12 +458,18 @@ export async function registerAttachment(
   const safeName = fileName.replace(/[\\/]/g, "_").slice(0, 200);
   // Factura or guía de remisión, read from the PDF header (or a SUNAT file name).
   const classified = await classifyAttachment(key, safeName);
+  // A type picked by hand wins; the document's RUC/series/number are kept only
+  // if the file really is that type.
+  const manual = isAttachmentKind(kind) ? kind : null;
 
   const { error } = await supabaseAdmin.from("expense_attachment").insert({
     expense_id: expenseId,
     storage_path: key,
     file_name: safeName,
     ...(classified ?? {}),
+    ...(manual && manual !== classified?.kind
+      ? { kind: manual, doc_ruc: null, doc_serie: null, doc_numero: null }
+      : {}),
   });
   return { error: error?.message };
 }

@@ -18,6 +18,8 @@ export async function uploadExpenseAttachment(
   expenseId: string,
   onProgress: (pct: number) => void,
   signal: AbortSignal,
+  /** Attachment type chosen by the user; omitted = detected on the server. */
+  kind?: string,
 ): Promise<void> {
   const { token } = await initiateMultipartUpload(expenseId, file.type);
 
@@ -53,6 +55,6 @@ export async function uploadExpenseAttachment(
     throw err;
   }
 
-  const { error } = await registerAttachment(token, file.name);
+  const { error } = await registerAttachment(token, file.name, kind);
   if (error) throw new Error(error);
 }
